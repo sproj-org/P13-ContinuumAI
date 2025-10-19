@@ -1,0 +1,33 @@
+# FastAPI Backend Requirements
+# Core FastAPI Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# Database & ORM - MySQL Setup
+sqlalchemy==2.0.23
+pymysql==1.1.0
+cryptography==43.0.3
+alembic==1.12.1
+
+# Authentication & Security  
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-dotenv==1.0.0
+authlib==1.2.1
+itsdangerous==2.1.2
+
+# Data Processing (SYNCED with main project versions)
+pandas==2.3.3
+numpy==2.3.4
+python-dateutil==2.9.0.post0
+
+# Configuration & Environment
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# HTTP & API (SYNCED with main project)
+requests==2.32.5
+
+# Utilities (SYNCED with main project)
+typing_extensions==4.15.0
