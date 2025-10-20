@@ -1,0 +1,10 @@
+# Python build stuff
+__pycache__/
+*.pyc
+build/
+dist/
+lib/
+lib64/
+.eggs/
+*.egg-info/
+.env
