@@ -4,9 +4,9 @@ import numpy as np
 from datetime import datetime
 
 @st.cache_data
-def load_data_from_buffer(buffer):
+def load_data_from_buffer(_buffer):
     """Read CSV from uploaded buffer and preprocess."""
-    df = pd.read_csv(buffer)
+    df = pd.read_csv(_buffer)
     return preprocess(df)
 
 @st.cache_data

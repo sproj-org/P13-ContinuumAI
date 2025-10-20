@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Build outputs
+frontend-react/dist/
+frontend-react/build/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Testing
+coverage/
+.nyc_output/
+.pytest_cache/
+
+# Misc
+*.bak
+*.tmp
+.cache/
+temp/
+
+# Documentation (temporary files)
+*_DONE.md
+*_FIXED*.md
+START_*.md
+TEST_*.md
+UPLOAD_*.md
+QUICK_*.md
+FINAL_*.md
+FIX_*.md
+ALL_FIXES*.md
+VISUAL_*.md
+RESTART_*.md

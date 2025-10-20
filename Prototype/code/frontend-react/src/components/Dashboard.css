@@ -1,0 +1,134 @@
+.dashboard-container {
+  min-height: 100vh;
+  padding: 2rem;
+  position: relative;
+  animation: fadeInDashboard 0.6s ease-out;
+}
+
+@keyframes fadeInDashboard {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dashboard-header {
+  position: relative;
+  text-align: center;
+  margin-bottom: 2rem;
+  padding: 1rem 0;
+}
+
+.dashboard-header h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  background: linear-gradient(90deg, #a78bfa, #7dd3fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Sidebar Toggle Button */
+.sidebar-toggle {
+  position: fixed;
+  left: 300px;
+  top: 2rem;
+  transform: translateX(0);
+  background: rgba(167, 139, 250, 0.15);
+  border: 1px solid rgba(167, 139, 250, 0.4);
+  color: #a78bfa;
+  font-size: 1.5rem;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  z-index: 1001;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.sidebar-toggle:hover {
+  background: rgba(167, 139, 250, 0.3);
+  border-color: rgba(167, 139, 250, 0.6);
+  transform: translateX(0) scale(1.08);
+  box-shadow: 0 0 25px rgba(167, 139, 250, 0.4);
+}
+
+.dashboard-main {
+  margin-left: 280px;
+  padding: 1rem;
+  position: relative;
+  transition: margin-left 0.3s ease;
+}
+
+.dashboard-main.sidebar-collapsed {
+  margin-left: 0;
+}
+
+/* Move toggle button when sidebar is collapsed */
+.sidebar-toggle.collapsed {
+  left: 1rem;
+}
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.5rem;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+/* Dashboard Footer (matching landing page) */
+.dashboard-footer {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  backdrop-filter: blur(6px);
+  text-align: center;
+  font-size: 0.9rem;
+  color: #888;
+  box-shadow: 0 0 15px rgba(167, 139, 250, 0.15);
+  transition: all 0.4s ease;
+  z-index: 100;
+  animation: fadeInFooter 1.6s ease 1.8s forwards;
+  opacity: 0;
+}
+
+.dashboard-footer:hover {
+  color: #bcb8d8;
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 25px rgba(167, 139, 250, 0.25);
+  transform: translateX(-50%) translateY(-2px);
+}
+
+@keyframes fadeInFooter {
+  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+@media (max-width: 1024px) {
+  .dashboard-main {
+    margin-left: 0;
+    margin-top: 280px;
+  }
+}
