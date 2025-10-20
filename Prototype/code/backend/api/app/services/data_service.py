@@ -21,7 +21,7 @@ class DataService:
         Convert DataFrame to JSON and store in database.
         
         Args:
-            df: Preprocessed DataFrame from your data_logic.py
+            df: Preprocessed DataFrame from data_logic.py
             filename: Original CSV filename
             dataset_name: Optional custom name for the dataset
             
@@ -55,7 +55,7 @@ class DataService:
             dataset_id: ID of the dataset to retrieve
             
         Returns:
-            DataFrame ready for your existing data_logic.py functions
+            DataFrame ready for  existing data_logic.py functions
         """
         dataset = self.db.query(SalesDataset).filter(SalesDataset.id == dataset_id).first()
         
@@ -119,7 +119,7 @@ class DataService:
         """Convert JSON back to DataFrame with proper type restoration"""
         df = pd.DataFrame(json_data)
         
-        # Restore date columns (your data_logic.py expects these)
+        # Restore date columns
         date_columns = [col for col in df.columns if 'date' in col.lower()]
         for col in date_columns:
             df[col] = pd.to_datetime(df[col], errors='coerce')

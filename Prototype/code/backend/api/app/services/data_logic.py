@@ -131,39 +131,58 @@ def apply_filters(df, date_from, date_to, regions=None, reps=None, categories=No
 
     return df2
 
+def _apply_filters_from_params(df, date_from, date_to, regions, reps, categories):
+    """Helper to parse and apply filters from query parameters"""
+    regions_list = regions.split(",") if regions else None
+    reps_list = reps.split(",") if reps else None
+    categories_list = categories.split(",") if categories else None
+    
+    date_from_dt = pd.to_datetime(date_from).date() if date_from else None
+    date_to_dt = pd.to_datetime(date_to).date() if date_to else None
+    
+    return apply_filters(df, date_from_dt, date_to_dt, regions_list, reps_list, categories_list)
 
 def compute_kpis(df):
-    """Compute a small set of KPIs used by the UI."""
-    total_revenue = float(df["revenue"].sum()) if "revenue" in df.columns else 0.0
-    total_orders = df["order_id"].nunique() if "order_id" in df.columns else len(df)
-    avg_aov = (
-        float(df["aov"].mean())
-        if "aov" in df.columns
-        else (total_revenue / total_orders if total_orders else 0)
-    )
+    """Compute key performance indicators with proper NaN handling"""
+    kpis = {}
+    
+    # Basic metrics
+    kpis["total_revenue"] = float(df["revenue"].sum()) if not df["revenue"].isna().all() else 0.0
+    kpis["total_orders"] = len(df)
+    
+    # Handle NaN values explicitly
+    avg_aov = df["aov"].mean()
+    kpis["avg_aov"] = float(avg_aov) if not pd.isna(avg_aov) else 0.0
+    
+    # Conversion rate with NaN handling
+    if "is_returning" in df.columns:
+        returning_customers = df["is_returning"].sum()
+        total_customers = len(df["customer_id"].unique())
+        conversion_rate = returning_customers / total_customers if total_customers > 0 else 0.0
+        kpis["conversion_rate"] = float(conversion_rate) if not pd.isna(conversion_rate) else 0.0
+    else:
+        kpis["conversion_rate"] = 0.0
+    
+    # Customer counts
+    kpis["new_count"] = len(df[df.get("is_returning", 0) == 0])
+    kpis["returning_count"] = len(df[df.get("is_returning", 0) == 1])
+    
+    return kpis
 
-    conversion_rate = np.nan
-    if "opportunity_id" in df.columns and "stage" in df.columns:
-        total_opps = df["opportunity_id"].nunique()
-        closed_opp_mask = df["stage"].str.lower().str.contains("closed|won", na=False)
-        closed_opps = df[closed_opp_mask]["opportunity_id"].nunique()
-        conversion_rate = (closed_opps / total_opps) if total_opps else np.nan
-
-    new_count = returning_count = 0
-    if "customer_id" in df.columns:
-        cust_counts = df.drop_duplicates(subset=["customer_id"])
-        returning_count = (
-            int(cust_counts["is_returning"].sum())
-            if "is_returning" in cust_counts.columns
-            else 0
-        )
-        new_count = len(cust_counts) - returning_count
-
-    return {
-        "total_revenue": total_revenue,
-        "total_orders": int(total_orders),
-        "avg_aov": avg_aov,
-        "conversion_rate": conversion_rate,
-        "new_count": int(new_count),
-        "returning_count": int(returning_count),
-    }
+#to Help with charts data travelling from backend to frontend over fastapi
+def make_json_serializable(obj):
+    """Convert pandas/numpy objects to JSON-serializable Python types"""
+    if isinstance(obj, dict):
+        return {key: make_json_serializable(value) for key, value in obj.items()}
+    elif isinstance(obj, list):
+        return [make_json_serializable(item) for item in obj]
+    elif isinstance(obj, (np.integer, np.int64, np.int32)):
+        return int(obj)
+    elif isinstance(obj, (np.floating, np.float64, np.float32)):
+        return float(obj) if not np.isnan(obj) else 0.0
+    elif isinstance(obj, np.ndarray):
+        return [make_json_serializable(item) for item in obj.tolist()]
+    elif pd.isna(obj):
+        return None
+    else:
+        return obj
