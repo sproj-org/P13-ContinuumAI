@@ -1,3 +1,8 @@
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
+from ..core.config import settings
+
+
 """
 Database configuration and connection setup for MySQL
 """
@@ -16,6 +21,7 @@ pymysql.install_as_MySQLdb()
 # Create engine with connection pooling
 engine = create_engine(
     settings.database_url,  # Use property from config, not direct DATABASE_URL
+    connect_args={"check_same_thread": False} if settings.DB_URL.startswith("sqlite") else {},
     poolclass=QueuePool,
     pool_size=10,
     max_overflow=20,

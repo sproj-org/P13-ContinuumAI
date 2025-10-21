@@ -15,6 +15,13 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
+    ACCESS_TOKEN_EXPIRE_MIN: int = 30
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 14
+    ALGORITHM: str = "HS256"
+    DB_URL: str = "sqlite:///./test_continuum.db"
+    JWT_ISS: str = "continuum.local"
+    JWT_AUD: str = "continuum.api"
+
     # Environment
     ENVIRONMENT: str = "development"
     
