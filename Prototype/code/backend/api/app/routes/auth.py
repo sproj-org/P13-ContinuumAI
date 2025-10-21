@@ -86,3 +86,9 @@ def refresh_token(request: Request, response: Response, db: Session = Depends(ge
         path="/",
     )
     return {"access_token": access}
+
+@router.post("/logout")
+def logout(response: Response):
+    # delete HttpOnly refresh cookie
+    response.delete_cookie(key="refresh", path="/")
+    return {"ok": True}

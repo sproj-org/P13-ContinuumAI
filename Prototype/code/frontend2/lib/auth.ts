@@ -89,3 +89,14 @@ axiosAuth.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+export async function logout(): Promise<void> {
+  try {
+    await fetch(`${API_BASE}/auth/logout`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+  } catch {}
+  // clear access token & cookie so middleware will redirect on next nav
+  setAccessToken(null);
+}
