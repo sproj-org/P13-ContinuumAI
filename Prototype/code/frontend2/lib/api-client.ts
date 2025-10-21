@@ -5,7 +5,9 @@
  * TypeScript port of the Python api_client.py
  */
 
-import axios, { AxiosResponse } from 'axios';
+// import axios, { AxiosResponse } from 'axios';
+import { axiosAuth } from './auth';
+import type { AxiosResponse } from 'axios';
 
 export interface Dataset {
   id: number;
@@ -63,7 +65,7 @@ export class ContinuumAPIClient {
       formData.append('file', file);
       formData.append('dataset_name', datasetName || file.name.replace('.csv', ''));
 
-      const response = await axios.post(
+      const response = await axiosAuth.post(
         `${this.baseUrl}/data/upload-csv/`,
         formData,
         {
@@ -101,7 +103,7 @@ export class ContinuumAPIClient {
    */
   async getDatasets(): Promise<Dataset[]> {
     try {
-      const response = await axios.get(`${this.baseUrl}/data/datasets/`, { timeout: 10000 });
+      const response = await axiosAuth.get(`${this.baseUrl}/data/datasets/`, { timeout: 10000 });
       if (response.status === 200) {
         return response.data.datasets || [];
       }
@@ -116,7 +118,7 @@ export class ContinuumAPIClient {
    */
   async analyzeDataset(datasetId: number): Promise<AnalysisResult | null> {
     try {
-      const response = await axios.get(
+      const response = await axiosAuth.get(
         `${this.baseUrl}/data/datasets/${datasetId}/analyze`,
         { timeout: 30000 }
       );
@@ -134,7 +136,7 @@ export class ContinuumAPIClient {
    */
   async healthCheck(): Promise<boolean> {
     try {
-      const response = await axios.get(`${this.baseUrl}/health`, { timeout: 5000 });
+      const response = await axiosAuth.get(`${this.baseUrl}/health`, { timeout: 5000 });
       return response.status === 200;
     } catch {
       return false;
@@ -146,7 +148,7 @@ export class ContinuumAPIClient {
    */
   async deleteDataset(datasetId: number): Promise<boolean> {
     try {
-      const response = await axios.delete(
+      const response = await axiosAuth.delete(
         `${this.baseUrl}/data/datasets/${datasetId}`,
         { timeout: 10000 }
       );
@@ -166,7 +168,7 @@ export class ContinuumAPIClient {
     try {
       const params = this.buildFilterParams(filters);
       
-      const response = await axios.get(
+      const response = await axiosAuth.get(
         `${this.baseUrl}/data/datasets/${datasetId}/analyze-filtered`,
         {
           params,
@@ -247,7 +249,7 @@ export class ContinuumAPIClient {
   async getSalesByRegion(datasetId: number, filters: FilterParams = {}): Promise<ChartData | null> {
     try {
       const params = this.buildFilterParams(filters);
-      const response = await axios.get(
+      const response = await axiosAuth.get(
         `${this.baseUrl}/data/datasets/${datasetId}/charts/sales-by-region`,
         { params, timeout: 30000 }
       );
@@ -260,7 +262,7 @@ export class ContinuumAPIClient {
   async getSalesOverTime(datasetId: number, filters: FilterParams = {}): Promise<ChartData | null> {
     try {
       const params = this.buildFilterParams(filters);
-      const response = await axios.get(
+      const response = await axiosAuth.get(
         `${this.baseUrl}/data/datasets/${datasetId}/charts/sales-over-time`,
         { params, timeout: 30000 }
       );
@@ -273,7 +275,7 @@ export class ContinuumAPIClient {
   async getSalesByChannel(datasetId: number, filters: FilterParams = {}): Promise<ChartData | null> {
     try {
       const params = this.buildFilterParams(filters);
-      const response = await axios.get(
+      const response = await axiosAuth.get(
         `${this.baseUrl}/data/datasets/${datasetId}/charts/sales-by-channel`,
         { params, timeout: 30000 }
       );
@@ -286,7 +288,7 @@ export class ContinuumAPIClient {
   async getRevenueDistribution(datasetId: number, filters: FilterParams = {}): Promise<ChartData | null> {
     try {
       const params = this.buildFilterParams(filters);
-      const response = await axios.get(
+      const response = await axiosAuth.get(
         `${this.baseUrl}/data/datasets/${datasetId}/charts/revenue-distribution`,
         { params, timeout: 30000 }
       );
@@ -303,7 +305,7 @@ export class ContinuumAPIClient {
         column,
         bins: bins.toString()
       };
-      const response = await axios.get(
+      const response = await axiosAuth.get(
         `${this.baseUrl}/data/datasets/${datasetId}/charts/histogram-data`,
         { params, timeout: 30000 }
       );
@@ -323,7 +325,7 @@ export class ContinuumAPIClient {
         ...this.buildFilterParams(filters),
         limit: limit.toString()
       };
-      const response = await axios.get(
+      const response = await axiosAuth.get(
         `${this.baseUrl}/data/datasets/${datasetId}/top-performers/salespeople`,
         { params, timeout: 30000 }
       );
@@ -339,7 +341,7 @@ export class ContinuumAPIClient {
         ...this.buildFilterParams(filters),
         limit: limit.toString()
       };
-      const response = await axios.get(
+      const response = await axiosAuth.get(
         `${this.baseUrl}/data/datasets/${datasetId}/top-performers/products`,
         { params, timeout: 30000 }
       );
@@ -352,7 +354,7 @@ export class ContinuumAPIClient {
   async getRegionalPerformance(datasetId: number, filters: FilterParams = {}): Promise<any> {
     try {
       const params = this.buildFilterParams(filters);
-      const response = await axios.get(
+      const response = await axiosAuth.get(
         `${this.baseUrl}/data/datasets/${datasetId}/regional-performance`,
         { params, timeout: 30000 }
       );
@@ -370,7 +372,7 @@ export class ContinuumAPIClient {
   async getProductAnalysisByCategory(datasetId: number, filters: FilterParams = {}): Promise<any> {
     try {
       const params = this.buildFilterParams(filters);
-      const response = await axios.get(
+      const response = await axiosAuth.get(
         `${this.baseUrl}/data/datasets/${datasetId}/product-analysis/by-category`,
         { params, timeout: 30000 }
       );
@@ -383,7 +385,7 @@ export class ContinuumAPIClient {
   async getProductPerformanceTable(datasetId: number, filters: FilterParams = {}): Promise<any> {
     try {
       const params = this.buildFilterParams(filters);
-      const response = await axios.get(
+      const response = await axiosAuth.get(
         `${this.baseUrl}/data/datasets/${datasetId}/product-analysis/performance-table`,
         { params, timeout: 30000 }
       );
@@ -400,7 +402,7 @@ export class ContinuumAPIClient {
   async getCustomerInsights(datasetId: number, filters: FilterParams = {}): Promise<any> {
     try {
       const params = this.buildFilterParams(filters);
-      const response = await axios.get(
+      const response = await axiosAuth.get(
         `${this.baseUrl}/data/datasets/${datasetId}/customer-insights`,
         { params, timeout: 30000 }
       );
@@ -418,7 +420,7 @@ export class ContinuumAPIClient {
   async exportFilteredCSV(datasetId: number, filters: FilterParams = {}): Promise<Blob | null> {
     try {
       const params = this.buildFilterParams(filters);
-      const response = await axios.get(
+      const response = await axiosAuth.get(
         `${this.baseUrl}/data/datasets/${datasetId}/export-csv`,
         {
           params,
@@ -443,7 +445,7 @@ export class ContinuumAPIClient {
         params.limit = limit.toString();
       }
       
-      const response = await axios.get(
+      const response = await axiosAuth.get(
         `${this.baseUrl}/data/datasets/${datasetId}/raw-data`,
         { params, timeout: 30000 }
       );

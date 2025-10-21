@@ -5,6 +5,14 @@ import uvicorn
 from app.core.database import create_tables, check_database_connection
 from app.routes import data, auth
 
+from app.core.database import Base, engine
+from app.routes import auth, data
+from app.core.config import settings
+from app.routes import data, auth  # <-- now auth imports won't crash
+from app.models.user import User   # ensure model is registered before create_all
+
+
+
 # Create FastAPI app
 app = FastAPI(
     title="ContinuumAI Sales Analytics API",
@@ -24,6 +32,19 @@ app.add_middleware(
 # Include routers
 app.include_router(data.router)
 app.include_router(auth.router)
+
+Base.metadata.create_all(bind=engine)
+
+# app.include_router(auth.router, prefix="/auth", tags=["auth"])
+# app.include_router(data.router, prefix="/data", tags=["data"])
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # your Next.js origin(s)
+    allow_credentials=True,                   # <— important for cookies
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.on_event("startup")
 async def startup_event():
