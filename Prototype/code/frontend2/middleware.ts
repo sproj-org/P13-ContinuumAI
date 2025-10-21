@@ -4,7 +4,7 @@ export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // public routes
-  if (pathname.startsWith('/login') || pathname.startsWith('/_next') || pathname.startsWith('/public')) {
+  if (pathname.startsWith('/login') || pathname.startsWith('/signup') || pathname.startsWith('/_next') || pathname.startsWith('/public')) {
     return NextResponse.next();
   }
 
@@ -20,3 +20,4 @@ export function middleware(req: NextRequest) {
 export const config = {
   matcher: ['/', '/((?!api|_next|public).*)'],
 };
+

@@ -5,34 +5,36 @@ import { useState } from 'react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:8000';
 
-export default function LoginPage() {
+export default function SignupPage() {
   const router = useRouter();
   const sp = useSearchParams();
   const next = sp.get('next') || '/';
 
-  const [email, setEmail] = useState('demo@continuum.ai');
-  const [password, setPassword] = useState('demo123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function login(e: React.FormEvent) {
+  async function signup(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
     setLoading(true);
     try {
       const emailNorm = email.trim().toLowerCase();
-      const res = await fetch(`${API_BASE}/auth/login`, {
+      const res = await fetch(`${API_BASE}/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        credentials: 'include', // receive HttpOnly refresh cookie
         body: JSON.stringify({ email: emailNorm, password }),
       });
-      if (!res.ok) throw new Error('Invalid credentials');
-      const data = await res.json();
+      if (res.status === 409) throw new Error('User already exists');
+      if (!res.ok) throw new Error('Sign up failed');
+      const data = await res.json(); // { access_token }
+      // short-lived access cookie for middleware/SSR checks
       document.cookie = `access=${encodeURIComponent(data.access_token)}; Path=/; SameSite=Lax`;
       router.replace(next);
     } catch (e: any) {
-      setErr('Invalid email or password');
+      setErr(e.message || 'Sign up failed');
     } finally {
       setLoading(false);
     }
@@ -41,11 +43,11 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen grid place-items-center bg-neutral-100 text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100">
       <form
-        onSubmit={login}
+        onSubmit={signup}
         className="w-full max-w-sm rounded-2xl bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 shadow-lg p-6 space-y-5"
       >
         <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
-          Sign in
+          Create account
         </h1>
 
         {err && (
@@ -67,6 +69,7 @@ export default function LoginPage() {
             placeholder="you@example.com"
             autoComplete="username"
             inputMode="email"
+            required
           />
         </div>
 
@@ -81,8 +84,10 @@ export default function LoginPage() {
                        px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            autoComplete="current-password"
+            placeholder="Min 8 characters"
+            autoComplete="new-password"
+            minLength={8}
+            required
           />
         </div>
 
@@ -92,16 +97,15 @@ export default function LoginPage() {
                      disabled:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600
                      dark:focus:ring-offset-neutral-900"
         >
-          {loading ? 'Signing in…' : 'Sign in'}
+          {loading ? 'Creating…' : 'Sign up'}
         </button>
-        
-        <p className="text-sm text-neutral-600 dark:text-neutral-400">
-        Don’t have an account?{' '}
-        <a className="text-blue-600 hover:underline" href="/signup">
-            Create one
-        </a>
-        </p>
 
+        <p className="text-sm text-neutral-600 dark:text-neutral-400">
+          Already have an account?{' '}
+          <a className="text-blue-600 hover:underline" href="/login">
+            Sign in
+          </a>
+        </p>
       </form>
     </div>
   );

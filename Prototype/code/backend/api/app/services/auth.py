@@ -18,6 +18,9 @@ def hash_password(p: str) -> str:
 def verify_password(p: str, h: str) -> bool:
     return pwd.verify(p, h)
 
+def normalize_email(email: str) -> str:
+    return (email or "").strip().lower()
+
 
 # ---- JWT helpers ----
 def _exp_m(minutes: int) -> datetime:
