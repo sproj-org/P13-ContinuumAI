@@ -1070,12 +1070,26 @@ export default function ContinuumDashboard() {
   const loadDemoData = async () => {
     setIsLoading(true);
     try {
-      const demoCSV = `order_date,customer_id,product_name,category,units,revenue,aov,region,salesperson,channel
-2024-01-15,C001,Product A,Electronics,5,2500,500,North,John Doe,Online
-2024-01-16,C002,Product B,Clothing,3,450,150,South,Jane Smith,Retail
-2024-01-17,C003,Product C,Electronics,2,1200,600,East,Bob Johnson,Online
-2024-01-18,C004,Product D,Home,4,800,200,West,Alice Brown,Online
-2024-01-19,C005,Product E,Clothing,1,100,100,North,John Doe,Retail`;
+//       const demoCSV = `order_date,customer_id,product_name,category,units,revenue,aov,region,salesperson,channel
+// 2024-01-15,C001,Product A,Electronics,5,2500,500,North,John Doe,Online
+// 2024-01-16,C002,Product B,Clothing,3,450,150,South,Jane Smith,Retail
+// 2024-01-17,C003,Product C,Electronics,2,1200,600,East,Bob Johnson,Online
+// 2024-01-18,C004,Product D,Home,4,800,200,West,Alice Brown,Online
+// 2024-01-19,C005,Product E,Clothing,1,100,100,North,John Doe,Retail`;
+const demoCSV = `order_id,opportunity_id,customer_id,order_date,lead_date,close_date,first_purchase_date,revenue,units,product_id,product_name,category,salesperson,region,country,city,stage,channel,is_returning,aov,sales_cycle_days
+ORD0000001,OPP000001,CUST00086,2025-02-18,2025-02-05,2025-02-18,2024-11-02,325.62,2,P-101,Widget B,Hardware,Bob,North America,MEX,Mexico City,Closed Won,Website,1,325.62,13
+ORD0000002,OPP000001,CUST00092,2025-09-28,2025-08-26,2025-09-28,2024-05-22,545.08,3,P-500,Addon 1,Addons,Alice,North America,MEX,Mexico City,Qualified,Website,1,545.08,33
+ORD0000003,OPP000002,CUST00155,2025-08-17,2025-08-14,2025-08-17,2025-06-29,2806.46,2,P-201,Service Y,Services,Eve,Europe,ITA,Rome,Negotiation,Website,1,2806.46,3
+ORD0000004,OPP000001,CUST00186,2024-09-23,2024-09-19,2024-09-23,2023-07-21,5227.29,3,P-201,Service Y,Services,George,South America,COL,Bogota,Proposal,Partner,1,5227.29,4
+ORD0000005,OPP000002,CUST00054,2025-10-12,2025-10-13,2025-10-12,2023-08-25,27428.11,6,P-400,Enterprise Suite,Software,Bob,Asia,JPN,Tokyo,Closed Won,Partner,1,27428.11,0
+ORD0000006,OPP000002,CUST00098,2025-06-29,2025-06-19,2025-06-29,2025-08-26,869.19,3,P-101,Widget B,Hardware,Carla,North America,CAN,Toronto,Lead,Partner,0,869.19,10
+ORD0000007,OPP000002,CUST00187,2025-10-05,2025-09-18,2025-10-05,2025-10-02,1131.14,3,P-100,Widget A,Hardware,Dustin,South America,COL,Bogota,Closed Won,Email,1,1131.14,17
+ORD0000008,OPP000002,CUST00185,2025-10-15,2025-10-03,2025-10-15,2024-10-31,374.04,6,P-301,Accessory R,Accessories,Alice,Oceania,AUS,Sydney,Lead,Event,1,374.04,12
+ORD0000009,OPP000002,CUST00037,2025-02-04,2025-02-02,2025-02-04,2025-08-20,3756.48,7,P-101,Widget B,Hardware,Carla,Europe,GBR,Manchester,Closed Lost,Paid Ads,0,3756.48,2
+ORD0000010,OPP000003,CUST00146,2025-10-07,2025-09-26,2025-10-07,2023-11-03,12865.78,5,P-200,Service X,Services,Farah,Asia,JPN,Tokyo,Negotiation,Email,1,12865.78,11
+ORD0000011,OPP000002,CUST00135,2025-05-22,2025-05-17,2025-05-22,2024-05-12,1802.17,4,P-101,Widget B,Hardware,Bob,Oceania,AUS,Sydney,Closed Won,Partner,1,1802.17,5
+ORD0000012,OPP000002,CUST00021,2025-08-07,2025-07-26,2025-08-07,2025-02-06,818.97,4,P-500,Addon 1,Addons,Bob,Europe,FRA,Paris,Negotiation,Website,1,818.97,12`;
+
 
       const datasetId = await apiClient.uploadDemoCSV(demoCSV);
       if (datasetId) {
@@ -1169,17 +1183,17 @@ export default function ContinuumDashboard() {
 
         {/* Data Management Section */}
         <div className="bg-white shadow rounded-lg p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Data Management</h2>
+          <h2 className="text-xl font-semibold text-black mb-4">Data Management</h2>
           
           {/* Existing Datasets */}
           {datasets.length > 0 && (
             <div className="mb-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-3">Existing Datasets</h3>
+              <h3 className="text-lg font-medium text-black mb-3">Existing Datasets</h3>
               <div className="space-y-2">
                 {datasets.map((dataset) => (
                   <div key={dataset.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-md">
                     <div>
-                      <span className="font-medium">📊 {dataset.name}</span>
+                      <span className="font-medium text-black">📊 {dataset.name}</span>
                       <span className="text-gray-500 ml-2">({dataset.total_records} records)</span>
                     </div>
                     <div className="flex space-x-2">
@@ -1272,13 +1286,13 @@ export default function ContinuumDashboard() {
                       type="date"
                       value={dateRange?.from || ''}
                       onChange={(e) => setDateRange(prev => ({ ...prev, from: e.target.value, to: prev?.to || '' }))}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                     />
                     <input
                       type="date"
                       value={dateRange?.to || ''}
                       onChange={(e) => setDateRange(prev => ({ ...prev, from: prev?.from || '', to: e.target.value }))}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                     />
                   </div>
                 </div>
@@ -1292,7 +1306,7 @@ export default function ContinuumDashboard() {
                     multiple
                     value={selectedRegions}
                     onChange={(e) => setSelectedRegions(Array.from(e.target.selectedOptions, option => option.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                     size={Math.min(filterOptions.regions.length + 1, 4)}
                   >
                     <option value="">All Regions</option>
@@ -1311,7 +1325,7 @@ export default function ContinuumDashboard() {
                     multiple
                     value={selectedReps}
                     onChange={(e) => setSelectedReps(Array.from(e.target.selectedOptions, option => option.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                     size={Math.min(filterOptions.reps.length + 1, 4)}
                   >
                     <option value="">All Salespeople</option>
@@ -1330,7 +1344,7 @@ export default function ContinuumDashboard() {
                     multiple
                     value={selectedCategories}
                     onChange={(e) => setSelectedCategories(Array.from(e.target.selectedOptions, option => option.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                     size={Math.min(filterOptions.categories.length + 1, 4)}
                   >
                     <option value="">All Categories</option>
