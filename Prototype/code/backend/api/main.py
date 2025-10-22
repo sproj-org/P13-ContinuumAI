@@ -23,7 +23,12 @@ app = FastAPI(
 # Add CORS middleware for frontend integration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8501", "http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:8501",
+        "http://localhost:3000",
+        "https://*.vercel.app",  # Vercel preview deployments
+        "https://continuum-ai.vercel.app",  # Update this with your actual Vercel domain
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -34,17 +39,6 @@ app.include_router(data.router)
 app.include_router(auth.router)
 
 Base.metadata.create_all(bind=engine)
-
-# app.include_router(auth.router, prefix="/auth", tags=["auth"])
-# app.include_router(data.router, prefix="/data", tags=["data"])
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # your Next.js origin(s)
-    allow_credentials=True,                   # <— important for cookies
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 @app.on_event("startup")
 async def startup_event():

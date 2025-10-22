@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: continuum-ai-backend
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        value: sqlite:///./test_continuum.db
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 30
+      - key: REFRESH_TOKEN_EXPIRE_DAYS
+        value: 14
+      - key: ENVIRONMENT
+        value: production
+      - key: JWT_ISS
+        value: continuum.local
+      - key: JWT_AUD
+        value: continuum.api

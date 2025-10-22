@@ -8,3 +8,9 @@ lib64/
 .eggs/
 *.egg-info/
 .env
+
+# Database files
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
