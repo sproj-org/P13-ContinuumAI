@@ -30,6 +30,7 @@ app.add_middleware(
         "https://continuum-ai.vercel.app",
         "https://continuum-cxx5dcm73-mustufas-projects-837a1f16.vercel.app",
         "https://continuum-9r481wyou-mustufas-projects-837a1f16.vercel.app",
+        "https://continuum-re2yxh72d-mustufas-projects-837a1f16.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
