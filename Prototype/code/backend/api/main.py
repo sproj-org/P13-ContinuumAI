@@ -26,8 +26,10 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:8501",
         "http://localhost:3000",
-        "https://*.vercel.app",  # Vercel preview deployments
-        "https://continuum-cxx5dcm73-mustufas-projects-837a1f16.vercel.app",  # Your Vercel deployment
+        "https://continuum-delta.vercel.app",  # Production domain
+        "https://continuum-ai.vercel.app",
+        "https://continuum-cxx5dcm73-mustufas-projects-837a1f16.vercel.app",
+        "https://continuum-9r481wyou-mustufas-projects-837a1f16.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
