@@ -15,13 +15,21 @@ import pymysql
 
 from .config import settings  # Fixed import - added dot for relative import
 
+from sqlalchemy.engine.url import make_url
 # Install PyMySQL as MySQLdb
 pymysql.install_as_MySQLdb()
 
+url = make_url(settings.DB_URL)
+connect_args = {}
+# apply sqlite-only flag
+if url.get_backend_name().startswith("sqlite"):
+    connect_args["check_same_thread"] = False
+
+
 # Create engine with connection pooling
 engine = create_engine(
-    settings.database_url,  # Use property from config, not direct DATABASE_URL
-    connect_args={"check_same_thread": False} if settings.DB_URL.startswith("sqlite") else {},
+    settings.DB_URL,
+    connect_args=connect_args,
     poolclass=QueuePool,
     pool_size=10,
     max_overflow=20,
