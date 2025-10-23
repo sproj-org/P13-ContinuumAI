@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
+import os
 
 from app.core.database import create_tables, check_database_connection
 from app.routes import data, auth
@@ -12,6 +13,7 @@ from app.routes import data, auth  # <-- now auth imports won't crash
 from app.models.user import User   # ensure model is registered before create_all
 
 
+FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:3000")
 
 # Create FastAPI app
 app = FastAPI(
@@ -24,6 +26,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        # FRONTEND_ORIGIN,
         "http://localhost:8501",
         "http://localhost:3000",
         "https://continuum-delta.vercel.app",  # Production domain

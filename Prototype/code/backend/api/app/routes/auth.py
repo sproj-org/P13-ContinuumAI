@@ -52,7 +52,19 @@ def login(body: LoginRequest, response: Response, db: Session = Depends(get_db))
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     access, refresh = create_tokens(user.email, role=user.role or "user", tenant_id=user.tenant_id or "default")
-    response.set_cookie(key="refresh", value=refresh, httponly=True, samesite="lax", secure=False, path="/")
+    # response.set_cookie(key="refresh", value=refresh, httponly=True, samesite="lax", secure=False, path="/")
+   
+    secure_cookie = True  # App Platform is HTTPS
+    samesite_mode = "none"  # because frontend & backend are different origins
+
+    response.set_cookie(
+        key="refresh",
+        value=refresh,
+        httponly=True,
+        samesite=samesite_mode,  # "none" for cross-site
+        secure=secure_cookie,    # must be True when SameSite=None
+        path="/",
+)
     return {"access_token": access}
 
 
@@ -75,14 +87,27 @@ def refresh_token(request: Request, response: Response, db: Session = Depends(ge
     access, new_refresh = create_tokens(user.email, role=user.role or "user", tenant_id=user.tenant_id or "default")
 
     # Rotate refresh cookie
+    # response.set_cookie(
+    #     key="refresh",
+    #     value=new_refresh,
+    #     httponly=True,
+    #     samesite="lax",
+    #     secure=False,  # switch to True behind TLS
+    #     path="/",
+    # )
+
+    secure_cookie = True  # App Platform is HTTPS
+    samesite_mode = "none"  # because frontend & backend are different origins
+
     response.set_cookie(
         key="refresh",
         value=new_refresh,
         httponly=True,
-        samesite="lax",
-        secure=False,  # switch to True behind TLS
+        samesite=samesite_mode,  # "none" for cross-site
+        secure=secure_cookie,    # must be True when SameSite=None
         path="/",
     )
+
     return {"access_token": access}
 
 @router.post("/logout")
