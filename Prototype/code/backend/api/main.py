@@ -44,12 +44,12 @@ app.add_middleware(
 app.include_router(data.router)
 app.include_router(auth.router)
 
-Base.metadata.create_all(bind=engine)
 
 @app.on_event("startup")
 async def startup_event():
     """Initialize database on startup"""
     print("Starting ContinuumAI API...")
+    Base.metadata.create_all(bind=engine)
     
     # Check database connection
     if check_database_connection():

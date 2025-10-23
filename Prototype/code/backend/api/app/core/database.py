@@ -17,7 +17,7 @@ from .config import settings  # Fixed import - added dot for relative import
 
 from sqlalchemy.engine.url import make_url
 # Install PyMySQL as MySQLdb
-pymysql.install_as_MySQLdb()
+# pymysql.install_as_MySQLdb()
 
 url = make_url(settings.DB_URL)
 connect_args = {}
