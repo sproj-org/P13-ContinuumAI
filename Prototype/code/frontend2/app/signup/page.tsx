@@ -1,11 +1,11 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:8000';
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
   const sp = useSearchParams();
   const next = sp.get('next') || '/';
@@ -33,8 +33,8 @@ export default function SignupPage() {
       // short-lived access cookie for middleware/SSR checks
       document.cookie = `access=${encodeURIComponent(data.access_token)}; Path=/; SameSite=Lax`;
       router.replace(next);
-    } catch (e: any) {
-      setErr(e.message || 'Sign up failed');
+    } catch (error) {
+      setErr(error instanceof Error ? error.message : 'Sign up failed');
     } finally {
       setLoading(false);
     }
@@ -108,5 +108,13 @@ export default function SignupPage() {
         </p>
       </form>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen grid place-items-center">Loading...</div>}>
+      <SignupForm />
+    </Suspense>
   );
 }

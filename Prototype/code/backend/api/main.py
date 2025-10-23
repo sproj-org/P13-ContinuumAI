@@ -23,7 +23,15 @@ app = FastAPI(
 # Add CORS middleware for frontend integration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8501", "http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:8501",
+        "http://localhost:3000",
+        "https://continuum-delta.vercel.app",  # Production domain
+        "https://continuum-ai.vercel.app",
+        "https://continuum-cxx5dcm73-mustufas-projects-837a1f16.vercel.app",
+        "https://continuum-9r481wyou-mustufas-projects-837a1f16.vercel.app",
+        "https://continuum-re2yxh72d-mustufas-projects-837a1f16.vercel.app",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -34,17 +42,6 @@ app.include_router(data.router)
 app.include_router(auth.router)
 
 Base.metadata.create_all(bind=engine)
-
-# app.include_router(auth.router, prefix="/auth", tags=["auth"])
-# app.include_router(data.router, prefix="/data", tags=["data"])
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # your Next.js origin(s)
-    allow_credentials=True,                   # <— important for cookies
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 @app.on_event("startup")
 async def startup_event():

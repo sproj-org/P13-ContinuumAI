@@ -52,8 +52,12 @@ export interface FilterOptions {
 export class ContinuumAPIClient {
   private baseUrl: string;
 
-  constructor(baseUrl: string = "http://localhost:8000") {
-    this.baseUrl = baseUrl;
+  constructor(baseUrl?: string) {
+    // Use environment variable in production, fallback to localhost in development
+    this.baseUrl = baseUrl || 
+      process.env.NEXT_PUBLIC_API_URL || 
+      "http://localhost:8000";
+    console.log("API Client Initialized. Base URL:", this.baseUrl);
   }
 
   /**
@@ -456,5 +460,5 @@ export class ContinuumAPIClient {
   }
 }
 
-// Export a singleton instance
+// Export a singleton instance with environment-aware URL
 export const apiClient = new ContinuumAPIClient();
