@@ -1,11 +1,11 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:8000';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const sp = useSearchParams();
   const next = sp.get('next') || '/';
@@ -31,7 +31,7 @@ export default function LoginPage() {
       const data = await res.json();
       document.cookie = `access=${encodeURIComponent(data.access_token)}; Path=/; SameSite=Lax`;
       router.replace(next);
-    } catch (e: any) {
+    } catch {
       setErr('Invalid email or password');
     } finally {
       setLoading(false);
@@ -104,5 +104,13 @@ export default function LoginPage() {
 
       </form>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen grid place-items-center">Loading...</div>}>
+      <LoginForm />
+    </Suspense>
   );
 }
