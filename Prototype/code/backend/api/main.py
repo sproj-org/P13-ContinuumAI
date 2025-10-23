@@ -23,15 +23,16 @@ app = FastAPI(
 # Add CORS middleware for frontend integration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:8501",
-        "http://localhost:3000",
-        "https://continuum-delta.vercel.app",  # Production domain
-        "https://continuum-ai.vercel.app",
-        "https://continuum-cxx5dcm73-mustufas-projects-837a1f16.vercel.app",
-        "https://continuum-9r481wyou-mustufas-projects-837a1f16.vercel.app",
-        "https://continuum-re2yxh72d-mustufas-projects-837a1f16.vercel.app",
-    ],
+    # allow_origins=[
+    #     "http://localhost:8501",
+    #     "http://localhost:3000",
+    #     "https://continuum-delta.vercel.app",  # Production domain
+    #     "https://continuum-ai.vercel.app",
+    #     "https://continuum-cxx5dcm73-mustufas-projects-837a1f16.vercel.app",
+    #     "https://continuum-9r481wyou-mustufas-projects-837a1f16.vercel.app",
+    #     "https://continuum-re2yxh72d-mustufas-projects-837a1f16.vercel.app",
+    # ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
