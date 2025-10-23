@@ -27,7 +27,7 @@ app.add_middleware(
         "http://localhost:8501",
         "http://localhost:3000",
         "https://*.vercel.app",  # Vercel preview deployments
-        "https://continuum-ai.vercel.app",  # Update this with your actual Vercel domain
+        "https://continuum-cxx5dcm73-mustufas-projects-837a1f16.vercel.app",  # Your Vercel deployment
     ],
     allow_credentials=True,
     allow_methods=["*"],
