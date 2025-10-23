@@ -57,6 +57,7 @@ export class ContinuumAPIClient {
     this.baseUrl = baseUrl || 
       process.env.NEXT_PUBLIC_API_URL || 
       "http://localhost:8000";
+    console.log("API Client Initialized. Base URL:", this.baseUrl);
   }
 
   /**
