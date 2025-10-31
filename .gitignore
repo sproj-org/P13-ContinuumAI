@@ -60,3 +60,27 @@ venev/
 # VS Code
 .vscode/
 .vercel
+
+# Database files
+*.csv
+*.db
+*.sqlite
+*.sqlite3
+
+# Database data folders
+**/database/data/processed/
+**/database/data/*.csv
+
+# Node modules
+node_modules/
+package-lock.json
+
+# Log files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
