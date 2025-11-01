@@ -217,4 +217,40 @@ mysql -u root -p'...' -h switchback.proxy.rlwy.net -P 11435 -D continuum_ai < da
 
 ---
 
+## 🔐 Quick Auth Test (Local)
+
+### 1️⃣ Register a new user
+```bash
+curl -X POST http://localhost:8000/auth/register \
+  -H "Content-Type: application/json" \
+  -d "{\"username\":\"demo\",\"email\":\"demo@example.com\",\"password\":\"DemoPass123!\"}"
+```
+
+### 2️⃣ Login to get JWT token
+```bash
+curl -X POST http://localhost:8000/auth/login \
+  -H "Content-Type: application/json" \
+  -d "{\"username_or_email\":\"demo\",\"password\":\"DemoPass123!\"}"
+```
+
+### 3️⃣ Access protected endpoint (replace TOKEN with your JWT)
+```bash
+curl -H "Authorization: Bearer TOKEN" http://localhost:8000/auth/me
+```
+
+### PowerShell equivalent:
+```powershell
+# 1️⃣ Register
+Invoke-WebRequest -Uri "http://localhost:8000/auth/register" -Method POST -Headers @{"Content-Type"="application/json"} -Body '{"username":"demo","email":"demo@example.com","password":"DemoPass123!"}'
+
+# 2️⃣ Login
+$response = Invoke-WebRequest -Uri "http://localhost:8000/auth/login" -Method POST -Headers @{"Content-Type"="application/json"} -Body '{"username_or_email":"demo","password":"DemoPass123!"}'
+$token = ($response.Content | ConvertFrom-Json).access_token
+
+# 3️⃣ Get current user
+Invoke-WebRequest -Uri "http://localhost:8000/auth/me" -Headers @{"Authorization"="Bearer $token"}
+```
+
+---
+
 **🚀 Happy Coding!**
