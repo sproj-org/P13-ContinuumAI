@@ -6,117 +6,137 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.io as pio
 
-
-# helper to choose trace type (webgl if large)
-def _scatter_by_size(x, y, name=None, mode="lines"):
-    if len(x) > 5000:
-        return go.Scattergl(x=x, y=y, mode=mode, name=name)
-    return go.Scatter(x=x, y=y, mode=mode, name=name)
-
-
-# helper to return plotly json
-def _to_json(fig: go.Figure) -> dict:
-    return fig.to_plotly_json()
-
+def _as_list(x):
+    if x is None or x == "" or x == []:
+        return []
+    if isinstance(x, (list, tuple, set)):
+        return list(x)
+    if isinstance(x, dict):  # bad shape from UI; ignore
+        return []
+    return [x]
 
 # --------------------
 # Preprocess & Filters
 # --------------------
 
-
 def preprocess(df: pd.DataFrame) -> pd.DataFrame:
-    """Basic preprocessing assuming expected columns are present in the uploaded CSV.
-
-    - strips column names
-    - parses date columns to datetimes
-    - coerces numeric columns
-    - computes aov, sales_cycle_days and is_returning when appropriate
-    - creates simple period helper columns
-    """
     df = df.copy()
     df.columns = [c.strip() for c in df.columns]
 
-    df["order_date"] = pd.to_datetime(df["order_date"], errors="coerce")
-    df["first_purchase_date"] = pd.to_datetime(
-        df["first_purchase_date"], errors="coerce"
-    )
-    df["lead_date"] = pd.to_datetime(df["lead_date"], errors="coerce")
-    df["close_date"] = pd.to_datetime(df["close_date"], errors="coerce")
+    # Flexible column normalizations for this project schema
+    # (order_date may already be datetime; tolerate missing)
+    for c in ("order_date","first_purchase_date","lead_date","close_date"):
+        if c in df.columns:
+            df[c] = pd.to_datetime(df[c], errors="coerce")
 
-    for col in ["units", "revenue", "aov", "sales_cycle_days", "is_returning"]:
+    # Numeric coercions if present
+    for col in ["units","revenue","aov","sales_cycle_days","is_returning","discount","profit"]:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
 
-    if ("aov" not in df.columns) or df["aov"].isna().all():
+    # aov fallback
+    if "aov" in df.columns:
+        if df["aov"].isna().all() and "revenue" in df.columns:
+            denom = df["units"].replace({0: np.nan}) if "units" in df.columns else np.nan
+            with np.errstate(divide="ignore", invalid="ignore"):
+                df["aov"] = df["revenue"] / denom
+    elif "revenue" in df.columns and "units" in df.columns:
+        denom = df["units"].replace({0: np.nan})
         with np.errstate(divide="ignore", invalid="ignore"):
-            df["aov"] = df["revenue"] / df["units"]
+            df["aov"] = df["revenue"] / denom
 
-    if ("sales_cycle_days" not in df.columns) or df["sales_cycle_days"].isna().all():
+    # sales_cycle_days fallback
+    if "sales_cycle_days" not in df.columns and {"lead_date","close_date"} <= set(df.columns):
         df["sales_cycle_days"] = (df["close_date"] - df["lead_date"]).dt.days
 
-    if ("is_returning" not in df.columns) or df["is_returning"].isna().all():
+    # is_returning fallback
+    if "is_returning" not in df.columns and {"first_purchase_date","order_date"} <= set(df.columns):
         df["is_returning"] = np.where(
             (~df["first_purchase_date"].isna())
             & (~df["order_date"].isna())
-            & (df["first_purchase_date"] < df["order_date"]),
-            1,
-            0,
+            & (df["first_purchase_date"] < df["order_date"]), 1, 0
         )
 
-    for idcol in ["customer_id", "order_id", "product_id", "opportunity_id"]:
+    for idcol in ["customer_id","order_id","product_id","opportunity_id"]:
         if idcol in df.columns:
             df[idcol] = df[idcol].astype(str)
 
-    for cat in [
-        "product_name",
-        "category",
-        "salesperson",
-        "region",
-        "country",
-        "city",
-        "channel",
-    ]:
+    for cat in ["product_name","category","salesperson","region","country","city","channel"]:
         if cat in df.columns:
             df[cat] = df[cat].fillna("Unknown")
 
-    df["order_date_only"] = df["order_date"].dt.date
-    df["order_month"] = df["order_date"].dt.to_period("M").dt.to_timestamp()
-    df["order_week"] = df["order_date"].dt.to_period("W").dt.start_time
+    if "order_date" in df.columns and df["order_date"].dtype.kind != "M":
+        try:
+            df["order_date"] = pd.to_datetime(df["order_date"], errors="coerce")
+        except Exception:
+            pass
+
+    if "order_date" in df.columns:
+        df["order_date_only"] = df["order_date"].dt.date
+        df["order_month"] = df["order_date"].dt.to_period("M").dt.to_timestamp()
+        df["order_week"] = df["order_date"].dt.to_period("W").dt.start_time
 
     return df
 
-
 def apply_filters(
     df: pd.DataFrame,
-    date_from: date,
-    date_to: date,
-    regions: Optional[list] = None,
-    reps: Optional[list] = None,
-    categories: Optional[list] = None,
+    date_from: date | str | None = None,
+    date_to: date | str | None = None,
+    regions: list | str | None = None,
+    reps: list | str | None = None,
+    categories: list | str | None = None,
 ) -> pd.DataFrame:
-    """Filter dataset by date range and optional region/rep/category lists.
-    Use the string "All" in lists to indicate no filtering.
-    """
-    df2 = df.copy()
-    if "order_date" in df2.columns:
-        df2 = df2[
-            (df2["order_date"].dt.date >= date_from)
-            & (df2["order_date"].dt.date <= date_to)
-        ]
+    """Filter dataset by date range and optional lists. Accepts strings or lists; 'All' disables that filter."""
+    out = df.copy()
 
-    if regions and "All" not in regions and "region" in df2.columns:
-        df2 = df2[df2["region"].isin(regions)]
-    if reps and "All" not in reps and "salesperson" in df2.columns:
-        df2 = df2[df2["salesperson"].isin(reps)]
-    if categories and "All" not in categories and "category" in df2.columns:
-        df2 = df2[df2["category"].isin(categories)]
+    def _to_date(x):
+        if isinstance(x, date):
+            return x
+        if isinstance(x, str) and x.strip():
+            for fmt in ("%Y-%m-%d","%Y/%m/%d","%d-%m-%Y"):
+                try:
+                    return datetime.strptime(x.strip(), fmt).date()
+                except Exception:
+                    continue
+        return None
 
-    return df2
+    dfrom = _to_date(date_from)
+    dto   = _to_date(date_to)
+
+    if "order_date" in out.columns and (dfrom or dto):
+        od = pd.to_datetime(out["order_date"], errors="coerce")
+        if dfrom:
+            out = out[od.dt.date >= dfrom]
+        if dto:
+            out = out[od.dt.date <= dto]
+
+    regions    = _as_list(regions)
+    reps       = _as_list(reps)
+    categories = _as_list(categories)
+
+    if regions and "All" not in regions and "region" in out.columns:
+        out = out[out["region"].isin(regions)]
+    if reps and "All" not in reps and "salesperson" in out.columns:
+        out = out[out["salesperson"].isin(reps)]
+    if categories and "All" not in categories and "category" in out.columns:
+        out = out[out["category"].isin(categories)]
+
+    return out
+
+# --- tool metadata decorator ---
+def tool(meta: dict):
+    def wrap(fn):
+        setattr(fn, "__tool_meta__", meta or {})
+        return fn
+    return wrap
+
+def _to_json(fig: go.Figure) -> dict:
+    return fig.to_plotly_json()
 
 
 # ---------- KPI functions (return Plotly Indicator JSON) ----------
 
-
+@tool({"requires": ["revenue"], "returns": "indicator", "intent": ["total revenue", "overall sales", "sum of revenue"]})
 def total_revenue(df: pd.DataFrame, revenue_col: str = "revenue") -> dict:
     if revenue_col not in df.columns:
         return {"type": "error", "error": f"Missing column '{revenue_col}'"}
@@ -132,7 +152,7 @@ def total_revenue(df: pd.DataFrame, revenue_col: str = "revenue") -> dict:
     fig.update_layout(height=140, margin=dict(t=10, b=10, l=10, r=10))
     return _to_json(fig)
 
-
+@tool({"requires": ["order_id"], "returns": "indicator", "intent": ["total orders", "number of orders", "order count"]})
 def total_orders(df: pd.DataFrame, order_id_col: str = "order_id") -> dict:
     if order_id_col not in df.columns:
         return {"type": "error", "error": f"Missing column '{order_id_col}'"}
@@ -148,7 +168,7 @@ def total_orders(df: pd.DataFrame, order_id_col: str = "order_id") -> dict:
     fig.update_layout(height=120, margin=dict(t=8, b=8, l=8, r=8))
     return _to_json(fig)
 
-
+@tool({"requires": ["aov", "revenue"], "returns": "indicator", "intent": ["average order value", "aov", "mean order value"]})
 def avg_aov(df: pd.DataFrame, aov_col: str = "aov") -> dict:
     if aov_col in df.columns and not df[aov_col].isna().all():
         value = float(df[aov_col].mean())
@@ -168,7 +188,7 @@ def avg_aov(df: pd.DataFrame, aov_col: str = "aov") -> dict:
     fig.update_layout(height=120, margin=dict(t=8, b=8, l=8, r=8))
     return _to_json(fig)
 
-
+@tool({"requires": ["opportunity_id", "stage"], "returns": "gauge", "intent": ["conversion rate", "win rate", "deal closure rate"]})
 def conversion_rate(
     df: pd.DataFrame, opp_col: str = "opportunity_id", stage_col: str = "stage"
 ) -> dict:
@@ -192,7 +212,7 @@ def conversion_rate(
     fig.update_layout(height=180, margin=dict(t=8, b=8, l=8, r=8))
     return _to_json(fig)
 
-
+@tool({"requires": ["customer_id", "is_returning"], "returns": "indicator", "intent": ["new customers", "customer acquisition", "first time buyers"]})
 def new_customers_count(
     df: pd.DataFrame,
     customer_col: str = "customer_id",
@@ -218,7 +238,7 @@ def new_customers_count(
     fig.update_layout(height=120, margin=dict(t=8, b=8, l=8, r=8))
     return _to_json(fig)
 
-
+@tool({"requires": ["customer_id", "is_returning"], "returns": "indicator", "intent": ["returning customers", "repeat customers", "loyalty"]})
 def returning_customers_count(
     df: pd.DataFrame,
     customer_col: str = "customer_id",
@@ -246,7 +266,7 @@ def returning_customers_count(
 
 # ---------- Time series & trends ----------
 
-
+@tool({"requires": ["order_date", "revenue"], "returns": "timeseries", "intent": ["sales over time", "revenue trend", "time series of revenue"]})
 def sales_over_time(
     df: pd.DataFrame,
     resample: str = "W",
@@ -298,7 +318,7 @@ def sales_over_time(
     )
     return _to_json(fig)
 
-
+@tool({"requires": ["order_date", "aov"], "returns": "timeseries", "intent": ["aov over time", "average order value trend", "pricing trend"]})
 def aov_over_time(df: pd.DataFrame, resample: str = "M", aov_col: str = "aov") -> dict:
     if "order_date" not in df.columns or aov_col not in df.columns:
         return {"type": "error", "error": "Missing 'order_date' or aov column"}
@@ -333,7 +353,7 @@ def aov_over_time(df: pd.DataFrame, resample: str = "M", aov_col: str = "aov") -
     )
     return _to_json(fig)
 
-
+@tool({"requires": ["order_date", "customer_id", "is_returning"], "returns": "stacked area", "intent": ["new vs returning over time", "customer cohorts", "repeat customer trend"]})
 def repeat_new_customers_over_time(df: pd.DataFrame, resample: str = "M") -> dict:
     if (
         "order_date" not in df.columns
@@ -405,7 +425,7 @@ def repeat_new_customers_over_time(df: pd.DataFrame, resample: str = "M") -> dic
 
 # ---------- Products & Pareto ----------
 
-
+@tool({"requires": ["product_name", "revenue"], "returns": "bar", "intent": ["top products by revenue", "bestselling products", "product ranking"]})
 def top_products_by_revenue(df: pd.DataFrame, top_n: int = 20) -> dict:
     if "product_name" not in df.columns or "revenue" not in df.columns:
         return {"type": "error", "error": "Missing 'product_name' or 'revenue'"}
@@ -439,7 +459,7 @@ def top_products_by_revenue(df: pd.DataFrame, top_n: int = 20) -> dict:
     )
     return _to_json(fig)
 
-
+@tool({"requires": ["product_name", "revenue"], "returns": "dual-axis", "intent": ["pareto analysis", "80/20 rule", "cumulative revenue by product"]})
 def pareto_product_revenue(df: pd.DataFrame, top_n: int = 50) -> dict:
     if "product_name" not in df.columns or "revenue" not in df.columns:
         return {"type": "error", "error": "Missing 'product_name' or 'revenue'"}
@@ -478,6 +498,7 @@ def pareto_product_revenue(df: pd.DataFrame, top_n: int = 50) -> dict:
     return _to_json(fig)
 
 
+@tool({"requires": ["product_name", "units", "revenue"], "returns": "scatter", "intent": ["units vs revenue", "bubble chart", "product performance"]})
 def units_vs_revenue_agg(df: pd.DataFrame) -> dict:
     if (
         "product_name" not in df.columns
@@ -511,6 +532,7 @@ def units_vs_revenue_agg(df: pd.DataFrame) -> dict:
 # ---------- Geography ----------
 
 
+@tool({"requires": ["region", "revenue"], "returns": "bar", "intent": ["revenue by region", "regional performance", "sales by region"]})
 def revenue_by_region(df: pd.DataFrame) -> dict:
     if "region" not in df.columns or "revenue" not in df.columns:
         return {"type": "error", "error": "Missing 'region' or 'revenue'"}
@@ -542,6 +564,7 @@ def revenue_by_region(df: pd.DataFrame) -> dict:
     return _to_json(fig)
 
 
+@tool({"requires": ["country", "revenue"], "returns": "bar", "intent": ["revenue by country", "country performance", "top countries"]})
 def revenue_by_country_top(df: pd.DataFrame, top_n: int = 50) -> dict:
     if "country" not in df.columns or "revenue" not in df.columns:
         return {"type": "error", "error": "Missing 'country' or 'revenue'"}
@@ -575,6 +598,7 @@ def revenue_by_country_top(df: pd.DataFrame, top_n: int = 50) -> dict:
     return _to_json(fig)
 
 
+@tool({"requires": ["city", "revenue"], "returns": "bar", "intent": ["revenue by city", "city performance", "top cities"]})
 def revenue_by_city_top(df: pd.DataFrame, top_n: int = 30) -> dict:
     if "city" not in df.columns or "revenue" not in df.columns:
         return {"type": "error", "error": "Missing 'city' or 'revenue'"}
@@ -611,6 +635,7 @@ def revenue_by_city_top(df: pd.DataFrame, top_n: int = 30) -> dict:
 # ---------- People & leaderboard ----------
 
 
+@tool({"requires": ["salesperson", "revenue"], "returns": "bar", "intent": ["top salespeople", "sales rep leaderboard", "rep performance"]})
 def top_salespeople(df: pd.DataFrame, top_k: int = 10) -> dict:
     if "salesperson" not in df.columns or "revenue" not in df.columns:
         return {"type": "error", "error": "Missing 'salesperson' or 'revenue'"}
@@ -645,6 +670,7 @@ def top_salespeople(df: pd.DataFrame, top_k: int = 10) -> dict:
     return _to_json(fig)
 
 
+@tool({"requires": ["salesperson", "revenue", "order_id"], "returns": "table", "intent": ["leaderboard table", "rep ranking", "sales summary table"]})
 def leaderboard(df: pd.DataFrame) -> dict:
     if (
         "salesperson" not in df.columns
@@ -675,6 +701,7 @@ def leaderboard(df: pd.DataFrame) -> dict:
 # ---------- Distribution & histogram ----------
 
 
+@tool({"requires": ["sales_cycle_days"], "returns": "histogram", "intent": ["sales cycle distribution", "sales duration histogram", "deal length distribution"]})
 def sales_cycle_histogram(df: pd.DataFrame, nbins: int = 40) -> dict:
     if "sales_cycle_days" not in df.columns:
         return {"type": "error", "error": "Missing 'sales_cycle_days'"}
@@ -692,6 +719,7 @@ def sales_cycle_histogram(df: pd.DataFrame, nbins: int = 40) -> dict:
     return _to_json(fig)
 
 
+@tool({"requires": ["salesperson", "sales_cycle_days"], "returns": "table", "intent": ["average sales cycle by rep", "sales efficiency", "rep performance duration"]})
 def avg_sales_cycle_by_rep(df: pd.DataFrame) -> dict:
     if "salesperson" not in df.columns or "sales_cycle_days" not in df.columns:
         return {"type": "error", "error": "Missing 'salesperson' or 'sales_cycle_days'"}
@@ -716,6 +744,7 @@ def avg_sales_cycle_by_rep(df: pd.DataFrame) -> dict:
 # ---------- Pipeline & funnel ----------
 
 
+@tool({"requires": ["stage", "opportunity_id"], "returns": "funnel", "intent": ["opportunity funnel", "pipeline funnel", "stage analysis"]})
 def opportunity_funnel(df: pd.DataFrame) -> dict:
     if "stage" not in df.columns or "opportunity_id" not in df.columns:
         return {"type": "error", "error": "Missing 'stage' or 'opportunity_id'"}
@@ -744,6 +773,7 @@ def opportunity_funnel(df: pd.DataFrame) -> dict:
     return _to_json(fig)
 
 
+@tool({"requires": ["opportunity_id", "stage", "lead_date", "close_date", "revenue"], "returns": "table", "intent": ["pipeline table", "opportunity table", "deal summary"]})
 def pipeline_table(df: pd.DataFrame) -> dict:
     if "opportunity_id" not in df.columns:
         return {"type": "error", "error": "Missing 'opportunity_id'"}

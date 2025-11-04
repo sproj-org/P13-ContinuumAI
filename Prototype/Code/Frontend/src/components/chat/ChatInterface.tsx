@@ -18,6 +18,8 @@ import {
 import { ContinuumIcon } from '@/components/ui/ContinuumIcon';
 import { useChat } from '@/contexts/ChatContext';
 import { clsx } from 'clsx';
+import PlotlyCard from '@/components/plotly/PlotlyCard';
+import { runQuery } from '@/lib/query';
 
 interface ChatInterfaceProps {
   isSidebarOpen: boolean;
@@ -78,23 +80,47 @@ export function ChatInterface({ isSidebarOpen, onToggleSidebar }: ChatInterfaceP
     setUploadedFiles([]);
     setIsTyping(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const responses = [
-        'Thank you for your message! I\'m here to help you with sales insights, market analysis, and strategic recommendations. What specific area would you like to explore?',
-        'Great question! Based on current market trends, I can provide you with detailed analytics and actionable insights. Would you like me to dive deeper into any particular aspect?',
-        'I\'d be happy to help you with that! Let me analyze the data and provide you with comprehensive insights that can drive your sales strategy forward.',
-        'Excellent! I can assist you with advanced sales intelligence, customer behavior analysis, and market forecasting. What would you like to focus on first?'
-      ];
-      
-      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-      
+    try {
+  const res = await runQuery({ message: inputValue.trim() || ' ' });
+  if (res.status === 'success' && res.results?.length) {
+    for (const fig of res.results) {
       addMessage(activeChat.id, {
-        content: randomResponse,
-        sender: 'ai'
-      });
-      setIsTyping(false);
-    }, 1500);
+        content: '[plotly]',
+        sender: 'ai',
+        metadata: fig, // Message type needs: metadata?: any
+      } as any);
+    }
+  } else {
+    addMessage(activeChat.id, {
+      content: res.message || "I'm sorry, I couldn't find that data.",
+      sender: 'ai',
+    });
+  }
+} catch {
+  addMessage(activeChat.id, { content: 'Error contacting orchestrator.', sender: 'ai' });
+} finally {
+  setIsTyping(false);
+}
+
+
+    
+    // Simulate AI response
+    // setTimeout(() => {
+    //   const responses = [
+    //     'Thank you for your message! I\'m here to help you with sales insights, market analysis, and strategic recommendations. What specific area would you like to explore?',
+    //     'Great question! Based on current market trends, I can provide you with detailed analytics and actionable insights. Would you like me to dive deeper into any particular aspect?',
+    //     'I\'d be happy to help you with that! Let me analyze the data and provide you with comprehensive insights that can drive your sales strategy forward.',
+    //     'Excellent! I can assist you with advanced sales intelligence, customer behavior analysis, and market forecasting. What would you like to focus on first?'
+    //   ];
+      
+    //   const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+      
+    //   addMessage(activeChat.id, {
+    //     content: randomResponse,
+    //     sender: 'ai'
+    //   });
+    //   setIsTyping(false);
+    // }, 1500);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -227,9 +253,14 @@ export function ChatInterface({ isSidebarOpen, onToggleSidebar }: ChatInterfaceP
                 {/* AI Message Content */}
                 <div className="group relative max-w-2xl">
                   <div className="px-6 py-4 rounded-2xl shadow-lg transition-all duration-300 ease-out hover:shadow-xl bg-white/10 backdrop-blur-xl text-white border border-white/20 hover:border-white/30 hover:bg-white/15">
-                    <p className="text-[15px] leading-relaxed whitespace-pre-wrap font-medium">
-                      {message.content}
-                    </p>
+{message.content === '[plotly]' && message.metadata ? (
+  <PlotlyCard figure={message.metadata} />
+) : (
+  <p className="text-[15px] leading-relaxed whitespace-pre-wrap font-medium">
+    {message.content}
+  </p>
+)}
+
                   </div>
                   
                   {/* AI Message Actions */}

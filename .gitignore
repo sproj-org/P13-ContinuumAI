@@ -61,15 +61,15 @@ venev/
 .vscode/
 .vercel
 
-# Database files
-*.csv
-*.db
-*.sqlite
-*.sqlite3
+# # Database files
+# *.csv
+# *.db
+# *.sqlite
+# *.sqlite3
 
-# Database data folders
-**/database/data/processed/
-**/database/data/*.csv
+# # Database data folders
+# **/database/data/processed/
+# **/database/data/*.csv
 
 # Node modules
 node_modules/
