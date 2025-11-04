@@ -286,62 +286,104 @@ def _normalize_filters_for_loader(filters: dict | None) -> dict:
 # ---------------------------
 # Public loader API
 # ---------------------------
-def load_frames(filters: Optional[Dict[str, Any]] = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    if os.getenv("USE_CSV_LOADER","0") == "1":
-        base_dir = os.getenv("CSV_BASE_DIR") or os.path.join(os.getcwd(), "backend","database","data","processed")
-        sales_df, opp_df = _load_from_csv(base_dir)
-    else:
-        engine = create_engine(settings.DATABASE_URL, pool_pre_ping=True)
-        sales_sql = os.getenv("ANALYTICS_SQL_SALES", "").strip() or f"SELECT * FROM {DEFAULT_SALES_VIEW}"
-        opp_sql   = os.getenv("ANALYTICS_SQL_OPP", "").strip()   or f"SELECT * FROM {DEFAULT_OPP_VIEW}"
-        sales_df = _read_sql(engine, sales_sql)
-        try:
-            opp_df = _read_sql(engine, opp_sql)
-        except Exception:
-            opp_df = pd.DataFrame()
+# def load_frames(filters: Optional[Dict[str, Any]] = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
+#     if os.getenv("USE_CSV_LOADER","0") == "1":
+#         base_dir = os.getenv("CSV_BASE_DIR") or os.path.join(os.getcwd(), "backend","database","data","processed")
+#         sales_df, opp_df = _load_from_csv(base_dir)
+#     else:
+#         engine = create_engine(settings.DATABASE_URL, pool_pre_ping=True)
+#         sales_sql = os.getenv("ANALYTICS_SQL_SALES", "").strip() or f"SELECT * FROM {DEFAULT_SALES_VIEW}"
+#         opp_sql   = os.getenv("ANALYTICS_SQL_OPP", "").strip()   or f"SELECT * FROM {DEFAULT_OPP_VIEW}"
+#         sales_df = _read_sql(engine, sales_sql)
+#         try:
+#             opp_df = _read_sql(engine, opp_sql)
+#         except Exception:
+#             opp_df = pd.DataFrame()
 
-    # normalize filters to what apply_filters expects
-    def _norm_list(x):
-        if x is None:
-            return None
-        if isinstance(x, (list, tuple, set)):
-            return list(x)
-        return [x]
+#     # normalize filters to what apply_filters expects
+#     def _norm_list(x):
+#         if x is None:
+#             return None
+#         if isinstance(x, (list, tuple, set)):
+#             return list(x)
+#         return [x]
 
-    def _norm_filters(f: Dict[str, Any] | None) -> Dict[str, Any]:
-        f = dict(f or {})
-        if not f.get("date_from") and "order_date" in sales_df.columns and not sales_df.empty:
-            f["date_from"] = pd.to_datetime(sales_df["order_date"], errors="coerce").min().date()
-        if not f.get("date_to") and "order_date" in sales_df.columns and not sales_df.empty:
-            f["date_to"] = pd.to_datetime(sales_df["order_date"], errors="coerce").max().date()
-        for k in ("regions", "reps", "categories"):
-            if k in f:
-                f[k] = _norm_list(f[k])
-        return f
+#     def _norm_filters(f: Dict[str, Any] | None) -> Dict[str, Any]:
+#         f = dict(f or {})
+#         if not f.get("date_from") and "order_date" in sales_df.columns and not sales_df.empty:
+#             f["date_from"] = pd.to_datetime(sales_df["order_date"], errors="coerce").min().date()
+#         if not f.get("date_to") and "order_date" in sales_df.columns and not sales_df.empty:
+#             f["date_to"] = pd.to_datetime(sales_df["order_date"], errors="coerce").max().date()
+#         for k in ("regions", "reps", "categories"):
+#             if k in f:
+#                 f[k] = _norm_list(f[k])
+#         return f
 
-    # Optional preprocessing/filters (fail-soft)
+#     # Optional preprocessing/filters (fail-soft)
+#     try:
+#         from app.utils.data_functions import preprocess, apply_filters  # type: ignore
+#         nf = _normalize_filters_for_loader(filters)
+
+#         if not sales_df.empty:
+#             sales_df = preprocess(sales_df)
+#             f = _norm_filters(filters)
+#             sales_df = apply_filters(sales_df, f.get("date_from"), f.get("date_to"),
+#                                     f.get("regions"), f.get("reps"), f.get("categories"))
+#         if not opp_df.empty:
+#             opp_df = preprocess(opp_df)
+#             f = _norm_filters(filters)
+#             opp_df = apply_filters(opp_df, f.get("date_from"), f.get("date_to"),
+#                                    f.get("regions"), f.get("reps"), f.get("categories"))
+#     except Exception:
+#         pass
+
+#     return sales_df, opp_df
+
+
+def load_frames(filters: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
+    """
+    Load data from demo_sales.csv, preprocess it, and apply filters.
+    """
+    csv_path = os.path.join("database", "data", "demo_sales.csv")
     try:
-        from app.utils.data_functions import preprocess, apply_filters  # type: ignore
-        nf = _normalize_filters_for_loader(filters)
+        # Load the CSV file
+        df = pd.read_csv(csv_path)
+        print(f"[DEBUG] Loaded demo_sales.csv with columns: {df.columns}")  # Debug: Check loaded columns
 
-        if not sales_df.empty:
-            sales_df = preprocess(sales_df)
-            f = _norm_filters(filters)
-            sales_df = apply_filters(sales_df, f.get("date_from"), f.get("date_to"),
-                                    f.get("regions"), f.get("reps"), f.get("categories"))
-        if not opp_df.empty:
-            opp_df = preprocess(opp_df)
-            f = _norm_filters(filters)
-            opp_df = apply_filters(opp_df, f.get("date_from"), f.get("date_to"),
-                                   f.get("regions"), f.get("reps"), f.get("categories"))
-    except Exception:
-        pass
+        # Preprocess the DataFrame
+        from app.utils.data_functions import preprocess, apply_filters
+        df = preprocess(df)
 
-    return sales_df, opp_df
+        # Apply filters
+        if filters:
+            df = apply_filters(
+                df,
+                filters.get("date_from"),
+                filters.get("date_to"),
+                filters.get("regions"),
+                filters.get("reps"),
+                filters.get("categories"),
+            )
+
+        return df  # Return the single DataFrame
+    except Exception as e:
+        raise RuntimeError(f"Failed to load or process demo_sales.csv: {e}")
+
+# def load_dataframe_for_tool(tool_name: str, filters: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
+#     sales_df, opp_df = load_frames(filters)
+#     lname = tool_name.lower()
+#     if "opportunity" in lname or lname.startswith("pipeline"):
+#         return opp_df if not opp_df.empty else sales_df
+#     return sales_df
 
 def load_dataframe_for_tool(tool_name: str, filters: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
-    sales_df, opp_df = load_frames(filters)
-    lname = tool_name.lower()
-    if "opportunity" in lname or lname.startswith("pipeline"):
-        return opp_df if not opp_df.empty else sales_df
-    return sales_df
+    """
+    Load the preprocessed and filtered DataFrame for any tool.
+    The tool_name parameter is ignored in this simplified version.
+    """
+    try:
+        df = load_frames(filters)  # Call the updated load_frames function
+        print(f"[DEBUG] DataFrame loaded for tool {tool_name} with columns: {df.columns}")  # Debug: Check loaded columns
+        return df  # Return the single DataFrame
+    except Exception as e:
+        raise RuntimeError(f"Failed to load DataFrame for tool {tool_name}: {e}")

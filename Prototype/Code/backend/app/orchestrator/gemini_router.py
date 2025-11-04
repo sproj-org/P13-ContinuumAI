@@ -5,18 +5,23 @@ import os, json, importlib, inspect, re
 try:
     import google.generativeai as genai
 except Exception:
+    print("NO LIB FOR GEMINI")
     genai = None
 
 from app.core.config import settings
+
 
 def _tokenize(s: str) -> List[str]:
     s = (s or "").lower()
     return re.findall(r"[a-z0-9]+", s)
 
+
 class Orchestrator:
     def __init__(self) -> None:
         self._tools = self._discover_tools()
-        self._model_name = settings.GEMINI_MODEL or os.getenv("GEMINI_MODEL", "gemini-2.5-pro")
+        self._model_name = settings.GEMINI_MODEL or os.getenv(
+            "GEMINI_MODEL", "gemini-2.5-pro"
+        )
         self._gemini_ready = bool(getattr(settings, "GEMINI_API_KEY", "") and genai)
         if self._gemini_ready:
             genai.configure(api_key=settings.GEMINI_API_KEY)
@@ -44,7 +49,7 @@ class Orchestrator:
 
     def _build_classifier_prompt(self, message: str) -> str:
         tools_json = json.dumps(self.tool_catalog(), ensure_ascii=False)
-        schema = {"response_type":"chart","tool_names":["name1"],"tool_args":{}}
+        schema = {"response_type": "chart", "tool_names": ["name1"], "tool_args": {}}
         return f"""You are a BI tool router. Choose 1–2 best tools from TOOLS and minimal args for the user's request.
 TOOLS:
 {tools_json}
@@ -57,43 +62,77 @@ User: {message}"""
         except Exception:
             s, e = text.find("{"), text.rfind("}")
             if s != -1 and e != -1 and e > s:
-                try: return json.loads(text[s:e+1])
-                except Exception: return {}
+                try:
+                    return json.loads(text[s : e + 1])
+                except Exception:
+                    return {}
             return {}
 
-    def _rank_tools(self, message: str) -> List[Tuple[str,float]]:
+    def rank_tools(self, message: str) -> List[Tuple[str, float]]:
         mtoks = set(_tokenize(message))
-        scores: List[Tuple[str,float]] = []
+        print(
+            f"[DEBUG] Message tokens: {mtoks}"
+        )  # Debug: Check tokens from the message
+        scores: List[Tuple[str, float]] = []
         for tname in self._tools.keys():
             ttoks = set(_tokenize(tname))
             score = 0.0
-            if any(k in mtoks for k in ("top","rank","best","leaderboard")):
-                if "product" in ttoks or "salespeople" in ttoks or "leaderboard" in ttoks:
+            if any(k in mtoks for k in ("top", "rank", "best", "leaderboard")):
+                if (
+                    "product" in ttoks
+                    or "salespeople" in ttoks
+                    or "leaderboard" in ttoks
+                ):
                     score += 2
             if "trend" in mtoks or "over" in mtoks or "time" in mtoks:
-                if any(k in ttoks for k in ("over_time","trend")):
+                if any(k in ttoks for k in ("over_time", "trend")):
                     score += 2
-            for k in ("revenue","product","customer","city","country","region","salesperson","aov","funnel","pipeline"):
+            for k in (
+                "revenue",
+                "product",
+                "customer",
+                "city",
+                "country",
+                "region",
+                "salesperson",
+                "aov",
+                "funnel",
+                "pipeline",
+            ):
                 if k in mtoks and k in ttoks:
                     score += 0.5
             if score > 0:
                 scores.append((tname, score))
+        print(
+            f"[DEBUG] Ranked tools: {scores}"
+        )  # Debug: Check ranked tools and their scores
         return sorted(scores, key=lambda x: x[1], reverse=True)
 
     def classify(self, message: str) -> Dict[str, Any]:
+        print(
+            f"[DEBUG] Classifying message: {message}"
+        )  # Debug: Check the input message
         if self._gemini_ready:
             try:
                 model = genai.GenerativeModel(self._model_name)
                 resp = model.generate_content(self._build_classifier_prompt(message))
                 text = resp.text if hasattr(resp, "text") else str(resp)
                 parsed = self._safe_json(text)
+                print(
+                    f"[DEBUG] Gemini classification response: {parsed}"
+                )  # Debug: Check Gemini response
                 if isinstance(parsed, dict) and parsed.get("tool_names"):
                     return parsed
-            except Exception:
-                pass
-        ranked = self._rank_tools(message)
-        picks = [n for n,_ in ranked[:2]] or list(self._tools.keys())[:1]
-        return {"response_type":"chart","tool_names": picks, "tool_args": {}}
+            except Exception as e:
+                print(
+                    f"[DEBUG] Gemini classification failed: {e}"
+                )  # Debug: Check Gemini errors
+        ranked = self.rank_tools(message)
+        print(
+            f"[DEBUG] Fallback ranked tools: {ranked}"
+        )  # Debug: Check fallback ranking
+        picks = [n for n, _ in ranked[:2]] or list(self._tools.keys())[:1]
+        return {"response_type": "chart", "tool_names": picks, "tool_args": {}}
 
     # ----------------- Execution -----------------
 
@@ -111,7 +150,7 @@ User: {message}"""
 
         # Common wrapper keys
         if isinstance(obj, dict):
-            for key in ("figure","plot","payload","plotly"):
+            for key in ("figure", "plot", "payload", "plotly"):
                 if key in obj:
                     inner = obj[key]
                     try:
@@ -138,7 +177,7 @@ User: {message}"""
 
         # Tuples
         if isinstance(obj, tuple) and len(obj) == 2:
-            a,b = obj
+            a, b = obj
             if isinstance(a, list) and (isinstance(b, dict) or b is None):
                 return {"data": a, "layout": (b or {})}
             na = self._to_plotly_json(a)
@@ -183,22 +222,31 @@ User: {message}"""
         # Pandas DF -> table fallback
         try:
             import pandas as _pd
+
             if "pandas" in str(type(obj)):
                 df = obj
                 return {
-                    "data": [{
-                        "type":"table",
-                        "header": {"values": list(df.columns)},
-                        "cells":  {"values": [df[c].tolist() for c in df.columns]},
-                    }],
-                    "layout": {"title": "Table"}
+                    "data": [
+                        {
+                            "type": "table",
+                            "header": {"values": list(df.columns)},
+                            "cells": {"values": [df[c].tolist() for c in df.columns]},
+                        }
+                    ],
+                    "layout": {"title": "Table"},
                 }
         except Exception:
             pass
 
         return None
 
-    def run_tools(self, tool_names: List[str], get_df, tool_args: Dict[str, Any], return_debug: bool=False):
+    def run_tools(
+        self,
+        tool_names: List[str],
+        get_df,
+        tool_args: Dict[str, Any],
+        return_debug: bool = False,
+    ):
         results: List[Dict[str, Any]] = []
         debug: List[Dict[str, Any]] = []
 
@@ -219,7 +267,9 @@ User: {message}"""
                     kwargs["n"] = 10
                 if "k" in sig.parameters and "k" not in kwargs:
                     kwargs["k"] = 10
-                bound = sig.bind_partial(df, **{k:v for k,v in kwargs.items() if k in sig.parameters})
+                bound = sig.bind_partial(
+                    df, **{k: v for k, v in kwargs.items() if k in sig.parameters}
+                )
                 bound.apply_defaults()
                 raw = fn(*bound.args, **bound.kwargs)
                 norm = self._to_plotly_json(raw)
@@ -232,7 +282,13 @@ User: {message}"""
                             results.append(nf)
                 else:
                     prev = str(type(raw).__name__)
-                    debug.append({"tool": name, "error": "unexpected_return_type", "py_type": prev})
+                    debug.append(
+                        {
+                            "tool": name,
+                            "error": "unexpected_return_type",
+                            "py_type": prev,
+                        }
+                    )
             except Exception as e:
                 debug.append({"tool": name, "error": f"exception: {e}"})
 

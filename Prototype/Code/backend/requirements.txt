@@ -8,3 +8,6 @@ bcrypt==4.0.1
 PyJWT==2.9.0
 pydantic-settings==2.5.2
 email-validator==2.2.0
+pandas==2.2.2
+plotly==5.24.1
+google-generativeai==0.8.5
