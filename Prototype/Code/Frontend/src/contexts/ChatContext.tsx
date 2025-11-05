@@ -1,12 +1,14 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import type { PlotlyChart } from '@/lib/mockApiResponses';
 
 export interface Message {
   id: string;
   content: string;
   sender: 'user' | 'ai';
   timestamp: Date;
+  chartData?: PlotlyChart[]; // Optional chart data for AI responses
 }
 
 export interface Chat {
