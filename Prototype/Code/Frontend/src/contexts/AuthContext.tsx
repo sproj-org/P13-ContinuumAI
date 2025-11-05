@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { loginUser, registerUser, getCurrentUser, LoginData, RegisterData, UserResponse } from '@/lib/mockApi';
+import { loginUser, registerUser, getCurrentUser, LoginData, RegisterData, UserResponse } from '@/lib/api';
 
 interface AuthContextType {
   user: UserResponse | null;

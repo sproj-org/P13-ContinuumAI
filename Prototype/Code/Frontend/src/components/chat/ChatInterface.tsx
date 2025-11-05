@@ -16,10 +16,10 @@ import {
   Paperclip
 } from 'lucide-react';
 import { ContinuumIcon } from '@/components/ui/ContinuumIcon';
+import { PlotlyChart } from '@/components/chat/PlotlyChart';
 import { useChat } from '@/contexts/ChatContext';
 import { clsx } from 'clsx';
-import PlotlyCard from '@/components/plotly/PlotlyCard';
-import { runQuery } from '@/lib/query';
+import { runQuery, type QueryResponse, type QueryRequest } from '@/lib/query';
 
 interface ChatInterfaceProps {
   isSidebarOpen: boolean;
@@ -76,51 +76,39 @@ export function ChatInterface({ isSidebarOpen, onToggleSidebar }: ChatInterfaceP
       sender: 'user'
     });
     
+    const userQuery = inputValue;
     setInputValue('');
     setUploadedFiles([]);
     setIsTyping(true);
 
     try {
-  const res = await runQuery({ message: inputValue.trim() || ' ' });
-  if (res.status === 'success' && res.results?.length) {
-    for (const fig of res.results) {
+      // Call real API
+      const request: QueryRequest = { message: userQuery };
+      const response = await runQuery(request);
+      
+      if (response.status === 'success') {
+        // Add AI message with chart data only (no text from backend)
+        addMessage(activeChat.id, {
+          content: response.results.length > 0 ? '' : 'No charts available for this query.',
+          sender: 'ai',
+          chartData: response.results // Store chart data in message
+        });
+      } else {
+        // Add error message
+        addMessage(activeChat.id, {
+          content: response.message,
+          sender: 'ai'
+        });
+      }
+    } catch (error) {
+      // Handle any errors
       addMessage(activeChat.id, {
-        content: '[plotly]',
-        sender: 'ai',
-        metadata: fig, // Message type needs: metadata?: any
-      } as any);
+        content: "I'm sorry, something went wrong. Please try again.",
+        sender: 'ai'
+      });
+    } finally {
+      setIsTyping(false);
     }
-  } else {
-    addMessage(activeChat.id, {
-      content: res.message || "I'm sorry, I couldn't find that data.",
-      sender: 'ai',
-    });
-  }
-} catch {
-  addMessage(activeChat.id, { content: 'Error contacting orchestrator.', sender: 'ai' });
-} finally {
-  setIsTyping(false);
-}
-
-
-    
-    // Simulate AI response
-    // setTimeout(() => {
-    //   const responses = [
-    //     'Thank you for your message! I\'m here to help you with sales insights, market analysis, and strategic recommendations. What specific area would you like to explore?',
-    //     'Great question! Based on current market trends, I can provide you with detailed analytics and actionable insights. Would you like me to dive deeper into any particular aspect?',
-    //     'I\'d be happy to help you with that! Let me analyze the data and provide you with comprehensive insights that can drive your sales strategy forward.',
-    //     'Excellent! I can assist you with advanced sales intelligence, customer behavior analysis, and market forecasting. What would you like to focus on first?'
-    //   ];
-      
-    //   const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-      
-    //   addMessage(activeChat.id, {
-    //     content: randomResponse,
-    //     sender: 'ai'
-    //   });
-    //   setIsTyping(false);
-    // }, 1500);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -251,17 +239,32 @@ export function ChatInterface({ isSidebarOpen, onToggleSidebar }: ChatInterfaceP
                 </div>
                 
                 {/* AI Message Content */}
-                <div className="group relative max-w-2xl">
-                  <div className="px-6 py-4 rounded-2xl shadow-lg transition-all duration-300 ease-out hover:shadow-xl bg-white/10 backdrop-blur-xl text-white border border-white/20 hover:border-white/30 hover:bg-white/15">
-{message.content === '[plotly]' && message.metadata ? (
-  <PlotlyCard figure={message.metadata} />
-) : (
-  <p className="text-[15px] leading-relaxed whitespace-pre-wrap font-medium">
-    {message.content}
-  </p>
-)}
-
-                  </div>
+                <div className="group relative max-w-3xl w-full">
+                  {/* Text content (if exists) */}
+                  {message.content && (
+                    <div className="px-6 py-4 rounded-2xl shadow-lg transition-all duration-300 ease-out hover:shadow-xl bg-white/10 backdrop-blur-xl text-white border border-white/20 hover:border-white/30 hover:bg-white/15 mb-4">
+                      <p className="text-[15px] leading-relaxed whitespace-pre-wrap font-medium">
+                        {message.content}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {/* Chart content (if exists) */}
+                  {message.chartData && message.chartData.length > 0 && (
+                    <div className="space-y-4">
+                      {message.chartData.map((chart, chartIndex) => (
+                        <div 
+                          key={`${message.id}-chart-${chartIndex}`}
+                          className="px-6 py-6 rounded-2xl shadow-lg bg-white/5 backdrop-blur-xl border border-white/20 hover:border-white/30 transition-all duration-300"
+                        >
+                          <PlotlyChart 
+                            chartData={chart}
+                            chartId={`chart-${message.id}-${chartIndex}`}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   
                   {/* AI Message Actions */}
                   <div className="flex items-center mt-3 space-x-3 opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out justify-start">

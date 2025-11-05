@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union, Literal
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from app.utils.loader import load_dataframe_for_tool, load_frames
@@ -10,6 +10,39 @@ import os, glob, json
 DEBUG_ORCH = os.getenv("DEBUG_ORCH", "0") == "1"
 MOCK_DIR = os.getenv("MOCK_PLOTLY_DIR", "")
 
+
+# Response models matching frontend API contract
+class PlotlyObject(BaseModel):
+    """A complete Plotly chart object with data and layout"""
+
+    data: List[Any] = Field(..., description="Plotly data array")
+    layout: Dict[str, Any] = Field(
+        default_factory=dict, description="Plotly layout object"
+    )
+    config: Optional[Dict[str, Any]] = Field(
+        default=None, description="Optional Plotly config"
+    )
+
+
+class QuerySuccessResponse(BaseModel):
+    """Success response matching frontend expectations"""
+
+    status: Literal["success"] = "success"
+    results: List[PlotlyObject] = Field(
+        ..., description="Array of Plotly chart objects"
+    )
+
+
+class QueryErrorResponse(BaseModel):
+    """Error response matching frontend expectations"""
+
+    status: Literal["error"] = "error"
+    message: str = Field(..., description="Error message")
+
+
+# Union type for all possible responses
+QueryResponse = Union[QuerySuccessResponse, QueryErrorResponse]
+
 router = APIRouter(prefix="/query", tags=["query"])
 
 
@@ -18,21 +51,6 @@ class QueryRequest(BaseModel):
     filters: Optional[Dict[str, Any]] = None
 
 
-# @router.get("/diagnostics", tags=["query"])
-# def diagnostics():
-#     try:
-#         from app.utils.loader import load_frames
-
-#         sales_df, opp_df = load_frames({})
-#         return {
-#             "sales_rows": 0 if sales_df is None else int(len(sales_df)),
-#             "sales_cols": [] if sales_df is None else list(sales_df.columns),
-#             "opp_rows": 0 if opp_df is None else int(len(opp_df)),
-#             "opp_cols": [] if opp_df is None else list(opp_df.columns),
-#         }
-#     except Exception as e:
-#         return {"error": f"diagnostics_failed: {e}"}
-
 @router.get("/diagnostics", tags=["query"])
 def diagnostics():
     """
@@ -40,11 +58,14 @@ def diagnostics():
     """
     try:
         df = load_frames()  # Load the single DataFrame
-        print(f"[DEBUG] Diagnostics: Loaded DataFrame with {len(df)} rows and columns: {df.columns}")  # Debug: Check DataFrame details
+        print(
+            f"[DEBUG] Diagnostics: Loaded DataFrame with {len(df)} rows and columns: {df.columns}"
+        )  # Debug: Check DataFrame details
         return {"status": "success", "rows": len(df), "columns": list(df.columns)}
     except Exception as e:
         print(f"[DEBUG] Diagnostics failed: {e}")  # Debug: Log the error
         return {"status": "error", "message": str(e)}
+
 
 @router.get("/tools")
 def list_tools():
@@ -88,7 +109,7 @@ def force_run(req: ForceRun):
 
 
 @router.post("", summary="LLM Orchestrated Query (returns Plotly JSON)")
-def run_query(req: QueryRequest) -> Dict[str, Any]:
+def run_query(req: QueryRequest) -> QueryResponse:
     orch = Orchestrator()
     print(f"[DEBUG] Received query: {req.message}")  # Debug: Check the input message
     plan = orch.classify(req.message)
@@ -147,21 +168,20 @@ def run_query(req: QueryRequest) -> Dict[str, Any]:
                 pass
         if figs:
             print(f"[DEBUG] Mock results: {figs}")  # Debug: Check mock results
-            return {
-                "status": "success",
-                "results": figs,
-                **({"debug": debug} if DEBUG_ORCH else {}),
-            }
+            # Convert mock results to PlotlyObject format
+            plotly_objects = [PlotlyObject(**fig) for fig in figs]
+            return QuerySuccessResponse(results=plotly_objects)
 
     if not results:
-        resp = {"status": "error", "message": "I'm sorry, I couldn't find that data."}
-        if DEBUG_ORCH:
-            resp["debug"] = debug
-        print(f"[DEBUG] Final response: {resp}")  # Debug: Check final error response
-        return resp
+        print(
+            f"[DEBUG] Final response: No results found"
+        )  # Debug: Check final error response
+        return QueryErrorResponse(message="I'm sorry, I couldn't find that data.")
 
-    return {
-        "status": "success",
-        "results": results,
-        **({"debug": debug} if DEBUG_ORCH else {}),
-    }
+    # Convert results to PlotlyObject format
+    try:
+        plotly_objects = [PlotlyObject(**result) for result in results]
+        return QuerySuccessResponse(results=plotly_objects)
+    except Exception as e:
+        print(f"[DEBUG] Error converting results to PlotlyObject: {e}")
+        return QueryErrorResponse(message=f"Error formatting results: {str(e)}")

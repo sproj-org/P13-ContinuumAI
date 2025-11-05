@@ -1,11 +1,19 @@
 # 🤖 Continuum AI - Sales Intelligence Platform
 
-A modern, AI-powered sales intelligence platform built with Next.js 16, featuring a beautiful chat interface, comprehensive dashboard, and seamless user experience.
+A modern, AI-powered sales intelligence platform built with Next.js 16, featuring a beautiful chat interface with **dynamic Plotly chart rendering**, comprehensive dashboard, and seamless user experience.
 
 ![Continuum AI](https://img.shields.io/badge/Next.js-16.0.1-black?style=for-the-badge&logo=next.js)
 ![React](https://img.shields.io/badge/React-19.2.0-blue?style=for-the-badge&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.0-38B2AC?style=for-the-badge&logo=tailwind-css)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4.0-38B2AC?style=for-the-badge&logo=tailwind-css)
+![Plotly](https://img.shields.io/badge/Plotly.js-Latest-3F4F75?style=for-the-badge&logo=plotly)
+
+## 📚 Documentation
+
+- **[Testing Guide](TESTING_GUIDE.md)** - Comprehensive test queries and feature showcase
+- **[Quick Start Guide](QUICK_START.md)** - Test the mock implementation
+- **[Backend Integration Guide](BACKEND_INTEGRATION_GUIDE.md)** - Complete guide for backend team
+- **[API Contract](BACKEND_INTEGRATION_GUIDE.md#-api-contract)** - Request/response format specification
 
 ## ✨ Features
 
@@ -18,10 +26,21 @@ A modern, AI-powered sales intelligence platform built with Next.js 16, featurin
 
 ### 💬 **AI Chat Interface**
 - **Real-time Messaging**: Instant AI responses with typing indicators
+- **Rich Text Responses**: Formatted text with emojis, bullets, and structured data
+- **Dynamic Chart Rendering**: Plotly.js integration for interactive data visualization
+- **Multiple Chart Support**: Render multiple charts in a single response
+- **Mixed Content**: Combine text explanations with visualizations
 - **File Upload**: Support for documents, images, and spreadsheets
 - **Message Actions**: Copy, like/dislike functionality
 - **Chat History**: Persistent conversation management
 - **Auto-expanding Input**: Smart textarea that grows with content
+
+### 📊 **Chart Visualization**
+- **All Plotly Chart Types**: Line, bar, pie, scatter, funnel, indicator, and more
+- **Interactive Charts**: Zoom, pan, hover tooltips, and download capabilities
+- **Dark Theme Styling**: Automatic styling to match the UI
+- **Responsive Design**: Charts resize automatically with window
+- **Multiple Charts**: Display multiple visualizations in one response
 
 ### 📊 **Dashboard**
 - **User Profile**: Comprehensive user information display
@@ -73,9 +92,10 @@ A modern, AI-powered sales intelligence platform built with Next.js 16, featurin
 - **Next.js 16.0.1** - React framework with App Router
 - **React 19.2.0** - UI library with latest features
 - **TypeScript 5.0** - Type-safe JavaScript
-- **Tailwind CSS 4.0** - Utility-first CSS framework
+- **Tailwind CSS 3.4.0** - Utility-first CSS framework
 
-### UI & Icons
+### Visualization & UI
+- **Plotly.js (plotly.js-dist-min)** - Interactive chart library
 - **Lucide React 0.552.0** - Beautiful, customizable icons
 - **clsx 2.1.1** - Conditional className utility
 - **class-variance-authority 0.7.1** - Component variant management
@@ -102,16 +122,21 @@ src/
 ├── components/            # Reusable UI components
 │   ├── chat/             # Chat-specific components
 │   │   ├── ChatInterface.tsx  # Main chat interface
+│   │   ├── PlotlyChart.tsx    # Chart renderer component
 │   │   └── Sidebar.tsx        # Chat history sidebar
 │   ├── ui/               # Generic UI components
+│   │   ├── ContinuumIcon.tsx  # Neural network logo
 │   │   └── ThemeToggle.tsx    # Dark/light mode toggle
 │   ├── LoginForm.tsx     # Login form component
 │   └── RegisterForm.tsx  # Registration form component
 ├── contexts/             # React Context providers
 │   ├── AuthContext.tsx   # Authentication state management
 │   └── ChatContext.tsx   # Chat state management
-└── lib/                  # Utility functions
-    └── api.ts            # API helper functions
+├── lib/                  # Utility functions
+│   ├── api.ts            # API helper functions
+│   └── mockApiResponses.ts  # Mock data for testing (DELETE after backend integration)
+└── types/                # TypeScript type definitions
+    └── plotly.d.ts       # Plotly type declarations
 ```
 
 ## 🎨 Design System
@@ -192,24 +217,4 @@ NEXT_PUBLIC_API_URL=your_api_url
 npm run build
 npm run start
 ```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- **Design Inspiration**: Linear, Notion, and modern SaaS applications
-- **Icons**: Lucide React icon library
-- **Fonts**: Inter by Google Fonts
-- **Framework**: Next.js team for the amazing framework
-
 ---

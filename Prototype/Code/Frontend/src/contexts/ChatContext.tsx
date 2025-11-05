@@ -2,11 +2,18 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
+export interface PlotlyChart {
+  data: any[];
+  layout?: any;
+  config?: any;
+}
+
 export interface Message {
   id: string;
   content: string;
   sender: 'user' | 'ai';
   timestamp: Date;
+  chartData?: PlotlyChart[]; // Optional chart data for AI responses
 }
 
 export interface Chat {
@@ -129,12 +136,4 @@ export function useChat() {
     throw new Error('useChat must be used within a ChatProvider');
   }
   return context;
-}
-
-export interface Message {
-  id: string;
-  content: string;
-  sender: 'user' | 'ai';
-  timestamp: Date;
-  metadata?: any; 
 }
