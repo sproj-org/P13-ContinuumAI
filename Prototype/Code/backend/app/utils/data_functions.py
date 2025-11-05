@@ -87,6 +87,12 @@ def apply_filters(
     categories: list | str | None = None,
 ) -> pd.DataFrame:
     """Filter dataset by date range and optional lists. Accepts strings or lists; 'All' disables that filter."""
+    
+    print("DEBUG|apply_filters incoming:", {
+        "date_from": date_from, "date_to": date_to,
+        "regions": regions, "reps": reps, "categories": categories
+    })
+
     out = df.copy()
 
     def _to_date(x):
@@ -105,21 +111,29 @@ def apply_filters(
 
     if "order_date" in out.columns and (dfrom or dto):
         od = pd.to_datetime(out["order_date"], errors="coerce")
-        if dfrom:
-            out = out[od.dt.date >= dfrom]
-        if dto:
-            out = out[od.dt.date <= dto]
+        mask = pd.Series(True, index=out.index)
+        if dfrom is not None:
+            mask &= (od.dt.date >= dfrom)
+        if dto is not None:
+            mask &= (od.dt.date <= dto)
+        out = out.loc[mask]
+
 
     regions    = _as_list(regions)
     reps       = _as_list(reps)
     categories = _as_list(categories)
 
-    if regions and "All" not in regions and "region" in out.columns:
-        out = out[out["region"].isin(regions)]
-    if reps and "All" not in reps and "salesperson" in out.columns:
-        out = out[out["salesperson"].isin(reps)]
-    if categories and "All" not in categories and "category" in out.columns:
-        out = out[out["category"].isin(categories)]
+    region_col = "region" if "region" in out.columns else ("region_name" if "region_name" in out.columns else None)
+    rep_col    = "salesperson" if "salesperson" in out.columns else ("rep_name" if "rep_name" in out.columns else None)
+    cat_col    = "category" if "category" in out.columns else None
+
+    if regions and "All" not in regions and region_col:
+        out = out[out[region_col].isin(regions)]
+    if reps and "All" not in reps and rep_col:
+        out = out[out[rep_col].isin(reps)]
+    if categories and "All" not in categories and cat_col:
+        out = out[out[cat_col].isin(categories)]
+
 
     return out
 

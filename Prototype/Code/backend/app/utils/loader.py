@@ -276,6 +276,47 @@ def _as_list(x):
         return []
     return [x]
 
+
+def _validate_filters(filters: dict | None) -> dict:
+    """Strict validation for supported filters only."""
+    allowed = {"date_from": (str, type(None)),
+               "date_to":   (str, type(None)),
+               "regions":   ((list, tuple, set), type(None), str),
+               "reps":      ((list, tuple, set), type(None), str),
+               "categories":((list, tuple, set), type(None), str)}
+    f = dict(filters or {})
+    unknown = sorted([k for k in f.keys() if k not in allowed])
+    if unknown:
+        raise ValueError(f"Unsupported filter key(s): {', '.join(unknown)}. "
+                         "Allowed: date_from, date_to, regions, reps, categories.")
+    # type checks
+    for k, types in allowed.items():
+        v = f.get(k)
+        if v is None:
+            continue
+        if isinstance(types, tuple):
+            valid_types = types
+        else:
+            valid_types = (types,)
+        if not isinstance(v, valid_types):
+            raise TypeError(f"{k} has invalid type {type(v).__name__}.")
+    # date sanity if both provided
+    from datetime import datetime
+    def _parse(d):
+        if d is None: return None
+        for fmt in ("%Y-%m-%d","%Y/%m/%d","%d-%m-%Y"):
+            try:
+                return datetime.strptime(str(d), fmt).date()
+            except Exception:
+                continue
+        raise ValueError(f"{d} is not a valid date (use YYYY-MM-DD).")
+    dfrom = _parse(f.get("date_from")) if f.get("date_from") else None
+    dto   = _parse(f.get("date_to")) if f.get("date_to") else None
+    if dfrom and dto and dfrom > dto:
+        raise ValueError("date_from must be ≤ date_to.")
+    return f
+
+
 def _normalize_filters_for_loader(filters: dict | None) -> dict:
     f = dict(filters or {})
     f["regions"]    = _as_list(f.get("regions"))
@@ -301,6 +342,8 @@ def load_frames(filters: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
 
         # Apply filters
         if filters:
+            filters = _validate_filters(filters)
+            filters = _normalize_filters_for_loader(filters)
             df = apply_filters(
                 df,
                 filters.get("date_from"),

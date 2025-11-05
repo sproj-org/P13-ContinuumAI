@@ -19,12 +19,39 @@ def _tokenize(s: str) -> List[str]:
 class Orchestrator:
     def __init__(self) -> None:
         self._tools = self._discover_tools()
+        self._index = self._build_index()  # <- add this
+
         self._model_name = settings.GEMINI_MODEL or os.getenv(
             "GEMINI_MODEL", "gemini-2.5-pro"
         )
         self._gemini_ready = bool(getattr(settings, "GEMINI_API_KEY", "") and genai)
         if self._gemini_ready:
             genai.configure(api_key=settings.GEMINI_API_KEY)
+
+        from app.utils import data_functions as _df
+        print("DEBUG|discovered_tools:", [n for n in dir(_df) if callable(getattr(_df, n)) and not n.startswith("_")])
+
+
+    def _build_index(self) -> Dict[str, set]:
+        # tokens per tool: function name + doc + meta fields
+        mod = importlib.import_module("app.utils.data_functions")
+        idx = {}
+        for name, obj in inspect.getmembers(mod, inspect.isfunction):
+            if name.startswith("_"): continue
+            toks = set(_tokenize(name))
+            doc  = (inspect.getdoc(obj) or "")
+            toks |= set(_tokenize(doc))
+            meta = getattr(obj, "__tool_meta__", {}) or {}
+            for k in ("intent","returns","requires"):
+                vals = meta.get(k, [])
+                if isinstance(vals, (list, tuple)):
+                    for v in vals: toks |= set(_tokenize(str(v)))
+                elif isinstance(vals, str):
+                    toks |= set(_tokenize(vals))
+            idx[name] = toks
+        return idx
+
+
 
     def _discover_tools(self) -> Dict[str, Callable[..., Any]]:
         mod = importlib.import_module("app.utils.data_functions")
@@ -41,20 +68,65 @@ class Orchestrator:
         for name, obj in inspect.getmembers(mod, inspect.isfunction):
             if name.startswith("_"):
                 continue
-            doc = (inspect.getdoc(obj) or "").strip()
-            cats.append({"name": name, "doc": doc[:300]})
+            meta = getattr(obj, "__tool_meta__", {}) or {}
+            doc  = (inspect.getdoc(obj) or "").strip()
+            cats.append({
+                "name": name,
+                "doc": doc[:300],
+                "intent": " ".join(meta.get("intent", [])[:20]),
+                "returns": " ".join(meta.get("returns", [])[:20]),
+                "requires": " ".join(meta.get("requires", [])[:20]),
+            })
         return cats
 
     # ----------------- Classification -----------------
 
+#     def _build_classifier_prompt(self, message: str) -> str:
+#         tools_json = json.dumps(self.tool_catalog(), ensure_ascii=False)
+#         schema = {"response_type": "chart", "tool_names": ["name1"], "tool_args": {}}
+#         return f"""You are a BI tool router. Choose 1–2 best tools from TOOLS and minimal args for the user's request.
+# TOOLS:
+# {tools_json}
+# Return ONLY JSON like: {json.dumps(schema)}
+# User: {message}"""
+
+
     def _build_classifier_prompt(self, message: str) -> str:
+        # Anchor “current date” for parsing relatives
+        TODAY = "17 October 2025"
+
         tools_json = json.dumps(self.tool_catalog(), ensure_ascii=False)
-        schema = {"response_type": "chart", "tool_names": ["name1"], "tool_args": {}}
-        return f"""You are a BI tool router. Choose 1–2 best tools from TOOLS and minimal args for the user's request.
-TOOLS:
-{tools_json}
-Return ONLY JSON like: {json.dumps(schema)}
-User: {message}"""
+        schema = {
+            "response_type": "chart",
+            "tool_names": ["name1"],
+            "tool_args": {
+                "date_from": "YYYY-MM-DD or null",
+                "date_to":   "YYYY-MM-DD or null",
+                "regions":   ["list of strings or empty"],
+                "reps":      ["list of strings or empty"],
+                "categories":["list of strings or empty"]
+            }
+        }
+        return f"""
+    You are a BI tool router and argument extractor.
+
+    - Today's date is **{TODAY}**. Resolve relative dates (e.g., "last quarter", "this year to date") against this date.
+    - Return ONLY JSON matching the schema below.
+    - Choose the best 1-2 tools whose intent matches the user ask.
+    - Fill tool_args ONLY with these keys: date_from, date_to, regions, reps, categories.
+    - Use ISO dates YYYY-MM-DD. If a date is ambiguous, prefer calendar quarters, and fill concrete start/end dates.
+    - Do not invent fields. Empty lists instead of scalars for regions/reps/categories.
+
+    TOOLS:
+    {tools_json}
+
+    SCHEMA:
+    {json.dumps(schema)}
+
+    USER:
+    {message}
+    """.strip()
+
 
     def _safe_json(self, text: str) -> Any:
         try:
@@ -76,37 +148,50 @@ User: {message}"""
         scores: List[Tuple[str, float]] = []
         for tname in self._tools.keys():
             ttoks = set(_tokenize(tname))
-            score = 0.0
-            if any(k in mtoks for k in ("top", "rank", "best", "leaderboard")):
-                if (
-                    "product" in ttoks
-                    or "salespeople" in ttoks
-                    or "leaderboard" in ttoks
-                ):
-                    score += 2
-            if "trend" in mtoks or "over" in mtoks or "time" in mtoks:
-                if any(k in ttoks for k in ("over_time", "trend")):
-                    score += 2
-            for k in (
-                "revenue",
-                "product",
-                "customer",
-                "city",
-                "country",
-                "region",
-                "salesperson",
-                "aov",
-                "funnel",
-                "pipeline",
-            ):
-                if k in mtoks and k in ttoks:
-                    score += 0.5
+            overlap = mtoks & ttoks
+
+        #     score = 0.0
+        #     if any(k in mtoks for k in ("top", "rank", "best", "leaderboard")):
+        #         if (
+        #             "product" in ttoks
+        #             or "salespeople" in ttoks
+        #             or "leaderboard" in ttoks
+        #         ):
+        #             score += 2
+        #     if "trend" in mtoks or "over" in mtoks or "time" in mtoks:
+        #         if any(k in ttoks for k in ("over_time", "trend")):
+        #             score += 2
+        #     for k in (
+        #         "revenue",
+        #         "product",
+        #         "customer",
+        #         "city",
+        #         "country",
+        #         "region",
+        #         "salesperson",
+        #         "aov",
+        #         "funnel",
+        #         "pipeline",
+        #     ):
+        #         if k in mtoks and k in ttoks:
+        #             score += 0.5
+        #     if score > 0:
+        #         scores.append((tname, score))
+        # print(
+        #     f"[DEBUG] Ranked tools: {scores}"
+        # )  # Debug: Check ranked tools and their scores
+        # return sorted(scores, key=lambda x: x[1], reverse=True)
+
+        for tname, ttoks in self._index.items():
+            overlap = mtoks & ttoks
+            # simple scoring: overlap size with some boosts
+            score = float(len(overlap))
+            if "by" in mtoks and {"region","regions"} & ttoks: score += 0.5
+            if {"trend","monthly","mo","month"} & mtoks and {"trend","month"} & ttoks: score += 0.5
             if score > 0:
                 scores.append((tname, score))
-        print(
-            f"[DEBUG] Ranked tools: {scores}"
-        )  # Debug: Check ranked tools and their scores
         return sorted(scores, key=lambda x: x[1], reverse=True)
+
 
     def classify(self, message: str) -> Dict[str, Any]:
         print(
@@ -131,8 +216,11 @@ User: {message}"""
         print(
             f"[DEBUG] Fallback ranked tools: {ranked}"
         )  # Debug: Check fallback ranking
-        picks = [n for n, _ in ranked[:2]] or list(self._tools.keys())[:1]
+        if not ranked:
+            return {"response_type": "chart", "tool_names": [], "tool_args": {}}
+        picks = [n for n, _ in ranked[:2]]
         return {"response_type": "chart", "tool_names": picks, "tool_args": {}}
+
 
     # ----------------- Execution -----------------
 

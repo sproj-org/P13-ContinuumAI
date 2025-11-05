@@ -43,6 +43,27 @@ class QueryErrorResponse(BaseModel):
 # Union type for all possible responses
 QueryResponse = Union[QuerySuccessResponse, QueryErrorResponse]
 
+
+# --------------------
+# Guardrail message
+# --------------------
+ALLOWED_FILTERS = ["date_from","date_to","regions","reps","categories"]
+
+def _guardrail_message() -> QueryErrorResponse:
+    examples = [
+        "Total revenue for 2025-01-01 to 2025-03-31",
+        "Revenue by region for Q2 2025",
+        "Top 10 products by revenue (2025)",
+        "Monthly sales trend for West (H1 2025)",
+        "Sales by representative (Jan–Mar 2025)",
+    ]
+    hint = (
+        "This request doesn’t match the available analytics right now. \n"
+        "Ask about descriptive BI on the demo dataset. \n"
+        f"You can filter with: {', '.join(ALLOWED_FILTERS)}. \n"
+        "Examples: " + "; ".join(examples)
+    )
+    return QueryErrorResponse(message=hint)
 router = APIRouter(prefix="/query", tags=["query"])
 
 
@@ -113,9 +134,7 @@ def run_query(req: QueryRequest) -> QueryResponse:
     orch = Orchestrator()
     print(f"[DEBUG] Received query: {req.message}")  # Debug: Check the input message
     plan = orch.classify(req.message)
-    print(
-        f"[DEBUG] Classification plan: {plan}"
-    )  # Debug: Check the classification plan
+    print("DEBUG|plan_from_classifier:", plan)  # TEMP
 
     tool_names: List[str] = plan.get("tool_names") or []
     tool_args: Dict[str, Any] = plan.get("tool_args") or {}
@@ -123,17 +142,20 @@ def run_query(req: QueryRequest) -> QueryResponse:
         f"[DEBUG] Tools to run: {tool_names}, Args: {tool_args}"
     )  # Debug: Check tools and args
 
+    allowed_filter_keys = {"date_from","date_to","regions","reps","categories"}
+    derived_filters = {k: v for k, v in tool_args.items() if k in allowed_filter_keys}
+    final_filters = {**(derived_filters or {}), **(req.filters or {})}  # explicit req.filters win
+
+
     def _get_df(tool_name: str):
         try:
-            return load_dataframe_for_tool(tool_name, req.filters or {})
+            return load_dataframe_for_tool(tool_name, final_filters)
         except Exception as e:
-            print(
-                f"[DEBUG] Dataframe load failed for {tool_name}: {e}"
-            )  # Debug: Check data loading errors
+            print("DEBUG|_get_df tool=", tool_name, "final_filters=", final_filters)
             raise HTTPException(status_code=500, detail=f"Data load failed: {e}")
 
     # 1) Try the LLM plan
-    out = orch.run_tools(tool_names, _get_df, tool_args, return_debug=DEBUG_ORCH)
+    out = orch.run_tools(tool_names, _get_df, tool_args, return_debug=True)
     if isinstance(out, tuple):
         results, debug = out
     else:
@@ -142,23 +164,11 @@ def run_query(req: QueryRequest) -> QueryResponse:
     #     f"[DEBUG] Results from LLM plan: {results}, Debug: {debug}"
     # )  # Debug: Check results from the plan
 
-    # 2) If empty/mismatched, auto-fallback to ranked tools (semantic router)
+    
+    # 2) If empty/mismatched, return guardrail instead of fallback
     if not results:
-        ranked = orch.rank_tools(req.message)[:6]  # try a few
-        print(
-            f"[DEBUG] Ranked tools for fallback: {ranked}"
-        )  # Debug: Check fallback tools
-        fallback = orch.run_tools(ranked, _get_df, tool_args, return_debug=DEBUG_ORCH)
-        if isinstance(fallback, tuple):
-            fres, fdbg = fallback
-        else:
-            fres, fdbg = fallback, []
-        results, debug = fres, (debug + fdbg)
-        print(
-            f"[DEBUG] Results from fallback: {results}, Debug: {debug}"
-        )  # Debug: Check fallback results
-
-    # 3) Optional mock
+        return _guardrail_message()
+# 3) Optional mock
     if (not results) and MOCK_DIR:
         figs = []
         for p in glob.glob(os.path.join(MOCK_DIR, "*.json"))[:2]:
