@@ -256,8 +256,7 @@ URL:https://continuumai-six.vercel.app
 
 **Backend API:**
 ```
-Base URL: http://localhost:8000
-API Documentation: http://localhost:8000/docs
+Base URL: http://p13-back.onrender.com
 ```
 
 ### Test Credentials
