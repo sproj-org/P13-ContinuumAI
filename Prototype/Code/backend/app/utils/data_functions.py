@@ -15,6 +15,46 @@ def _as_list(x):
         return []
     return [x]
 
+def _build_filter_subtitle(date_from=None, date_to=None, regions=None, reps=None, categories=None) -> str:
+    """Build a readable subtitle showing applied filters"""
+    parts = []
+    
+    if date_from or date_to:
+        if date_from and date_to:
+            parts.append(f"Period: {date_from} to {date_to}")
+        elif date_from:
+            parts.append(f"From: {date_from}")
+        elif date_to:
+            parts.append(f"Until: {date_to}")
+    
+    regions_list = _as_list(regions)
+    if regions_list and "All" not in regions_list:
+        parts.append(f"Regions: {', '.join(regions_list)}")
+    
+    reps_list = _as_list(reps)
+    if reps_list and "All" not in reps_list:
+        parts.append(f"Reps: {', '.join(reps_list)}")
+    
+    categories_list = _as_list(categories)
+    if categories_list and "All" not in categories_list:
+        parts.append(f"Categories: {', '.join(categories_list)}")
+    
+    return " | ".join(parts) if parts else ""
+
+def _format_title(main_title: str, filter_subtitle: str = "") -> dict:
+    """Format title with subtitle positioned at center bottom"""
+    if filter_subtitle:
+        return {
+            "text": main_title,
+            "subtitle": {
+                "text": filter_subtitle,
+                "font": {"size": 11, "color": "#666"}
+            },
+            "x": 0.5,
+            "xanchor": "center"
+        }
+    return {"text": main_title, "x": 0.5, "xanchor": "center"}
+
 # --------------------
 # Preprocess & Filters
 # --------------------
@@ -151,39 +191,48 @@ def _to_json(fig: go.Figure) -> dict:
 # ---------- KPI functions (return Plotly Indicator JSON) ----------
 
 @tool({"requires": ["revenue"], "returns": "indicator", "intent": ["total revenue", "overall sales", "sum of revenue"]})
-def total_revenue(df: pd.DataFrame, revenue_col: str = "revenue") -> dict:
+def total_revenue(df: pd.DataFrame, revenue_col: str = "revenue", 
+                  date_from=None, date_to=None, regions=None, reps=None, categories=None) -> dict:
     if revenue_col not in df.columns:
         return {"type": "error", "error": f"Missing column '{revenue_col}'"}
     value = float(df[revenue_col].sum())
+    
+    filter_subtitle = _build_filter_subtitle(date_from, date_to, regions, reps, categories)
+    
     fig = go.Figure(
         go.Indicator(
             mode="number",
             value=value,
-            title={"text": "Total Revenue"},
+            title=_format_title("Total Revenue", filter_subtitle),
             number={"prefix": "$", "valueformat": ",.2f"},
         )
     )
-    fig.update_layout(height=140, margin=dict(t=10, b=10, l=10, r=10))
+    fig.update_layout(height=140, margin=dict(t=30, b=10, l=10, r=10))
     return _to_json(fig)
 
 @tool({"requires": ["order_id"], "returns": "indicator", "intent": ["total orders", "number of orders", "order count"]})
-def total_orders(df: pd.DataFrame, order_id_col: str = "order_id") -> dict:
+def total_orders(df: pd.DataFrame, order_id_col: str = "order_id",
+                 date_from=None, date_to=None, regions=None, reps=None, categories=None) -> dict:
     if order_id_col not in df.columns:
         return {"type": "error", "error": f"Missing column '{order_id_col}'"}
     value = int(df[order_id_col].nunique())
+    
+    filter_subtitle = _build_filter_subtitle(date_from, date_to, regions, reps, categories)
+    
     fig = go.Figure(
         go.Indicator(
             mode="number",
             value=value,
-            title={"text": "Total Orders"},
+            title=_format_title("Total Orders", filter_subtitle),
             number={"valueformat": ","},
         )
     )
-    fig.update_layout(height=120, margin=dict(t=8, b=8, l=8, r=8))
+    fig.update_layout(height=120, margin=dict(t=30, b=8, l=8, r=8))
     return _to_json(fig)
 
 @tool({"requires": ["aov", "revenue"], "returns": "indicator", "intent": ["average order value", "aov", "mean order value"]})
-def avg_aov(df: pd.DataFrame, aov_col: str = "aov") -> dict:
+def avg_aov(df: pd.DataFrame, aov_col: str = "aov",
+            date_from=None, date_to=None, regions=None, reps=None, categories=None) -> dict:
     if aov_col in df.columns and not df[aov_col].isna().all():
         value = float(df[aov_col].mean())
     elif "revenue" in df.columns:
@@ -191,15 +240,18 @@ def avg_aov(df: pd.DataFrame, aov_col: str = "aov") -> dict:
         value = float(df["revenue"].sum() / orders) if orders else 0.0
     else:
         return {"type": "error", "error": "Missing columns 'aov' or 'revenue'"}
+    
+    filter_subtitle = _build_filter_subtitle(date_from, date_to, regions, reps, categories)
+    
     fig = go.Figure(
         go.Indicator(
             mode="number",
             value=value,
-            title={"text": "Avg AOV"},
+            title=_format_title("Avg AOV", filter_subtitle),
             number={"prefix": "$", "valueformat": ",.2f"},
         )
     )
-    fig.update_layout(height=120, margin=dict(t=8, b=8, l=8, r=8))
+    fig.update_layout(height=120, margin=dict(t=30, b=8, l=8, r=8))
     return _to_json(fig)
 
 @tool({"requires": ["opportunity_id", "stage"], "returns": "gauge", "intent": ["conversion rate", "win rate", "deal closure rate"]})
@@ -220,10 +272,17 @@ def conversion_rate(
             mode="gauge+number",
             value=value * 100,
             title={"text": "Conversion Rate (%)"},
-            gauge={"axis": {"range": [0, 100]}},
+            gauge={
+                "axis": {"range": [0, 100]},
+                "bar": {"color": "green"},
+            },
+            domain={"x": [0, 1], "y": [0, 1]},
         )
     )
-    fig.update_layout(height=180, margin=dict(t=8, b=8, l=8, r=8))
+    fig.update_layout(
+        height=300,
+        margin=dict(t=50, b=30, l=30, r=30),
+    )
     return _to_json(fig)
 
 @tool({"requires": ["customer_id", "is_returning"], "returns": "indicator", "intent": ["new customers", "customer acquisition", "first time buyers"]})
@@ -286,6 +345,7 @@ def sales_over_time(
     resample: str = "W",
     revenue_col: str = "revenue",
     rolling_window: Optional[int] = None,
+    date_from=None, date_to=None, regions=None, reps=None, categories=None,
 ) -> dict:
     if "order_date" not in df.columns or revenue_col not in df.columns:
         return {"type": "error", "error": "Missing 'order_date' or revenue column"}
@@ -322,18 +382,24 @@ def sales_over_time(
                 line=dict(shape="spline", smoothing=0.3),
             )
         )
+    
+    filter_subtitle = _build_filter_subtitle(date_from, date_to, regions, reps, categories)
+    
     fig.update_layout(
-        title="Sales Over Time",
+        title=_format_title("Sales Over Time", filter_subtitle),
         xaxis_title="Date",
         yaxis_title="Revenue",
         template="plotly_white",
         height=480,
-        xaxis=dict(tickformat="%b %Y", dtick="M1"),
+        margin=dict(t=100, b=80, l=80, r=60),
+        xaxis=dict(tickformat="%b %Y", dtick="M1", automargin=True),
+        yaxis=dict(automargin=True),
     )
     return _to_json(fig)
 
 @tool({"requires": ["order_date", "aov"], "returns": "timeseries", "intent": ["aov over time", "average order value trend", "pricing trend"]})
-def aov_over_time(df: pd.DataFrame, resample: str = "M", aov_col: str = "aov") -> dict:
+def aov_over_time(df: pd.DataFrame, resample: str = "M", aov_col: str = "aov",
+                  date_from=None, date_to=None, regions=None, reps=None, categories=None) -> dict:
     if "order_date" not in df.columns or aov_col not in df.columns:
         return {"type": "error", "error": "Missing 'order_date' or aov column"}
     tmp = (
@@ -357,13 +423,18 @@ def aov_over_time(df: pd.DataFrame, resample: str = "M", aov_col: str = "aov") -
             line=dict(shape="spline", smoothing=0.3),
         )
     )
+    
+    filter_subtitle = _build_filter_subtitle(date_from, date_to, regions, reps, categories)
+    
     fig.update_layout(
-        title="AOV Over Time",
+        title=_format_title("AOV Over Time", filter_subtitle),
         xaxis_title="Date",
         yaxis_title="AOV",
         template="plotly_white",
         height=420,
-        xaxis=dict(tickformat="%b %Y", dtick="M1"),
+        margin=dict(t=100, b=80, l=80, r=60),
+        xaxis=dict(tickformat="%b %Y", dtick="M1", automargin=True),
+        yaxis=dict(automargin=True),
     )
     return _to_json(fig)
 
@@ -440,7 +511,8 @@ def repeat_new_customers_over_time(df: pd.DataFrame, resample: str = "M") -> dic
 # ---------- Products & Pareto ----------
 
 @tool({"requires": ["product_name", "revenue"], "returns": "bar", "intent": ["top products by revenue", "bestselling products", "product ranking"]})
-def top_products_by_revenue(df: pd.DataFrame, top_n: int = 20) -> dict:
+def top_products_by_revenue(df: pd.DataFrame, top_n: int = 20,
+                            date_from=None, date_to=None, regions=None, reps=None, categories=None) -> dict:
     if "product_name" not in df.columns or "revenue" not in df.columns:
         return {"type": "error", "error": "Missing 'product_name' or 'revenue'"}
     prod = (
@@ -464,17 +536,24 @@ def top_products_by_revenue(df: pd.DataFrame, top_n: int = 20) -> dict:
             textposition="auto",
         )
     )
+    
+    filter_subtitle = _build_filter_subtitle(date_from, date_to, regions, reps, categories)
+    
     fig.update_layout(
-        title=f"Top {top_n} Products by Revenue",
+        title=_format_title(f"Top {top_n} Products by Revenue", filter_subtitle),
         xaxis_title="Revenue",
         yaxis_title="Product",
         height=480,
         template="plotly_white",
+        margin=dict(t=100, b=60, l=80, r=60),
+        xaxis=dict(automargin=True),
+        yaxis=dict(automargin=True),
     )
     return _to_json(fig)
 
 @tool({"requires": ["product_name", "revenue"], "returns": "dual-axis", "intent": ["pareto analysis", "80/20 rule", "cumulative revenue by product"]})
-def pareto_product_revenue(df: pd.DataFrame, top_n: int = 50) -> dict:
+def pareto_product_revenue(df: pd.DataFrame, top_n: int = 50,
+                           date_from=None, date_to=None, regions=None, reps=None, categories=None) -> dict:
     if "product_name" not in df.columns or "revenue" not in df.columns:
         return {"type": "error", "error": "Missing 'product_name' or 'revenue'"}
     prod = (
@@ -500,14 +579,24 @@ def pareto_product_revenue(df: pd.DataFrame, top_n: int = 50) -> dict:
             mode="lines+markers",
         )
     )
+    
+    filter_subtitle = _build_filter_subtitle(date_from, date_to, regions, reps, categories)
+    
     fig.update_layout(
-        title="Pareto: Product Revenue vs Cumulative %",
+        title=_format_title("Pareto: Product Revenue vs Cumulative %", filter_subtitle),
         xaxis_title="Product",
         yaxis_title="Revenue",
         yaxis2=dict(title="Cumulative %", overlaying="y", side="right", range=[0, 110]),
-        xaxis=dict(tickangle=-45),
-        height=520,
+        xaxis=dict(
+            tickangle=-45,
+            automargin=True,
+            tickfont=dict(size=10),
+        ),
+        yaxis=dict(automargin=True),
+        height=560,
         template="plotly_white",
+        margin=dict(t=100, b=150, l=80, r=100),
+        bargap=0.2,
     )
     return _to_json(fig)
 
@@ -547,7 +636,8 @@ def units_vs_revenue_agg(df: pd.DataFrame) -> dict:
 
 
 @tool({"requires": ["region", "revenue"], "returns": "bar", "intent": ["revenue by region", "regional performance", "sales by region"]})
-def revenue_by_region(df: pd.DataFrame) -> dict:
+def revenue_by_region(df: pd.DataFrame,
+                      date_from=None, date_to=None, regions=None, reps=None, categories=None) -> dict:
     if "region" not in df.columns or "revenue" not in df.columns:
         return {"type": "error", "error": "Missing 'region' or 'revenue'"}
     region_agg = (
@@ -556,30 +646,37 @@ def revenue_by_region(df: pd.DataFrame) -> dict:
         .sort_values("revenue", ascending=False)
     )
 
-    regions = region_agg["region"].tolist()
+    regions_list = region_agg["region"].tolist()
     revenue_vals = region_agg["revenue"].tolist()
     revenue_labels = [f"${x:,.0f}" for x in revenue_vals]
 
     fig = go.Figure(
         go.Bar(
-            x=regions,
+            x=regions_list,
             y=revenue_vals,
             text=revenue_labels,
             textposition="auto",
         )
     )
+    
+    filter_subtitle = _build_filter_subtitle(date_from, date_to, regions, reps, categories)
+    
     fig.update_layout(
-        title="Revenue by Region",
+        title=_format_title("Revenue by Region", filter_subtitle),
         xaxis_title="Region",
         yaxis_title="Revenue",
         height=420,
         template="plotly_white",
+        margin=dict(t=100, b=60, l=80, r=60),
+        xaxis=dict(automargin=True),
+        yaxis=dict(automargin=True),
     )
     return _to_json(fig)
 
 
 @tool({"requires": ["country", "revenue"], "returns": "bar", "intent": ["revenue by country", "country performance", "top countries"]})
-def revenue_by_country_top(df: pd.DataFrame, top_n: int = 50) -> dict:
+def revenue_by_country_top(df: pd.DataFrame, top_n: int = 50,
+                           date_from=None, date_to=None, regions=None, reps=None, categories=None) -> dict:
     if "country" not in df.columns or "revenue" not in df.columns:
         return {"type": "error", "error": "Missing 'country' or 'revenue'"}
     country_agg = (
@@ -601,19 +698,30 @@ def revenue_by_country_top(df: pd.DataFrame, top_n: int = 50) -> dict:
             textposition="auto",
         )
     )
+    
+    filter_subtitle = _build_filter_subtitle(date_from, date_to, regions, reps, categories)
+    
     fig.update_layout(
-        title="Top Countries by Revenue",
+        title=_format_title("Top Countries by Revenue", filter_subtitle),
         xaxis_title="Country",
         yaxis_title="Revenue",
-        xaxis=dict(tickangle=-45),
-        height=420,
+        xaxis=dict(
+            tickangle=-45,
+            automargin=True,
+            tickfont=dict(size=10),
+        ),
+        yaxis=dict(automargin=True),
+        height=500,
         template="plotly_white",
+        margin=dict(t=100, b=150, l=80, r=60),
+        bargap=0.2,
     )
     return _to_json(fig)
 
 
 @tool({"requires": ["city", "revenue"], "returns": "bar", "intent": ["revenue by city", "city performance", "top cities"]})
-def revenue_by_city_top(df: pd.DataFrame, top_n: int = 30) -> dict:
+def revenue_by_city_top(df: pd.DataFrame, top_n: int = 30,
+                        date_from=None, date_to=None, regions=None, reps=None, categories=None) -> dict:
     if "city" not in df.columns or "revenue" not in df.columns:
         return {"type": "error", "error": "Missing 'city' or 'revenue'"}
     city_agg = (
@@ -635,13 +743,23 @@ def revenue_by_city_top(df: pd.DataFrame, top_n: int = 30) -> dict:
             textposition="auto",
         )
     )
+    
+    filter_subtitle = _build_filter_subtitle(date_from, date_to, regions, reps, categories)
+    
     fig.update_layout(
-        title="Top Cities by Revenue",
+        title=_format_title("Top Cities by Revenue", filter_subtitle),
         xaxis_title="City",
         yaxis_title="Revenue",
-        xaxis=dict(tickangle=-45),
-        height=420,
+        xaxis=dict(
+            tickangle=-45,
+            automargin=True,
+            tickfont=dict(size=10),
+        ),
+        yaxis=dict(automargin=True),
+        height=500,
         template="plotly_white",
+        margin=dict(t=100, b=150, l=80, r=60),
+        bargap=0.2,
     )
     return _to_json(fig)
 
@@ -650,7 +768,8 @@ def revenue_by_city_top(df: pd.DataFrame, top_n: int = 30) -> dict:
 
 
 @tool({"requires": ["salesperson", "revenue"], "returns": "bar", "intent": ["top salespeople", "sales rep leaderboard", "rep performance"]})
-def top_salespeople(df: pd.DataFrame, top_k: int = 10) -> dict:
+def top_salespeople(df: pd.DataFrame, top_k: int = 10,
+                    date_from=None, date_to=None, regions=None, reps=None, categories=None) -> dict:
     if "salesperson" not in df.columns or "revenue" not in df.columns:
         return {"type": "error", "error": "Missing 'salesperson' or 'revenue'"}
     rep_agg = (
@@ -674,12 +793,18 @@ def top_salespeople(df: pd.DataFrame, top_k: int = 10) -> dict:
             textposition="auto",
         )
     )
+    
+    filter_subtitle = _build_filter_subtitle(date_from, date_to, regions, reps, categories)
+    
     fig.update_layout(
-        title=f"Top {top_k} Salespeople by Revenue",
+        title=_format_title(f"Top {top_k} Salespeople by Revenue", filter_subtitle),
         xaxis_title="Revenue",
         yaxis_title="Salesperson",
         height=480,
         template="plotly_white",
+        margin=dict(t=100, b=60, l=80, r=60),
+        xaxis=dict(automargin=True),
+        yaxis=dict(automargin=True),
     )
     return _to_json(fig)
 
@@ -716,19 +841,26 @@ def leaderboard(df: pd.DataFrame) -> dict:
 
 
 @tool({"requires": ["sales_cycle_days"], "returns": "histogram", "intent": ["sales cycle distribution", "sales duration histogram", "deal length distribution"]})
-def sales_cycle_histogram(df: pd.DataFrame, nbins: int = 40) -> dict:
+def sales_cycle_histogram(df: pd.DataFrame, nbins: int = 40,
+                          date_from=None, date_to=None, regions=None, reps=None, categories=None) -> dict:
     if "sales_cycle_days" not in df.columns:
         return {"type": "error", "error": "Missing 'sales_cycle_days'"}
     data = df["sales_cycle_days"].dropna().astype(float).values
     if len(data) == 0:
         return {"type": "error", "error": "No sales_cycle_days data"}
     fig = go.Figure(go.Histogram(x=data, nbinsx=nbins))
+    
+    filter_subtitle = _build_filter_subtitle(date_from, date_to, regions, reps, categories)
+    
     fig.update_layout(
-        title="Sales Cycle Days Distribution",
+        title=_format_title("Sales Cycle Days Distribution", filter_subtitle),
         xaxis_title="Days",
         yaxis_title="Count",
         height=420,
         template="plotly_white",
+        margin=dict(t=100, b=60, l=80, r=60),
+        xaxis=dict(automargin=True),
+        yaxis=dict(automargin=True),
     )
     return _to_json(fig)
 
@@ -759,7 +891,8 @@ def avg_sales_cycle_by_rep(df: pd.DataFrame) -> dict:
 
 
 @tool({"requires": ["stage", "opportunity_id"], "returns": "funnel", "intent": ["opportunity funnel", "pipeline funnel", "stage analysis"]})
-def opportunity_funnel(df: pd.DataFrame) -> dict:
+def opportunity_funnel(df: pd.DataFrame,
+                       date_from=None, date_to=None, regions=None, reps=None, categories=None) -> dict:
     if "stage" not in df.columns or "opportunity_id" not in df.columns:
         return {"type": "error", "error": "Missing 'stage' or 'opportunity_id'"}
     stage_counts = (
@@ -779,10 +912,14 @@ def opportunity_funnel(df: pd.DataFrame) -> dict:
             textinfo="value+percent initial",
         )
     )
+    
+    filter_subtitle = _build_filter_subtitle(date_from, date_to, regions, reps, categories)
+    
     fig.update_layout(
-        title="Opportunity Funnel",
+        title=_format_title("Opportunity Funnel", filter_subtitle),
         height=420,
         template="plotly_white",
+        margin=dict(t=100, b=60, l=80, r=60),
     )
     return _to_json(fig)
 

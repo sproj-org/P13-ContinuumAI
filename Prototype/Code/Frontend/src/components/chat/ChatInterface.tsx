@@ -13,13 +13,16 @@ import {
   Sparkles,
   Plus,
   ArrowUp,
-  Paperclip
+  Paperclip,
+  ArrowLeft,
+  LayoutDashboard
 } from 'lucide-react';
 import { ContinuumIcon } from '@/components/ui/ContinuumIcon';
 import { PlotlyChart } from '@/components/chat/PlotlyChart';
 import { useChat } from '@/contexts/ChatContext';
 import { clsx } from 'clsx';
 import { runQuery, type QueryResponse, type QueryRequest } from '@/lib/query';
+import { useRouter } from 'next/navigation';
 
 interface ChatInterfaceProps {
   isSidebarOpen: boolean;
@@ -33,6 +36,7 @@ export function ChatInterface({ isSidebarOpen, onToggleSidebar }: ChatInterfaceP
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -197,6 +201,19 @@ export function ChatInterface({ isSidebarOpen, onToggleSidebar }: ChatInterfaceP
           >
             <Menu className="w-5 h-5 text-white/70" />
           </button>
+          
+          {/* Back to Dashboard Button */}
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="flex items-center space-x-2 px-3 py-2 rounded-xl hover:bg-white/10 transition-all duration-200 ease-out active:scale-95 group"
+            title="Back to Dashboard"
+          >
+            <ArrowLeft className="w-5 h-5 text-white/70 group-hover:text-white/90 transition-colors" />
+            <span className="hidden sm:inline text-sm font-medium text-white/70 group-hover:text-white/90 transition-colors">
+              Dashboard
+            </span>
+          </button>
+          
           <div className="flex items-center space-x-4">
             <div className="w-12 h-12 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-2xl flex items-center justify-center shadow-2xl shadow-cyan-500/25 ring-1 ring-white/10">
               <ContinuumIcon size={24} className="text-black" />
