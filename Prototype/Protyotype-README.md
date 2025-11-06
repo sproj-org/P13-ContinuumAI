@@ -251,7 +251,7 @@
 
 **Frontend Application:**
 ```
-URL: http://localhost:3000
+URL:https://continuumai-six.vercel.app
 ```
 
 **Backend API:**
@@ -280,7 +280,7 @@ Password: Test@123
 
 ```powershell
 # Navigate to backend directory
-cd C:\SensAi\P13-ContinuumAI\Prototype\Code\backend
+cd P13-ContinuumAI\Prototype\Code\backend
 
 # Install dependencies (first time only)
 pip install -r requirements.txt
@@ -295,7 +295,7 @@ Backend will be available at: `http://localhost:8000`
 
 ```powershell
 # Navigate to frontend directory
-cd C:\SensAi\P13-ContinuumAI\Prototype\Code\Frontend
+cd P13-ContinuumAI\Prototype\Code\Frontend
 
 # Install dependencies (first time only)
 npm install
@@ -304,12 +304,12 @@ npm install
 npm run dev
 ```
 
-Frontend will be available at: `http://localhost:3000`
+Frontend will be available at: `(https://continuumai-six.vercel.app)`
 
 ### Quick Start Guide
 
 1. **Login/Register:**
-   - Navigate to `http://localhost:3000`
+   - Navigate to `https://continuumai-six.vercel.app`
    - Click "Sign In" or "Sign Up"
    - Use demo credentials or create new account
 
