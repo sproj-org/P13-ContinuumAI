@@ -1,6 +1,6 @@
 # ContinuumAI - Sales Intelligence Prototype
 
-**Team:** SensAI  
+**Team:** Group-13  
 **Project:** P13-ContinuumAI  
 **Sprint:** Front-Back Integration  
 **Date:** November 6, 2025
@@ -9,7 +9,7 @@
 
 ## LIST OF REQUIREMENTS COMPLETED IN THE PROTOTYPE
 
-### Phase 1 Requirements 
+
 
 #### 1. User Authentication
 **Status:**  COMPLETED  
@@ -55,7 +55,7 @@
 **Status:**  COMPLETED (Enhanced with AI)  
 **Developers:**
 - **Ali Faizan** (Data & Tool Developer) - Chart generation functions
-- **Umer Nafees** (Agent Orchestrator) - Intent classification & routing
+- **Umer** (Agent Orchestrator) - Intent classification & routing
 - **Muhammad Bazaf Shakeel** (Frontend Lead) - Chart rendering UI
 
 **Implementation:**
@@ -75,16 +75,16 @@
 - `Frontend/src/components/chat/PlotlyChart.tsx` - Chart rendering
 - `backend/app/orchestrator/gemini_router.py` - Query routing
 
----
 
-### Phase 2 Requirements 
+
+
 
 #### 4. Full Chatbot Interface
 **Status:**  COMPLETED  
 **Developers:**
 - **Muhammad Bazaf Shakeel** (Frontend Lead) - Chat UI implementation
 - **Nafees** (Backend Lead) - API integration
-- **Umer Nafees** (Agent Orchestrator) - Gemini AI integration
+- **Umer** (Agent Orchestrator) - Gemini AI integration
 
 **Implementation:**
 - Conversational AI powered by Gemini 2.5 Pro
@@ -107,7 +107,7 @@
 **Status:**  COMPLETED  
 **Developers:**
 - **Ali Faizan** (Data & Tool Developer) - KPI calculation functions
-- **Umer Nafees** (Agent Orchestrator) - Tool routing
+- **Umer** (Agent Orchestrator) - Tool routing
 
 **Implementation:**
 - Real-time KPI tracking:
@@ -156,7 +156,7 @@
 **Status:**  COMPLETED  
 **Developers:**
 - **Ali Faizan** (Data & Tool Developer) - Analysis functions
-- **Umer Nafees** (Agent Orchestrator) - AI-powered insights
+- **Umer** (Agent Orchestrator) - AI-powered insights
 - **Nafees** (Backend Lead) - API integration
 
 **Implementation:**
