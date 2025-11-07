@@ -1,8 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.controllers.auth import router as auth_router
+from app.controllers.query import router as query_router
 
 app = FastAPI(title="ContinuumAI Backend")
+app.include_router(query_router, prefix="/api")
 
 # CORS Configuration
 app.add_middleware(
