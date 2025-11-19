@@ -14,7 +14,7 @@ def _as_list(x):
     if isinstance(x, dict):  # bad shape from UI; ignore
         return []
     return [x]
-
+ 
 def _build_filter_subtitle(date_from=None, date_to=None, regions=None, reps=None, categories=None) -> str:
     """Build a readable subtitle showing applied filters"""
     parts = []
@@ -128,11 +128,6 @@ def apply_filters(
 ) -> pd.DataFrame:
     """Filter dataset by date range and optional lists. Accepts strings or lists; 'All' disables that filter."""
     
-    print("DEBUG|apply_filters incoming:", {
-        "date_from": date_from, "date_to": date_to,
-        "regions": regions, "reps": reps, "categories": categories
-    })
-
     out = df.copy()
 
     def _to_date(x):
@@ -209,6 +204,9 @@ def total_revenue(df: pd.DataFrame, revenue_col: str = "revenue",
     )
     fig.update_layout(height=140, margin=dict(t=30, b=10, l=10, r=10))
     return _to_json(fig)
+
+
+
 
 @tool({"requires": ["order_id"], "returns": "indicator", "intent": ["total orders", "number of orders", "order count"]})
 def total_orders(df: pd.DataFrame, order_id_col: str = "order_id",
@@ -395,6 +393,130 @@ def sales_over_time(
         xaxis=dict(tickformat="%b %Y", dtick="M1", automargin=True),
         yaxis=dict(automargin=True),
     )
+    return _to_json(fig)
+
+
+@tool({"requires": ["order_date", "revenue"], "returns": "timeseries", "intent": ["short-term forecast", "sales forecast", "basic sales forecasting", "predict", "prediction", "forecast"]})
+def basic_sales_forecast(
+    df: pd.DataFrame,
+    resample: str = "W",
+    revenue_col: str = "revenue",
+    periods: int = 4,
+    lookback: Optional[int] = None,
+    date_from=None, date_to=None, regions=None, reps=None, categories=None,
+) -> dict:
+    """Simple short-term sales forecast using linear regression on a resampled series.
+
+    Inputs:
+      - df: source dataframe with an 'order_date' column and revenue_col
+      - resample: pandas offset alias (e.g. 'D','W','M') for aggregation
+      - revenue_col: column name containing revenue values
+    - periods: number of future periods to predict (units follow `resample`; e.g. when `resample='W'` this is weeks)
+      - lookback: optionally use only the last N aggregated points to fit the model
+
+    Returns a Plotly figure JSON with historical series, fitted trend and forecast
+    with a simple prediction band derived from residual standard deviation.
+    """
+    if "order_date" not in df.columns or revenue_col not in df.columns:
+        return {"type": "error", "error": "Missing 'order_date' or revenue column"}
+
+    tmp = (
+        df.set_index("order_date").resample(resample)[revenue_col].sum().reset_index().rename(columns={revenue_col: "revenue"})
+    )
+    tmp = tmp.sort_values("order_date").reset_index(drop=True)
+    tmp = tmp.dropna(subset=["revenue"])  # drop empty aggregated buckets
+
+    if lookback is not None and int(lookback) > 0:
+        tmp = tmp.tail(int(lookback)).reset_index(drop=True)
+
+    if tmp.empty or len(tmp) < 2:
+        return {"type": "error", "error": "Not enough data points to fit forecast (need >=2)"}
+
+    # numeric x for regression (0..n-1)
+    n = len(tmp)
+    x = np.arange(n)
+    y = tmp["revenue"].astype(float).values
+
+    # linear fit (slope, intercept)
+    coeffs = np.polyfit(x, y, 1)
+    model = np.poly1d(coeffs)
+
+    # fitted values on historical indexes and forecasts for future indexes
+    fitted = model(x)
+    future_x = np.arange(n, n + int(periods))
+    preds = model(future_x)
+
+    # simple residual-based prediction interval (approximate)
+    residuals = y - fitted
+    stderr = float(np.std(residuals, ddof=1)) if len(residuals) > 1 else 0.0
+    ci = 1.96 * stderr
+
+    # build future dates using pandas frequency
+    try:
+        offset = pd.tseries.frequencies.to_offset(resample)
+        last_date = pd.to_datetime(tmp["order_date"].iloc[-1])
+        start = last_date + offset
+        future_dates = pd.date_range(start=start, periods=int(periods), freq=resample)
+    except Exception:
+        # fallback: use days step
+        last_date = pd.to_datetime(tmp["order_date"].iloc[-1])
+        future_dates = [last_date + pd.Timedelta(days=1 * (i + 1)) for i in range(int(periods))]
+        future_dates = pd.to_datetime(future_dates)
+
+    # prepare plotting arrays
+    hist_dates = pd.to_datetime(tmp["order_date"]).dt.strftime("%Y-%m-%d").tolist()
+    future_dates_str = pd.to_datetime(future_dates).strftime("%Y-%m-%d").tolist()
+
+    # trend line across history + forecast
+    all_dates = list(pd.to_datetime(tmp["order_date"]).tolist()) + list(pd.to_datetime(future_dates))
+    all_x = np.arange(n + int(periods))
+    trend_all = model(all_x)
+
+    fig = go.Figure()
+    # historical series
+    fig.add_trace(
+        go.Scatter(x=hist_dates, y=y.tolist(), mode="lines+markers", name="Revenue", line=dict(shape="spline", smoothing=0.3))
+    )
+
+    # fitted trend (historic + forecast)
+    fig.add_trace(
+        go.Scatter(x=[d.strftime("%Y-%m-%d") for d in all_dates], y=trend_all.tolist(), mode="lines", name="Linear trend", line=dict(dash="dash", color="orange"))
+    )
+
+    # forecast points
+    fig.add_trace(
+        go.Scatter(x=future_dates_str, y=preds.tolist(), mode="markers+lines", name="Forecast", marker=dict(symbol="diamond", color="green"))
+    )
+
+    # prediction interval (fill between)
+    lower = (preds - ci).tolist()
+    upper = (preds + ci).tolist()
+    fig.add_trace(
+        go.Scatter(
+            x=future_dates_str + future_dates_str[::-1],
+            y=upper + lower[::-1],
+            fill="toself",
+            fillcolor="rgba(0,176,246,0.1)",
+            line=dict(color="rgba(255,255,255,0)"),
+            hoverinfo="skip",
+            showlegend=True,
+            name="95% band",
+        )
+    )
+
+    filter_subtitle = _build_filter_subtitle(date_from, date_to, regions, reps, categories)
+
+    fig.update_layout(
+        title=_format_title("Basic Sales Forecast (Linear)", filter_subtitle),
+        xaxis_title="Date",
+        yaxis_title="Revenue",
+        template="plotly_white",
+        height=480,
+        margin=dict(t=100, b=80, l=80, r=60),
+        xaxis=dict(tickformat="%b %Y", dtick="M1", automargin=True),
+        yaxis=dict(automargin=True),
+    )
+
     return _to_json(fig)
 
 @tool({"requires": ["order_date", "aov"], "returns": "timeseries", "intent": ["aov over time", "average order value trend", "pricing trend"]})
@@ -942,4 +1064,108 @@ def pipeline_table(df: pd.DataFrame) -> dict:
         data=[go.Table(header=dict(values=header), cells=dict(values=cells))]
     )
     fig.update_layout(title="Pipeline Table", height=600)
+    return _to_json(fig)
+
+
+# ---------- Correlation & Relationships ----------
+
+
+@tool({"requires": ["revenue"], "returns": "bar", "intent": ["correlation analysis", "feature correlation", "sales drivers", "what influences sales", "relationship between factors", "correlation matrix", "cross-dimensional correlation", "top factors", "sales factors"]})
+def correlation_analysis(
+    df: pd.DataFrame,
+    top_n: int = 5,
+    date_from=None, date_to=None, regions=None, reps=None, categories=None
+) -> dict:
+    """Identify the top factors that influence sales revenue.
+    
+    Computes correlation coefficients and returns a beautiful ranked list
+    of the top N factors most strongly correlated with revenue.
+    """
+    if "revenue" not in df.columns:
+        return {"type": "error", "error": "Missing 'revenue' column"}
+    
+    # Prepare dataframe with relevant features
+    analysis_df = df.copy()
+    
+    # Select numeric features
+    numeric_features = []
+    for col in ["revenue", "units", "aov", "sales_cycle_days", "is_returning"]:
+        if col in analysis_df.columns:
+            numeric_features.append(col)
+    
+    # Create feature dataframe
+    feature_df = analysis_df[numeric_features].copy()
+    
+    # Encode categorical features as numeric (mean revenue per category)
+    for col in ["category", "region", "salesperson", "channel", "product_name"]:
+        if col in analysis_df.columns:
+            # Calculate mean revenue per category level
+            cat_means = analysis_df.groupby(col)["revenue"].mean()
+            # Map categories to their mean revenue
+            feature_df[f"{col}_encoded"] = analysis_df[col].map(cat_means)
+    
+    # Drop rows with missing values
+    feature_df = feature_df.dropna()
+    
+    if feature_df.empty or len(feature_df) < 2:
+        return {"type": "error", "error": "Not enough data points for correlation analysis"}
+    
+    # Compute correlation matrix
+    corr_matrix = feature_df.corr()
+    
+    # Get correlations with revenue (exclude revenue itself)
+    if "revenue" not in corr_matrix.columns:
+        return {"type": "error", "error": "Could not compute correlations"}
+    
+    revenue_corr = corr_matrix["revenue"].drop("revenue", errors="ignore")
+    
+    # Sort by absolute correlation (strongest relationships first) and take top N
+    top_factors = revenue_corr.abs().sort_values(ascending=False).head(int(top_n))
+    
+    # Get the absolute correlation values (strength only) for the top factors
+    top_factors_values = revenue_corr[top_factors.index].abs()
+    
+    # Clean up names for display
+    factor_names = [
+        name.replace("_encoded", "").replace("_", " ").title() 
+        for name in top_factors_values.index
+    ]
+    corr_values = top_factors_values.values
+    
+    # Use a gradient color scheme from light to dark based on strength
+    colors = ['#636EFA'] * len(corr_values)  # Consistent blue color
+    
+    # Create horizontal bar chart
+    fig = go.Figure(data=[
+        go.Bar(
+            y=factor_names[::-1],  # Reverse to show strongest at top
+            x=corr_values[::-1],
+            orientation='h',
+            marker=dict(
+                color=colors[::-1],
+                line=dict(color='rgba(0,0,0,0.3)', width=1)
+            ),
+            text=[f"{val:.3f}" for val in corr_values[::-1]],
+            textposition='outside',
+            hovertemplate="<b>%{y}</b><br>Correlation Strength: %{x:.3f}<extra></extra>"
+        )
+    ])
+    
+    filter_subtitle = _build_filter_subtitle(date_from, date_to, regions, reps, categories)
+    
+    fig.update_layout(
+        title=_format_title(f"Top {top_n} Factors Influencing Sales", filter_subtitle),
+        xaxis_title="Correlation Strength",
+        yaxis_title="Factor",
+        height=400,
+        template="plotly_white",
+        margin=dict(t=100, b=60, l=200, r=100),
+        xaxis=dict(
+            range=[0, 1],
+            automargin=True
+        ),
+        yaxis=dict(automargin=True),
+        showlegend=False
+    )
+    
     return _to_json(fig)

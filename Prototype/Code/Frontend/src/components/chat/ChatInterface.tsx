@@ -86,8 +86,18 @@ export function ChatInterface({ isSidebarOpen, onToggleSidebar }: ChatInterfaceP
     setIsTyping(true);
 
     try {
-      // Call real API
-      const request: QueryRequest = { message: userQuery };
+      // Detect forecasting keywords so the backend/router can prioritize forecast tools
+      const isForecast = /\b(predict|prediction|forecast|forecasting)\b/i.test(userQuery || '');
+      // Detect correlation/relationship keywords
+      const isCorrelation = /\b(correlation|correlations|relationship|relationships|driver|drivers|influence|influences|factor|factors)\b/i.test(userQuery || '');
+      
+      // Call real API with appropriate flags
+      const filters: Record<string, boolean> = {};
+      if (isForecast) filters.forecast = true;
+      if (isCorrelation) filters.correlation = true;
+      
+      const request: QueryRequest = { message: userQuery, filters: Object.keys(filters).length > 0 ? filters : undefined };
+      console.debug('DEBUG|chat: sending request', request);
       const response = await runQuery(request);
       
       if (response.status === 'success') {

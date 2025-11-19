@@ -6,6 +6,7 @@ from app.utils.loader import load_dataframe_for_tool, load_frames
 from app.orchestrator.gemini_router import Orchestrator
 
 import os, glob, json
+import re
 
 DEBUG_ORCH = os.getenv("DEBUG_ORCH", "0") == "1"
 MOCK_DIR = os.getenv("MOCK_PLOTLY_DIR", "")
@@ -79,12 +80,8 @@ def diagnostics():
     """
     try:
         df = load_frames()  # Load the single DataFrame
-        print(
-            f"[DEBUG] Diagnostics: Loaded DataFrame with {len(df)} rows and columns: {df.columns}"
-        )  # Debug: Check DataFrame details
         return {"status": "success", "rows": len(df), "columns": list(df.columns)}
     except Exception as e:
-        print(f"[DEBUG] Diagnostics failed: {e}")  # Debug: Log the error
         return {"status": "error", "message": str(e)}
 
 
@@ -132,26 +129,65 @@ def force_run(req: ForceRun):
 @router.post("", summary="LLM Orchestrated Query (returns Plotly JSON)")
 def run_query(req: QueryRequest) -> QueryResponse:
     orch = Orchestrator()
-    print(f"[DEBUG] Received query: {req.message}")  # Debug: Check the input message
+    # Allow a deterministic override for simple forecasting requests so users
+    # who write "predict/forecast ... next 4 weeks" are routed to the
+    # basic_sales_forecast tool even if the LLM classifier misses it.
+    msg = (req.message or "")
+    forecast_match = re.search(r"\b(predict|forecast|forecasting|prediction)\b", msg, re.I)
+    correlation_match = re.search(r"\b(correlation|correlations|relationship|relationships|driver|drivers|influence|influences|factor|factors)\b", msg, re.I)
+
+    def _parse_periods(message: str):
+        # Parse patterns: "next 4 weeks", "next 2 months", "next 1 year", "for 3 days"
+        # Convert everything to weeks for consistent forecasting
+        m = re.search(r"(?:next|for|in)\s+(\d+)\s*(week|weeks|wk|w|month|months|mo|year|years|yr|y|day|days|d)\b", message, re.I)
+        if not m:
+            return None
+        n = int(m.group(1))
+        unit = m.group(2).lower()
+        
+        # Convert all time units to weeks
+        if unit.startswith("week") or unit in ("wk", "w"):
+            # Already in weeks
+            weeks = n
+        elif unit.startswith("month") or unit == "mo":
+            # 1 month ≈ 4 weeks
+            weeks = n * 4
+        elif unit.startswith("year") or unit in ("yr", "y"):
+            # 1 year ≈ 52 weeks
+            weeks = n * 52
+        elif unit.startswith("day") or unit == "d":
+            # 7 days = 1 week (round up)
+            weeks = max(1, (n + 6) // 7)  # Round up to nearest week
+        else:
+            return None
+        
+        return {"periods": weeks, "resample": "W"}
+
     plan = orch.classify(req.message)
-    print("DEBUG|plan_from_classifier:", plan)  # TEMP
+    
+    # Override 1: If user explicitly asked to forecast
+    if forecast_match:
+        parsed = _parse_periods(msg) or {"periods": 4, "resample": "W"}
+        plan = {"response_type": "chart", "tool_names": ["basic_sales_forecast"], "tool_args": parsed}
+    
+    # Override 2: If user asks about correlations/relationships/drivers
+    elif correlation_match:
+        plan = {"response_type": "chart", "tool_names": ["correlation_analysis"], "tool_args": {}}
 
     tool_names: List[str] = plan.get("tool_names") or []
     tool_args: Dict[str, Any] = plan.get("tool_args") or {}
-    print(
-        f"[DEBUG] Tools to run: {tool_names}, Args: {tool_args}"
-    )  # Debug: Check tools and args
 
     allowed_filter_keys = {"date_from","date_to","regions","reps","categories"}
     derived_filters = {k: v for k, v in tool_args.items() if k in allowed_filter_keys}
-    final_filters = {**(derived_filters or {}), **(req.filters or {})}  # explicit req.filters win
+    # Merge filters but only keep allowed keys for data loading
+    merged_filters = {**(derived_filters or {}), **(req.filters or {})}
+    final_filters = {k: v for k, v in merged_filters.items() if k in allowed_filter_keys}
 
 
     def _get_df(tool_name: str):
         try:
             return load_dataframe_for_tool(tool_name, final_filters)
         except Exception as e:
-            print("DEBUG|_get_df tool=", tool_name, "final_filters=", final_filters)
             raise HTTPException(status_code=500, detail=f"Data load failed: {e}")
 
     # 1) Try the LLM plan
@@ -160,10 +196,6 @@ def run_query(req: QueryRequest) -> QueryResponse:
         results, debug = out
     else:
         results, debug = out, []
-    # print(
-    #     f"[DEBUG] Results from LLM plan: {results}, Debug: {debug}"
-    # )  # Debug: Check results from the plan
-
     
     # 2) If empty/mismatched, return guardrail instead of fallback
     if not results:
@@ -177,15 +209,11 @@ def run_query(req: QueryRequest) -> QueryResponse:
             except Exception:
                 pass
         if figs:
-            print(f"[DEBUG] Mock results: {figs}")  # Debug: Check mock results
             # Convert mock results to PlotlyObject format
             plotly_objects = [PlotlyObject(**fig) for fig in figs]
             return QuerySuccessResponse(results=plotly_objects)
 
     if not results:
-        print(
-            f"[DEBUG] Final response: No results found"
-        )  # Debug: Check final error response
         return QueryErrorResponse(message="I'm sorry, I couldn't find that data.")
 
     # Convert results to PlotlyObject format
@@ -193,5 +221,4 @@ def run_query(req: QueryRequest) -> QueryResponse:
         plotly_objects = [PlotlyObject(**result) for result in results]
         return QuerySuccessResponse(results=plotly_objects)
     except Exception as e:
-        print(f"[DEBUG] Error converting results to PlotlyObject: {e}")
         return QueryErrorResponse(message=f"Error formatting results: {str(e)}")

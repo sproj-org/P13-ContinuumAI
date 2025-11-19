@@ -5,7 +5,6 @@ import os, json, importlib, inspect, re
 try:
     import google.generativeai as genai
 except Exception:
-    print("NO LIB FOR GEMINI")
     genai = None
 
 from app.core.config import settings
@@ -27,9 +26,6 @@ class Orchestrator:
         self._gemini_ready = bool(getattr(settings, "GEMINI_API_KEY", "") and genai)
         if self._gemini_ready:
             genai.configure(api_key=settings.GEMINI_API_KEY)
-
-        from app.utils import data_functions as _df
-        print("DEBUG|discovered_tools:", [n for n in dir(_df) if callable(getattr(_df, n)) and not n.startswith("_")])
 
 
     def _build_index(self) -> Dict[str, set]:
@@ -142,9 +138,6 @@ class Orchestrator:
 
     def rank_tools(self, message: str) -> List[Tuple[str, float]]:
         mtoks = set(_tokenize(message))
-        print(
-            f"[DEBUG] Message tokens: {mtoks}"
-        )  # Debug: Check tokens from the message
         scores: List[Tuple[str, float]] = []
         for tname in self._tools.keys():
             ttoks = set(_tokenize(tname))
@@ -188,34 +181,29 @@ class Orchestrator:
             score = float(len(overlap))
             if "by" in mtoks and {"region","regions"} & ttoks: score += 0.5
             if {"trend","monthly","mo","month"} & mtoks and {"trend","month"} & ttoks: score += 0.5
+            # boost forecasting/prediction when the user explicitly asks to predict/forecast
+            if {"predict","prediction","forecast"} & mtoks and {"predict","prediction","forecast"} & ttoks:
+                score += 2.0
+            # boost correlation analysis when user asks about relationships/drivers
+            if {"correlation","correlations","relationship","relationships","driver","drivers","influence","influences","factor","factors"} & mtoks and {"correlation","relationship","driver","influence","factor"} & ttoks:
+                score += 2.0
             if score > 0:
                 scores.append((tname, score))
         return sorted(scores, key=lambda x: x[1], reverse=True)
 
 
     def classify(self, message: str) -> Dict[str, Any]:
-        print(
-            f"[DEBUG] Classifying message: {message}"
-        )  # Debug: Check the input message
         if self._gemini_ready:
             try:
                 model = genai.GenerativeModel(self._model_name)
                 resp = model.generate_content(self._build_classifier_prompt(message))
                 text = resp.text if hasattr(resp, "text") else str(resp)
                 parsed = self._safe_json(text)
-                print(
-                    f"[DEBUG] Gemini classification response: {parsed}"
-                )  # Debug: Check Gemini response
                 if isinstance(parsed, dict) and parsed.get("tool_names"):
                     return parsed
-            except Exception as e:
-                print(
-                    f"[DEBUG] Gemini classification failed: {e}"
-                )  # Debug: Check Gemini errors
+            except Exception:
+                pass
         ranked = self.rank_tools(message)
-        print(
-            f"[DEBUG] Fallback ranked tools: {ranked}"
-        )  # Debug: Check fallback ranking
         if not ranked:
             return {"response_type": "chart", "tool_names": [], "tool_args": {}}
         picks = [n for n, _ in ranked[:2]]

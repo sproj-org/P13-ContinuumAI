@@ -3,7 +3,6 @@ import os
 
 input_file = "database/data/SampleSuperstore.csv"
 
-print("📥 Loading dataset...")
 df = pd.read_csv(input_file, encoding="latin1")
 
 output_dir = "database/data"
@@ -56,6 +55,3 @@ df_sales = df[[
 })
 
 df_sales.to_csv(f"{output_dir}/sales_transactions.csv", index=False)
-
-print("\n✅ Processed CSV files created successfully!")
-print(f"📂 Output directory: {output_dir}")
