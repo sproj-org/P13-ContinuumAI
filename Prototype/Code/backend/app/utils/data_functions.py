@@ -1130,7 +1130,7 @@ def correlation_analysis(
         name.replace("_encoded", "").replace("_", " ").title() 
         for name in top_factors_values.index
     ]
-    corr_values = top_factors_values.values
+    corr_values = top_factors_values.values.tolist()
     
     # Use a gradient color scheme from light to dark based on strength
     colors = ['#636EFA'] * len(corr_values)  # Consistent blue color
