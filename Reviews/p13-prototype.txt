@@ -1,4 +1,4 @@
-SUBMISSION GUIDELINES [90/100]
+SUBMISSION GUIDELINES [66/100]
 
 1. Properly tested working system deployed on an online hosting platform. [30/30 ]
 
@@ -16,6 +16,7 @@ SUBMISSION GUIDELINES [90/100]
 General Comments
 
 Individual grading:
+
 
 
 --------------------------------------------------------
