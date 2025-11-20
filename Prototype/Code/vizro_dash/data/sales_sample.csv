@@ -1,0 +1,11 @@
+﻿date,region,product,category,sales_amount,quantity
+2025-01-01,North,Aurora CRM,Software,12000,18
+2025-01-02,South,Helios ERP,Software,15000,12
+2025-01-03,East,Nimbus Analytics,Services,9000,14
+2025-01-04,West,Aurora CRM,Software,11000,9
+2025-01-05,Central,Atlas Support,Services,8000,16
+2025-01-06,North,Helios ERP,Software,10000,11
+2025-01-07,South,Atlas Support,Services,7000,15
+2025-01-08,East,Aurora CRM,Software,9500,10
+2025-01-09,West,Nimbus Analytics,Services,10500,13
+2025-01-10,Central,Helios ERP,Software,9800,12
