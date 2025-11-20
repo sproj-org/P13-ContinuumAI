@@ -1,0 +1,5 @@
+OrderRef,OppID,ClientID,Date_of_Purchase,location,sales_info,amount_q,unit_count,product_code,category,avg_ord
+3001,OP-3001,CID3001,2025-01-07,"Berlin, DE","Eve|EMEA",1300.00,2,PRD-3001,Hardware,650.00
+3002,OP-3002,CID3002,2025-02-09,"Toronto, CA","Eve|NA",50.00,1,PRD-3002,Accessories,50.00
+3003,OP-3003,CID3003,2025-03-21,"Austin, US","Dan|NA",400.00,4,PRD-3003,Hardware,100.00
+3004,OP-3004,CID3004,2025-04-01,"", "Unknown|APAC",0.00,0,,Samples,

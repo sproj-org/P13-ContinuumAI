@@ -1,0 +1,4 @@
+session_id,timestamp,description,amount_usd,user_email,status,remarks,device,ip_address
+S001,2025-01-01T10:00:00Z,"Broken promo",12.50,user1@example.com,open,"n/a","mobile","1.2.3.4"
+S002,2025-01-03T14:20:00Z,"Feedback",0.00,user2@example.com,closed,"ok","desktop","5.6.7.8"
+S003,2025-02-11T09:10:00Z,"Survey",5.00,user3@example.com,pending,"-","tablet","9.10.11.12"
