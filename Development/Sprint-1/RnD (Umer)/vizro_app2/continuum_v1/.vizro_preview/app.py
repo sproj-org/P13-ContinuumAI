@@ -7,63 +7,99 @@ from vizro import Vizro
 import pandas as pd
 from vizro.managers import data_manager
 import vizro.plotly.express as px
-import numpy as np
 from vizro.models.types import capture
 
 
 ####### Function definitions ######
 @capture("graph")
-def returning_cohort_sales_cycle_distribution(data_frame):
-    import pandas as pd
-    import plotly.express as px
-
-    # Work on a copy to avoid mutating the original
+def mom_revenue_growth_by_channel(data_frame):
+    # Prepare data: month string (YYYY-MM), aggregate revenue by month and channel
     df = data_frame.copy()
+    df["order_date"] = pd.to_datetime(df["order_date"])
+    df["month"] = df["order_date"].dt.to_period("M").astype(str)
 
-    # Ensure dates are parsed and build monthly cohort label
-    df["first_purchase_date"] = pd.to_datetime(
-        df["first_purchase_date"], errors="coerce"
-    )
-    df["cohort_month"] = df["first_purchase_date"].dt.to_period("M").astype(str)
-
-    # Map is_returning (0/1) to human labels
-    df["returning_label"] = df["is_returning"].map({1: "Returning", 0: "New"})
-
-    # Ensure a chronological order for cohorts (helps plotting)
-    cohort_values = df["cohort_month"].dropna().unique().tolist()
-    try:
-        cohort_order = sorted(cohort_values, key=lambda x: pd.Period(x, freq="M"))
-    except Exception:
-        cohort_order = cohort_values
-
-    # Box plot showing distribution of sales_cycle_days per cohort, split by returning status
-    fig = px.box(
-        data_frame=df,
-        x="cohort_month",
-        y="sales_cycle_days",
-        color="returning_label",
-        category_orders={"cohort_month": cohort_order},
-        points="outliers",
-        labels={
-            "cohort_month": "Cohort (first_purchase month)",
-            "sales_cycle_days": "Sales cycle (days)",
-            "returning_label": "Customer type",
-        },
+    monthly = (
+        df.groupby(["month", "channel"], as_index=False)["revenue"]
+        .sum()
+        .rename(columns={"revenue": "monthly_revenue"})
     )
 
-    # Return the Plotly figure
+    # Restrict to the most recent 12 months available in the data
+    months_sorted = sorted(monthly["month"].unique())
+    if len(months_sorted) == 0:
+        raise ValueError("No monthly data available")
+    last_months = months_sorted[-12:]
+    monthly = monthly[monthly["month"].isin(last_months)].copy()
+
+    # convert month to datetime for correct plotting order
+    monthly["month"] = pd.to_datetime(monthly["month"])
+    monthly = monthly.sort_values(["channel", "month"])
+
+    # compute month-over-month percent change per channel (as percent)
+    monthly["mom_pct"] = (
+        monthly.groupby("channel")["monthly_revenue"].pct_change() * 100
+    )
+
+    # Build the line chart: x=month, y=MoM % change, color=channel
+    fig = px.line(
+        data_frame=monthly,
+        x="month",
+        y="mom_pct",
+        color="channel",
+        markers=True,
+        labels={"month": "Month", "mom_pct": "MoM % Change", "channel": "Channel"},
+    )
+
+    # Ensure lines show markers and return the figure
+    fig.update_traces(mode="lines+markers")
     return fig
 
 
 @capture("graph")
-def salesperson_performance_bubble(data_frame):
-    # data_frame: expects the demo_sales.csv loaded into a pandas DataFrame
+def returning_customer_cohort_sales_cycle_distribution(data_frame):
+    # Purpose: show distribution of sales_cycle_days for monthly cohorts (by first_purchase_date)
+    # and split by returning status (is_returning). Uses last 12 months relative to the data.
     df = data_frame.copy()
-    # parse dates
+    # Ensure dates
+    df["first_purchase_date"] = pd.to_datetime(df["first_purchase_date"])
+    # Limit to the most recent 12 months based on first_purchase_date
+    max_date = df["first_purchase_date"].max()
+    cutoff = max_date - pd.DateOffset(months=11)
+    df = df[df["first_purchase_date"] >= cutoff].copy()
+    # Create cohort label as YYYY-MM
+    df["cohort"] = df["first_purchase_date"].dt.to_period("M").astype(str)
+    # Map is_returning to readable label
+    df["returning_label"] = df["is_returning"].map({1: "Returning", 0: "New"})
+    # Order cohorts chronologically
+    cohort_order = sorted(df["cohort"].unique(), key=lambda x: pd.Period(x))
+    df["cohort"] = pd.Categorical(df["cohort"], categories=cohort_order, ordered=True)
+    # Build box plot of sales_cycle_days by cohort, colored by returning status
+    fig = px.box(
+        data_frame=df,
+        x="cohort",
+        y="sales_cycle_days",
+        color="returning_label",
+        points="outliers",
+        labels={
+            "cohort": "Cohort (first_purchase month)",
+            "sales_cycle_days": "Sales cycle (days)",
+            "returning_label": "Customer type",
+        },
+        title="Sales cycle distribution by first-purchase cohort (last 12 months) and returning status",
+    )
+    # Keep legend title clear
+    fig.update_layout(legend_title_text="Customer type")
+    return fig
+
+
+@capture("graph")
+def salesperson_performance_scatter(data_frame):
+    # Ensure dates are parsed and work on a copy
+    df = data_frame.copy()
     df["order_date"] = pd.to_datetime(df["order_date"])
 
-    # base aggregations per salesperson
-    agg = (
+    # Aggregate metrics per salesperson
+    chart_df = (
         df.groupby("salesperson")
         .agg(
             total_revenue=("revenue", "sum"),
@@ -74,105 +110,40 @@ def salesperson_performance_bubble(data_frame):
         .reset_index()
     )
 
-    # Define recent window (last 90 days) and previous 90-day window for trend
-    max_date = df["order_date"].max()
-    recent_start = max_date - pd.Timedelta(days=90)
-    prev_start = recent_start - pd.Timedelta(days=90)
+    # Round numbers for cleaner display
+    chart_df["total_revenue"] = chart_df["total_revenue"].round(2)
+    chart_df["avg_sales_cycle_days"] = chart_df["avg_sales_cycle_days"].round(1)
+    chart_df["avg_aov"] = chart_df["avg_aov"].round(2)
 
-    recent = (
-        df[(df["order_date"] > recent_start) & (df["order_date"] <= max_date)]
-        .groupby("salesperson")["revenue"]
-        .sum()
-        .reset_index()
-        .rename(columns={"revenue": "revenue_recent"})
-    )
-
-    prev = (
-        df[(df["order_date"] > prev_start) & (df["order_date"] <= recent_start)]
-        .groupby("salesperson")["revenue"]
-        .sum()
-        .reset_index()
-        .rename(columns={"revenue": "revenue_prev"})
-    )
-
-    # Merge everything into one DataFrame for charting
-    chart_df = agg.merge(recent, on="salesperson", how="left").merge(
-        prev, on="salesperson", how="left"
-    )
-    chart_df["revenue_recent"] = chart_df["revenue_recent"].fillna(0)
-    chart_df["revenue_prev"] = chart_df["revenue_prev"].fillna(0)
-
-    # percent change vs previous window (NaN when previous is zero)
-    chart_df["pct_change_recent"] = np.where(
-        chart_df["revenue_prev"] > 0,
-        (chart_df["revenue_recent"] - chart_df["revenue_prev"])
-        / chart_df["revenue_prev"],
-        np.nan,
-    )
-
-    # Build bubble scatter: x = avg sales cycle, y = avg AOV, size = total revenue, color = deals
+    # Create scatter: x = average sales cycle, y = total revenue, size = number of deals
     fig = px.scatter(
         data_frame=chart_df,
         x="avg_sales_cycle_days",
-        y="avg_aov",
-        size="total_revenue",
-        color="deals",
+        y="total_revenue",
+        size="deals",
+        color="salesperson",
         hover_data=[
             "salesperson",
-            "total_revenue",
             "deals",
-            "avg_sales_cycle_days",
             "avg_aov",
-            "revenue_recent",
-            "revenue_prev",
-            "pct_change_recent",
+            "avg_sales_cycle_days",
+            "total_revenue",
         ],
         labels={
-            "avg_sales_cycle_days": "Avg Sales Cycle (days)",
-            "avg_aov": "Avg Order Value (AOV)",
-            "total_revenue": "Total Revenue",
-            "deals": "Number of Deals",
+            "avg_sales_cycle_days": "Avg sales_cycle_days",
+            "total_revenue": "Total revenue (USD)",
+            "deals": "Number of deals",
         },
+        title="Salesperson performance: revenue vs. sales cycle (point size = deals)",
     )
 
-    # Improve marker styling
-    fig.update_traces(
-        marker=dict(opacity=0.85, line={"width": 0.5, "color": "DarkSlateGrey"})
-    )
-
-    # Add reference mean lines so viewers can quickly see above/below average for both axes
-    mean_x = chart_df["avg_sales_cycle_days"].mean()
-    mean_y = chart_df["avg_aov"].mean()
-    fig.add_shape(
-        type="line",
-        x0=mean_x,
-        x1=mean_x,
-        y0=chart_df["avg_aov"].min(),
-        y1=chart_df["avg_aov"].max(),
-        line=dict(dash="dash", width=1),
-    )
-    fig.add_shape(
-        type="line",
-        x0=chart_df["avg_sales_cycle_days"].min(),
-        x1=chart_df["avg_sales_cycle_days"].max(),
-        y0=mean_y,
-        y1=mean_y,
-        line=dict(dash="dash", width=1),
-    )
-
-    # Axis titles
-    fig.update_layout(
-        xaxis_title="Average Sales Cycle (days)",
-        yaxis_title="Average Order Value (AOV)",
-        legend_title="Number of Deals",
-    )
-
+    # Keep axis ranges automatic; return figure for Vizro to render
     return fig
 
 
 ####### Data Manager Settings #####
 data_manager["demo_sales.csv"] = pd.read_csv(
-    "C:/Users/Umer/Desktop/SPROJ/P13-ContinuumAI/Prototype/Code/vizro_app2/continuum_v1/data/demo_sales.csv"
+    "C:/Users/Umer/Desktop/SPROJ/P13-ContinuumAI/Development/Sprint-1/RnD (Umer)/vizro_app2/continuum_v1/data/demo_sales.csv"
 )
 
 ########### Model code ############
@@ -189,9 +160,9 @@ model = vm.Dashboard(
                             type="container",
                             components=[
                                 vm.Card(
-                                    id="shortest_avg_sales_cycle_cohort_card",
+                                    id="services_drop_flags_card",
                                     type="card",
-                                    text="### Shortest average sales cycle\n**Cohort:** 2025-01  \n**Customer type:** New  \n**Average sales cycle (days):** 2.00  \n**Orders in cohort:** 1",
+                                    text="### Services revenue drop alerts\n- Count: 3\n- Months: 2024-12, 2025-01, 2025-06",
                                     extra={
                                         "style": {
                                             "textAlign": "center",
@@ -207,9 +178,27 @@ model = vm.Dashboard(
                                     },
                                 ),
                                 vm.Card(
-                                    id="recommended_high_value_rep_card",
+                                    id="recommend_high_value_salesperson_card_card",
                                     type="card",
-                                    text="### Recommended rep to focus on high-value products\n**Bob** — Total revenue: $822,051, Avg AOV: $7,275, Deals: 113, Recent revenue change: 246.5%\n\nReason: High AOV (>=75th pct) and positive recent revenue trend (246.5%).",
+                                    text="### Recommendation\nBob — recommended to focus on high-value products.\n\nReason: recent average AOV = $6,928.69, which is 24.5% higher than the prior 90-day window,\nand their overall average AOV ($7,274.79) is above the team median ($6,670.57).",
+                                    extra={
+                                        "style": {
+                                            "textAlign": "center",
+                                            "display": "flex",
+                                            "flexDirection": "column",
+                                            "justifyContent": "center",
+                                            "alignItems": "center",
+                                            "minHeight": "140px",
+                                            "flex": "1 1 calc(50% - 12px)",
+                                            "minWidth": "240px",
+                                        },
+                                        "className": "text-center kpi-card",
+                                    },
+                                ),
+                                vm.Card(
+                                    id="shortest_avg_sales_cycle_cohort_card",
+                                    type="card",
+                                    text="### Cohort with shortest avg sales cycle\n**2025-10** — 8.8 days (average)",
                                     extra={
                                         "style": {
                                             "textAlign": "center",
@@ -234,12 +223,12 @@ model = vm.Dashboard(
                             type="container",
                             components=[
                                 vm.Graph(
-                                    id="returning_cohort_sales_cycle_distribution_component",
+                                    id="mom_revenue_growth_by_channel_component",
                                     type="graph",
-                                    figure=returning_cohort_sales_cycle_distribution(
+                                    figure=mom_revenue_growth_by_channel(
                                         data_frame="demo_sales.csv"
                                     ),
-                                    title="Returning Cohort Sales Cycle Distribution",
+                                    title="Mom Revenue Growth By Channel",
                                     extra={
                                         "style": {
                                             "flex": "1 1 100%",
@@ -251,12 +240,29 @@ model = vm.Dashboard(
                                     },
                                 ),
                                 vm.Graph(
-                                    id="salesperson_performance_bubble_component",
+                                    id="salesperson_performance_scatter_component",
                                     type="graph",
-                                    figure=salesperson_performance_bubble(
+                                    figure=salesperson_performance_scatter(
                                         data_frame="demo_sales.csv"
                                     ),
-                                    title="Salesperson Performance Bubble",
+                                    title="Salesperson Performance Scatter",
+                                    extra={
+                                        "style": {
+                                            "flex": "1 1 100%",
+                                            "width": "100%",
+                                            "minWidth": "100%",
+                                            "height": "100%",
+                                        },
+                                        "className": "stretch-graph",
+                                    },
+                                ),
+                                vm.Graph(
+                                    id="returning_customer_cohort_sales_cycle_distribution_component",
+                                    type="graph",
+                                    figure=returning_customer_cohort_sales_cycle_distribution(
+                                        data_frame="demo_sales.csv"
+                                    ),
+                                    title="Returning Customer Cohort Sales Cycle Distribution",
                                     extra={
                                         "style": {
                                             "flex": "1 1 100%",
