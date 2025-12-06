@@ -12,51 +12,6 @@ from vizro.models.types import capture
 
 ####### Function definitions ######
 @capture("graph")
-def salesperson_performance_bubble_chart(data_frame):
-    # Compare each salesperson by total revenue, number of deals, avg sales_cycle_days, and AOV
-    df = data_frame.copy()
-    # ensure order_date is parsed if needed (not used in this aggregation but safe)
-    df["order_date"] = pd.to_datetime(df["order_date"])
-
-    # Aggregate per salesperson with unique column names
-    agg_df = (
-        df.groupby("salesperson")
-        .agg(
-            total_revenue=("revenue", "sum"),
-            num_deals=("order_id", "nunique"),
-            avg_sales_cycle_days=("sales_cycle_days", "mean"),
-            avg_aov=("aov", "mean"),
-        )
-        .reset_index()
-    )
-
-    # Create bubble scatter: x=avg sales cycle days, y=avg AOV, size=total revenue, color=num_deals
-    fig = px.scatter(
-        data_frame=agg_df,
-        x="avg_sales_cycle_days",
-        y="avg_aov",
-        size="total_revenue",
-        color="num_deals",
-        hover_data=[
-            "salesperson",
-            "total_revenue",
-            "num_deals",
-            "avg_sales_cycle_days",
-            "avg_aov",
-        ],
-        labels={
-            "avg_sales_cycle_days": "Avg Sales Cycle (days)",
-            "avg_aov": "Average Order Value",
-            "num_deals": "Number of Deals",
-            "total_revenue": "Total Revenue",
-        },
-    )
-
-    # Return the plotly figure for Vizro to render
-    return fig
-
-
-@capture("graph")
 def mom_revenue_growth_by_channel(data_frame):
     import pandas as pd
     import plotly.express as px
@@ -157,6 +112,91 @@ def mom_revenue_growth_by_channel(data_frame):
     return fig
 
 
+@capture("graph")
+def returning_customer_cohort_sales_cycle_distribution(data_frame):
+    # Prepare a working copy and ensure dates are datetimes
+    df = data_frame.copy()
+    df["first_purchase_date"] = pd.to_datetime(df["first_purchase_date"])
+
+    # Create cohort month (YYYY-MM) based on first_purchase_date
+    df["cohort_month"] = df["first_purchase_date"].dt.to_period("M").astype(str)
+
+    # Limit to the most recent 12 months of first_purchase_date to keep the cohort view focused
+    max_date = df["first_purchase_date"].max()
+    cutoff = (max_date - pd.DateOffset(months=11)).replace(day=1)
+    df = df[df["first_purchase_date"] >= cutoff]
+
+    # Friendly labels for returning status
+    df["returning_label"] = df["is_returning"].map({1: "Returning", 0: "New"})
+
+    # Ensure cohorts are ordered chronologically on the x-axis
+    cohort_order = sorted(df["cohort_month"].unique())
+
+    # Build violin plot: distribution of sales_cycle_days by cohort, segmented by returning/new
+    fig = px.violin(
+        data_frame=df,
+        x="cohort_month",
+        y="sales_cycle_days",
+        color="returning_label",
+        box=True,
+        points="outliers",
+        labels={
+            "cohort_month": "Cohort (first_purchase_month)",
+            "sales_cycle_days": "Sales Cycle Days",
+            "returning_label": "Customer Type",
+        },
+        category_orders={"cohort_month": cohort_order},
+    )
+
+    # Return the figure for rendering in the dashboard
+    return fig
+
+
+@capture("graph")
+def salesperson_performance_bubble_chart(data_frame):
+    # Compare each salesperson by total revenue, number of deals, avg sales_cycle_days, and AOV
+    df = data_frame.copy()
+    # ensure order_date is parsed if needed (not used in this aggregation but safe)
+    df["order_date"] = pd.to_datetime(df["order_date"])
+
+    # Aggregate per salesperson with unique column names
+    agg_df = (
+        df.groupby("salesperson")
+        .agg(
+            total_revenue=("revenue", "sum"),
+            num_deals=("order_id", "nunique"),
+            avg_sales_cycle_days=("sales_cycle_days", "mean"),
+            avg_aov=("aov", "mean"),
+        )
+        .reset_index()
+    )
+
+    # Create bubble scatter: x=avg sales cycle days, y=avg AOV, size=total revenue, color=num_deals
+    fig = px.scatter(
+        data_frame=agg_df,
+        x="avg_sales_cycle_days",
+        y="avg_aov",
+        size="total_revenue",
+        color="num_deals",
+        hover_data=[
+            "salesperson",
+            "total_revenue",
+            "num_deals",
+            "avg_sales_cycle_days",
+            "avg_aov",
+        ],
+        labels={
+            "avg_sales_cycle_days": "Avg Sales Cycle (days)",
+            "avg_aov": "Average Order Value",
+            "num_deals": "Number of Deals",
+            "total_revenue": "Total Revenue",
+        },
+    )
+
+    # Return the plotly figure for Vizro to render
+    return fig
+
+
 ####### Data Manager Settings #####
 data_manager["demo_sales.csv"] = pd.read_csv(
     "C:/Users/Umer/Desktop/SPROJ/P13-ContinuumAI/Development/Sprint-1/RnD (Umer)/vizro_app2/continuum_v1/data/demo_sales.csv"
@@ -197,6 +237,24 @@ model = vm.Dashboard(
                                     id="salesperson_high_value_recommendation_card",
                                     type="card",
                                     text="### Recommendation\nSalespeople with above-median AOV and non-declining recent monthly revenue.\n\nTop picks to focus on high-value products:\n- **Eve** — Recent AOV: $7,179, Recent revenue (90d): $452,252, Last-month change: 305%\n- **Bob** — Recent AOV: $6,929, Recent revenue (90d): $443,436, Last-month change: 173%\n- **Alice** — Recent AOV: $6,175, Recent revenue (90d): $494,006, Last-month change: 14%\n\nNotes: Consider pairing the recommended salespeople with premium product training and targeted high-value product bundles. If a recommended salesperson has a high sales cycle, ensure they have resources to accelerate decisioning for bigger deals.",
+                                    extra={
+                                        "style": {
+                                            "textAlign": "center",
+                                            "display": "flex",
+                                            "flexDirection": "column",
+                                            "justifyContent": "center",
+                                            "alignItems": "center",
+                                            "minHeight": "140px",
+                                            "flex": "1 1 calc(50% - 12px)",
+                                            "minWidth": "240px",
+                                        },
+                                        "className": "text-center kpi-card",
+                                    },
+                                ),
+                                vm.Card(
+                                    id="cohort_shortest_avg_cycle_card_card",
+                                    type="card",
+                                    text="### Shortest average sales cycle\nCohort: **2025-01** (New)  \nAverage sales_cycle_days: **2.0 days**  \nOrders in cohort: **1**",
                                     extra={
                                         "style": {
                                             "textAlign": "center",
@@ -254,6 +312,23 @@ model = vm.Dashboard(
                                         "className": "stretch-graph",
                                     },
                                 ),
+                                vm.Graph(
+                                    id="returning_customer_cohort_sales_cycle_distribution_component",
+                                    type="graph",
+                                    figure=returning_customer_cohort_sales_cycle_distribution(
+                                        data_frame="demo_sales.csv"
+                                    ),
+                                    title="Returning Customer Cohort Sales Cycle Distribution",
+                                    extra={
+                                        "style": {
+                                            "flex": "1 1 100%",
+                                            "width": "100%",
+                                            "minWidth": "100%",
+                                            "height": "100%",
+                                        },
+                                        "className": "stretch-graph",
+                                    },
+                                ),
                             ],
                             layout=vm.Flex(
                                 type="flex", direction="column", gap="24px", wrap=False
@@ -264,7 +339,34 @@ model = vm.Dashboard(
                 )
             ],
             title="Overview",
-            controls=[],
+            controls=[
+                vm.Filter(
+                    id="filter_1_salesperson",
+                    type="filter",
+                    column="salesperson",
+                    targets=["salesperson_performance_bubble_chart_component"],
+                    selector=vm.Dropdown(
+                        type="dropdown", multi=True, title="Salesperson filter"
+                    ),
+                    show_in_url=False,
+                    visible=True,
+                ),
+                vm.Filter(
+                    id="filter_2_product_name",
+                    type="filter",
+                    column="product_name",
+                    targets=[
+                        "mom_revenue_growth_by_channel_component",
+                        "salesperson_performance_bubble_chart_component",
+                        "returning_customer_cohort_sales_cycle_distribution_component",
+                    ],
+                    selector=vm.Dropdown(
+                        type="dropdown", multi=True, title="Product Name filter"
+                    ),
+                    show_in_url=False,
+                    visible=True,
+                ),
+            ],
         )
     ],
     theme="vizro_dark",
