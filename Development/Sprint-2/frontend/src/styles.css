@@ -188,6 +188,25 @@ textarea {
 .chart-shell {
   width: 100%;
 }
+.chart-qa {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.chart-qa input {
+  flex: 1;
+}
+.chart-answers {
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px solid #1f2937;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1.4;
+}
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

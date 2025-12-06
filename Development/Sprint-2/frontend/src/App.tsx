@@ -3,7 +3,7 @@ import axios from "axios";
 import { FiltersBar } from "./components/FiltersBar";
 import { ChatPanel } from "./components/ChatPanel";
 import { KPIGrid } from "./components/KPIGrid";
-import { PlotlyChart } from "./components/PlotlyChart";
+import { ChartCard } from "./components/ChartCard";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
@@ -27,6 +27,8 @@ export default function App() {
   const [lastPrompt, setLastPrompt] = useState<string>("");
   const [baselineResults, setBaselineResults] = useState<PlotlyObject[]>([]);
   const [baselineKpis, setBaselineKpis] = useState<Kpi[]>([]);
+  const [debugHistory, setDebugHistory] = useState<string[]>([]);
+  const [chartAnswers, setChartAnswers] = useState<Record<string, string[]>>({});
 
   const extractCodeFromDebug = (debug: any): string => {
     if (!Array.isArray(debug) || !debug.length) return "";
@@ -83,13 +85,24 @@ export default function App() {
         { headers: { "Content-Type": "application/json", ...authHeader } }
       );
       if (res.data.status === "success") {
-        setResults(res.data.results || []);
-        setKpis(res.data.kpis || []);
+        const safeResults = res.data.results ? JSON.parse(JSON.stringify(res.data.results)) : [];
+        const safeKpis = res.data.kpis ? JSON.parse(JSON.stringify(res.data.kpis)) : [];
+        setResults(safeResults);
+        setKpis(safeKpis);
         const dbg = res.data?.meta?.debug;
-        if (dbg) setDebugText(extractCodeFromDebug(dbg) || debugText);
-        if (dbg) setBaselineDebug(extractCodeFromDebug(dbg) || debugText);
-        setBaselineResults(res.data.results || []);
-        setBaselineKpis(res.data.kpis || []);
+        const codes = res.data?.meta?.debug_codes || [];
+        const codeBlock = dbg ? extractCodeFromDebug(dbg) : "";
+        if (codes.length) {
+          setDebugHistory((prev) => [...prev, ...codes]);
+          setDebugText([...debugHistory, ...codes].filter(Boolean).join("\n\n"));
+          setBaselineDebug([...debugHistory, ...codes].filter(Boolean).join("\n\n"));
+        } else if (codeBlock) {
+          setDebugHistory((prev) => [...prev, codeBlock]);
+          setDebugText([...debugHistory, codeBlock].join("\n\n"));
+          setBaselineDebug([...debugHistory, codeBlock].join("\n\n"));
+        }
+        setBaselineResults(safeResults);
+        setBaselineKpis(safeKpis);
         const parsedReply = res.data?.meta?.debug?.[0]?.parsed?.reply || res.data?.meta?.debug?.[0]?.raw;
         setMessages((prev) => [
           ...prev,
@@ -121,8 +134,8 @@ export default function App() {
     const isEmptyFilters = !payload || Object.keys(payload).length === 0;
     if (isEmptyFilters) {
       // Restore baseline visuals when filters are cleared
-      setResults(baselineResults);
-      setKpis(baselineKpis);
+      setResults(JSON.parse(JSON.stringify(baselineResults)));
+      setKpis(JSON.parse(JSON.stringify(baselineKpis)));
       setDebugText(baselineDebug || debugText);
       return;
     }
@@ -142,11 +155,29 @@ export default function App() {
         setResults(res.data.results || []);
         setKpis(res.data.kpis || []);
         const dbg = res.data?.meta?.debug;
-        if (dbg) setDebugText(extractCodeFromDebug(dbg) || debugText);
+        const codes = res.data?.meta?.debug_codes || [];
+        const codeBlock = dbg ? extractCodeFromDebug(dbg) : "";
+        if (codes.length) {
+          setDebugHistory((prev) => [...prev, ...codes]);
+          setDebugText([...debugHistory, ...codes].filter(Boolean).join("\n\n"));
+        } else if (codeBlock) {
+          setDebugHistory((prev) => [...prev, codeBlock]);
+          setDebugText([...debugHistory, codeBlock].join("\n\n"));
+        } else {
+          setDebugText(baselineDebug || debugText);
+        }
       } else {
         const dbg = res.data?.meta?.debug;
         setError(res.data?.message || "No results returned");
-        if (dbg) setDebugText(extractCodeFromDebug(dbg) || debugText);
+        const codes = res.data?.meta?.debug_codes || [];
+        const codeBlock = dbg ? extractCodeFromDebug(dbg) : "";
+        if (codes.length) {
+          setDebugHistory((prev) => [...prev, ...codes]);
+          setDebugText([...debugHistory, ...codes].filter(Boolean).join("\n\n"));
+        } else if (codeBlock) {
+          setDebugHistory((prev) => [...prev, codeBlock]);
+          setDebugText([...debugHistory, codeBlock].join("\n\n"));
+        }
       }
     } catch (e: any) {
       setError(e?.response?.data?.detail || e.message || "Filter refresh failed");
@@ -160,6 +191,30 @@ export default function App() {
     setError("");
     // re-render existing charts without filters
     applyFilters({});
+  };
+
+  const askAboutChart = async (chartId: string, question: string) => {
+    try {
+      const res = await axios.post(
+        `${API_BASE}/question`,
+        { chart_id: chartId, question },
+        { headers: { "Content-Type": "application/json", ...authHeader } }
+      );
+      const answer = res.data?.answer || res.data?.message || "No answer returned.";
+      setChartAnswers((prev) => ({
+        ...prev,
+        [chartId]: [...(prev[chartId] || []), answer],
+      }));
+      setMessages((prev) => [...prev, { role: "assistant", content: answer }]);
+      return answer;
+    } catch (e: any) {
+      const msg = e?.response?.data?.detail || e.message || "Question failed";
+      setChartAnswers((prev) => ({
+        ...prev,
+        [chartId]: [...(prev[chartId] || []), msg],
+      }));
+      return msg;
+    }
   };
 
   return (
@@ -210,9 +265,13 @@ export default function App() {
             <div className="stack">
               {results.map((chart, idx) =>
                 chart.type === "kpi" ? null : (
-                  <div key={idx} className="card chart">
-                    <PlotlyChart chartData={chart} chartId={`chart-${idx}`} />
-                  </div>
+                  <ChartCard
+                    key={idx}
+                    chart={chart}
+                    chartId={`chart-${idx}`}
+                    onAsk={askAboutChart}
+                    answers={chartAnswers[`chart-${idx}`]}
+                  />
                 )
               )}
             </div>

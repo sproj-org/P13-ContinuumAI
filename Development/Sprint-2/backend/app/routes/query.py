@@ -6,6 +6,8 @@ import pandas as pd
 from pydantic import BaseModel, Field
 from app.services.data_loader import load_data, list_filters
 from app.services.llm_vizro import call_vizro_llm, extract_json
+from app.services.profiler import profile_dataframe
+from app.services.vizro_client import call_vizro, run_async, serialize_result
 from app.state import (
     CUSTOM_CHARTS,
     CARD_COMPONENTS,
@@ -142,6 +144,19 @@ def _register_card(card_plan: Dict[str, Any], body: str):
     CARD_PLANS.append(card_plan)
 
 
+def _collect_all_plan_codes() -> List[str]:
+    codes: List[str] = []
+    for plan in CUSTOM_CHARTS:
+        code = plan.get("chart_code")
+        if code:
+            codes.append(code)
+    for plan in CARD_PLANS:
+        code = plan.get("card_code")
+        if code:
+            codes.append(code)
+    return codes
+
+
 def _render_all_plans(df: pd.DataFrame):
     """Re-render all cached charts/cards for the current dataframe."""
     results: List[Dict[str, Any]] = []
@@ -173,6 +188,7 @@ def _render_all_plans(df: pd.DataFrame):
 @router.post("/query", response_model=QueryResponse)
 def run_query(req: QueryRequest, user=Depends(get_current_user)):
     df = load_data(req.filters or {})
+    profile = profile_dataframe(df)
     results: List[Dict[str, Any]] = []
     kpis: List[Dict[str, Any]] = []
     debug: List[Dict[str, Any]] = []
@@ -230,11 +246,44 @@ def run_query(req: QueryRequest, user=Depends(get_current_user)):
             pd.Period: lambda v: str(v),
         },
     )
+    # Build a simple Vizro dashboard config for MCP validation (cards then charts)
+    components: List[Dict[str, Any]] = []
+    cards = [c for c in DASHBOARD_COMPONENTS if c.get("type") == "card"]
+    charts = [c for c in DASHBOARD_COMPONENTS if c.get("type") == "graph"]
+    if cards:
+        components.append({"type": "container", "id": "kpi_wrap", "layout": {"type": "flex", "direction": "row", "wrap": True, "gap": "12px"}, "components": cards})
+    if charts:
+        components.append({"type": "container", "id": "chart_wrap", "layout": {"type": "flex", "direction": "column", "wrap": False, "gap": "16px"}, "components": charts})
+    dashboard_config = {
+        "title": "Dashboard",
+        "theme": "vizro_dark",
+        "pages": [
+            {
+                "title": "Page 1",
+                "controls": [],
+                "components": components or [],
+            }
+        ],
+    }
+
+    validation = None
+    try:
+        args = {
+            "dashboard_config": dashboard_config,
+            "data_infos": [profile],
+            "custom_charts": CUSTOM_CHARTS,
+            "auto_open": False,
+        }
+        validation = serialize_result(run_async(call_vizro("validate_dashboard_config", args)))
+    except Exception as exc:
+        validation = {"error": f"validation_failed: {exc}"}
+    debug.append({"validation": validation})
+
     return QueryResponse(
         status="success",
         results=enc(GENERATED_RESULTS or all_results),
         kpis=enc(GENERATED_KPIS or all_kpis),
-        meta={"debug": debug},
+        meta={"debug": debug, "debug_codes": _collect_all_plan_codes(), "validation": validation},
     )
 
 
@@ -267,5 +316,60 @@ def refresh_existing(user=Depends(get_current_user), req: RefreshRequest = None)
         status="success",
         results=enc(results),
         kpis=enc(kpis),
-        meta={"debug": debug},
+        meta={"debug": debug, "debug_codes": _collect_all_plan_codes()},
     )
+
+
+class QuestionRequest(BaseModel):
+    chart_id: Optional[str] = None
+    question: str
+    filters: Optional[Dict[str, Any]] = None
+
+
+@router.post("/question")
+def ask_question(req: QuestionRequest, user=Depends(get_current_user)):
+    df = load_data(req.filters or {})
+    profile = profile_dataframe(df)
+    # Try to fetch chart cache; if chart_id not provided, take first entry.
+    cache = CHART_DATA_CACHE or {}
+    cache_df = None
+    if req.chart_id and req.chart_id in cache and isinstance(cache[req.chart_id], dict):
+        cache_df = cache[req.chart_id].get("dataframe")
+    if cache_df is None and cache:
+        first = next(iter(cache.values()))
+        if isinstance(first, dict):
+            cache_df = first.get("dataframe")
+
+    chart_context = ""
+    if isinstance(cache_df, pd.DataFrame):
+        chart_context = cache_df.head(20).to_markdown(index=False)
+
+    system_prompt = f"""
+You are a data analyst with access to the dataset and cached chart data.
+
+Chart sample (if available):
+{chart_context or 'No chart data cached.'}
+
+Dataset summary:
+Columns: {profile.get('column_names_types')}
+Stats: {profile.get('stats')}
+
+Answer the user's question concisely. If the question can be answered from the chart data, prioritize that. Otherwise, use the dataset summary to guide your answer. Return only plain text.
+""".strip()
+
+    try:
+        from openai import OpenAI
+        import httpx
+
+        client = OpenAI(http_client=httpx.Client())
+        resp = client.chat.completions.create(
+            model="gpt-5-mini",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": req.question},
+            ],
+        )
+        answer = resp.choices[0].message.content or "No answer returned."
+        return {"status": "success", "answer": answer}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Question failed: {exc}")

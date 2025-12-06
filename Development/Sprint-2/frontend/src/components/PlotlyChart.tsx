@@ -17,7 +17,12 @@ export function PlotlyChart({ chartData, chartId }: Props) {
     font: { color: "#e2e8f0", family: "Inter, 'Helvetica Neue', Arial, sans-serif" },
     autosize: true,
     margin: { l: 70, r: 40, t: 60, b: 60, ...(baseLayout as any).margin },
-    hoverlabel: { bgcolor: "#111827", bordercolor: "#1f2937" },
+    hoverlabel: {
+      bgcolor: "#0f172a",
+      bordercolor: "#1f2937",
+      font: { color: "#f1f5f9", family: "Inter, 'Helvetica Neue', Arial, sans-serif" },
+      ...(baseLayout as any).hoverlabel,
+    },
     ...baseLayout,
   };
 
