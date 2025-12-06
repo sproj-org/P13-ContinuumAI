@@ -197,10 +197,12 @@ textarea {
 .kpi h4 {
   margin: 0 0 6px;
 }
-.kpi p {
+.kpi-body {
   margin: 0;
   color: #cbd5e1;
   font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
 }
 .chat-panel textarea {
   min-height: 120px;
@@ -287,9 +289,13 @@ textarea {
   padding: 8px;
   font-size: 12px;
   color: #cbd5e1;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 .debug-drawer {
   margin-top: 16px;
+  max-height: 420px;
+  overflow: auto;
 }
 .debug-title {
   font-weight: 700;

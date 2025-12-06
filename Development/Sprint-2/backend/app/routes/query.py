@@ -9,6 +9,7 @@ from app.services.llm_vizro import call_vizro_llm, extract_json
 from app.state import (
     CUSTOM_CHARTS,
     CARD_COMPONENTS,
+    CARD_PLANS,
     DASHBOARD_COMPONENTS,
     FILTERS,
     CHART_DATA_CACHE,
@@ -137,6 +138,36 @@ def _register_card(card_plan: Dict[str, Any], body: str):
     }
     CARD_COMPONENTS[:] = [c for c in CARD_COMPONENTS if c.get("id") != card_component["id"]]
     CARD_COMPONENTS.append(card_component)
+    CARD_PLANS[:] = [cp for cp in CARD_PLANS if cp.get("card_name") != card_name]
+    CARD_PLANS.append(card_plan)
+
+
+def _render_all_plans(df: pd.DataFrame):
+    """Re-render all cached charts/cards for the current dataframe."""
+    results: List[Dict[str, Any]] = []
+    kpis: List[Dict[str, Any]] = []
+    debug: List[Dict[str, Any]] = []
+
+    for plan in CUSTOM_CHARTS:
+        try:
+            fig_json = _execute_plan(plan, df, expect_figure=True)
+            if fig_json:
+                results.append(fig_json)
+        except Exception as e:
+            debug.append({"chart_refresh_error": str(e), "chart_code": plan.get("chart_code")})
+
+    for plan in CARD_PLANS:
+        try:
+            card_out = _execute_plan(plan, df, expect_figure=False)
+            if isinstance(card_out, dict):
+                body = card_out.get("text", "")
+            else:
+                body = str(card_out)
+            kpis.append({"type": "kpi", "title": plan.get("card_name", "KPI"), "body": body})
+        except Exception as e:
+            debug.append({"card_refresh_error": str(e), "card_code": plan.get("card_code")})
+
+    return results, kpis, debug
 
 
 @router.post("/query", response_model=QueryResponse)
@@ -180,9 +211,15 @@ def run_query(req: QueryRequest, user=Depends(get_current_user)):
     else:
         debug.append({"card_plan_missing": True})
 
-    # accumulate like vizro app file regeneration
-    GENERATED_RESULTS.extend(results)
-    GENERATED_KPIS.extend(kpis)
+    # Re-render all plans (old + new) so the frontend gets the full dashboard
+    all_results, all_kpis, refresh_debug = _render_all_plans(df)
+    debug.extend(refresh_debug)
+    if all_results:
+        GENERATED_RESULTS.clear()
+        GENERATED_RESULTS.extend(all_results)
+    if all_kpis:
+        GENERATED_KPIS.clear()
+        GENERATED_KPIS.extend(all_kpis)
 
     sanitized_results = _sanitize(GENERATED_RESULTS)
     sanitized_kpis = _sanitize(GENERATED_KPIS)
@@ -195,7 +232,40 @@ def run_query(req: QueryRequest, user=Depends(get_current_user)):
     )
     return QueryResponse(
         status="success",
-        results=enc(sanitized_results),
-        kpis=enc(sanitized_kpis),
+        results=enc(GENERATED_RESULTS or all_results),
+        kpis=enc(GENERATED_KPIS or all_kpis),
+        meta={"debug": debug},
+    )
+
+
+class RefreshRequest(BaseModel):
+    filters: Optional[Dict[str, Any]] = None
+
+
+@router.post("/refresh", response_model=QueryResponse)
+def refresh_existing(user=Depends(get_current_user), req: RefreshRequest = None):
+    """Re-run cached chart/card plans against new filters without a fresh LLM call."""
+    if not CUSTOM_CHARTS and not CARD_PLANS:
+        raise HTTPException(status_code=400, detail="No charts or KPIs to refresh. Run a query first.")
+    filters = (req.filters if req else None) or {}
+    df = load_data(filters)
+    results, kpis, debug = _render_all_plans(df)
+
+    GENERATED_RESULTS.clear()
+    GENERATED_RESULTS.extend(results)
+    GENERATED_KPIS.clear()
+    GENERATED_KPIS.extend(kpis)
+
+    enc = lambda obj: jsonable_encoder(
+        _sanitize(obj),
+        custom_encoder={
+            np.ndarray: lambda v: v.tolist(),
+            pd.Period: lambda v: str(v),
+        },
+    )
+    return QueryResponse(
+        status="success",
+        results=enc(results),
+        kpis=enc(kpis),
         meta={"debug": debug},
     )

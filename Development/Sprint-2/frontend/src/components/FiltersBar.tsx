@@ -138,11 +138,25 @@ export function FiltersBar({ options, filters, onChange, onApply, onReset, selec
         </div>
       </div>
       <div className="filter-actions">
-        <button className="btn" onClick={onApply}>
+        <button
+          className="btn"
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            onApply();
+          }}
+        >
           Apply filters
         </button>
-        <button className="btn ghost" type="button" onClick={onReset}>
-          Clear filters & dashboard
+        <button
+          className="btn ghost"
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            onReset();
+          }}
+        >
+          Clear filters
         </button>
       </div>
     </div>

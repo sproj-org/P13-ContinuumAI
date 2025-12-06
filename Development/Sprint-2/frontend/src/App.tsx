@@ -22,7 +22,21 @@ export default function App() {
   const [token, setToken] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [debugText, setDebugText] = useState<string>("");
+  const [baselineDebug, setBaselineDebug] = useState<string>("");
   const [showDebug, setShowDebug] = useState<boolean>(false);
+  const [lastPrompt, setLastPrompt] = useState<string>("");
+  const [baselineResults, setBaselineResults] = useState<PlotlyObject[]>([]);
+  const [baselineKpis, setBaselineKpis] = useState<Kpi[]>([]);
+
+  const extractCodeFromDebug = (debug: any): string => {
+    if (!Array.isArray(debug) || !debug.length) return "";
+    const first = debug[0] || {};
+    const parsed = first.parsed || {};
+    const codeParts: string[] = [];
+    if (parsed.chart_plan?.chart_code) codeParts.push(parsed.chart_plan.chart_code);
+    if (parsed.card_plan?.card_code) codeParts.push(parsed.card_plan.card_code);
+    return codeParts.join("\n\n").trim();
+  };
 
   // Demo auth: auto-login/register demo user once
   useEffect(() => {
@@ -59,6 +73,7 @@ export default function App() {
 
   const runQuery = async (prompt: string, overrideFilters?: any) => {
     setMessages((prev) => [...prev, { role: "user", content: prompt }]);
+    setLastPrompt(prompt);
     setLoading(true);
     setError("");
     try {
@@ -71,14 +86,19 @@ export default function App() {
         setResults(res.data.results || []);
         setKpis(res.data.kpis || []);
         const dbg = res.data?.meta?.debug;
-        if (dbg) {
-          setDebugText(JSON.stringify(dbg, null, 2));
-        }
-        setMessages((prev) => [...prev, { role: "assistant", content: "Updated the dashboard." }]);
+        if (dbg) setDebugText(extractCodeFromDebug(dbg) || debugText);
+        if (dbg) setBaselineDebug(extractCodeFromDebug(dbg) || debugText);
+        setBaselineResults(res.data.results || []);
+        setBaselineKpis(res.data.kpis || []);
+        const parsedReply = res.data?.meta?.debug?.[0]?.parsed?.reply || res.data?.meta?.debug?.[0]?.raw;
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: parsedReply || "Updated the dashboard with the latest plan." },
+        ]);
       } else {
         const dbg = res.data?.meta?.debug;
         setError(res.data?.message || "No results returned");
-        if (dbg) setDebugText(JSON.stringify(dbg, null, 2));
+        if (dbg) setDebugText(extractCodeFromDebug(dbg) || debugText);
         setResults([]);
         setKpis([]);
         setMessages((prev) => [
@@ -96,11 +116,50 @@ export default function App() {
     }
   };
 
-  const resetAll = () => {
-    setFilters({});
-    setResults([]);
-    setKpis([]);
+  const applyFilters = async (override?: any) => {
+    const payload = override ?? filters;
+    const isEmptyFilters = !payload || Object.keys(payload).length === 0;
+    if (isEmptyFilters) {
+      // Restore baseline visuals when filters are cleared
+      setResults(baselineResults);
+      setKpis(baselineKpis);
+      setDebugText(baselineDebug || debugText);
+      return;
+    }
+    // If no charts yet, fall back to a normal query
+    if (!results.length && !kpis.length && lastPrompt) {
+      return runQuery(lastPrompt, payload);
+    }
+    setLoading(true);
     setError("");
+    try {
+      const res = await axios.post(
+        `${API_BASE}/refresh`,
+        { filters: payload },
+        { headers: { "Content-Type": "application/json", ...authHeader } }
+      );
+      if (res.data.status === "success") {
+        setResults(res.data.results || []);
+        setKpis(res.data.kpis || []);
+        const dbg = res.data?.meta?.debug;
+        if (dbg) setDebugText(extractCodeFromDebug(dbg) || debugText);
+      } else {
+        const dbg = res.data?.meta?.debug;
+        setError(res.data?.message || "No results returned");
+        if (dbg) setDebugText(extractCodeFromDebug(dbg) || debugText);
+      }
+    } catch (e: any) {
+      setError(e?.response?.data?.detail || e.message || "Filter refresh failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const clearFilters = () => {
+    setFilters({});
+    setError("");
+    // re-render existing charts without filters
+    applyFilters({});
   };
 
   return (
@@ -108,14 +167,6 @@ export default function App() {
       <aside className="sidebar">
         <h1 className="logo">Continuum</h1>
         <ChatPanel onSend={runQuery} loading={loading} messages={messages} />
-        {debugText && (
-          <div className="debug-panel">
-            <button className="btn ghost small" onClick={() => setShowDebug(!showDebug)}>
-              {showDebug ? "Hide details" : "Show details"}
-            </button>
-            {showDebug && <pre className="debug-text">{debugText}</pre>}
-          </div>
-        )}
       </aside>
       <main className="content">
         <header className="header">
@@ -137,16 +188,13 @@ export default function App() {
                 <div className="eyebrow">Filters</div>
                 <h4>Refine the dashboard</h4>
               </div>
-              <button className="btn ghost small" onClick={resetAll}>
-                Clear dashboard
-              </button>
             </div>
             <FiltersBar
               options={options}
               filters={filters}
               onChange={setFilters}
-              onApply={() => runQuery("Update with filters")}
-              onReset={resetAll}
+              onApply={applyFilters}
+              onReset={clearFilters}
               selectedColumns={selectedColumns}
               onColumnsChange={setSelectedColumns}
             />
@@ -173,7 +221,7 @@ export default function App() {
 
         {showDebug && debugText && (
           <section className="debug-drawer card">
-            <div className="debug-title">Generated code & debug</div>
+            <div className="debug-title">Generated code</div>
             <pre className="debug-text">{debugText}</pre>
           </section>
         )}
