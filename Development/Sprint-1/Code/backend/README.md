@@ -12,7 +12,7 @@ You do **not** need the raw CSVs to run the app — only the connection string i
 ### Step 1: Create your `.env` file
 ```bash
 # Copy the example file
-cp .env.example .env
+cp env.example .env
 ```
 
 ### Step 2: Configure environment variables
@@ -105,7 +105,7 @@ pip install -r requirements.txt
 
 ### Run the backend server:
 ```bash
-uvicorn main:app --reload
+uvicorn app.main:app --reload
 ```
 
 The API will be available at: `http://localhost:8000`
