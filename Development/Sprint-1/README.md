@@ -10,8 +10,7 @@ All work for this phase is located in the **`Code`** directory.
 
 - We carried forward the initial prototype and manually implemented the Sprint 1 use cases (as listed in the project plan on GitHub).
 - Separate READMEs for **frontend** and **backend** include detailed instructions for running the system locally.
-- Since this work represents the functional baseline for Sprint 1, we preserved it and also deployed it for demonstration purposes.  
-- **Deployed version:** `xyz.com`
+- Since this work represents the functional baseline for Sprint 1, we preserved it and included it in the demo video too.  
 
 ---
 
@@ -48,7 +47,7 @@ MCP essentially allows the LLM to **understand the data before acting on it**, w
 
 ## **3. Implementing MCP in Our System**
 
-This was the final phase of Sprint 1.
+This was the final phase of Sprint 1. We did not have alot of time for this phase, roughly 4-5 days.
 
 - We began transitioning from manual Python-function workflows to a fully MCP-driven architecture using **Vizro MCP**.
 - During implementation, we discovered that integrating MCP into the old codebase created conflicts because of fundamental differences in design.
@@ -56,16 +55,5 @@ This was the final phase of Sprint 1.
 
 All implementation work for this phase is inside the **`Vizro Conversion`** folder and will be continued in Sprint 2.
 
----
-
-## **Additional Deliverables**
-
-The following documents have been updated to reflect the new MCP-based architecture:
-
-- Updated **Project Plan** (GitHub)  
-- Updated **Threat Modeling Document**  
-- Updated **System Architecture**  
-
-All updates align with the new Vizro MCP Sales Agent design.
-
+- **Deployed version:** `https://p13-continuum-ai-vizro-v1.vercel.app`
 ---
