@@ -12,7 +12,7 @@
 
 ### First-Time Setup
 
-If this is your first time running this, just run the following command in the root directory (`/Vizro_conversion`):
+If this is your first time running this, just run the following command in the root directory (`/Phase_1`):
 
 ```bash
 docker compose up
