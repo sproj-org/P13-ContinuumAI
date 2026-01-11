@@ -7,7 +7,7 @@ This document summarizes the progress and planning for **Sprint 2**, with a clea
 
 ## Phase Breakdown
 
-### Phase 1: UI & Planning ✅
+### Phase 1: UI & Planning
 - Completed UI design
 - Explored all dashboard variations
 - Generated datasets for testing and visualization (synthtic gen)
@@ -19,7 +19,7 @@ This document summarizes the progress and planning for **Sprint 2**, with a clea
 
 ---
 
-### Phase 2: Core Build & Data Pipeline 🚧
+### Phase 2: Core Build & Data Pipeline
 - Complete the main application build
 - Reach approximately **80–90% overall app completion**
 - Add a **data cleaning pipeline** in the workflow
