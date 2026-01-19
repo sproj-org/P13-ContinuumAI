@@ -43,10 +43,15 @@ pip install -r requirements.txt
 Create a `.env` file in the `backend/` directory:
 
 ```env
-DATABASE_URL=postgresql://username:password@host:port/database
-SECRET_KEY=your-super-secret-key-here-make-it-long-and-random
-ALGORITHM=HS256
+# Supabase PostgreSQL Connection
+DATABASE_URL= 
+# JWT Configuration
+JWT_SECRET_KEY=secret
+JWT_ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
+# CORS
+FRONTEND_URL=http://localhost:3000
+
 ```
 
 > **Note:** Get your `DATABASE_URL` from Supabase Dashboard → Settings → Database → Connection string (URI)
