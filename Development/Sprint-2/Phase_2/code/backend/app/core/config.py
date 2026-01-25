@@ -3,25 +3,19 @@ from functools import lru_cache
 
 
 class Settings(BaseSettings):
-    """Application settings loaded from environment variables."""
-    
-    # Database
     DATABASE_URL: str
-    
-    # JWT
-    JWT_SECRET_KEY: str
-    JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    
-    # CORS
-    FRONTEND_URL: str = "http://localhost:3000"
-    
+    SECRET_KEY: str = "replace-me"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    ALGORITHM: str = "HS256"
+    DEMO_TABLE: str = "sales_demo"
+    CSV_PATH: str = "database/data/demo_sales.csv"
+    FRONTEND_ORIGIN: str = "http://localhost:5173"
+    OPENAI_API_KEY: str | None = None
+
     class Config:
         env_file = ".env"
-        case_sensitive = True
 
 
-@lru_cache()
+@lru_cache
 def get_settings() -> Settings:
-    """Get cached settings instance."""
     return Settings()
