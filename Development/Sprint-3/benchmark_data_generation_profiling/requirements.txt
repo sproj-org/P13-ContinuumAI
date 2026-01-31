@@ -1,0 +1,9 @@
+numpy>=1.24
+pandas>=2.0
+matplotlib>=3.7
+faker>=19.0
+pyarrow>=14.0
+jupyter>=1.0
+matplotlib>=3.7
+jupyter>=1.0
+fastparquet>=2023.10

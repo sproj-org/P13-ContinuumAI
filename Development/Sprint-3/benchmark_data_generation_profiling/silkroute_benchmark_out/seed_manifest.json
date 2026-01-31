@@ -1,0 +1,114 @@
+{
+  "config": {
+    "seed": 42,
+    "n_stores": 6,
+    "n_products": 90,
+    "n_skus_target": 150,
+    "n_customers": 2500,
+    "n_transactions": 15000,
+    "n_lines_target": 30000,
+    "n_salespeople": 26,
+    "return_rate_target": [
+      0.08,
+      0.12
+    ],
+    "start_date": "2025-01-01",
+    "end_date": "2025-12-31",
+    "cities": [
+      [
+        "Karachi",
+        "Sindh"
+      ],
+      [
+        "Lahore",
+        "Punjab"
+      ],
+      [
+        "Islamabad",
+        "ICT"
+      ]
+    ],
+    "online_share_start": 0.22,
+    "online_share_end": 0.42,
+    "hero_sku_count": 10,
+    "high_return_sku_count": 8,
+    "underperforming_store_count": 2,
+    "discount_heavy_store_count": 2,
+    "top_salespeople_count": 4,
+    "hero_primary_pick_prob": 0.45,
+    "clearance_line_prob": 0.015,
+    "clearance_discount_min": 0.3,
+    "clearance_discount_max": 0.45,
+    "high_return_sku_weight_mult": 6.0,
+    "high_return_customer_weight_mult": 3.0,
+    "high_return_customer_3line_prob": 0.2,
+    "return_two_lines_prob": 0.15,
+    "inventory_snapshot_freq_days": 7
+  },
+  "pattern_sets": {
+    "hero_skus": [
+      "SKU00022",
+      "SKU00035",
+      "SKU00071",
+      "SKU00077",
+      "SKU00082",
+      "SKU00085",
+      "SKU00087",
+      "SKU00092",
+      "SKU00137",
+      "SKU00162"
+    ],
+    "high_return_skus": [
+      "SKU00005",
+      "SKU00033",
+      "SKU00046",
+      "SKU00061",
+      "SKU00076",
+      "SKU00078",
+      "SKU00113",
+      "SKU00166"
+    ]
+  },
+  "people_sets": {
+    "top_salespeople": [
+      "P0001",
+      "P0009",
+      "P0017",
+      "P0025"
+    ],
+    "discount_heavy_salespeople": [
+      "P0007",
+      "P0011",
+      "P0015",
+      "P0026"
+    ]
+  },
+  "customer_sets_summary": {
+    "loyal_customers_n": 335,
+    "high_return_customers_n": 257
+  },
+  "meta": {
+    "underperforming_stores": [
+      "S002",
+      "S003"
+    ],
+    "discount_heavy_stores": [
+      "S004",
+      "S005"
+    ],
+    "online_share_by_month": {
+      "2025-01": 0.22,
+      "2025-02": 0.2381818181818182,
+      "2025-03": 0.25636363636363635,
+      "2025-04": 0.27454545454545454,
+      "2025-05": 0.2927272727272727,
+      "2025-06": 0.3109090909090909,
+      "2025-07": 0.3290909090909091,
+      "2025-08": 0.3472727272727273,
+      "2025-09": 0.3654545454545455,
+      "2025-10": 0.38363636363636366,
+      "2025-11": 0.40181818181818185,
+      "2025-12": 0.42
+    }
+  }
+}

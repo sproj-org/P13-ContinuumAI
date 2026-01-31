@@ -1,0 +1,91 @@
+product_id,product_name,brand,category,subcategory,status
+PR0001,Adidas Denim Jeans,Adidas,Fashion,Apparel > denim jeans,active
+PR0002,Outfitters Formal Trousers,Outfitters,Fashion,Apparel > formal trousers,active
+PR0003,Lenovo Phone Stands,Lenovo,Electronics,Consumer accessories > phone stands,active
+PR0004,Levis Wallets,Levis,Fashion,Accessories > wallets,active
+PR0005,Spigen Wireless Chargers,Spigen,Attach & Addons,Chargers > wireless chargers,active
+PR0006,JBL Ultrabooks,JBL,Electronics,Laptops > ultrabooks,active
+PR0007,HP Gaming Laptops,HP,Electronics,Laptops > gaming laptops,active
+PR0008,HP Flagship Android Devices,HP,Electronics,Smartphones > flagship Android devices,active
+PR0009,Logitech Warranty Extensions,Logitech,Attach & Addons,Extended services > warranty extensions,active
+PR0010,Dell Overear Headphones,Dell,Electronics,Audio devices > overear headphones,active
+PR0011,Logitech Phone Cases,Logitech,Attach & Addons,Cases & protection > phone cases,active
+PR0012,Dell Usb Hubs,Dell,Electronics,Consumer accessories > USB hubs,active
+PR0013,Baseus Laptop Sleeves,Baseus,Attach & Addons,Cases & protection > laptop sleeves,active
+PR0014,Anker Screen Protectors,Anker,Attach & Addons,Cases & protection > screen protectors,active
+PR0015,Nike Running Shoes,Nike,Fashion,Footwear > running shoes,active
+PR0016,Adidas Caps,Adidas,Fashion,Accessories > caps,active
+PR0017,Nike Belts,Nike,Fashion,Accessories > belts,active
+PR0018,Baseus Laptop Power Adapters,Baseus,Attach & Addons,Chargers > laptop power adapters,active
+PR0019,HP Business Laptops,HP,Electronics,Laptops > business laptops,active
+PR0020,Outfitters Formal Leather Shoes,Outfitters,Fashion,Footwear > formal leather shoes,active
+PR0021,Anker Power Banks,Anker,Electronics,Consumer accessories > power banks,active
+PR0022,Khaadi Scarves,Khaadi,Fashion,Accessories > scarves,active
+PR0023,Adidas Sandals,Adidas,Fashion,Footwear > sandals,active
+PR0024,HP Bluetooth Speakers,HP,Electronics,Audio devices > Bluetooth speakers,active
+PR0025,Anker Fast Chargers,Anker,Attach & Addons,Chargers > fast chargers,active
+PR0026,Outfitters Casual Sneakers,Outfitters,Fashion,Footwear > casual sneakers,active
+PR0027,Levis Cotton Tshirts,Levis,Fashion,Apparel > cotton tshirts,active
+PR0028,Spigen Accidental Damage Protection,Spigen,Attach & Addons,Extended services > accidental damage protection,active
+PR0029,JBL Wireless Earbuds,JBL,Electronics,Audio devices > wireless earbuds,active
+PR0030,Outfitters Hoodies,Outfitters,Fashion,Apparel > hoodies,active
+PR0031,OPPO Midrange Android Phones,OPPO,Electronics,Smartphones > midrange Android phones,active
+PR0032,Outfitters Casual Shirts,Outfitters,Fashion,Apparel > casual shirts,active
+PR0033,Anker Overear Headphones,Anker,Electronics,Audio devices > overear headphones,active
+PR0034,Khaadi Casual Shirts,Khaadi,Fashion,Apparel > casual shirts,active
+PR0035,Belkin Warranty Extensions,Belkin,Attach & Addons,Extended services > warranty extensions,active
+PR0036,JBL Gaming Laptops,JBL,Electronics,Laptops > gaming laptops,active
+PR0037,JBL Flagship Android Devices,JBL,Electronics,Smartphones > flagship Android devices,active
+PR0038,Adidas Hoodies,Adidas,Fashion,Apparel > hoodies,active
+PR0039,Baseus Warranty Extensions,Baseus,Attach & Addons,Extended services > warranty extensions,active
+PR0040,Sapphire Wallets,Sapphire,Fashion,Accessories > wallets,active
+PR0041,Spigen Fast Chargers,Spigen,Attach & Addons,Chargers > fast chargers,active
+PR0042,Sapphire Belts,Sapphire,Fashion,Accessories > belts,active
+PR0043,Samsung Ultrabooks,Samsung,Electronics,Laptops > ultrabooks,active
+PR0044,Outfitters Denim Jeans,Outfitters,Fashion,Apparel > denim jeans,active
+PR0045,Adidas Sandals,Adidas,Fashion,Footwear > sandals,active
+PR0046,Nike Caps,Nike,Fashion,Accessories > caps,active
+PR0047,Khaadi Casual Shirts,Khaadi,Fashion,Apparel > casual shirts,active
+PR0048,Logitech Laptop Sleeves,Logitech,Attach & Addons,Cases & protection > laptop sleeves,active
+PR0049,Samsung Bluetooth Speakers,Samsung,Electronics,Audio devices > Bluetooth speakers,active
+PR0050,Baseus Laptop Power Adapters,Baseus,Attach & Addons,Chargers > laptop power adapters,active
+PR0051,Levis Belts,Levis,Fashion,Accessories > belts,active
+PR0052,Baseus Laptop Power Adapters,Baseus,Attach & Addons,Chargers > laptop power adapters,active
+PR0053,Samsung Midrange Android Phones,Samsung,Electronics,Smartphones > midrange Android phones,active
+PR0054,Belkin Laptop Power Adapters,Belkin,Attach & Addons,Chargers > laptop power adapters,active
+PR0055,Belkin Warranty Extensions,Belkin,Attach & Addons,Extended services > warranty extensions,active
+PR0056,Khaadi Hoodies,Khaadi,Fashion,Apparel > hoodies,active
+PR0057,Adidas Formal Leather Shoes,Adidas,Fashion,Footwear > formal leather shoes,active
+PR0058,Dell Midrange Android Phones,Dell,Electronics,Smartphones > midrange Android phones,active
+PR0059,Samsung Bluetooth Speakers,Samsung,Electronics,Audio devices > Bluetooth speakers,active
+PR0060,Anker Warranty Extensions,Anker,Attach & Addons,Extended services > warranty extensions,active
+PR0061,Spigen Fast Chargers,Spigen,Attach & Addons,Chargers > fast chargers,active
+PR0062,Xiaomi Bluetooth Speakers,Xiaomi,Electronics,Audio devices > Bluetooth speakers,active
+PR0063,Sapphire Scarves,Sapphire,Fashion,Accessories > scarves,active
+PR0064,Spigen Screen Protectors,Spigen,Attach & Addons,Cases & protection > screen protectors,active
+PR0065,JBL Power Banks,JBL,Electronics,Consumer accessories > power banks,active
+PR0066,Anker Phone Stands,Anker,Electronics,Consumer accessories > phone stands,active
+PR0067,Anker Gaming Laptops,Anker,Electronics,Laptops > gaming laptops,active
+PR0068,Belkin Warranty Extensions,Belkin,Attach & Addons,Extended services > warranty extensions,active
+PR0069,Khaadi Caps,Khaadi,Fashion,Accessories > caps,active
+PR0070,Anker Ultrabooks,Anker,Electronics,Laptops > ultrabooks,active
+PR0071,JBL Business Laptops,JBL,Electronics,Laptops > business laptops,active
+PR0072,Dell Overear Headphones,Dell,Electronics,Audio devices > overear headphones,active
+PR0073,HP Flagship Android Devices,HP,Electronics,Smartphones > flagship Android devices,active
+PR0074,Xiaomi Overear Headphones,Xiaomi,Electronics,Audio devices > overear headphones,active
+PR0075,Lenovo Wireless Earbuds,Lenovo,Electronics,Audio devices > wireless earbuds,active
+PR0076,OPPO Midrange Android Phones,OPPO,Electronics,Smartphones > midrange Android phones,active
+PR0077,Belkin Accidental Damage Protection,Belkin,Attach & Addons,Extended services > accidental damage protection,active
+PR0078,Dell Bluetooth Speakers,Dell,Electronics,Audio devices > Bluetooth speakers,active
+PR0079,Baseus Warranty Extensions,Baseus,Attach & Addons,Extended services > warranty extensions,active
+PR0080,Samsung Phone Stands,Samsung,Electronics,Consumer accessories > phone stands,active
+PR0081,Lenovo Business Laptops,Lenovo,Electronics,Laptops > business laptops,active
+PR0082,Dell Wireless Earbuds,Dell,Electronics,Audio devices > wireless earbuds,active
+PR0083,Nike Sandals,Nike,Fashion,Footwear > sandals,active
+PR0084,Baseus Fast Chargers,Baseus,Attach & Addons,Chargers > fast chargers,active
+PR0085,Baseus Wireless Chargers,Baseus,Attach & Addons,Chargers > wireless chargers,active
+PR0086,Sony Phone Stands,Sony,Electronics,Consumer accessories > phone stands,active
+PR0087,Levis Belts,Levis,Fashion,Accessories > belts,active
+PR0088,Anker Wireless Earbuds,Anker,Electronics,Audio devices > wireless earbuds,active
+PR0089,Sapphire Denim Jeans,Sapphire,Fashion,Apparel > denim jeans,active
+PR0090,Xiaomi Wireless Earbuds,Xiaomi,Electronics,Audio devices > wireless earbuds,active

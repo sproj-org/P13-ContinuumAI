@@ -1,0 +1,7 @@
+store_id,store_name,city,region,store_type
+S001,SilkRoute Karachi 1,Karachi,Sindh,flagship
+S002,SilkRoute Lahore 2,Lahore,Punjab,mall
+S003,SilkRoute Islamabad 3,Islamabad,ICT,mall
+S004,SilkRoute Karachi 1,Karachi,Sindh,flagship
+S005,SilkRoute Lahore 2,Lahore,Punjab,high_street
+S006,SilkRoute Islamabad 3,Islamabad,ICT,mall

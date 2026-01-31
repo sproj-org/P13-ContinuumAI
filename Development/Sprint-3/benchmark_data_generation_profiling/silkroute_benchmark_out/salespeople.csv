@@ -1,0 +1,27 @@
+salesperson_id,name,role,store_id
+P0001,Allison Hill,sales_associate,S002
+P0002,Noah Rhodes,floor_supervisor,S001
+P0003,Angie Henderson,floor_supervisor,S006
+P0004,Daniel Wagner,floor_supervisor,S001
+P0005,Cristian Santos,floor_supervisor,S004
+P0006,Connie Lawrence,sales_associate,S001
+P0007,Abigail Shaffer,sales_associate,S002
+P0008,Gina Moore,sales_associate,S005
+P0009,Gabrielle Davis,floor_supervisor,S001
+P0010,Ryan Munoz,floor_supervisor,S002
+P0011,Monica Herrera,floor_supervisor,S006
+P0012,Jamie Arnold,floor_supervisor,S005
+P0013,Lisa Hensley,senior_associate,S002
+P0014,Michele Williams,senior_associate,S005
+P0015,Dylan Miller,senior_associate,S001
+P0016,Brian Ramirez,sales_associate,S006
+P0017,Holly Wood,senior_associate,S003
+P0018,Derek Zuniga,senior_associate,S002
+P0019,Lisa Jackson,sales_associate,S003
+P0020,Carla Gray,sales_associate,S001
+P0021,Margaret Hawkins DDS,senior_associate,S001
+P0022,Patty Perez,senior_associate,S003
+P0023,Ethan Adams,floor_supervisor,S003
+P0024,Tommy Walter,sales_associate,S006
+P0025,Matthew Foster,senior_associate,S005
+P0026,Judy Baker,sales_associate,S004

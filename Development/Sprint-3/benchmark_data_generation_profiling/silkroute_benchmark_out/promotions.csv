@@ -1,0 +1,13 @@
+promo_id,product_id,promo_type,start_date,end_date,discount_type
+PROMO001,PR0049,bundle_offer,2025-04-09,2025-04-17,fixed
+PROMO002,PR0047,seasonal_sale,2025-05-07,2025-05-16,percent
+PROMO003,PR0076,flash_sale,2025-06-17,2025-06-29,percent
+PROMO004,PR0060,flash_sale,2025-11-29,2025-12-19,fixed
+PROMO005,PR0038,seasonal_sale,2025-12-09,2025-12-27,fixed
+PROMO006,PR0087,clearance,2025-11-06,2025-11-18,percent
+PROMO007,PR0082,bundle_offer,2025-01-16,2025-02-03,percent
+PROMO008,PR0033,flash_sale,2025-06-22,2025-07-12,fixed
+PROMO009,PR0049,seasonal_sale,2025-11-24,2025-12-12,fixed
+PROMO010,PR0077,clearance,2025-08-02,2025-08-13,fixed
+PROMO011,PR0069,clearance,2025-10-09,2025-10-23,percent
+PROMO012,PR0047,seasonal_sale,2025-03-26,2025-04-10,percent

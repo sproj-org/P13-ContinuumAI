@@ -1,0 +1,12 @@
+category,attribute_name,attribute_type,required_flag
+Fashion,material,text,True
+Fashion,fit,text,False
+Fashion,gender,text,False
+Fashion,season,text,False
+Electronics,storage_gb,int,False
+Electronics,ram_gb,int,False
+Electronics,screen_size_in,float,False
+Electronics,battery_mah,int,False
+Electronics,warranty_months,int,True
+Attach & Addons,compatibility,text,False
+Attach & Addons,warranty_months,int,False
