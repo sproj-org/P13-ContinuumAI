@@ -1,0 +1,4 @@
+ID_ORDR,opp_ref,cli_id,fecha_pedido,leadGeneratedOn,closedOn,firstBuy,revUSD,qty_sold,prod_ident,prod_label,grpCat,sales_rep_name,territory_area,pais,city_loc,pipelineState,sales_stream,isReturningCustomer,mean_ticket,daysToClose
+5001,OP-5001,CID5001,2025-01-12,2024-12-30,2025-01-08,2024-09-01,220.50,2,PX-001,"Paquete Uno","Electrónica","Juan Perez","South-West","MX","Monterrey","Ganado","Online",1,110.25,9
+5002,OP-5002,CID5002,2025-02-20,2025-01-15,2025-02-14,2024-10-11,75.00,1,PX-002,"Kit Básico","Accesorios","Maria Gomez","Iberia","ES","Madrid","Perdido","Distribuidor",0,75.00,30
+5003,OP-5003,CID5003,2025-03-22,2025-02-03,2025-03-10,2024-08-20,540.00,3,PX-003,"Super Pack","HW","Ahmed Ali","GCC","AE","Dubai","Negociación","Partner",0,180.00,19

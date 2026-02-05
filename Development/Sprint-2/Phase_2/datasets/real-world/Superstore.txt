@@ -1,0 +1,1 @@
+A real-world retail sales dataset capturing orders, products, customers, regions, discounts, and profitability. It is well-suited for analyzing sales performance, customer segments, regional trends, discount effectiveness, and profit drivers, as well as for building predictive models for sales or profit and deriving actionable business insights.

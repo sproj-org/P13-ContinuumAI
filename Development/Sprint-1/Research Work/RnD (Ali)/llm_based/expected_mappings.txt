@@ -1,0 +1,107 @@
+1: demo_sales:
+the og mapping itself
+
+2: temp1:
+{
+ "order_id": "OrderNo",
+ "opportunity_id": "OppID",
+ "customer_id": "CustRef",
+ "order_date": "PurchaseDate",
+ "lead_date": "LeadDT",
+ "close_date": "ClosedOn",
+ "first_purchase_date": "FirstOrder",
+ "revenue": "TotalAmt",
+ "units": "Qty",
+ "product_id": "SKU",
+ "product_name": "ItemTitle",
+ "category": "CatName",
+ "salesperson": "RepName",
+ "region": "RegionName",
+ "country": "CountryCode",
+ "city": "Town",
+ "stage": "DealStage",
+ "channel": "SalesChannel",
+ "is_returning": "RepeatFlag",
+ "aov": "AvgOrderVal",
+ "sales_cycle_days": "DealDays"
+}
+
+
+
+3: temp2:
+
+{
+  "order_id": null,
+  "opportunity_id": null,
+  "customer_id": "user_email", maybe
+  "order_date": "timestamp", maybe
+  "lead_date": null,
+  "close_date": null,
+  "first_purchase_date": null,
+  "revenue": "amount_usd",
+  "units": null,
+  "product_id": null,
+  "product_name": null,
+  "category": null,
+  "salesperson": null,
+  "region": null,
+  "country": null,
+  "city": null,
+  "stage": "status",
+  "channel": null,
+  "is_returning": null,
+  "aov": null,
+  "sales_cycle_days": null
+}
+
+4: temp3:
+
+{
+ "order_id": "OrderRef",
+ "opportunity_id": "OppID",
+ "customer_id": "ClientID",
+ "order_date": "Date_of_Purchase",
+ "lead_date": None,                 
+ "close_date": None,                
+ "first_purchase_date": None,       
+ "revenue": "amount_q",
+ "units": "unit_count",
+ "product_id": "product_code",
+ "product_name": None,              
+ "category": "category",
+ "salesperson": None,               
+ "region": None,                    
+ "country": None,                   
+ "city": None,
+ "stage": None,
+ "channel": None,
+ "is_returning": None,
+ "aov": "avg_ord",
+ "sales_cycle_days": None
+}
+
+5: temp4:
+
+{
+ "order_id": "ID_ORDR",
+ "opportunity_id": "opp_ref",
+ "customer_id": "cli_id",
+ "order_date": "fecha_pedido",          
+ "lead_date": "leadGeneratedOn",
+ "close_date": "closedOn",
+ "first_purchase_date": "firstBuy",
+ "revenue": "revUSD",
+ "units": "qty_sold",
+ "product_id": "prod_ident",
+ "product_name": "prod_label",
+ "category": "grpCat",
+ "salesperson": "sales_rep_name",
+ "region": "territory_area",
+ "country": "pais",                      
+ "city": "city_loc",
+ "stage": "pipelineState",
+ "channel": "sales_stream",
+ "is_returning": "isReturningCustomer",
+ "aov": "mean_ticket",
+ "sales_cycle_days": "daysToClose"
+}

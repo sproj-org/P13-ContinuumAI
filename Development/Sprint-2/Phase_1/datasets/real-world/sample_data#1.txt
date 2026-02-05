@@ -1,0 +1,1 @@
+A sample retail sales dataset containing order details, customer information, product data, shipping attributes, and sales amounts. It is suitable for sales trend analysis, customer segmentation, clustering, and basic retail performance analytics.

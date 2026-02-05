@@ -1,0 +1,2401 @@
+order_id,order_date,customer_id,product_name,category,region,channel,units,revenue,stage
+O-900000,2024-07-17,C-2680,CRM Pro,Software,NA,inbound,6,6276,Won
+O-900001,2024-07-26,C-6409,CRM-Pro,Hardware,asia,inbound,12,7224,Won
+O-900002,2023-02-23,C-2307,AnalyticsSuite,software,North America,OUTBOUND,10,8290,Won
+O-900003,2024-02-13,C-2380,CRM-Pro,hardware,asia,In-bound,15,20370,Won
+O-900004,2024-08-30,C-6288,AnalyticsSuite,Hardware,Europe,OUTBOUND,4,1360,Won
+O-900005,2024-12-14,C-5785,Analytics Suite,Software,Asia,OUTBOUND,14,12936,Won
+O-900006,2023-11-19,C-5337,POS Terminal,software,Asia,OUTBOUND,4,7580,Won
+O-900007,2024-12-03,C-2307,AnalyticsSuite,software,Europe,out bound,7,2674,Won
+O-900008,2023-01-06,C-3811,CRM Pro,Soft ware,APAC,inbound,12,9864,Won
+O-900009,2023-11-05,C-1119,POS Terminal,Hard ware,N. America,Partner,2,1596,Won
+O-900010,2023-03-11,C-2907,CRM Pro,Hard ware,Europe,out bound,1,491,Won
+O-900011,2024-08-12,C-6628,CRM-Pro,Hard ware,europe,Outbound,13,4654,Won
+O-900012,2024-11-10,C-1376,CRM Pro,Soft ware,Europe,partner,8,10744,Won
+O-900013,2024-08-06,C-1824,AnalyticsSuite,Soft ware,europe,OUTBOUND,2,2036,Won
+O-900014,2024-08-31,C-4532,AnalyticsSuite,hardware,europe,inbound,2,644,Won
+O-900015,2024-06-10,C-5101,CRM-Pro,software,Europe,OUTBOUND,3,2268,Won
+O-900016,2023-06-14,C-2806,Analytics Suite,software,Asia,out bound,10,11310,Won
+O-900017,2023-09-28,C-5208,POS-Terminal,Hardware,europe,partner,3,3966,Won
+O-900018,2024-01-03,C-5436,AnalyticsSuite,software,North America,Partner,14,26712,Won
+O-900019,2023-06-27,C-4133,CRM Pro,Software,europe,inbound,6,2712,Won
+O-900020,2023-09-30,C-6361,Analytics Suite,Soft ware,Asia,In-bound,12,18924,Won
+O-900021,2023-01-24,C-3630,CRM Pro,Hard ware,Europe,OUTBOUND,8,3056,Won
+O-900022,2024-06-05,C-6788,Analytics Suite,Hardware,APAC,out bound,9,7578,Won
+O-900023,2023-01-20,C-3644,POS-Terminal,Hard ware,North-America,Inbound,3,3261,Won
+O-900024,2023-05-07,C-1307,Analytics Suite,hardware,North-America,Inbound,8,4752,Won
+O-900025,2024-05-01,C-5911,CRM Pro,hardware,NA,In-bound,9,17541,Won
+O-900026,2023-06-06,C-4005,CRM-Pro,Software,EU,inbound,1,1972,Won
+O-900027,2024-08-28,C-3854,Analytics Suite,Hardware,North-America,Partner,15,7995,Won
+O-900028,2024-04-10,C-2487,AnalyticsSuite,Hard ware,North-America,In-bound,2,2488,Won
+O-900029,2023-05-22,C-1808,Analytics Suite,Hard ware,north america,Outbound,12,19512,Won
+O-900030,2023-03-03,C-2048,AnalyticsSuite,Software,APAC,OUTBOUND,1,1892,Won
+O-900031,2023-07-01,C-4726,CRM-Pro,Soft ware,APAC,Inbound,14,5264,Won
+O-900032,2024-12-19,C-5803,AnalyticsSuite,Hard ware,North America,Inbound,8,3704,Won
+O-900033,2024-06-07,C-4949,POS-Terminal,software,europe,out bound,10,4010,Won
+O-900034,2024-01-19,C-3713,CRM Pro,hardware,Asia,In-bound,14,19936,Won
+O-900035,2024-05-21,C-4428,Analytics Suite,Hard ware,north america,Inbound,7,6713,Won
+O-900036,2024-03-31,C-5437,CRM Pro,Software,EU,out bound,4,3084,Won
+O-900037,2024-09-13,C-1850,Analytics Suite,software,North-America,partner,15,19680,Won
+O-900038,2024-06-06,C-1038,AnalyticsSuite,Software,asia,inbound,7,2492,Won
+O-900039,2024-11-08,C-5583,AnalyticsSuite,Software,europe,inbound,13,13039,Won
+O-900040,2024-04-16,C-3276,POS Terminal,Hardware,NA,inbound,8,3600,Won
+O-900041,2023-04-12,C-5402,CRM-Pro,Hard ware,Asia,Inbound,14,18340,Won
+O-900042,2023-11-02,C-1150,CRM-Pro,software,Asia,In-bound,12,9744,Won
+O-900043,2024-01-22,C-2954,CRM Pro,software,North America,Partner,14,16786,Won
+O-900044,2024-08-04,C-5933,CRM-Pro,hardware,Asia,Outbound,2,1918,Won
+O-900045,2024-01-22,C-4300,CRM Pro,Software,North-America,In-bound,5,7895,Won
+O-900046,2023-11-24,C-4865,AnalyticsSuite,Hardware,NA,inbound,8,5592,Won
+O-900047,2023-09-18,C-3857,Analytics Suite,hardware,Asia,partner,2,1772,Won
+O-900048,2023-03-02,C-1283,CRM Pro,Software,Asia,partner,12,5532,Won
+O-900049,2023-03-02,C-3066,Analytics Suite,Soft ware,APAC,OUTBOUND,2,1786,Won
+O-900050,2024-09-20,C-6028,CRM Pro,software,Asia,Partner,6,5514,Won
+O-900051,2023-08-10,C-1862,AnalyticsSuite,Hard ware,asia,partner,12,10320,Won
+O-900052,2024-12-07,C-4622,AnalyticsSuite,Hardware,North America,In-bound,12,8184,Won
+O-900053,2023-07-12,C-2152,POS-Terminal,Hard ware,NA,OUTBOUND,14,18788,Won
+O-900054,2024-12-27,C-6860,CRM Pro,Soft ware,asia,partner,2,3938,Won
+O-900055,2024-01-28,C-4209,CRM-Pro,Hardware,NA,In-bound,6,4818,Won
+O-900056,2024-07-12,C-4471,CRM Pro,hardware,APAC,Partner,6,9528,Won
+O-900057,2024-03-13,C-2138,CRM-Pro,Hard ware,APAC,Partner,7,9877,Won
+O-900058,2024-06-03,C-4395,CRM Pro,Software,EU,Inbound,3,4527,Won
+O-900059,2024-03-14,C-4857,AnalyticsSuite,Hard ware,North America,Outbound,5,2920,Won
+O-900060,2023-04-23,C-4346,POS-Terminal,Hardware,North-America,out bound,12,11760,Won
+O-900061,2023-01-16,C-2463,AnalyticsSuite,Soft ware,north america,In-bound,14,26852,Won
+O-900062,2024-02-18,C-3956,POS Terminal,software,N. America,Partner,8,11768,Won
+O-900063,2024-02-22,C-3697,POS-Terminal,software,APAC,Outbound,7,9492,Won
+O-900064,2023-12-19,C-3968,AnalyticsSuite,Hard ware,europe,Outbound,15,6720,Won
+O-900065,2024-08-07,C-3402,CRM Pro,Hardware,N. America,Partner,9,17541,Won
+O-900066,2024-12-23,C-1448,CRM Pro,Hardware,North America,Outbound,2,632,Won
+O-900067,2023-07-01,C-4904,CRM-Pro,Hard ware,APAC,partner,5,6145,Won
+O-900068,2024-08-01,C-1802,CRM Pro,Hardware,north america,Partner,9,14580,Won
+O-900069,2023-10-03,C-1535,Analytics Suite,Hardware,APAC,inbound,10,14980,Won
+O-900070,2023-10-31,C-6592,POS-Terminal,Soft ware,North America,Inbound,11,9922,Won
+O-900071,2023-11-19,C-2852,POS Terminal,Software,asia,In-bound,9,12249,Won
+O-900072,2024-02-17,C-5708,CRM Pro,hardware,North-America,partner,7,9653,Won
+O-900073,2024-01-28,C-6251,CRM-Pro,Software,North-America,Partner,3,1788,Won
+O-900074,2024-06-27,C-5966,CRM-Pro,Soft ware,North America,inbound,13,15236,Won
+O-900075,2024-03-29,C-3116,Analytics Suite,Hard ware,Europe,out bound,6,11934,Won
+O-900076,2023-05-04,C-1740,POS Terminal,Hard ware,EU,partner,7,12845,Won
+O-900077,2023-09-30,C-4465,CRM-Pro,Hard ware,N. America,Partner,14,7840,Won
+O-900078,2023-09-16,C-1337,POS-Terminal,hardware,APAC,Inbound,14,13706,Won
+O-900079,2024-06-07,C-3389,POS-Terminal,hardware,North-America,Outbound,6,4740,Won
+O-900080,2024-12-24,C-2401,CRM-Pro,Software,Europe,In-bound,11,5137,Won
+O-900081,2023-11-14,C-2663,POS-Terminal,Hard ware,N. America,partner,15,22110,Won
+O-900082,2023-07-04,C-5069,CRM Pro,Soft ware,North America,Outbound,6,6678,Won
+O-900083,2023-07-27,C-5056,CRM-Pro,hardware,APAC,Partner,1,1079,Won
+O-900084,2023-04-12,C-4794,POS-Terminal,Hardware,Asia,inbound,12,7296,Won
+O-900085,2024-06-18,C-4973,AnalyticsSuite,Hardware,asia,Partner,8,11960,Won
+O-900086,2024-07-20,C-6316,AnalyticsSuite,hardware,Asia,Partner,14,19110,Won
+O-900087,2024-11-26,C-6456,AnalyticsSuite,Hard ware,EU,Outbound,1,1341,Won
+O-900088,2023-12-09,C-4379,AnalyticsSuite,Hard ware,North-America,partner,9,2853,Won
+O-900089,2024-09-20,C-2807,POS-Terminal,software,Asia,out bound,15,29385,Won
+O-900090,2023-12-23,C-2561,POS Terminal,Software,EU,Partner,9,5940,Won
+O-900091,2024-12-05,C-1151,POS-Terminal,Hard ware,asia,partner,5,6010,Won
+O-900092,2024-06-16,C-5695,CRM-Pro,Hard ware,asia,OUTBOUND,15,20475,Won
+O-900093,2024-01-28,C-5432,POS-Terminal,Hardware,EU,Inbound,11,21912,Won
+O-900094,2023-09-15,C-3948,POS Terminal,Hard ware,Asia,inbound,13,20228,Won
+O-900095,2024-08-14,C-1315,CRM Pro,Hard ware,NA,out bound,5,7270,Won
+O-900096,2023-02-24,C-1006,CRM Pro,Hard ware,N. America,OUTBOUND,5,4175,Won
+O-900097,2023-11-18,C-3014,POS Terminal,Hard ware,North-America,Inbound,10,5200,Won
+O-900098,2024-10-18,C-1762,Analytics Suite,hardware,N. America,OUTBOUND,1,1072,Won
+O-900099,2024-05-16,C-5365,POS Terminal,Hardware,asia,partner,12,9480,Won
+O-900100,2024-09-28,C-4186,Analytics Suite,Soft ware,North-America,Outbound,11,12012,Won
+O-900101,2024-02-17,C-1083,POS Terminal,Hard ware,europe,Partner,10,19810,Won
+O-900102,2023-04-12,C-6043,Analytics Suite,Hard ware,north america,Outbound,1,1955,Won
+O-900103,2023-08-29,C-6789,POS Terminal,Hard ware,asia,OUTBOUND,12,5736,Won
+O-900104,2024-09-27,C-3904,CRM Pro,Soft ware,APAC,OUTBOUND,1,372,Won
+O-900105,2024-02-12,C-5600,POS-Terminal,Software,Europe,inbound,4,3796,Won
+O-900106,2023-04-01,C-4579,AnalyticsSuite,hardware,NA,inbound,7,13118,Won
+O-900107,2023-12-17,C-5213,POS Terminal,software,EU,Partner,12,16968,Won
+O-900108,2024-11-05,C-3947,POS-Terminal,Soft ware,N. America,partner,7,13503,Won
+O-900109,2023-11-23,C-2570,POS-Terminal,Software,NA,In-bound,14,15302,Won
+O-900110,2023-12-24,C-4117,AnalyticsSuite,Hard ware,Europe,OUTBOUND,13,12025,Won
+O-900111,2024-05-12,C-5582,CRM Pro,Soft ware,APAC,out bound,5,3380,Won
+O-900112,2024-11-09,C-4153,CRM-Pro,software,North-America,In-bound,8,3632,Won
+O-900113,2023-08-21,C-5223,POS-Terminal,Hard ware,NA,inbound,8,10176,Won
+O-900114,2023-10-25,C-3535,CRM-Pro,Hardware,Europe,Outbound,1,1381,Won
+O-900115,2024-01-27,C-5332,POS-Terminal,Software,europe,inbound,10,19050,Won
+O-900116,2023-05-07,C-6090,CRM-Pro,Software,North-America,Partner,13,7150,Won
+O-900117,2024-05-08,C-4796,CRM-Pro,Hard ware,North America,out bound,4,3076,Won
+O-900118,2023-02-20,C-6486,Analytics Suite,hardware,Europe,partner,14,5208,Won
+O-900119,2023-09-22,C-4480,CRM-Pro,Software,europe,OUTBOUND,13,6409,Won
+O-900120,2023-06-17,C-6242,POS Terminal,Software,europe,Inbound,4,2136,Won
+O-900121,2023-11-29,C-2615,CRM-Pro,software,asia,In-bound,10,14730,Won
+O-900122,2023-04-25,C-6577,AnalyticsSuite,software,Europe,OUTBOUND,11,9361,Won
+O-900123,2024-02-23,C-2197,AnalyticsSuite,Software,north america,Outbound,8,15904,Won
+O-900124,2024-09-20,C-2872,Analytics Suite,Soft ware,EU,In-bound,4,5460,Won
+O-900125,2023-09-09,C-6214,AnalyticsSuite,software,north america,In-bound,1,693,Won
+O-900126,2023-07-13,C-6030,CRM-Pro,hardware,North-America,Outbound,10,18890,Won
+O-900127,2024-12-09,C-6029,POS-Terminal,hardware,APAC,Partner,14,21238,Won
+O-900128,2024-12-27,C-3979,Analytics Suite,Soft ware,North America,Partner,7,3374,Won
+O-900129,2024-08-20,C-4682,POS-Terminal,hardware,europe,OUTBOUND,5,7645,Won
+O-900130,2023-04-29,C-3866,Analytics Suite,Soft ware,APAC,In-bound,12,21252,Won
+O-900131,2023-01-20,C-3067,CRM Pro,Software,NA,Partner,11,7084,Won
+O-900132,2024-10-02,C-2009,Analytics Suite,Hard ware,APAC,partner,9,6318,Won
+O-900133,2023-07-23,C-3712,POS Terminal,Hard ware,EU,In-bound,12,14856,Won
+O-900134,2024-11-03,C-1190,AnalyticsSuite,hardware,Asia,out bound,13,9581,Won
+O-900135,2024-09-04,C-2768,AnalyticsSuite,Hardware,europe,Inbound,6,4824,Won
+O-900136,2024-12-07,C-3740,AnalyticsSuite,software,N. America,out bound,3,2001,Won
+O-900137,2024-09-14,C-1413,Analytics Suite,Software,Europe,inbound,4,3808,Won
+O-900138,2023-05-09,C-6832,CRM Pro,Hard ware,Europe,Outbound,14,26362,Won
+O-900139,2023-05-08,C-1805,Analytics Suite,Hardware,EU,partner,10,13640,Won
+O-900140,2023-10-01,C-1562,CRM-Pro,Soft ware,asia,Partner,4,5620,Won
+O-900141,2023-12-31,C-5200,AnalyticsSuite,hardware,asia,partner,9,4725,Won
+O-900142,2023-04-23,C-4965,CRM Pro,Soft ware,North-America,out bound,11,7535,Won
+O-900143,2023-01-29,C-5069,POS-Terminal,software,APAC,out bound,1,688,Won
+O-900144,2023-10-10,C-1146,CRM-Pro,software,Europe,partner,9,17910,Won
+O-900145,2023-11-28,C-6398,POS-Terminal,Hard ware,N. America,inbound,1,939,Won
+O-900146,2024-08-04,C-5703,CRM-Pro,hardware,North-America,In-bound,11,6567,Won
+O-900147,2024-06-25,C-5323,CRM Pro,hardware,north america,Inbound,14,6496,Won
+O-900148,2024-02-16,C-2757,AnalyticsSuite,software,North America,Inbound,10,8360,Won
+O-900149,2024-11-04,C-2735,CRM-Pro,Hardware,europe,Inbound,5,9270,Won
+O-900150,2024-09-20,C-5253,AnalyticsSuite,Software,Asia,OUTBOUND,6,11490,Won
+O-900151,2023-08-01,C-2565,POS Terminal,Hardware,europe,In-bound,1,1228,Won
+O-900152,2024-03-31,C-6553,Analytics Suite,software,North America,Inbound,7,7448,Won
+O-900153,2024-12-14,C-4692,POS Terminal,software,asia,partner,14,13342,Won
+O-900154,2023-11-21,C-3345,CRM-Pro,software,Europe,out bound,7,11200,Won
+O-900155,2024-07-05,C-5715,CRM Pro,Hardware,EU,Inbound,6,4440,Won
+O-900156,2024-03-04,C-1825,CRM-Pro,Software,NA,Partner,9,6750,Won
+O-900157,2023-04-20,C-1707,Analytics Suite,Hard ware,asia,In-bound,3,4545,Won
+O-900158,2023-01-24,C-5988,Analytics Suite,Hardware,europe,OUTBOUND,9,3267,Won
+O-900159,2023-11-25,C-5509,Analytics Suite,Soft ware,North America,Outbound,2,2648,Won
+O-900160,2024-01-12,C-6842,CRM-Pro,Software,NA,OUTBOUND,3,5007,Won
+O-900161,2023-11-24,C-6195,CRM-Pro,software,North-America,out bound,15,13710,Won
+O-900162,2023-11-03,C-5764,CRM-Pro,Hardware,North-America,out bound,11,8195,Won
+O-900163,2023-11-01,C-6567,CRM Pro,hardware,APAC,Outbound,4,5120,Won
+O-900164,2024-01-10,C-5107,AnalyticsSuite,Hardware,Europe,OUTBOUND,15,16770,Won
+O-900165,2023-03-11,C-4766,POS Terminal,Soft ware,europe,Partner,2,1126,Won
+O-900166,2024-08-11,C-6244,CRM Pro,Hardware,NA,Partner,9,14247,Won
+O-900167,2023-08-21,C-6614,Analytics Suite,Hardware,north america,out bound,15,11775,Won
+O-900168,2024-11-28,C-6872,Analytics Suite,Software,asia,Partner,11,3762,Won
+O-900169,2024-08-04,C-2353,AnalyticsSuite,Software,N. America,In-bound,5,8450,Won
+O-900170,2023-06-08,C-3545,CRM-Pro,hardware,N. America,OUTBOUND,1,498,Won
+O-900171,2024-01-05,C-4484,Analytics Suite,Soft ware,North America,In-bound,14,13006,Won
+O-900172,2024-07-09,C-4190,AnalyticsSuite,software,EU,partner,14,21252,Won
+O-900173,2024-08-18,C-5168,CRM Pro,Software,asia,Outbound,11,9845,Won
+O-900174,2024-01-09,C-3184,Analytics Suite,Hardware,APAC,OUTBOUND,10,7170,Won
+O-900175,2023-09-06,C-6450,POS-Terminal,Hard ware,asia,Outbound,9,13005,Won
+O-900176,2024-08-26,C-1126,AnalyticsSuite,Hardware,europe,In-bound,14,14980,Won
+O-900177,2023-01-12,C-3100,POS Terminal,software,N. America,inbound,10,13570,Won
+O-900178,2024-11-26,C-5144,Analytics Suite,Hard ware,EU,partner,6,11598,Won
+O-900179,2024-02-26,C-2633,CRM-Pro,Hard ware,Asia,out bound,5,6855,Won
+O-900180,2024-07-09,C-3319,POS-Terminal,Hardware,EU,inbound,11,19481,Won
+O-900181,2023-06-16,C-1376,CRM-Pro,Hardware,APAC,Partner,3,5901,Won
+O-900182,2023-05-26,C-6974,Analytics Suite,Hard ware,north america,Outbound,8,6256,Won
+O-900183,2024-07-28,C-3568,Analytics Suite,Soft ware,North-America,Inbound,7,10682,Won
+O-900184,2023-09-06,C-2659,POS-Terminal,Software,NA,partner,12,11808,Won
+O-900185,2023-09-12,C-6199,POS-Terminal,Software,North-America,out bound,1,1795,Won
+O-900186,2023-03-26,C-4821,AnalyticsSuite,software,APAC,Inbound,12,9144,Won
+O-900187,2023-05-02,C-1195,CRM Pro,hardware,APAC,inbound,14,16506,Won
+O-900188,2024-05-22,C-1976,AnalyticsSuite,Soft ware,EU,Partner,11,10109,Won
+O-900189,2024-05-20,C-2994,AnalyticsSuite,software,Europe,OUTBOUND,2,2056,Won
+O-900190,2024-01-28,C-2681,AnalyticsSuite,Soft ware,north america,Partner,10,10400,Won
+O-900191,2024-09-22,C-1417,POS-Terminal,Hardware,north america,partner,14,24374,Won
+O-900192,2024-02-06,C-6676,CRM Pro,Soft ware,Asia,In-bound,7,4179,Won
+O-900193,2024-03-21,C-6652,POS-Terminal,Hard ware,asia,Outbound,13,6240,Won
+O-900194,2023-08-12,C-5600,AnalyticsSuite,Soft ware,APAC,Inbound,7,6881,Won
+O-900195,2023-07-15,C-6818,POS-Terminal,hardware,Asia,out bound,1,469,Won
+O-900196,2024-12-11,C-5585,POS Terminal,Software,north america,inbound,11,16885,Won
+O-900197,2024-06-11,C-4874,CRM-Pro,Software,europe,inbound,4,1264,Won
+O-900198,2024-02-17,C-2947,Analytics Suite,Soft ware,APAC,inbound,7,11067,Won
+O-900199,2023-08-12,C-2329,POS-Terminal,software,NA,inbound,2,1158,Won
+O-900200,2023-09-30,C-4517,CRM Pro,software,NA,Outbound,4,5596,Won
+O-900201,2023-09-04,C-3060,AnalyticsSuite,Soft ware,asia,Partner,11,20284,Won
+O-900202,2024-01-01,C-2845,AnalyticsSuite,Software,Asia,Outbound,14,20706,Won
+O-900203,2024-10-28,C-3576,POS Terminal,software,europe,partner,15,16275,Won
+O-900204,2023-08-12,C-2049,AnalyticsSuite,Software,Asia,Partner,4,7176,Won
+O-900205,2023-06-09,C-3761,POS-Terminal,Hardware,Europe,OUTBOUND,15,12945,Won
+O-900206,2024-08-13,C-2693,CRM Pro,Soft ware,europe,In-bound,5,6525,Won
+O-900207,2024-02-12,C-1109,AnalyticsSuite,Hardware,asia,Partner,7,7581,Won
+O-900208,2023-07-04,C-4836,CRM-Pro,Hardware,europe,partner,13,17498,Won
+O-900209,2023-02-05,C-6305,POS Terminal,hardware,europe,In-bound,3,5100,Won
+O-900210,2023-03-27,C-3924,AnalyticsSuite,Software,APAC,Partner,3,1998,Won
+O-900211,2023-08-05,C-6606,POS Terminal,software,North-America,In-bound,15,9420,Won
+O-900212,2024-10-12,C-2187,POS-Terminal,Software,Asia,Inbound,10,7220,Won
+O-900213,2024-11-18,C-3534,CRM Pro,Hardware,APAC,Inbound,14,4676,Won
+O-900214,2024-04-03,C-3549,POS Terminal,Hard ware,Europe,In-bound,13,14729,Won
+O-900215,2024-01-07,C-3159,POS-Terminal,Hard ware,asia,Partner,1,589,Won
+O-900216,2024-10-31,C-5578,POS Terminal,Hardware,APAC,In-bound,6,8130,Won
+O-900217,2023-06-15,C-1222,POS-Terminal,Hardware,europe,In-bound,13,25935,Won
+O-900218,2024-05-26,C-1683,POS-Terminal,Software,Europe,In-bound,6,2232,Won
+O-900219,2024-09-12,C-5797,Analytics Suite,Soft ware,NA,OUTBOUND,1,867,Won
+O-900220,2024-01-11,C-6080,POS Terminal,Soft ware,Asia,Outbound,11,10010,Won
+O-900221,2023-10-10,C-4931,POS Terminal,hardware,europe,partner,8,6152,Won
+O-900222,2024-01-31,C-2727,AnalyticsSuite,Soft ware,Europe,Inbound,15,7665,Won
+O-900223,2023-12-21,C-5449,POS-Terminal,hardware,North America,OUTBOUND,11,17963,Won
+O-900224,2023-01-22,C-4891,CRM-Pro,Software,North-America,Partner,4,4220,Won
+O-900225,2024-11-27,C-3581,POS-Terminal,software,APAC,In-bound,1,971,Won
+O-900226,2024-05-10,C-6499,AnalyticsSuite,Software,Asia,In-bound,8,5544,Won
+O-900227,2023-06-27,C-1776,Analytics Suite,software,North-America,out bound,13,18499,Won
+O-900228,2024-07-30,C-1981,Analytics Suite,hardware,asia,out bound,13,10933,Won
+O-900229,2023-03-09,C-6458,AnalyticsSuite,Hardware,North America,Inbound,13,17004,Won
+O-900230,2023-11-11,C-2694,CRM-Pro,Soft ware,Asia,Inbound,7,8169,Won
+O-900231,2023-08-09,C-4077,AnalyticsSuite,Soft ware,North-America,In-bound,10,18040,Won
+O-900232,2024-03-07,C-5807,POS-Terminal,Hardware,asia,partner,14,14140,Won
+O-900233,2024-11-21,C-4564,CRM-Pro,Soft ware,asia,inbound,4,5664,Won
+O-900234,2024-08-14,C-1536,POS-Terminal,Software,Asia,out bound,11,8184,Won
+O-900235,2024-04-24,C-5136,CRM Pro,Hard ware,APAC,In-bound,5,3485,Won
+O-900236,2024-11-08,C-5805,Analytics Suite,software,EU,Partner,15,13815,Won
+O-900237,2024-06-23,C-3668,POS Terminal,Hard ware,asia,partner,15,4680,Won
+O-900238,2024-11-24,C-5466,CRM-Pro,software,North America,OUTBOUND,14,6622,Won
+O-900239,2023-04-08,C-2032,POS-Terminal,software,NA,Inbound,1,481,Won
+O-900240,2024-03-02,C-6516,Analytics Suite,hardware,N. America,inbound,9,4554,Won
+O-900241,2023-11-23,C-5162,POS-Terminal,Software,North-America,partner,8,8456,Won
+O-900242,2024-03-09,C-3572,POS-Terminal,Software,EU,Partner,12,15780,Won
+O-900243,2023-04-25,C-2409,CRM Pro,Hard ware,north america,Outbound,9,9873,Won
+O-900244,2024-03-15,C-1964,POS Terminal,Software,EU,Inbound,10,4660,Won
+O-900245,2023-04-02,C-6275,CRM Pro,software,EU,Inbound,12,7788,Won
+O-900246,2023-02-01,C-4066,POS Terminal,software,europe,Inbound,6,11988,Won
+O-900247,2024-02-28,C-3756,CRM-Pro,Hardware,North America,In-bound,11,9592,Won
+O-900248,2024-02-11,C-6793,AnalyticsSuite,Software,Asia,Outbound,15,14340,Won
+O-900249,2024-06-09,C-6766,AnalyticsSuite,Software,N. America,inbound,7,5502,Won
+O-900250,2023-09-20,C-4966,POS-Terminal,Software,NA,Outbound,11,8096,Won
+O-900251,2023-06-20,C-5795,POS-Terminal,software,Europe,In-bound,14,23212,Won
+O-900252,2023-11-10,C-6345,Analytics Suite,Soft ware,Europe,out bound,12,9624,Won
+O-900253,2023-06-18,C-5247,POS-Terminal,hardware,EU,Inbound,11,7271,Won
+O-900254,2023-05-02,C-6481,AnalyticsSuite,Soft ware,asia,Outbound,11,14839,Won
+O-900255,2023-05-28,C-6788,POS Terminal,Hard ware,NA,inbound,15,26235,Won
+O-900256,2024-12-10,C-3657,POS-Terminal,hardware,North America,Outbound,13,4342,Won
+O-900257,2023-05-22,C-5218,POS Terminal,Software,N. America,Partner,12,14544,Won
+O-900258,2023-07-26,C-3964,Analytics Suite,Soft ware,North-America,inbound,9,14499,Won
+O-900259,2024-05-10,C-2232,POS-Terminal,Hard ware,North-America,out bound,3,2136,Won
+O-900260,2024-10-01,C-2500,Analytics Suite,Hardware,Asia,In-bound,1,1297,Won
+O-900261,2024-09-02,C-2891,CRM-Pro,Software,Europe,In-bound,14,10416,Won
+O-900262,2024-07-25,C-5139,POS Terminal,Hardware,N. America,Outbound,11,14960,Won
+O-900263,2023-10-01,C-1833,AnalyticsSuite,Soft ware,EU,In-bound,6,9420,Won
+O-900264,2024-08-30,C-3650,AnalyticsSuite,Soft ware,North-America,partner,5,7640,Won
+O-900265,2024-06-24,C-5764,AnalyticsSuite,Hard ware,europe,Outbound,12,19812,Won
+O-900266,2024-05-12,C-2251,CRM-Pro,Hardware,NA,Partner,10,5560,Won
+O-900267,2024-04-13,C-5459,Analytics Suite,Hard ware,N. America,Inbound,7,3416,Won
+O-900268,2023-09-27,C-3213,POS Terminal,Hardware,North America,out bound,2,3850,Won
+O-900269,2024-12-03,C-4618,CRM-Pro,Soft ware,europe,partner,9,14454,Won
+O-900270,2024-09-26,C-6311,POS-Terminal,Hardware,N. America,In-bound,4,3988,Won
+O-900271,2024-01-12,C-6385,POS Terminal,Software,asia,In-bound,2,706,Won
+O-900272,2023-08-15,C-1612,POS Terminal,Software,EU,Outbound,11,14366,Won
+O-900273,2023-04-18,C-1372,POS Terminal,hardware,Asia,Outbound,9,4995,Won
+O-900274,2024-03-03,C-3080,POS Terminal,software,NA,In-bound,14,20118,Won
+O-900275,2024-11-18,C-1068,CRM Pro,software,europe,OUTBOUND,5,7805,Won
+O-900276,2023-11-02,C-5847,CRM Pro,Hard ware,EU,Outbound,11,10846,Won
+O-900277,2023-06-24,C-3903,AnalyticsSuite,Hard ware,NA,Inbound,14,4578,Won
+O-900278,2023-12-25,C-5538,Analytics Suite,Software,asia,inbound,14,8904,Won
+O-900279,2023-12-01,C-4505,POS-Terminal,Software,europe,inbound,4,7160,Won
+O-900280,2023-04-05,C-2180,POS-Terminal,Soft ware,north america,Partner,3,3051,Won
+O-900281,2023-05-01,C-6202,AnalyticsSuite,Soft ware,NA,out bound,11,17996,Won
+O-900282,2023-08-04,C-2705,POS Terminal,Software,north america,Partner,10,11750,Won
+O-900283,2023-02-03,C-5796,POS Terminal,Hard ware,North-America,partner,4,2552,Won
+O-900284,2023-04-14,C-1280,POS-Terminal,Hard ware,North-America,OUTBOUND,10,9790,Won
+O-900285,2023-03-04,C-3138,CRM-Pro,Hard ware,north america,Inbound,12,13812,Won
+O-900286,2023-02-26,C-2932,POS-Terminal,Software,North-America,OUTBOUND,9,3897,Won
+O-900287,2024-04-08,C-3738,Analytics Suite,Hardware,europe,In-bound,12,4152,Won
+O-900288,2023-10-01,C-6501,POS Terminal,Hard ware,APAC,out bound,6,7344,Won
+O-900289,2023-03-02,C-4904,AnalyticsSuite,software,north america,Outbound,11,15983,Won
+O-900290,2024-12-08,C-1380,POS-Terminal,Hard ware,North-America,In-bound,6,3450,Won
+O-900291,2023-03-23,C-2916,AnalyticsSuite,Hard ware,north america,partner,2,3576,Won
+O-900292,2023-08-07,C-2843,POS Terminal,hardware,europe,Inbound,10,11470,Won
+O-900293,2023-01-04,C-2801,AnalyticsSuite,Hard ware,Asia,out bound,13,15743,Won
+O-900294,2023-12-07,C-3158,AnalyticsSuite,Software,EU,Partner,4,7228,Won
+O-900295,2023-01-08,C-5840,POS-Terminal,Software,NA,partner,15,28350,Won
+O-900296,2024-09-19,C-6160,CRM Pro,Hardware,EU,partner,7,9996,Won
+O-900297,2024-10-12,C-5001,CRM Pro,hardware,europe,Partner,2,1312,Won
+O-900298,2024-03-20,C-6966,Analytics Suite,Hard ware,north america,inbound,9,3492,Won
+O-900299,2023-11-28,C-4022,AnalyticsSuite,Hardware,NA,Outbound,8,5728,Won
+O-900300,2024-12-26,C-2148,AnalyticsSuite,Hard ware,Asia,out bound,5,7245,Won
+O-900301,2024-09-12,C-2270,POS-Terminal,hardware,north america,Partner,9,14202,Won
+O-900302,2024-09-25,C-6967,CRM-Pro,Soft ware,North America,Inbound,5,4655,Won
+O-900303,2024-07-15,C-6007,POS-Terminal,Software,europe,OUTBOUND,13,12129,Won
+O-900304,2024-01-24,C-6107,POS Terminal,Software,asia,Partner,8,8832,Won
+O-900305,2023-03-29,C-2593,Analytics Suite,Software,EU,OUTBOUND,1,490,Won
+O-900306,2023-01-13,C-5167,CRM-Pro,Software,north america,inbound,5,7925,Won
+O-900307,2023-05-05,C-4206,CRM Pro,Hard ware,APAC,Partner,14,11256,Won
+O-900308,2024-02-15,C-2336,POS-Terminal,Software,Europe,Outbound,5,9585,Won
+O-900309,2024-07-25,C-6702,AnalyticsSuite,Software,EU,Inbound,4,2292,Won
+O-900310,2024-08-26,C-5505,POS-Terminal,Hard ware,EU,Inbound,15,4815,Won
+O-900311,2023-06-17,C-5739,CRM Pro,software,europe,Outbound,6,10098,Won
+O-900312,2023-09-08,C-6821,POS Terminal,Soft ware,Asia,Partner,15,21090,Won
+O-900313,2023-07-03,C-2746,CRM Pro,Software,Europe,Outbound,11,7018,Won
+O-900314,2023-05-25,C-1238,POS Terminal,Soft ware,EU,Partner,4,4160,Won
+O-900315,2023-05-09,C-3058,CRM-Pro,Hard ware,Europe,In-bound,10,7640,Won
+O-900316,2023-02-21,C-3448,CRM-Pro,Hardware,europe,out bound,6,10092,Won
+O-900317,2023-09-19,C-6899,CRM Pro,Hardware,Asia,inbound,8,15960,Won
+O-900318,2024-06-22,C-3975,POS-Terminal,hardware,North America,Inbound,12,20904,Won
+O-900319,2024-08-21,C-1519,Analytics Suite,Hardware,Europe,inbound,15,24975,Won
+O-900320,2023-04-04,C-3142,CRM-Pro,Hardware,asia,In-bound,6,5382,Won
+O-900321,2024-02-16,C-2805,AnalyticsSuite,hardware,North-America,partner,6,10098,Won
+O-900322,2024-09-17,C-3687,POS-Terminal,hardware,APAC,Inbound,14,4788,Won
+O-900323,2023-12-22,C-1682,AnalyticsSuite,Soft ware,APAC,OUTBOUND,3,3693,Won
+O-900324,2024-05-30,C-6589,CRM-Pro,software,NA,inbound,1,842,Won
+O-900325,2023-01-30,C-3849,CRM-Pro,Hardware,Asia,partner,14,4928,Won
+O-900326,2023-04-08,C-5320,CRM Pro,Hardware,EU,In-bound,1,776,Won
+O-900327,2024-11-02,C-3305,AnalyticsSuite,Hardware,europe,Inbound,3,5916,Won
+O-900328,2024-01-09,C-2406,POS-Terminal,Hard ware,europe,Outbound,2,1546,Won
+O-900329,2023-04-23,C-1631,POS-Terminal,Soft ware,NA,Partner,13,7891,Won
+O-900330,2024-12-28,C-2444,POS-Terminal,software,North America,out bound,2,3256,Won
+O-900331,2023-03-16,C-5599,POS Terminal,Soft ware,NA,out bound,6,11466,Won
+O-900332,2024-05-21,C-3707,AnalyticsSuite,Hard ware,Europe,Outbound,14,19026,Won
+O-900333,2024-12-19,C-4722,POS Terminal,Soft ware,EU,OUTBOUND,7,10087,Won
+O-900334,2024-05-07,C-4055,CRM-Pro,Hard ware,europe,Partner,10,12560,Won
+O-900335,2023-09-16,C-1291,CRM-Pro,software,asia,partner,14,10234,Won
+O-900336,2024-02-29,C-1129,POS-Terminal,hardware,EU,inbound,7,2296,Won
+O-900337,2023-02-27,C-6081,Analytics Suite,Hardware,EU,Outbound,11,15433,Won
+O-900338,2023-12-02,C-3573,POS-Terminal,Soft ware,N. America,out bound,1,1996,Won
+O-900339,2023-06-29,C-1720,AnalyticsSuite,Software,North-America,inbound,10,12010,Won
+O-900340,2024-08-16,C-4202,AnalyticsSuite,software,asia,In-bound,10,14200,Won
+O-900341,2023-06-25,C-1507,Analytics Suite,Software,APAC,In-bound,11,14960,Won
+O-900342,2023-08-15,C-3960,CRM Pro,Hard ware,North America,out bound,9,4023,Won
+O-900343,2024-09-14,C-6613,Analytics Suite,Software,north america,Inbound,15,24195,Won
+O-900344,2023-09-18,C-1515,AnalyticsSuite,Hard ware,Europe,out bound,8,8824,Won
+O-900345,2023-06-04,C-3368,CRM Pro,Soft ware,Asia,OUTBOUND,9,5886,Won
+O-900346,2024-05-08,C-6173,AnalyticsSuite,Hardware,North America,Inbound,1,977,Won
+O-900347,2024-03-31,C-3104,CRM-Pro,Hard ware,europe,OUTBOUND,7,3612,Won
+O-900348,2023-12-02,C-4341,CRM Pro,Soft ware,Europe,out bound,12,4980,Won
+O-900349,2023-05-26,C-3486,CRM Pro,Hard ware,Europe,inbound,4,4352,Won
+O-900350,2024-05-01,C-6070,POS Terminal,hardware,asia,OUTBOUND,9,5931,Won
+O-900351,2024-06-13,C-6795,Analytics Suite,Software,N. America,partner,8,11384,Won
+O-900352,2023-06-02,C-6927,POS Terminal,hardware,North America,Outbound,9,4662,Won
+O-900353,2024-10-22,C-5606,CRM-Pro,Soft ware,asia,out bound,13,21515,Won
+O-900354,2024-01-12,C-2469,CRM-Pro,hardware,NA,partner,12,17436,Won
+O-900355,2024-10-05,C-2718,POS Terminal,hardware,europe,partner,5,3915,Won
+O-900356,2024-09-25,C-2422,CRM-Pro,hardware,North-America,OUTBOUND,10,18770,Won
+O-900357,2024-02-20,C-5897,CRM-Pro,hardware,N. America,Inbound,4,2852,Won
+O-900358,2024-10-16,C-4560,CRM Pro,hardware,EU,Inbound,1,345,Won
+O-900359,2024-11-08,C-5783,POS-Terminal,Soft ware,europe,Outbound,13,4433,Won
+O-900360,2023-07-09,C-2940,POS-Terminal,Soft ware,Europe,Inbound,11,10549,Won
+O-900361,2023-07-12,C-2924,CRM Pro,Hardware,EU,partner,3,1881,Won
+O-900362,2024-05-07,C-1429,POS Terminal,Soft ware,europe,Partner,11,19283,Won
+O-900363,2023-01-14,C-5754,CRM Pro,Soft ware,N. America,In-bound,3,2640,Won
+O-900364,2024-06-26,C-6106,POS-Terminal,Soft ware,europe,Outbound,10,12030,Won
+O-900365,2024-08-12,C-2648,AnalyticsSuite,Hard ware,north america,In-bound,5,3530,Won
+O-900366,2024-07-14,C-5665,POS-Terminal,Hardware,APAC,Outbound,15,25785,Won
+O-900367,2023-11-07,C-6296,CRM-Pro,software,asia,Partner,13,16471,Won
+O-900368,2023-03-16,C-4685,Analytics Suite,Hardware,Europe,out bound,9,7965,Won
+O-900369,2024-07-19,C-1410,CRM Pro,Hard ware,north america,OUTBOUND,12,4080,Won
+O-900370,2024-07-20,C-6730,POS Terminal,software,Asia,out bound,4,2828,Won
+O-900371,2023-04-23,C-6022,CRM Pro,software,NA,partner,8,10360,Won
+O-900372,2023-03-22,C-2829,Analytics Suite,Soft ware,Asia,Outbound,10,16200,Won
+O-900373,2023-08-27,C-5766,CRM-Pro,Soft ware,N. America,out bound,3,2217,Won
+O-900374,2024-01-06,C-2964,AnalyticsSuite,hardware,APAC,Partner,13,21658,Won
+O-900375,2023-02-20,C-6159,Analytics Suite,Soft ware,N. America,Outbound,8,10968,Won
+O-900376,2024-12-13,C-1098,CRM Pro,hardware,EU,out bound,9,2772,Won
+O-900377,2023-11-07,C-3278,POS Terminal,Software,europe,OUTBOUND,1,763,Won
+O-900378,2023-04-23,C-4623,CRM-Pro,Hard ware,Europe,OUTBOUND,6,2142,Won
+O-900379,2023-03-18,C-4650,AnalyticsSuite,Soft ware,N. America,Inbound,6,4848,Won
+O-900380,2024-06-17,C-2922,CRM-Pro,Hardware,N. America,OUTBOUND,15,19665,Won
+O-900381,2024-02-18,C-6066,Analytics Suite,Soft ware,europe,Outbound,6,9564,Won
+O-900382,2024-09-20,C-6072,POS-Terminal,Hard ware,asia,partner,14,23100,Won
+O-900383,2023-07-11,C-6244,POS Terminal,Hardware,North-America,Outbound,15,19320,Won
+O-900384,2024-09-28,C-3253,CRM-Pro,Hard ware,APAC,Outbound,8,14992,Won
+O-900385,2024-05-16,C-1606,AnalyticsSuite,hardware,APAC,OUTBOUND,8,2536,Won
+O-900386,2024-02-13,C-3192,CRM-Pro,Hardware,europe,inbound,10,18860,Won
+O-900387,2024-02-17,C-2446,POS-Terminal,hardware,EU,Outbound,6,8304,Won
+O-900388,2024-10-17,C-2564,AnalyticsSuite,Software,north america,Partner,2,1762,Won
+O-900389,2023-11-30,C-6690,POS Terminal,Soft ware,europe,out bound,13,14547,Won
+O-900390,2024-10-26,C-3901,AnalyticsSuite,software,asia,Inbound,4,2072,Won
+O-900391,2023-10-21,C-3734,Analytics Suite,hardware,NA,OUTBOUND,5,5080,Won
+O-900392,2024-11-25,C-1247,CRM Pro,Software,EU,Partner,7,5628,Won
+O-900393,2023-01-27,C-2087,POS-Terminal,hardware,Asia,In-bound,14,16366,Won
+O-900394,2023-01-15,C-6885,CRM-Pro,Software,asia,inbound,15,16980,Won
+O-900395,2024-01-25,C-4366,POS Terminal,software,EU,Inbound,9,3879,Won
+O-900396,2024-10-12,C-4994,Analytics Suite,Software,EU,In-bound,7,13006,Won
+O-900397,2023-08-11,C-6761,CRM Pro,Soft ware,N. America,inbound,13,13325,Won
+O-900398,2023-12-30,C-4788,CRM-Pro,Software,EU,OUTBOUND,5,5430,Won
+O-900399,2024-03-27,C-3637,POS-Terminal,Software,north america,OUTBOUND,4,6840,Won
+O-900400,2024-10-17,C-5766,POS Terminal,hardware,north america,partner,8,6640,Won
+O-900401,2023-06-22,C-2101,Analytics Suite,Hard ware,NA,out bound,13,22061,Won
+O-900402,2024-07-03,C-6152,CRM-Pro,hardware,North-America,In-bound,2,1920,Won
+O-900403,2024-02-07,C-4772,Analytics Suite,Hardware,N. America,out bound,9,16326,Won
+O-900404,2023-04-19,C-1057,POS Terminal,Hardware,NA,inbound,7,13006,Won
+O-900405,2024-09-13,C-5955,Analytics Suite,Software,Europe,inbound,1,709,Won
+O-900406,2024-05-14,C-2071,CRM Pro,hardware,NA,OUTBOUND,5,9365,Won
+O-900407,2023-01-11,C-6171,CRM Pro,Soft ware,N. America,OUTBOUND,5,9475,Won
+O-900408,2024-08-12,C-4722,POS Terminal,hardware,APAC,partner,4,1404,Won
+O-900409,2024-04-16,C-2384,AnalyticsSuite,Soft ware,N. America,out bound,9,5256,Won
+O-900410,2023-03-10,C-4683,POS-Terminal,Hard ware,europe,inbound,5,9500,Won
+O-900411,2024-08-19,C-1619,POS-Terminal,hardware,North America,Outbound,8,15032,Won
+O-900412,2023-08-14,C-4014,Analytics Suite,Soft ware,APAC,Outbound,3,975,Won
+O-900413,2023-02-26,C-5674,POS-Terminal,Software,NA,inbound,6,4782,Won
+O-900414,2023-12-12,C-5179,POS Terminal,Hard ware,NA,In-bound,14,25634,Won
+O-900415,2024-04-03,C-5788,POS Terminal,hardware,north america,out bound,5,4520,Won
+O-900416,2023-09-12,C-5166,AnalyticsSuite,Soft ware,North America,Inbound,9,5985,Won
+O-900417,2023-08-07,C-3412,POS-Terminal,Soft ware,europe,Inbound,5,1935,Won
+O-900418,2024-08-25,C-5028,POS-Terminal,Software,North America,In-bound,2,1180,Won
+O-900419,2024-08-22,C-5097,CRM-Pro,Hard ware,asia,Outbound,7,10668,Won
+O-900420,2023-08-27,C-6677,CRM-Pro,Hard ware,north america,Inbound,1,1782,Won
+O-900421,2024-08-15,C-4150,AnalyticsSuite,Soft ware,Europe,inbound,14,16408,Won
+O-900422,2023-03-24,C-1565,CRM-Pro,Soft ware,Asia,Partner,4,4836,Won
+O-900423,2023-10-02,C-5782,Analytics Suite,software,North-America,Partner,7,7035,Won
+O-900424,2023-11-17,C-4008,POS Terminal,Hard ware,north america,Partner,3,2169,Won
+O-900425,2024-09-03,C-5490,CRM-Pro,software,EU,inbound,5,6060,Won
+O-900426,2024-04-21,C-3536,POS Terminal,Hardware,North-America,Partner,10,18400,Won
+O-900427,2024-09-24,C-1917,AnalyticsSuite,Software,North-America,OUTBOUND,13,23946,Won
+O-900428,2023-08-17,C-6947,POS Terminal,hardware,europe,Partner,15,12090,Won
+O-900429,2023-03-17,C-5291,POS-Terminal,Hardware,Europe,Inbound,13,17329,Won
+O-900430,2024-03-21,C-2131,POS-Terminal,Hardware,North America,Inbound,13,9581,Won
+O-900431,2024-01-27,C-5846,POS Terminal,software,asia,OUTBOUND,5,6665,Won
+O-900432,2024-03-25,C-5377,POS-Terminal,Hard ware,europe,Inbound,14,5558,Won
+O-900433,2024-04-25,C-5598,CRM Pro,software,north america,OUTBOUND,2,2556,Won
+O-900434,2024-12-09,C-4990,POS-Terminal,Soft ware,asia,partner,1,1013,Won
+O-900435,2023-07-12,C-1506,CRM-Pro,Soft ware,europe,Outbound,1,1829,Won
+O-900436,2024-08-31,C-5319,POS-Terminal,Hard ware,Europe,In-bound,14,13314,Won
+O-900437,2024-12-23,C-5766,AnalyticsSuite,Soft ware,Europe,Outbound,3,3705,Won
+O-900438,2024-06-20,C-4703,POS Terminal,software,N. America,OUTBOUND,15,24435,Won
+O-900439,2023-11-14,C-4357,CRM-Pro,Software,EU,partner,9,11160,Won
+O-900440,2024-08-27,C-4841,POS Terminal,Hardware,APAC,out bound,13,21866,Won
+O-900441,2024-02-19,C-2369,Analytics Suite,hardware,NA,inbound,15,4980,Won
+O-900442,2023-07-17,C-1550,CRM-Pro,software,EU,OUTBOUND,14,21042,Won
+O-900443,2024-02-20,C-3037,POS-Terminal,Software,europe,Outbound,9,4455,Won
+O-900444,2023-12-16,C-3432,Analytics Suite,hardware,north america,OUTBOUND,13,19617,Won
+O-900445,2024-06-04,C-1023,Analytics Suite,Hardware,asia,inbound,11,16775,Won
+O-900446,2023-07-05,C-4770,Analytics Suite,Software,EU,out bound,12,20184,Won
+O-900447,2024-11-04,C-3742,POS-Terminal,Hard ware,Europe,OUTBOUND,5,1535,Won
+O-900448,2024-05-31,C-5637,AnalyticsSuite,Hardware,Asia,Outbound,15,10260,Won
+O-900449,2024-02-06,C-5600,POS Terminal,Hard ware,North-America,Partner,9,11736,Won
+O-900450,2023-10-08,C-1468,CRM Pro,Hard ware,NA,Inbound,14,27986,Won
+O-900451,2023-12-19,C-6756,AnalyticsSuite,hardware,EU,Inbound,2,1690,Won
+O-900452,2023-07-06,C-1696,Analytics Suite,Hardware,EU,In-bound,6,3906,Won
+O-900453,2024-12-20,C-3186,AnalyticsSuite,Soft ware,north america,out bound,8,8016,Won
+O-900454,2024-03-30,C-3159,AnalyticsSuite,Hardware,NA,inbound,3,4053,Won
+O-900455,2024-09-21,C-1014,Analytics Suite,Soft ware,europe,Outbound,14,4452,Won
+O-900456,2024-08-05,C-2992,POS Terminal,software,EU,In-bound,5,2215,Won
+O-900457,2023-11-30,C-4920,POS-Terminal,hardware,North America,out bound,11,11572,Won
+O-900458,2024-07-24,C-6283,POS Terminal,Hard ware,APAC,In-bound,9,6462,Won
+O-900459,2024-06-01,C-1668,POS Terminal,Software,north america,Partner,11,8492,Won
+O-900460,2023-09-11,C-5218,CRM Pro,software,North America,OUTBOUND,2,2054,Won
+O-900461,2023-02-26,C-1146,POS-Terminal,hardware,North America,OUTBOUND,3,1896,Won
+O-900462,2023-10-19,C-2553,AnalyticsSuite,Hardware,APAC,OUTBOUND,11,19239,Won
+O-900463,2023-11-12,C-6655,AnalyticsSuite,Hardware,EU,partner,12,6120,Won
+O-900464,2024-12-01,C-4864,CRM Pro,Hard ware,EU,OUTBOUND,5,4285,Won
+O-900465,2024-05-18,C-6066,CRM-Pro,hardware,North-America,out bound,11,20152,Won
+O-900466,2024-02-20,C-5279,POS-Terminal,Soft ware,Europe,In-bound,3,5472,Won
+O-900467,2024-04-15,C-4152,POS Terminal,Hardware,Europe,partner,8,10024,Won
+O-900468,2023-05-20,C-4050,Analytics Suite,software,Asia,In-bound,14,4410,Won
+O-900469,2024-08-26,C-3734,POS-Terminal,Soft ware,EU,out bound,13,22841,Won
+O-900470,2024-04-15,C-6179,Analytics Suite,Software,north america,partner,7,6251,Won
+O-900471,2024-10-30,C-1520,Analytics Suite,software,europe,Inbound,14,16464,Won
+O-900472,2024-01-18,C-5659,AnalyticsSuite,Soft ware,N. America,OUTBOUND,2,1424,Won
+O-900473,2024-08-27,C-4412,Analytics Suite,hardware,APAC,Outbound,14,23814,Won
+O-900474,2024-10-06,C-5467,AnalyticsSuite,software,NA,In-bound,9,13815,Won
+O-900475,2023-07-09,C-1028,CRM Pro,Hardware,NA,out bound,4,1580,Won
+O-900476,2024-06-30,C-6571,CRM-Pro,Hard ware,N. America,Partner,10,15590,Won
+O-900477,2024-10-31,C-5383,CRM Pro,software,North America,inbound,2,3388,Won
+O-900478,2023-07-16,C-4610,AnalyticsSuite,hardware,Europe,Outbound,9,2700,Won
+O-900479,2024-02-10,C-2253,POS-Terminal,Hard ware,North America,Inbound,7,6097,Won
+O-900480,2024-02-29,C-6395,Analytics Suite,hardware,europe,Outbound,4,5732,Won
+O-900481,2023-02-23,C-2043,AnalyticsSuite,hardware,NA,Inbound,7,12957,Won
+O-900482,2024-04-10,C-6609,POS-Terminal,Software,Asia,inbound,4,2416,Won
+O-900483,2024-04-25,C-5529,CRM-Pro,hardware,NA,Inbound,2,2154,Won
+O-900484,2023-04-11,C-3978,Analytics Suite,Software,asia,inbound,2,3888,Won
+O-900485,2023-07-23,C-5259,AnalyticsSuite,Hard ware,North America,partner,2,2398,Won
+O-900486,2023-06-08,C-1136,POS Terminal,hardware,Europe,Inbound,10,10980,Won
+O-900487,2023-10-25,C-1456,CRM Pro,Hardware,north america,OUTBOUND,12,16212,Won
+O-900488,2023-11-12,C-4985,POS-Terminal,Hard ware,APAC,In-bound,7,5355,Won
+O-900489,2024-07-11,C-3562,POS Terminal,software,N. America,Outbound,9,9594,Won
+O-900490,2024-06-04,C-2939,Analytics Suite,Software,APAC,Outbound,13,9412,Won
+O-900491,2023-01-12,C-2382,POS Terminal,hardware,europe,In-bound,7,9905,Won
+O-900492,2024-01-22,C-5705,POS Terminal,Soft ware,N. America,OUTBOUND,10,8280,Won
+O-900493,2023-08-04,C-2934,CRM-Pro,Software,europe,In-bound,12,11508,Won
+O-900494,2023-10-08,C-3553,AnalyticsSuite,Hardware,N. America,In-bound,14,8736,Won
+O-900495,2023-07-16,C-5264,AnalyticsSuite,Hardware,North America,Inbound,3,1317,Won
+O-900496,2023-07-31,C-6495,POS-Terminal,hardware,asia,Outbound,9,8892,Won
+O-900497,2024-02-26,C-1520,CRM Pro,Hard ware,NA,OUTBOUND,6,4644,Won
+O-900498,2024-04-13,C-5932,CRM Pro,hardware,EU,Inbound,11,8569,Won
+O-900499,2024-04-28,C-3797,POS Terminal,Soft ware,North America,Outbound,6,6072,Won
+O-900500,2023-01-01,C-3071,Analytics Suite,hardware,North-America,OUTBOUND,2,2224,Won
+O-900501,2024-12-13,C-4003,CRM Pro,Hard ware,EU,out bound,15,8655,Won
+O-900502,2024-04-20,C-5167,POS Terminal,Hardware,EU,out bound,6,6336,Won
+O-900503,2023-10-14,C-6192,POS Terminal,Hardware,EU,Inbound,10,17190,Won
+O-900504,2023-10-05,C-6305,Analytics Suite,hardware,north america,Partner,3,5976,Won
+O-900505,2024-03-25,C-6091,CRM Pro,software,Europe,partner,14,19040,Won
+O-900506,2023-07-31,C-3184,POS-Terminal,Hardware,europe,OUTBOUND,6,8232,Won
+O-900507,2024-02-20,C-5738,AnalyticsSuite,Hardware,north america,Outbound,13,19201,Won
+O-900508,2024-06-22,C-2368,POS-Terminal,Hard ware,north america,out bound,9,8289,Won
+O-900509,2023-07-14,C-4536,POS-Terminal,Soft ware,N. America,Outbound,11,3850,Won
+O-900510,2024-08-18,C-1067,POS Terminal,Soft ware,europe,Partner,9,12537,Won
+O-900511,2023-01-13,C-5538,CRM Pro,Soft ware,Asia,inbound,9,4446,Won
+O-900512,2024-07-15,C-2229,POS Terminal,Hard ware,North America,partner,11,9405,Won
+O-900513,2024-08-02,C-3765,CRM-Pro,Software,europe,out bound,5,4845,Won
+O-900514,2024-04-08,C-3620,POS-Terminal,Software,NA,In-bound,9,11736,Won
+O-900515,2024-05-16,C-6947,AnalyticsSuite,Hardware,APAC,In-bound,14,11074,Won
+O-900516,2023-12-29,C-3381,Analytics Suite,software,north america,Partner,1,1281,Won
+O-900517,2023-08-26,C-5079,POS Terminal,Software,N. America,Outbound,6,9984,Won
+O-900518,2023-03-12,C-2285,AnalyticsSuite,Hard ware,North America,Inbound,7,5978,Won
+O-900519,2024-05-08,C-3950,POS-Terminal,Hardware,europe,Outbound,14,4536,Won
+O-900520,2024-10-24,C-2613,POS Terminal,software,NA,out bound,10,9010,Won
+O-900521,2024-06-28,C-6352,Analytics Suite,software,Asia,out bound,9,6498,Won
+O-900522,2024-04-23,C-3121,Analytics Suite,software,europe,Inbound,1,1401,Won
+O-900523,2023-02-07,C-2322,POS-Terminal,Hardware,APAC,partner,11,21637,Won
+O-900524,2023-06-17,C-6662,AnalyticsSuite,hardware,North-America,out bound,4,2184,Won
+O-900525,2023-09-13,C-3723,POS Terminal,Soft ware,asia,Inbound,4,7468,Won
+O-900526,2023-09-23,C-5599,Analytics Suite,hardware,APAC,Inbound,11,11528,Won
+O-900527,2024-02-19,C-6103,AnalyticsSuite,Soft ware,europe,In-bound,5,8210,Won
+O-900528,2023-11-16,C-5167,CRM Pro,software,asia,out bound,4,7276,Won
+O-900529,2024-09-30,C-6805,POS Terminal,Software,N. America,out bound,10,11420,Won
+O-900530,2023-01-09,C-5371,CRM-Pro,Hardware,Asia,In-bound,4,7156,Won
+O-900531,2023-09-12,C-4811,POS-Terminal,Software,Asia,inbound,10,15160,Won
+O-900532,2024-12-24,C-6376,AnalyticsSuite,hardware,asia,Partner,15,25515,Won
+O-900533,2023-08-15,C-3192,AnalyticsSuite,Software,EU,partner,7,5747,Won
+O-900534,2024-01-08,C-4170,POS Terminal,Hardware,north america,Inbound,4,7100,Won
+O-900535,2024-07-09,C-6396,CRM-Pro,Hard ware,North-America,inbound,10,3150,Won
+O-900536,2024-11-02,C-5051,POS Terminal,software,asia,Outbound,9,17622,Won
+O-900537,2023-07-25,C-2897,CRM-Pro,Hard ware,EU,inbound,11,14443,Won
+O-900538,2024-08-19,C-6296,AnalyticsSuite,Soft ware,North America,Outbound,14,21322,Won
+O-900539,2024-06-12,C-5309,CRM Pro,Hard ware,asia,In-bound,6,11394,Won
+O-900540,2023-08-15,C-5551,POS-Terminal,Software,Asia,OUTBOUND,7,11256,Won
+O-900541,2023-06-24,C-5450,CRM Pro,hardware,asia,out bound,14,18004,Won
+O-900542,2023-07-04,C-5648,AnalyticsSuite,hardware,Asia,OUTBOUND,5,5625,Won
+O-900543,2023-06-27,C-5176,CRM-Pro,Software,north america,out bound,15,10350,Won
+O-900544,2023-03-20,C-3662,POS Terminal,Hardware,NA,Partner,8,2648,Won
+O-900545,2024-12-02,C-2801,AnalyticsSuite,Hard ware,North-America,inbound,8,15000,Won
+O-900546,2024-04-28,C-1055,Analytics Suite,Hardware,europe,out bound,1,1316,Won
+O-900547,2024-08-18,C-1596,POS-Terminal,Soft ware,APAC,inbound,4,7452,Won
+O-900548,2023-02-12,C-6112,POS-Terminal,Hardware,NA,In-bound,7,4025,Won
+O-900549,2024-03-27,C-5588,POS Terminal,Hard ware,EU,In-bound,6,9042,Won
+O-900550,2023-08-05,C-3361,Analytics Suite,software,EU,out bound,4,4600,Won
+O-900551,2024-10-19,C-6017,AnalyticsSuite,hardware,asia,In-bound,5,3985,Won
+O-900552,2023-03-06,C-4021,POS Terminal,software,north america,OUTBOUND,2,1132,Won
+O-900553,2023-12-30,C-3590,Analytics Suite,Soft ware,North America,Partner,3,4437,Won
+O-900554,2023-12-17,C-1541,CRM-Pro,software,asia,inbound,11,5588,Won
+O-900555,2024-02-10,C-1386,POS-Terminal,Hardware,N. America,Partner,6,2520,Won
+O-900556,2023-10-05,C-1015,Analytics Suite,software,Europe,out bound,1,1651,Won
+O-900557,2024-04-28,C-4590,Analytics Suite,Hard ware,NA,Inbound,5,2375,Won
+O-900558,2023-01-11,C-5920,CRM Pro,Hard ware,APAC,Partner,1,1092,Won
+O-900559,2024-12-26,C-6181,CRM-Pro,Soft ware,north america,out bound,11,12749,Won
+O-900560,2024-06-09,C-5300,AnalyticsSuite,Software,EU,In-bound,1,790,Won
+O-900561,2023-04-17,C-1016,AnalyticsSuite,software,North-America,Partner,8,7416,Won
+O-900562,2024-05-22,C-6097,POS-Terminal,Hard ware,europe,Outbound,5,5225,Won
+O-900563,2024-08-13,C-4529,POS-Terminal,Hard ware,APAC,Inbound,8,8792,Won
+O-900564,2024-12-15,C-2089,POS-Terminal,Hard ware,EU,Partner,6,6006,Won
+O-900565,2024-08-06,C-4634,CRM-Pro,hardware,EU,Outbound,15,25875,Won
+O-900566,2024-04-30,C-6413,CRM-Pro,Hard ware,europe,Outbound,13,21814,Won
+O-900567,2023-03-20,C-4227,AnalyticsSuite,software,NA,Partner,4,2460,Won
+O-900568,2024-11-13,C-1427,POS-Terminal,Hardware,north america,inbound,4,1364,Won
+O-900569,2023-01-25,C-5897,POS Terminal,Hardware,Europe,OUTBOUND,15,21990,Won
+O-900570,2024-05-01,C-6286,POS Terminal,software,Asia,Partner,6,5298,Won
+O-900571,2023-09-10,C-3452,Analytics Suite,software,Europe,out bound,14,16814,Won
+O-900572,2023-03-11,C-4064,CRM Pro,hardware,EU,out bound,8,12032,Won
+O-900573,2024-03-14,C-5420,CRM-Pro,software,North-America,out bound,7,9842,Won
+O-900574,2023-04-30,C-3935,POS-Terminal,Software,N. America,In-bound,10,4430,Won
+O-900575,2023-04-11,C-1792,CRM-Pro,Software,asia,Partner,5,2165,Won
+O-900576,2023-01-16,C-1314,CRM-Pro,software,N. America,Partner,15,17535,Won
+O-900577,2024-04-08,C-5304,CRM-Pro,Soft ware,north america,In-bound,13,15951,Won
+O-900578,2023-02-07,C-3436,AnalyticsSuite,software,North America,OUTBOUND,3,4674,Won
+O-900579,2023-04-17,C-4507,POS Terminal,software,North-America,out bound,10,18480,Won
+O-900580,2023-02-06,C-2331,POS-Terminal,Hard ware,Europe,Inbound,3,5178,Won
+O-900581,2024-03-01,C-4159,CRM-Pro,Soft ware,asia,Partner,4,6548,Won
+O-900582,2024-05-23,C-3845,CRM Pro,hardware,Europe,Partner,8,2768,Won
+O-900583,2023-04-10,C-4300,AnalyticsSuite,Hard ware,NA,out bound,5,6675,Won
+O-900584,2024-03-23,C-5502,AnalyticsSuite,Software,asia,inbound,13,7189,Won
+O-900585,2023-01-08,C-5731,AnalyticsSuite,Hardware,europe,OUTBOUND,11,20713,Won
+O-900586,2024-01-10,C-3415,POS-Terminal,Hardware,APAC,Inbound,7,7476,Won
+O-900587,2024-10-24,C-1883,CRM-Pro,hardware,north america,partner,4,6504,Won
+O-900588,2023-09-30,C-4324,POS-Terminal,hardware,APAC,Outbound,6,11370,Won
+O-900589,2023-01-29,C-3147,POS Terminal,Soft ware,Europe,Outbound,5,4125,Won
+O-900590,2023-08-17,C-6408,POS-Terminal,hardware,North America,out bound,14,22736,Won
+O-900591,2024-11-27,C-6343,POS-Terminal,software,asia,out bound,7,11417,Won
+O-900592,2024-03-05,C-2937,POS Terminal,Hard ware,N. America,Outbound,8,10032,Won
+O-900593,2024-12-13,C-3988,AnalyticsSuite,Soft ware,North America,partner,1,493,Won
+O-900594,2024-06-25,C-2372,POS-Terminal,Hardware,NA,Inbound,11,9471,Won
+O-900595,2023-07-05,C-6299,Analytics Suite,Hardware,EU,out bound,6,9216,Won
+O-900596,2023-11-08,C-4335,CRM Pro,hardware,NA,Outbound,14,20720,Won
+O-900597,2023-06-05,C-2193,CRM Pro,hardware,North-America,Inbound,2,676,Won
+O-900598,2023-09-09,C-3508,CRM Pro,Hard ware,NA,OUTBOUND,6,4932,Won
+O-900599,2024-12-29,C-1311,POS Terminal,Soft ware,EU,OUTBOUND,14,18746,Won
+O-900600,2023-07-11,C-4177,CRM-Pro,Soft ware,North America,partner,14,6986,Won
+O-900601,2024-09-17,C-4724,CRM Pro,software,NA,inbound,14,22484,Won
+O-900602,2024-01-12,C-5446,AnalyticsSuite,Software,N. America,out bound,8,3552,Won
+O-900603,2023-06-28,C-3308,CRM Pro,Software,APAC,Inbound,4,2304,Won
+O-900604,2024-07-15,C-1548,CRM-Pro,Hard ware,Asia,partner,10,4980,Won
+O-900605,2023-04-21,C-2487,CRM-Pro,Hardware,Europe,Inbound,9,7389,Won
+O-900606,2023-08-04,C-6433,CRM-Pro,Hard ware,North America,Partner,4,3268,Won
+O-900607,2023-05-12,C-3804,POS-Terminal,hardware,EU,Outbound,3,2871,Won
+O-900608,2024-10-25,C-1258,CRM-Pro,Soft ware,NA,partner,4,3980,Won
+O-900609,2023-03-15,C-4563,POS-Terminal,hardware,APAC,OUTBOUND,13,13104,Won
+O-900610,2024-03-05,C-1836,CRM Pro,Hard ware,europe,out bound,13,13767,Won
+O-900611,2023-09-30,C-1281,POS-Terminal,Soft ware,N. America,inbound,11,4620,Won
+O-900612,2024-03-21,C-5600,CRM-Pro,Hard ware,North-America,Inbound,11,18458,Won
+O-900613,2023-03-22,C-2954,POS Terminal,Hardware,Europe,inbound,11,13508,Won
+O-900614,2023-01-21,C-4853,POS-Terminal,Hardware,APAC,Outbound,10,5800,Won
+O-900615,2024-06-18,C-6967,CRM-Pro,software,N. America,OUTBOUND,6,8760,Won
+O-900616,2023-11-26,C-1385,CRM Pro,Hard ware,north america,Inbound,15,18795,Won
+O-900617,2024-02-03,C-5873,AnalyticsSuite,Software,asia,Inbound,14,8750,Won
+O-900618,2024-05-16,C-3162,CRM Pro,software,EU,In-bound,12,23316,Won
+O-900619,2023-01-27,C-4963,Analytics Suite,Hardware,APAC,out bound,12,19440,Won
+O-900620,2023-11-06,C-1415,POS-Terminal,Software,Asia,out bound,8,4208,Won
+O-900621,2024-06-18,C-3168,POS Terminal,Software,asia,inbound,13,17147,Won
+O-900622,2024-07-03,C-2170,CRM-Pro,Software,APAC,out bound,1,1134,Won
+O-900623,2023-03-11,C-2384,AnalyticsSuite,hardware,north america,Inbound,9,6867,Won
+O-900624,2024-10-17,C-5803,CRM-Pro,Soft ware,EU,out bound,10,11970,Won
+O-900625,2023-01-04,C-3943,AnalyticsSuite,Software,europe,out bound,10,13070,Won
+O-900626,2024-11-05,C-4380,POS-Terminal,hardware,APAC,Inbound,1,1267,Won
+O-900627,2023-11-09,C-1147,CRM-Pro,Hardware,europe,partner,7,8561,Won
+O-900628,2023-08-19,C-2735,POS Terminal,hardware,north america,In-bound,5,4405,Won
+O-900629,2024-11-19,C-6829,AnalyticsSuite,Software,europe,out bound,14,7070,Won
+O-900630,2023-08-18,C-5468,CRM-Pro,software,north america,out bound,9,9072,Won
+O-900631,2024-11-07,C-2005,AnalyticsSuite,software,europe,inbound,11,17017,Won
+O-900632,2023-07-28,C-6549,POS-Terminal,Hard ware,north america,Partner,14,26670,Won
+O-900633,2024-05-17,C-5420,CRM Pro,Hard ware,APAC,Partner,8,5360,Won
+O-900634,2024-05-13,C-3930,CRM-Pro,Software,N. America,Inbound,6,3288,Won
+O-900635,2024-07-18,C-4383,POS Terminal,hardware,europe,inbound,1,1976,Won
+O-900636,2024-12-24,C-3266,AnalyticsSuite,hardware,N. America,Partner,3,3579,Won
+O-900637,2023-08-06,C-5037,POS Terminal,Hard ware,Asia,partner,11,11836,Won
+O-900638,2023-06-29,C-2100,POS-Terminal,Hardware,NA,OUTBOUND,14,11396,Won
+O-900639,2023-01-25,C-2471,POS Terminal,hardware,Asia,partner,9,7785,Won
+O-900640,2024-11-18,C-2243,POS-Terminal,software,north america,inbound,11,7777,Won
+O-900641,2024-12-27,C-5926,CRM-Pro,Software,Asia,In-bound,4,4416,Won
+O-900642,2023-12-05,C-3120,CRM-Pro,hardware,N. America,OUTBOUND,12,15060,Won
+O-900643,2024-07-03,C-2072,AnalyticsSuite,hardware,EU,OUTBOUND,8,4304,Won
+O-900644,2024-09-09,C-3815,AnalyticsSuite,software,Asia,Partner,1,1461,Won
+O-900645,2024-11-11,C-1556,POS Terminal,Hardware,North America,In-bound,11,17666,Won
+O-900646,2024-09-17,C-6441,CRM Pro,Soft ware,north america,out bound,3,2487,Won
+O-900647,2023-08-04,C-5561,AnalyticsSuite,hardware,europe,Outbound,2,1716,Won
+O-900648,2024-03-05,C-1361,Analytics Suite,software,Asia,inbound,10,19730,Won
+O-900649,2023-04-04,C-2991,CRM-Pro,hardware,North-America,OUTBOUND,2,2054,Won
+O-900650,2023-12-27,C-6872,CRM Pro,Soft ware,NA,Outbound,6,11802,Won
+O-900651,2023-12-10,C-6741,AnalyticsSuite,software,APAC,out bound,12,12552,Won
+O-900652,2023-10-26,C-4709,AnalyticsSuite,Soft ware,asia,In-bound,12,21732,Won
+O-900653,2024-02-09,C-6537,CRM Pro,Software,North America,out bound,11,8162,Won
+O-900654,2023-12-23,C-1641,CRM-Pro,hardware,EU,Partner,15,28365,Won
+O-900655,2023-10-13,C-3292,Analytics Suite,Hard ware,North-America,Partner,3,5451,Won
+O-900656,2024-10-31,C-1309,POS Terminal,Soft ware,NA,OUTBOUND,8,12792,Won
+O-900657,2024-09-07,C-1742,POS Terminal,Hard ware,asia,Outbound,7,13090,Won
+O-900658,2024-09-27,C-6192,CRM Pro,hardware,APAC,In-bound,14,26516,Won
+O-900659,2023-09-15,C-2430,POS-Terminal,software,N. America,In-bound,13,15379,Won
+O-900660,2023-05-03,C-1819,AnalyticsSuite,software,europe,out bound,6,3366,Won
+O-900661,2023-08-03,C-1503,POS Terminal,Hardware,EU,inbound,3,3732,Won
+O-900662,2023-01-04,C-3757,AnalyticsSuite,Soft ware,north america,partner,3,1560,Won
+O-900663,2024-02-06,C-3403,AnalyticsSuite,Hard ware,Asia,out bound,11,9592,Won
+O-900664,2023-03-13,C-5494,CRM-Pro,hardware,N. America,Partner,3,3414,Won
+O-900665,2023-09-20,C-6092,POS Terminal,software,EU,Inbound,6,6420,Won
+O-900666,2023-04-24,C-6167,CRM-Pro,hardware,EU,In-bound,2,1480,Won
+O-900667,2024-02-01,C-5398,POS-Terminal,Hardware,asia,Partner,13,14326,Won
+O-900668,2023-09-27,C-4593,Analytics Suite,software,N. America,In-bound,13,7163,Won
+O-900669,2023-07-10,C-5540,POS Terminal,Software,North America,partner,7,2912,Won
+O-900670,2024-10-10,C-4497,AnalyticsSuite,Hard ware,Europe,Inbound,14,26544,Won
+O-900671,2024-11-13,C-2567,POS-Terminal,hardware,APAC,Outbound,15,10575,Won
+O-900672,2023-07-01,C-4037,POS Terminal,software,Asia,In-bound,6,2514,Won
+O-900673,2024-07-04,C-5101,CRM Pro,hardware,North-America,partner,15,15750,Won
+O-900674,2024-05-16,C-5364,POS-Terminal,Soft ware,NA,inbound,10,15560,Won
+O-900675,2024-01-29,C-4446,POS Terminal,Hardware,Europe,OUTBOUND,5,6480,Won
+O-900676,2024-09-26,C-2198,AnalyticsSuite,software,Europe,out bound,13,6227,Won
+O-900677,2024-07-06,C-6267,CRM Pro,software,EU,partner,4,4392,Won
+O-900678,2024-12-19,C-6502,Analytics Suite,Software,North America,Outbound,9,15948,Won
+O-900679,2023-08-04,C-4633,Analytics Suite,software,asia,Partner,8,5360,Won
+O-900680,2024-12-29,C-4372,POS-Terminal,Software,North America,OUTBOUND,2,2514,Won
+O-900681,2023-03-19,C-5836,CRM Pro,Hard ware,North-America,Outbound,6,2148,Won
+O-900682,2023-09-05,C-1292,AnalyticsSuite,Hardware,europe,partner,11,11847,Won
+O-900683,2023-09-11,C-5469,CRM Pro,software,EU,Partner,1,313,Won
+O-900684,2024-09-07,C-2415,Analytics Suite,Hardware,APAC,Inbound,2,1428,Won
+O-900685,2023-06-14,C-6303,POS-Terminal,Software,EU,Inbound,11,17886,Won
+O-900686,2023-04-02,C-1352,CRM Pro,Software,asia,In-bound,5,2630,Won
+O-900687,2023-03-08,C-1085,POS-Terminal,Hard ware,North-America,Partner,10,4680,Won
+O-900688,2023-05-03,C-2264,POS Terminal,Soft ware,APAC,Outbound,5,3840,Won
+O-900689,2024-09-08,C-3163,Analytics Suite,hardware,APAC,Inbound,5,3735,Won
+O-900690,2023-09-11,C-2815,AnalyticsSuite,hardware,europe,Inbound,1,1918,Won
+O-900691,2024-11-13,C-5385,POS Terminal,software,North America,inbound,7,12236,Won
+O-900692,2024-06-09,C-4760,POS-Terminal,hardware,NA,inbound,1,675,Won
+O-900693,2023-06-25,C-6552,CRM Pro,Soft ware,europe,Outbound,6,4572,Won
+O-900694,2024-07-26,C-4674,POS-Terminal,Hard ware,north america,Partner,9,16875,Won
+O-900695,2024-08-15,C-6173,POS Terminal,Soft ware,North-America,Partner,5,3820,Won
+O-900696,2024-10-22,C-4703,POS Terminal,software,Asia,partner,7,2296,Won
+O-900697,2024-09-17,C-4900,CRM Pro,Hard ware,asia,inbound,7,6692,Won
+O-900698,2024-05-22,C-3568,POS Terminal,Hard ware,North America,Partner,1,542,Won
+O-900699,2024-11-19,C-1451,CRM-Pro,Soft ware,North America,out bound,4,2996,Won
+O-900700,2024-02-09,C-3579,CRM-Pro,Soft ware,north america,In-bound,13,7969,Won
+O-900701,2024-07-10,C-4534,AnalyticsSuite,software,NA,OUTBOUND,2,3398,Won
+O-900702,2024-11-10,C-3371,POS-Terminal,Hardware,Asia,Partner,8,9792,Won
+O-900703,2023-12-30,C-6613,CRM-Pro,software,asia,inbound,7,11123,Won
+O-900704,2023-01-12,C-2001,AnalyticsSuite,Hard ware,N. America,Outbound,8,9728,Won
+O-900705,2024-07-07,C-5736,Analytics Suite,Hard ware,NA,Inbound,5,4845,Won
+O-900706,2023-03-28,C-3624,Analytics Suite,Hardware,north america,Inbound,6,5892,Won
+O-900707,2023-12-24,C-4419,CRM-Pro,Hardware,Europe,inbound,7,10542,Won
+O-900708,2024-12-07,C-2894,AnalyticsSuite,Software,Europe,Partner,12,11004,Won
+O-900709,2024-07-09,C-5187,CRM-Pro,software,North-America,out bound,3,2898,Won
+O-900710,2023-12-31,C-3297,Analytics Suite,Software,NA,OUTBOUND,5,1665,Won
+O-900711,2023-06-07,C-5242,AnalyticsSuite,hardware,North-America,inbound,2,3850,Won
+O-900712,2023-06-18,C-2049,AnalyticsSuite,hardware,North-America,Inbound,11,15884,Won
+O-900713,2023-07-31,C-6664,AnalyticsSuite,software,NA,OUTBOUND,10,17620,Won
+O-900714,2024-08-17,C-2004,AnalyticsSuite,hardware,NA,Outbound,3,957,Won
+O-900715,2024-09-27,C-1984,CRM Pro,software,europe,out bound,13,18291,Won
+O-900716,2023-01-18,C-5139,Analytics Suite,Software,EU,inbound,11,3377,Won
+O-900717,2023-06-30,C-3529,Analytics Suite,software,EU,In-bound,13,6864,Won
+O-900718,2023-03-21,C-6263,CRM-Pro,software,North-America,out bound,3,1596,Won
+O-900719,2023-03-04,C-6250,Analytics Suite,Software,asia,Partner,5,3260,Won
+O-900720,2023-11-14,C-4199,Analytics Suite,Hardware,EU,Partner,9,5652,Won
+O-900721,2023-05-30,C-5860,AnalyticsSuite,Hard ware,europe,out bound,9,10962,Won
+O-900722,2023-08-03,C-3314,AnalyticsSuite,Software,APAC,Inbound,7,2772,Won
+O-900723,2024-03-30,C-3504,CRM-Pro,software,North-America,Inbound,13,17030,Won
+O-900724,2024-12-21,C-2253,CRM Pro,hardware,north america,Inbound,10,6820,Won
+O-900725,2024-02-26,C-3629,Analytics Suite,hardware,north america,OUTBOUND,10,3970,Won
+O-900726,2024-10-12,C-6973,AnalyticsSuite,hardware,north america,Outbound,14,24374,Won
+O-900727,2024-08-14,C-6058,Analytics Suite,Hardware,Asia,inbound,7,5992,Won
+O-900728,2024-06-02,C-2466,POS-Terminal,Soft ware,N. America,OUTBOUND,5,7715,Won
+O-900729,2024-10-20,C-5322,POS-Terminal,software,EU,out bound,10,10650,Won
+O-900730,2024-08-22,C-2333,AnalyticsSuite,Software,north america,Inbound,10,6620,Won
+O-900731,2024-04-04,C-5404,AnalyticsSuite,Hard ware,North-America,inbound,1,1922,Won
+O-900732,2024-01-07,C-2579,Analytics Suite,Software,N. America,out bound,8,15608,Won
+O-900733,2023-07-04,C-5245,CRM-Pro,Hard ware,asia,partner,10,13450,Won
+O-900734,2024-04-25,C-4435,CRM-Pro,Hardware,Europe,OUTBOUND,11,12122,Won
+O-900735,2023-07-30,C-2845,POS-Terminal,Hard ware,europe,OUTBOUND,9,8487,Won
+O-900736,2024-01-18,C-4734,CRM Pro,hardware,EU,Outbound,9,12852,Won
+O-900737,2024-12-14,C-4155,Analytics Suite,Hard ware,N. America,inbound,7,3927,Won
+O-900738,2023-05-02,C-2471,Analytics Suite,Hard ware,N. America,In-bound,3,2166,Won
+O-900739,2023-12-03,C-2436,AnalyticsSuite,software,N. America,Outbound,15,25890,Won
+O-900740,2023-05-14,C-1801,POS-Terminal,software,APAC,OUTBOUND,3,4425,Won
+O-900741,2024-10-16,C-5922,POS Terminal,Soft ware,EU,OUTBOUND,10,11890,Won
+O-900742,2024-11-23,C-2329,POS-Terminal,hardware,europe,In-bound,11,9064,Won
+O-900743,2023-11-05,C-6452,AnalyticsSuite,Soft ware,EU,In-bound,8,11680,Won
+O-900744,2023-08-15,C-3438,Analytics Suite,Hardware,North-America,OUTBOUND,10,5320,Won
+O-900745,2024-10-20,C-2461,CRM Pro,software,N. America,Partner,15,20190,Won
+O-900746,2023-10-20,C-5789,POS-Terminal,Software,North-America,out bound,12,16620,Won
+O-900747,2024-10-18,C-6284,Analytics Suite,Hardware,NA,Outbound,3,4329,Won
+O-900748,2024-02-09,C-6077,AnalyticsSuite,Software,NA,Partner,11,16137,Won
+O-900749,2024-08-06,C-5295,Analytics Suite,Hard ware,europe,Outbound,11,19459,Won
+O-900750,2024-07-03,C-6194,CRM Pro,Hardware,Europe,OUTBOUND,14,11564,Won
+O-900751,2024-09-26,C-2010,CRM Pro,hardware,Asia,In-bound,14,8218,Won
+O-900752,2024-10-01,C-4092,POS-Terminal,Hard ware,North America,partner,5,6410,Won
+O-900753,2024-05-14,C-5011,POS-Terminal,Hard ware,NA,Inbound,5,3200,Won
+O-900754,2023-12-31,C-5089,POS Terminal,Hard ware,Asia,partner,8,13592,Won
+O-900755,2024-01-31,C-1784,CRM Pro,Soft ware,asia,Inbound,2,1164,Won
+O-900756,2024-09-03,C-1607,CRM-Pro,Hard ware,APAC,OUTBOUND,3,3189,Won
+O-900757,2024-12-11,C-4655,AnalyticsSuite,Hard ware,N. America,partner,4,4348,Won
+O-900758,2024-11-09,C-2089,AnalyticsSuite,Software,NA,out bound,8,9432,Won
+O-900759,2023-01-07,C-3028,AnalyticsSuite,Soft ware,NA,out bound,12,13356,Won
+O-900760,2023-10-19,C-1971,POS Terminal,Software,north america,Outbound,1,1574,Won
+O-900761,2024-08-09,C-1961,AnalyticsSuite,software,N. America,partner,3,3456,Won
+O-900762,2023-05-26,C-6248,POS Terminal,software,APAC,Inbound,7,4221,Won
+O-900763,2023-01-28,C-3844,CRM-Pro,hardware,europe,In-bound,2,2454,Won
+O-900764,2024-01-02,C-2587,AnalyticsSuite,hardware,APAC,Inbound,13,10504,Won
+O-900765,2024-05-16,C-2667,CRM-Pro,hardware,Asia,inbound,3,5334,Won
+O-900766,2023-09-09,C-6508,CRM-Pro,hardware,NA,Outbound,1,815,Won
+O-900767,2023-05-20,C-3925,POS Terminal,software,North America,In-bound,2,3584,Won
+O-900768,2024-10-09,C-1780,CRM-Pro,Hardware,NA,OUTBOUND,12,6528,Won
+O-900769,2024-02-18,C-4676,POS-Terminal,hardware,north america,out bound,9,6822,Won
+O-900770,2024-02-03,C-3230,AnalyticsSuite,hardware,North-America,partner,11,14267,Won
+O-900771,2023-06-15,C-3593,POS Terminal,Hardware,North America,Outbound,1,1075,Won
+O-900772,2023-03-22,C-6887,CRM Pro,Soft ware,europe,partner,8,15376,Won
+O-900773,2024-07-18,C-4193,Analytics Suite,Hardware,asia,partner,4,2904,Won
+O-900774,2023-01-16,C-1712,CRM-Pro,Software,N. America,out bound,3,1470,Won
+O-900775,2023-03-27,C-1300,Analytics Suite,Hardware,asia,Inbound,5,6720,Won
+O-900776,2024-11-03,C-6858,CRM Pro,Hardware,NA,Partner,5,7255,Won
+O-900777,2023-06-14,C-6931,POS-Terminal,Hard ware,Europe,Partner,1,522,Won
+O-900778,2024-04-10,C-5946,CRM Pro,Software,Asia,Outbound,12,14508,Won
+O-900779,2023-10-23,C-1214,AnalyticsSuite,software,APAC,OUTBOUND,8,14960,Won
+O-900780,2024-05-11,C-1726,AnalyticsSuite,Software,N. America,Partner,9,17946,Won
+O-900781,2024-05-12,C-5029,POS Terminal,Hardware,north america,inbound,11,16687,Won
+O-900782,2023-08-07,C-5844,POS-Terminal,Soft ware,Asia,out bound,13,4121,Won
+O-900783,2023-01-18,C-5901,CRM-Pro,Hard ware,asia,In-bound,9,13626,Won
+O-900784,2023-12-23,C-4727,POS Terminal,Soft ware,asia,Partner,5,3235,Won
+O-900785,2024-04-08,C-6036,CRM Pro,Hardware,north america,Outbound,4,1888,Won
+O-900786,2024-10-23,C-5369,CRM-Pro,Hard ware,North-America,Partner,3,3207,Won
+O-900787,2023-06-05,C-1393,POS Terminal,Software,North-America,Inbound,14,5768,Won
+O-900788,2023-02-03,C-4193,Analytics Suite,Software,APAC,In-bound,2,920,Won
+O-900789,2024-05-07,C-6077,AnalyticsSuite,Software,asia,Inbound,1,1917,Won
+O-900790,2024-07-08,C-6750,AnalyticsSuite,Soft ware,europe,Partner,7,13356,Won
+O-900791,2023-08-23,C-6964,POS Terminal,Soft ware,North America,Outbound,12,5652,Won
+O-900792,2024-06-16,C-3222,POS-Terminal,Software,Asia,out bound,8,8488,Won
+O-900793,2024-07-10,C-5199,AnalyticsSuite,hardware,Europe,out bound,4,1984,Won
+O-900794,2024-11-03,C-1046,AnalyticsSuite,Hardware,EU,Partner,7,11592,Won
+O-900795,2023-11-22,C-4869,POS-Terminal,Hard ware,Europe,Inbound,13,10647,Won
+O-900796,2023-10-20,C-3014,POS Terminal,software,N. America,partner,13,17238,Won
+O-900797,2024-04-29,C-6733,Analytics Suite,Software,Europe,OUTBOUND,13,5252,Won
+O-900798,2023-03-09,C-1570,AnalyticsSuite,Hardware,north america,Inbound,6,5388,Won
+O-900799,2023-12-14,C-5111,POS Terminal,software,APAC,Partner,3,5046,Won
+O-900800,2024-08-12,C-5275,AnalyticsSuite,Software,asia,inbound,15,28650,Won
+O-900801,2023-05-30,C-2085,AnalyticsSuite,Software,Asia,Inbound,15,8670,Won
+O-900802,2024-02-09,C-5672,AnalyticsSuite,Software,North America,In-bound,3,5244,Won
+O-900803,2024-09-05,C-1452,AnalyticsSuite,Hardware,NA,Inbound,1,498,Won
+O-900804,2023-07-30,C-6252,CRM-Pro,software,asia,Inbound,10,8760,Won
+O-900805,2024-04-23,C-5468,POS Terminal,Soft ware,asia,inbound,6,10848,Won
+O-900806,2024-03-22,C-2172,AnalyticsSuite,Hard ware,North-America,partner,14,26796,Won
+O-900807,2024-12-25,C-1816,Analytics Suite,Software,NA,Outbound,2,2594,Won
+O-900808,2024-02-22,C-6664,POS Terminal,hardware,N. America,out bound,13,19890,Won
+O-900809,2024-02-07,C-4118,POS Terminal,software,N. America,OUTBOUND,7,12586,Won
+O-900810,2024-04-20,C-1003,POS-Terminal,Software,Asia,inbound,7,9359,Won
+O-900811,2024-06-12,C-1059,CRM-Pro,Hard ware,N. America,OUTBOUND,3,3105,Won
+O-900812,2024-01-08,C-3389,POS Terminal,software,asia,In-bound,1,507,Won
+O-900813,2024-07-08,C-4948,POS-Terminal,hardware,APAC,inbound,3,2223,Won
+O-900814,2023-08-07,C-6987,Analytics Suite,hardware,europe,partner,1,1881,Won
+O-900815,2023-02-06,C-4811,Analytics Suite,Soft ware,asia,Partner,8,2608,Won
+O-900816,2024-05-07,C-6064,CRM Pro,software,APAC,Partner,11,19283,Won
+O-900817,2023-01-11,C-5167,AnalyticsSuite,Software,europe,Inbound,9,6498,Won
+O-900818,2023-11-07,C-3894,Analytics Suite,Software,EU,In-bound,8,12832,Won
+O-900819,2023-10-03,C-5410,POS Terminal,hardware,Europe,In-bound,7,9765,Won
+O-900820,2023-10-28,C-6659,AnalyticsSuite,Hardware,europe,Outbound,2,3872,Won
+O-900821,2023-09-09,C-5153,CRM-Pro,Soft ware,North America,Inbound,14,23940,Won
+O-900822,2024-08-26,C-3028,POS Terminal,Hard ware,APAC,In-bound,8,13120,Won
+O-900823,2023-02-16,C-4650,Analytics Suite,hardware,N. America,OUTBOUND,9,7983,Won
+O-900824,2024-04-27,C-5272,CRM-Pro,Hardware,asia,inbound,2,3150,Won
+O-900825,2024-12-06,C-5778,Analytics Suite,software,north america,OUTBOUND,5,7450,Won
+O-900826,2024-12-01,C-2522,CRM Pro,Hard ware,N. America,out bound,3,4197,Won
+O-900827,2024-05-30,C-5991,CRM Pro,Hard ware,NA,out bound,11,15257,Won
+O-900828,2024-06-17,C-2875,CRM Pro,software,north america,Partner,3,2373,Won
+O-900829,2024-08-25,C-6756,AnalyticsSuite,Hardware,EU,inbound,5,6250,Won
+O-900830,2023-08-30,C-5799,POS Terminal,software,Europe,Outbound,11,9482,Won
+O-900831,2023-05-27,C-3842,CRM Pro,software,Europe,partner,12,13332,Won
+O-900832,2024-12-29,C-5682,CRM-Pro,Hardware,NA,partner,8,10944,Won
+O-900833,2023-03-22,C-5553,POS-Terminal,Software,Asia,inbound,6,11190,Won
+O-900834,2024-09-03,C-5944,Analytics Suite,Hardware,APAC,Partner,6,7344,Won
+O-900835,2024-05-23,C-3220,CRM Pro,Software,Europe,out bound,4,4940,Won
+O-900836,2024-10-04,C-1857,POS Terminal,hardware,asia,inbound,9,15804,Won
+O-900837,2024-02-10,C-3754,POS Terminal,hardware,North America,Outbound,9,13599,Won
+O-900838,2024-06-25,C-2443,POS Terminal,Hard ware,NA,Partner,8,15912,Won
+O-900839,2023-11-28,C-5583,POS Terminal,Hardware,asia,inbound,8,8232,Won
+O-900840,2024-06-11,C-4696,CRM-Pro,Hard ware,APAC,inbound,10,3250,Won
+O-900841,2024-04-28,C-2004,Analytics Suite,Soft ware,north america,OUTBOUND,12,18396,Won
+O-900842,2023-07-09,C-3306,Analytics Suite,Software,NA,OUTBOUND,12,19296,Won
+O-900843,2023-04-23,C-4141,POS Terminal,hardware,Europe,partner,6,5472,Won
+O-900844,2024-08-19,C-3004,Analytics Suite,hardware,Asia,out bound,11,9911,Won
+O-900845,2024-10-23,C-4755,CRM-Pro,Soft ware,North America,Inbound,7,4739,Won
+O-900846,2024-11-01,C-1873,POS-Terminal,Hard ware,NA,inbound,14,5474,Won
+O-900847,2023-04-07,C-5077,CRM-Pro,Hardware,EU,OUTBOUND,5,2425,Won
+O-900848,2024-07-21,C-5089,Analytics Suite,Hard ware,asia,partner,11,8712,Won
+O-900849,2024-10-12,C-5384,AnalyticsSuite,software,Europe,OUTBOUND,2,3822,Won
+O-900850,2023-05-09,C-3081,Analytics Suite,Hard ware,europe,OUTBOUND,8,14376,Won
+O-900851,2024-02-01,C-3713,POS-Terminal,software,EU,Partner,1,1052,Won
+O-900852,2023-01-22,C-3105,POS Terminal,Soft ware,north america,In-bound,4,4792,Won
+O-900853,2024-07-15,C-5008,Analytics Suite,Soft ware,North-America,In-bound,9,17460,Won
+O-900854,2023-07-15,C-1335,CRM-Pro,Hardware,north america,Inbound,5,2055,Won
+O-900855,2024-05-30,C-6966,POS Terminal,software,asia,Partner,1,912,Won
+O-900856,2024-06-15,C-3505,POS Terminal,Hard ware,North America,partner,11,20526,Won
+O-900857,2023-02-19,C-4201,POS Terminal,Hardware,Europe,Outbound,5,6520,Won
+O-900858,2023-11-06,C-3485,Analytics Suite,Software,Asia,Outbound,10,4460,Won
+O-900859,2023-08-14,C-4832,Analytics Suite,Soft ware,north america,Outbound,1,1910,Won
+O-900860,2024-10-27,C-3638,CRM-Pro,hardware,N. America,Outbound,8,4520,Won
+O-900861,2024-11-02,C-5046,POS-Terminal,software,europe,In-bound,11,10670,Won
+O-900862,2023-01-18,C-3678,POS-Terminal,Software,europe,Inbound,4,7284,Won
+O-900863,2023-05-16,C-4644,AnalyticsSuite,Hard ware,EU,Partner,10,10260,Won
+O-900864,2024-04-26,C-3609,POS Terminal,software,north america,OUTBOUND,14,19586,Won
+O-900865,2024-11-07,C-3267,CRM-Pro,Soft ware,Europe,out bound,4,2632,Won
+O-900866,2024-02-02,C-6874,CRM-Pro,Software,NA,Partner,13,16250,Won
+O-900867,2023-07-26,C-5657,POS Terminal,Hardware,North-America,Inbound,6,11454,Won
+O-900868,2023-09-18,C-4557,POS Terminal,Software,Europe,out bound,8,8304,Won
+O-900869,2024-03-24,C-4376,POS Terminal,Hardware,europe,OUTBOUND,8,4024,Won
+O-900870,2024-12-13,C-5421,Analytics Suite,Hard ware,north america,out bound,7,3507,Won
+O-900871,2024-04-22,C-3495,POS Terminal,Soft ware,N. America,partner,14,21840,Won
+O-900872,2024-02-28,C-5716,CRM-Pro,Hardware,APAC,Partner,3,3405,Won
+O-900873,2023-08-17,C-1615,Analytics Suite,software,North-America,OUTBOUND,8,14912,Won
+O-900874,2023-05-20,C-4687,CRM-Pro,hardware,Europe,Partner,3,1890,Won
+O-900875,2023-08-02,C-1942,POS-Terminal,Soft ware,NA,In-bound,11,21450,Won
+O-900876,2024-06-01,C-5681,POS-Terminal,Hard ware,north america,In-bound,11,3993,Won
+O-900877,2023-12-07,C-6621,POS Terminal,Software,North-America,OUTBOUND,10,11920,Won
+O-900878,2023-03-06,C-3817,POS Terminal,Soft ware,Asia,In-bound,14,5950,Won
+O-900879,2023-03-15,C-4429,POS-Terminal,Software,NA,OUTBOUND,5,8795,Won
+O-900880,2023-04-13,C-1628,AnalyticsSuite,software,EU,Partner,6,3732,Won
+O-900881,2024-03-03,C-3597,CRM-Pro,Hardware,asia,partner,15,27300,Won
+O-900882,2024-05-11,C-2060,CRM Pro,Hardware,Asia,Inbound,12,14796,Won
+O-900883,2024-03-02,C-3595,AnalyticsSuite,hardware,N. America,OUTBOUND,3,1461,Won
+O-900884,2023-10-28,C-2553,POS-Terminal,Hard ware,Asia,Outbound,2,1134,Won
+O-900885,2024-02-10,C-4717,CRM Pro,software,APAC,inbound,12,6540,Won
+O-900886,2023-09-10,C-3382,CRM Pro,Hard ware,North-America,Inbound,1,1720,Won
+O-900887,2024-07-22,C-1057,Analytics Suite,Software,N. America,partner,9,13077,Won
+O-900888,2024-06-17,C-5557,CRM Pro,Software,North-America,Inbound,11,9680,Won
+O-900889,2024-04-16,C-3533,CRM-Pro,Soft ware,north america,In-bound,4,4544,Won
+O-900890,2023-12-03,C-6386,AnalyticsSuite,software,north america,out bound,14,26012,Won
+O-900891,2024-11-14,C-5835,Analytics Suite,hardware,N. America,partner,1,1718,Won
+O-900892,2023-09-24,C-3516,POS Terminal,Soft ware,EU,inbound,15,19755,Won
+O-900893,2023-12-21,C-4659,POS-Terminal,Software,North-America,inbound,9,11232,Won
+O-900894,2024-07-26,C-2578,AnalyticsSuite,Software,NA,In-bound,15,7605,Won
+O-900895,2024-08-30,C-2321,Analytics Suite,software,europe,inbound,10,12880,Won
+O-900896,2024-01-21,C-3841,Analytics Suite,Hard ware,EU,Inbound,15,20655,Won
+O-900897,2023-12-10,C-2147,CRM-Pro,Hard ware,asia,OUTBOUND,14,16646,Won
+O-900898,2024-11-20,C-4858,Analytics Suite,Hardware,Europe,In-bound,2,1082,Won
+O-900899,2024-11-02,C-2862,CRM Pro,Software,EU,partner,5,4370,Won
+O-900900,2024-06-14,C-4308,AnalyticsSuite,Hard ware,NA,Outbound,10,8450,Won
+O-900901,2023-09-19,C-3019,Analytics Suite,software,North America,out bound,1,496,Won
+O-900902,2024-01-14,C-5557,CRM Pro,Hard ware,Asia,inbound,1,1114,Won
+O-900903,2023-06-15,C-4507,POS Terminal,Software,europe,Inbound,8,8328,Won
+O-900904,2024-06-24,C-5184,AnalyticsSuite,Hardware,N. America,OUTBOUND,8,15968,Won
+O-900905,2023-11-30,C-5872,Analytics Suite,Hard ware,North America,OUTBOUND,2,3758,Won
+O-900906,2023-12-26,C-6488,POS Terminal,hardware,north america,Outbound,1,600,Won
+O-900907,2024-07-26,C-4059,Analytics Suite,Software,europe,partner,3,3783,Won
+O-900908,2024-01-17,C-3753,POS Terminal,Hardware,asia,Partner,14,21896,Won
+O-900909,2023-02-09,C-3054,CRM Pro,Hard ware,North America,Inbound,5,7115,Won
+O-900910,2024-09-27,C-1758,POS-Terminal,software,APAC,Inbound,13,19240,Won
+O-900911,2023-09-21,C-4100,POS-Terminal,Hard ware,North America,inbound,15,6870,Won
+O-900912,2023-09-01,C-2282,POS Terminal,Soft ware,Europe,Outbound,12,4308,Won
+O-900913,2023-12-30,C-6453,CRM-Pro,Software,Asia,partner,4,3276,Won
+O-900914,2024-06-19,C-1935,CRM-Pro,hardware,Asia,Inbound,8,8200,Won
+O-900915,2024-03-21,C-5265,AnalyticsSuite,hardware,asia,out bound,1,1928,Won
+O-900916,2024-05-25,C-2150,POS-Terminal,Software,North-America,out bound,7,9513,Won
+O-900917,2023-04-12,C-4261,POS Terminal,Soft ware,Europe,Inbound,12,15468,Won
+O-900918,2024-12-16,C-5673,POS Terminal,Hardware,europe,Partner,3,4017,Won
+O-900919,2023-05-21,C-5934,CRM-Pro,software,North-America,OUTBOUND,9,5508,Won
+O-900920,2023-02-22,C-6427,POS Terminal,Hardware,North America,Outbound,6,5382,Won
+O-900921,2023-06-08,C-6835,POS Terminal,hardware,APAC,In-bound,9,16623,Won
+O-900922,2023-03-20,C-4082,AnalyticsSuite,Soft ware,NA,OUTBOUND,5,7840,Won
+O-900923,2024-10-15,C-6316,AnalyticsSuite,Hard ware,asia,OUTBOUND,6,2316,Won
+O-900924,2024-10-23,C-5749,POS Terminal,Software,N. America,out bound,8,9616,Won
+O-900925,2024-05-26,C-5782,Analytics Suite,Hardware,NA,OUTBOUND,1,368,Won
+O-900926,2024-12-15,C-1000,POS Terminal,Hardware,North America,Partner,5,4710,Won
+O-900927,2024-06-01,C-5248,POS-Terminal,Hard ware,APAC,OUTBOUND,6,11784,Won
+O-900928,2024-01-07,C-2565,POS Terminal,Hardware,asia,Partner,1,835,Won
+O-900929,2023-03-18,C-6012,POS-Terminal,hardware,North America,inbound,7,4018,Won
+O-900930,2023-11-27,C-6315,AnalyticsSuite,Hard ware,north america,Outbound,1,1318,Won
+O-900931,2023-09-26,C-3743,POS-Terminal,Hardware,Asia,OUTBOUND,10,12210,Won
+O-900932,2024-03-31,C-2387,POS Terminal,Hardware,North America,Inbound,14,17710,Won
+O-900933,2024-10-21,C-4170,POS Terminal,Software,europe,Inbound,1,1011,Won
+O-900934,2023-11-14,C-2973,POS-Terminal,software,europe,In-bound,2,2224,Won
+O-900935,2024-06-13,C-1492,POS-Terminal,Hardware,Asia,inbound,3,3261,Won
+O-900936,2024-07-04,C-4854,POS Terminal,software,N. America,inbound,5,2585,Won
+O-900937,2023-12-31,C-1689,CRM Pro,hardware,APAC,partner,3,2568,Won
+O-900938,2023-06-29,C-3316,Analytics Suite,Software,N. America,In-bound,9,6669,Won
+O-900939,2024-01-30,C-5142,Analytics Suite,Hardware,europe,OUTBOUND,15,17115,Won
+O-900940,2023-02-25,C-3584,CRM Pro,hardware,N. America,In-bound,2,790,Won
+O-900941,2023-06-30,C-4210,POS-Terminal,software,europe,Partner,15,5595,Won
+O-900942,2024-12-20,C-3484,POS Terminal,hardware,APAC,Partner,2,2120,Won
+O-900943,2024-11-19,C-3335,AnalyticsSuite,Hardware,North-America,Partner,10,19720,Won
+O-900944,2024-01-09,C-6000,POS-Terminal,Soft ware,APAC,inbound,11,21912,Won
+O-900945,2024-05-22,C-1627,POS-Terminal,Hard ware,North-America,out bound,4,3316,Won
+O-900946,2023-12-17,C-3266,Analytics Suite,Hardware,North-America,Partner,1,1575,Won
+O-900947,2024-05-25,C-4129,POS-Terminal,software,North-America,In-bound,1,436,Won
+O-900948,2023-05-01,C-4236,POS-Terminal,Soft ware,europe,inbound,14,10962,Won
+O-900949,2024-09-27,C-2687,CRM Pro,Hard ware,north america,Inbound,8,2544,Won
+O-900950,2023-07-10,C-1153,Analytics Suite,Software,NA,Outbound,15,23025,Won
+O-900951,2023-08-06,C-4405,POS-Terminal,hardware,NA,partner,14,27160,Won
+O-900952,2023-01-04,C-5820,Analytics Suite,Soft ware,asia,out bound,13,21034,Won
+O-900953,2023-09-23,C-5979,Analytics Suite,Hard ware,north america,In-bound,1,1587,Won
+O-900954,2023-07-04,C-6306,POS Terminal,Software,North-America,Partner,8,4672,Won
+O-900955,2024-09-03,C-4777,POS Terminal,Soft ware,EU,OUTBOUND,12,11112,Won
+O-900956,2024-06-07,C-3277,Analytics Suite,Software,North America,inbound,1,341,Won
+O-900957,2024-05-12,C-3396,AnalyticsSuite,Hard ware,Asia,partner,1,1199,Won
+O-900958,2024-09-03,C-6712,AnalyticsSuite,Soft ware,APAC,out bound,7,8267,Won
+O-900959,2023-11-21,C-5002,Analytics Suite,Soft ware,APAC,In-bound,11,9537,Won
+O-900960,2023-10-06,C-4652,POS-Terminal,Software,north america,In-bound,2,1562,Won
+O-900961,2023-05-19,C-5336,POS-Terminal,software,north america,Inbound,10,6660,Won
+O-900962,2023-07-21,C-6860,AnalyticsSuite,Software,NA,partner,2,2344,Won
+O-900963,2023-02-27,C-3673,POS-Terminal,Hard ware,Europe,partner,10,16730,Won
+O-900964,2023-09-02,C-5204,Analytics Suite,Hardware,europe,out bound,9,6147,Won
+O-900965,2023-11-21,C-3459,AnalyticsSuite,Hard ware,N. America,out bound,6,8454,Won
+O-900966,2024-06-19,C-2736,POS Terminal,Hard ware,Asia,partner,8,10912,Won
+O-900967,2023-12-10,C-3487,Analytics Suite,Hard ware,N. America,Inbound,11,13717,Won
+O-900968,2024-03-23,C-4356,CRM-Pro,Soft ware,NA,Inbound,9,3006,Won
+O-900969,2024-02-19,C-3958,Analytics Suite,Hard ware,Asia,out bound,11,13662,Won
+O-900970,2024-08-26,C-6558,AnalyticsSuite,Hard ware,APAC,inbound,4,5268,Won
+O-900971,2024-02-15,C-3503,Analytics Suite,Hardware,N. America,Outbound,2,2612,Won
+O-900972,2023-01-09,C-1940,Analytics Suite,Hard ware,Asia,out bound,15,27750,Won
+O-900973,2023-06-15,C-1408,POS Terminal,Software,europe,out bound,9,9333,Won
+O-900974,2024-01-07,C-1806,CRM Pro,software,North-America,partner,11,20735,Won
+O-900975,2023-06-24,C-3488,CRM Pro,Software,EU,Inbound,8,3504,Won
+O-900976,2024-12-17,C-2889,CRM Pro,Hardware,North America,partner,11,20328,Won
+O-900977,2023-11-24,C-3911,AnalyticsSuite,Soft ware,Asia,partner,5,4340,Won
+O-900978,2023-12-28,C-4063,Analytics Suite,Software,North America,inbound,7,5747,Won
+O-900979,2023-03-27,C-5962,AnalyticsSuite,Hard ware,EU,Inbound,6,8166,Won
+O-900980,2023-02-25,C-1476,CRM-Pro,hardware,APAC,OUTBOUND,3,1821,Won
+O-900981,2024-06-23,C-2459,Analytics Suite,Software,North America,OUTBOUND,1,1298,Won
+O-900982,2024-01-10,C-5734,POS-Terminal,hardware,North-America,Outbound,14,16254,Won
+O-900983,2023-05-02,C-4875,POS Terminal,software,N. America,Outbound,8,5472,Won
+O-900984,2023-02-02,C-6134,POS-Terminal,Soft ware,Europe,out bound,6,5166,Won
+O-900985,2023-02-01,C-4039,CRM Pro,software,N. America,OUTBOUND,1,754,Won
+O-900986,2023-11-23,C-1592,Analytics Suite,Soft ware,NA,In-bound,2,3618,Won
+O-900987,2023-11-18,C-1059,POS-Terminal,hardware,Europe,inbound,5,9315,Won
+O-900988,2023-07-20,C-1972,POS Terminal,Soft ware,asia,Outbound,3,2931,Won
+O-900989,2024-09-29,C-4243,CRM-Pro,software,APAC,out bound,14,19810,Won
+O-900990,2023-10-18,C-2815,POS-Terminal,software,EU,Outbound,10,9160,Won
+O-900991,2023-12-25,C-4223,POS Terminal,Software,Europe,inbound,6,8712,Won
+O-900992,2024-04-19,C-5372,Analytics Suite,software,Europe,OUTBOUND,7,2688,Won
+O-900993,2023-04-11,C-1004,POS Terminal,Soft ware,N. America,inbound,15,29010,Won
+O-900994,2023-08-20,C-4606,POS-Terminal,Hardware,North America,Inbound,4,2360,Won
+O-900995,2023-10-03,C-1070,Analytics Suite,software,asia,inbound,12,5520,Won
+O-900996,2023-05-30,C-5950,CRM-Pro,Software,europe,inbound,6,9366,Won
+O-900997,2024-03-13,C-4360,Analytics Suite,Hardware,North-America,Outbound,15,5925,Won
+O-900998,2023-10-17,C-5493,AnalyticsSuite,hardware,APAC,Partner,10,7220,Won
+O-900999,2023-10-06,C-4351,AnalyticsSuite,Software,APAC,In-bound,6,4542,Won
+O-901000,2023-12-29,C-4950,POS-Terminal,Soft ware,north america,Partner,3,1326,Won
+O-901001,2024-06-25,C-3533,CRM-Pro,hardware,europe,In-bound,14,11718,Won
+O-901002,2024-01-15,C-6231,POS-Terminal,Software,EU,Outbound,12,21588,Won
+O-901003,2023-06-22,C-6651,POS Terminal,Software,North-America,Inbound,12,15252,Won
+O-901004,2023-03-15,C-3817,Analytics Suite,software,North America,out bound,13,16497,Won
+O-901005,2024-03-01,C-5850,POS Terminal,Hard ware,Europe,Outbound,5,5500,Won
+O-901006,2023-12-07,C-1618,AnalyticsSuite,Hardware,N. America,Outbound,7,7378,Won
+O-901007,2024-09-05,C-5704,POS Terminal,software,N. America,partner,3,4461,Won
+O-901008,2023-09-22,C-4268,POS-Terminal,hardware,Europe,Inbound,11,5885,Won
+O-901009,2023-07-31,C-6521,CRM-Pro,software,North America,OUTBOUND,12,19584,Won
+O-901010,2024-12-07,C-2889,Analytics Suite,hardware,EU,OUTBOUND,7,9289,Won
+O-901011,2024-09-10,C-2881,AnalyticsSuite,software,North-America,Inbound,2,2810,Won
+O-901012,2023-05-26,C-6134,POS Terminal,hardware,asia,Outbound,5,5830,Won
+O-901013,2023-10-01,C-5101,CRM-Pro,software,EU,Partner,11,12771,Won
+O-901014,2024-11-08,C-2030,CRM Pro,software,asia,Inbound,14,20748,Won
+O-901015,2024-12-01,C-2029,Analytics Suite,Software,North America,inbound,10,14720,Won
+O-901016,2023-05-10,C-2989,Analytics Suite,software,north america,inbound,1,1641,Won
+O-901017,2023-03-06,C-6036,CRM Pro,Hardware,N. America,partner,2,1478,Won
+O-901018,2024-07-08,C-3571,CRM Pro,Software,North America,OUTBOUND,9,10980,Won
+O-901019,2023-04-06,C-6506,CRM-Pro,Hardware,North-America,partner,11,12573,Won
+O-901020,2023-08-07,C-5593,POS-Terminal,Software,APAC,out bound,6,2766,Won
+O-901021,2024-01-16,C-3954,POS-Terminal,Software,N. America,inbound,4,4040,Won
+O-901022,2023-12-27,C-4083,POS Terminal,Hard ware,north america,Partner,5,3755,Won
+O-901023,2024-11-19,C-2015,CRM Pro,Soft ware,Asia,out bound,10,4640,Won
+O-901024,2024-01-28,C-1331,POS Terminal,Hard ware,North America,Inbound,13,11193,Won
+O-901025,2024-01-24,C-3147,POS-Terminal,Soft ware,North-America,inbound,13,20930,Won
+O-901026,2023-06-05,C-3420,CRM Pro,Hard ware,N. America,In-bound,10,3980,Won
+O-901027,2024-10-04,C-1675,CRM Pro,hardware,NA,inbound,11,21120,Won
+O-901028,2024-12-05,C-2495,POS Terminal,software,N. America,OUTBOUND,15,12525,Won
+O-901029,2023-03-27,C-4284,CRM Pro,hardware,NA,In-bound,3,5916,Won
+O-901030,2024-05-05,C-4341,POS-Terminal,software,APAC,partner,2,1878,Won
+O-901031,2024-07-23,C-6257,AnalyticsSuite,Software,North America,OUTBOUND,9,10602,Won
+O-901032,2023-10-11,C-4406,CRM-Pro,hardware,NA,out bound,8,2816,Won
+O-901033,2023-06-19,C-4448,Analytics Suite,Hard ware,Asia,Partner,15,23160,Won
+O-901034,2023-07-27,C-3166,AnalyticsSuite,Software,North-America,out bound,10,11870,Won
+O-901035,2024-05-12,C-3568,AnalyticsSuite,Hardware,NA,Partner,6,7968,Won
+O-901036,2023-06-10,C-1591,CRM Pro,hardware,North America,Partner,14,24024,Won
+O-901037,2024-03-02,C-1537,POS Terminal,hardware,North-America,OUTBOUND,13,15717,Won
+O-901038,2023-12-29,C-1051,CRM Pro,Software,north america,partner,4,1552,Won
+O-901039,2023-08-04,C-5845,AnalyticsSuite,Hard ware,NA,partner,5,2265,Won
+O-901040,2024-11-03,C-5502,CRM-Pro,Hard ware,EU,Inbound,6,8538,Won
+O-901041,2023-11-17,C-6619,Analytics Suite,software,APAC,out bound,15,12870,Won
+O-901042,2023-12-05,C-3989,POS Terminal,software,NA,partner,8,4464,Won
+O-901043,2024-11-01,C-5314,CRM-Pro,Soft ware,NA,Inbound,6,4488,Won
+O-901044,2024-03-03,C-2052,AnalyticsSuite,Soft ware,Europe,partner,6,5196,Won
+O-901045,2023-04-03,C-2282,POS Terminal,Software,asia,inbound,11,5544,Won
+O-901046,2024-11-02,C-2599,POS Terminal,Software,Asia,inbound,1,1833,Won
+O-901047,2024-09-13,C-5687,POS Terminal,Hardware,europe,partner,14,16534,Won
+O-901048,2023-03-23,C-6447,Analytics Suite,hardware,APAC,OUTBOUND,7,11872,Won
+O-901049,2024-01-24,C-1550,CRM-Pro,Software,europe,out bound,15,7935,Won
+O-901050,2023-06-18,C-2537,AnalyticsSuite,Hard ware,asia,partner,9,17388,Won
+O-901051,2023-08-09,C-6649,CRM-Pro,Soft ware,North-America,In-bound,9,12222,Won
+O-901052,2023-11-24,C-5908,POS-Terminal,Hard ware,Europe,out bound,3,5439,Won
+O-901053,2023-11-30,C-1139,CRM Pro,Hardware,europe,inbound,6,4452,Won
+O-901054,2023-10-13,C-2264,CRM Pro,Hard ware,north america,Partner,8,3240,Won
+O-901055,2023-11-06,C-4482,CRM-Pro,software,N. America,inbound,5,8390,Won
+O-901056,2023-08-04,C-4599,Analytics Suite,hardware,APAC,In-bound,9,10116,Won
+O-901057,2024-02-19,C-1199,CRM-Pro,Hard ware,north america,out bound,1,1330,Won
+O-901058,2023-11-12,C-5132,CRM-Pro,Soft ware,APAC,inbound,9,4662,Won
+O-901059,2023-09-12,C-1292,Analytics Suite,Hard ware,North-America,out bound,5,5845,Won
+O-901060,2023-01-18,C-1112,CRM-Pro,Software,NA,Inbound,2,678,Won
+O-901061,2024-02-19,C-5385,POS Terminal,hardware,Asia,Partner,1,1664,Won
+O-901062,2023-03-21,C-6522,CRM Pro,Hard ware,N. America,Partner,7,4851,Won
+O-901063,2024-05-27,C-2766,CRM Pro,hardware,APAC,inbound,13,17797,Won
+O-901064,2024-09-06,C-5306,POS-Terminal,hardware,NA,inbound,3,3636,Won
+O-901065,2024-11-01,C-3726,CRM Pro,Software,Asia,inbound,14,24472,Won
+O-901066,2024-07-25,C-4397,POS-Terminal,Soft ware,north america,In-bound,7,12957,Won
+O-901067,2023-05-09,C-3730,CRM-Pro,Hardware,Europe,In-bound,13,9178,Won
+O-901068,2024-03-31,C-2681,POS Terminal,hardware,North-America,inbound,10,13990,Won
+O-901069,2024-09-27,C-4790,POS Terminal,software,North-America,Outbound,9,9261,Won
+O-901070,2023-10-29,C-4623,POS Terminal,Soft ware,north america,Outbound,12,21360,Won
+O-901071,2023-07-31,C-6518,Analytics Suite,software,NA,In-bound,12,8964,Won
+O-901072,2023-10-21,C-5641,POS-Terminal,Soft ware,EU,Outbound,6,2886,Won
+O-901073,2024-03-03,C-1300,POS-Terminal,Software,North America,Inbound,2,2586,Won
+O-901074,2024-01-24,C-1596,CRM Pro,software,N. America,Partner,13,13442,Won
+O-901075,2023-11-13,C-1399,POS-Terminal,Soft ware,EU,OUTBOUND,3,2151,Won
+O-901076,2023-12-28,C-3621,POS Terminal,software,asia,Inbound,11,4774,Won
+O-901077,2023-01-18,C-3382,POS Terminal,Software,Europe,In-bound,14,12250,Won
+O-901078,2023-03-16,C-6923,Analytics Suite,hardware,north america,inbound,14,9786,Won
+O-901079,2024-08-07,C-1854,POS Terminal,software,APAC,OUTBOUND,12,5460,Won
+O-901080,2024-06-20,C-4640,AnalyticsSuite,Software,Asia,inbound,6,11544,Won
+O-901081,2024-01-02,C-2769,CRM Pro,Software,North America,inbound,12,13176,Won
+O-901082,2024-09-12,C-1224,Analytics Suite,Hardware,APAC,OUTBOUND,6,5292,Won
+O-901083,2023-12-19,C-2003,POS Terminal,Software,Europe,In-bound,10,18690,Won
+O-901084,2023-11-01,C-2796,CRM Pro,Hardware,asia,Outbound,5,4130,Won
+O-901085,2023-11-08,C-1180,POS-Terminal,Hardware,Europe,Outbound,3,5373,Won
+O-901086,2024-07-01,C-4626,Analytics Suite,Hardware,APAC,OUTBOUND,15,26820,Won
+O-901087,2023-07-03,C-1005,CRM Pro,Soft ware,asia,Partner,12,5988,Won
+O-901088,2024-09-18,C-3573,POS-Terminal,software,APAC,Partner,2,840,Won
+O-901089,2024-05-18,C-1037,Analytics Suite,Hard ware,North-America,Partner,14,26642,Won
+O-901090,2023-04-13,C-6495,POS Terminal,software,asia,OUTBOUND,14,23100,Won
+O-901091,2023-02-19,C-1849,POS Terminal,Software,EU,Outbound,6,2334,Won
+O-901092,2023-02-24,C-5514,CRM Pro,hardware,N. America,In-bound,13,25870,Won
+O-901093,2024-12-06,C-4838,CRM-Pro,Hardware,Europe,Inbound,14,24766,Won
+O-901094,2024-09-22,C-4845,POS-Terminal,Hard ware,Europe,inbound,12,7812,Won
+O-901095,2024-06-18,C-2494,AnalyticsSuite,Software,asia,out bound,8,9376,Won
+O-901096,2024-12-23,C-3490,AnalyticsSuite,software,Europe,Outbound,9,4896,Won
+O-901097,2023-09-01,C-2010,POS Terminal,Soft ware,EU,inbound,7,5026,Won
+O-901098,2024-02-02,C-2990,CRM-Pro,software,NA,In-bound,6,4212,Won
+O-901099,2023-04-19,C-2632,Analytics Suite,Hard ware,North America,Outbound,10,16630,Won
+O-901100,2023-04-06,C-5883,AnalyticsSuite,Hardware,Asia,OUTBOUND,9,4329,Won
+O-901101,2024-05-16,C-2808,CRM Pro,software,N. America,OUTBOUND,14,6174,Won
+O-901102,2024-12-27,C-5009,AnalyticsSuite,Software,APAC,Outbound,2,3462,Won
+O-901103,2024-11-17,C-6596,Analytics Suite,Hard ware,north america,OUTBOUND,9,12654,Won
+O-901104,2024-08-25,C-1107,CRM Pro,Hardware,north america,Partner,15,11625,Won
+O-901105,2024-02-12,C-3852,CRM-Pro,hardware,N. America,In-bound,1,1247,Won
+O-901106,2024-04-24,C-3879,CRM-Pro,Software,N. America,out bound,10,16360,Won
+O-901107,2023-09-01,C-1135,AnalyticsSuite,Soft ware,North America,Inbound,10,14340,Won
+O-901108,2024-02-17,C-5753,CRM Pro,software,NA,Outbound,15,26415,Won
+O-901109,2023-10-23,C-2840,POS-Terminal,Soft ware,North America,In-bound,14,22372,Won
+O-901110,2024-11-13,C-6133,POS Terminal,Hard ware,Asia,In-bound,14,25718,Won
+O-901111,2024-10-24,C-6312,CRM-Pro,Hard ware,NA,out bound,1,1903,Won
+O-901112,2023-05-16,C-4039,AnalyticsSuite,Software,APAC,Partner,3,5562,Won
+O-901113,2024-12-29,C-6936,CRM Pro,hardware,North America,OUTBOUND,10,10820,Won
+O-901114,2023-08-27,C-4273,POS-Terminal,hardware,NA,inbound,2,2950,Won
+O-901115,2024-09-23,C-1138,POS-Terminal,software,N. America,inbound,10,3990,Won
+O-901116,2023-02-11,C-4695,AnalyticsSuite,Software,EU,Partner,11,6193,Won
+O-901117,2024-10-12,C-3438,POS-Terminal,software,europe,Inbound,6,11886,Won
+O-901118,2024-05-05,C-3882,CRM Pro,Hardware,asia,In-bound,3,5994,Won
+O-901119,2024-01-30,C-6731,AnalyticsSuite,software,Asia,In-bound,7,11494,Won
+O-901120,2024-11-09,C-1993,POS-Terminal,Soft ware,N. America,inbound,12,14064,Won
+O-901121,2024-10-02,C-5294,CRM-Pro,Software,North-America,out bound,5,1785,Won
+O-901122,2024-05-23,C-3171,CRM-Pro,Soft ware,asia,inbound,9,16668,Won
+O-901123,2023-02-11,C-2980,AnalyticsSuite,Software,EU,inbound,15,24135,Won
+O-901124,2024-09-05,C-4029,POS-Terminal,Hardware,Europe,In-bound,14,14182,Won
+O-901125,2024-03-12,C-1590,POS-Terminal,software,North-America,OUTBOUND,10,10220,Won
+O-901126,2023-07-18,C-1834,CRM-Pro,Soft ware,North-America,Inbound,12,7320,Won
+O-901127,2023-09-04,C-5630,AnalyticsSuite,Software,North-America,partner,3,900,Won
+O-901128,2023-12-09,C-6117,CRM Pro,hardware,europe,out bound,7,2618,Won
+O-901129,2023-11-22,C-2482,POS-Terminal,Hard ware,EU,partner,5,9730,Won
+O-901130,2023-11-20,C-4357,POS Terminal,hardware,Asia,In-bound,5,3520,Won
+O-901131,2024-11-22,C-6879,AnalyticsSuite,hardware,europe,inbound,10,8450,Won
+O-901132,2023-03-26,C-2039,CRM Pro,Software,N. America,out bound,9,5490,Won
+O-901133,2023-12-19,C-4779,CRM Pro,Software,North America,OUTBOUND,5,2290,Won
+O-901134,2023-06-21,C-5424,POS Terminal,Hard ware,asia,Partner,2,2408,Won
+O-901135,2023-10-01,C-5646,POS Terminal,Hardware,EU,partner,2,1134,Won
+O-901136,2023-03-19,C-4466,AnalyticsSuite,software,north america,OUTBOUND,6,4650,Won
+O-901137,2023-06-17,C-6960,AnalyticsSuite,software,North America,OUTBOUND,5,6760,Won
+O-901138,2023-06-30,C-2985,POS Terminal,Soft ware,EU,Outbound,1,1821,Won
+O-901139,2024-12-04,C-1916,Analytics Suite,hardware,North America,partner,1,1625,Won
+O-901140,2024-02-12,C-6786,AnalyticsSuite,Software,APAC,In-bound,6,6528,Won
+O-901141,2024-12-28,C-3204,POS Terminal,Software,europe,Partner,1,1669,Won
+O-901142,2023-09-05,C-4077,CRM-Pro,Software,NA,out bound,1,1185,Won
+O-901143,2023-11-27,C-1948,POS Terminal,Software,Asia,out bound,1,839,Won
+O-901144,2023-12-11,C-4028,POS Terminal,software,europe,Outbound,9,9639,Won
+O-901145,2024-11-25,C-2397,AnalyticsSuite,Hard ware,asia,inbound,6,7500,Won
+O-901146,2024-11-24,C-3187,CRM Pro,Soft ware,North-America,partner,5,1820,Won
+O-901147,2024-06-20,C-1824,CRM Pro,Hard ware,asia,Inbound,11,17292,Won
+O-901148,2024-11-01,C-5644,CRM-Pro,Hard ware,NA,out bound,10,5370,Won
+O-901149,2024-10-23,C-4273,CRM Pro,Hardware,North-America,In-bound,12,4176,Won
+O-901150,2024-10-25,C-3695,CRM-Pro,Software,Europe,out bound,15,11685,Won
+O-901151,2024-01-11,C-5918,AnalyticsSuite,software,asia,Inbound,8,14240,Won
+O-901152,2024-10-19,C-2409,POS Terminal,Hardware,APAC,Inbound,1,1474,Won
+O-901153,2023-09-27,C-2552,POS Terminal,Hardware,asia,out bound,14,20678,Won
+O-901154,2024-02-16,C-6318,CRM-Pro,Hard ware,europe,OUTBOUND,14,8358,Won
+O-901155,2023-06-30,C-3820,POS Terminal,Soft ware,North-America,Inbound,15,7230,Won
+O-901156,2024-06-17,C-1167,CRM Pro,Soft ware,asia,OUTBOUND,15,7500,Won
+O-901157,2023-11-10,C-4825,POS Terminal,Soft ware,asia,partner,8,3896,Won
+O-901158,2024-03-20,C-3532,CRM Pro,Soft ware,North America,inbound,8,3992,Won
+O-901159,2023-01-06,C-3753,CRM-Pro,Software,Europe,Partner,5,3930,Won
+O-901160,2024-12-23,C-4747,AnalyticsSuite,Software,EU,out bound,8,10536,Won
+O-901161,2024-03-27,C-6158,CRM Pro,Hardware,europe,Partner,1,602,Won
+O-901162,2024-06-28,C-5495,Analytics Suite,Soft ware,NA,Inbound,1,357,Won
+O-901163,2024-11-25,C-2222,CRM Pro,software,north america,OUTBOUND,14,5908,Won
+O-901164,2024-09-23,C-1134,CRM Pro,hardware,North America,out bound,4,1532,Won
+O-901165,2024-02-02,C-2859,Analytics Suite,Software,N. America,Inbound,6,5178,Won
+O-901166,2023-08-27,C-2535,POS Terminal,Hardware,Asia,In-bound,15,19200,Won
+O-901167,2023-01-17,C-3903,POS Terminal,software,asia,OUTBOUND,7,9590,Won
+O-901168,2023-03-25,C-5787,POS-Terminal,Soft ware,north america,partner,10,8200,Won
+O-901169,2023-08-17,C-3753,CRM Pro,Software,North America,Partner,6,11358,Won
+O-901170,2024-12-01,C-4783,AnalyticsSuite,software,North America,Inbound,14,13272,Won
+O-901171,2023-11-01,C-2646,CRM-Pro,Soft ware,N. America,OUTBOUND,11,16731,Won
+O-901172,2024-07-03,C-4694,AnalyticsSuite,hardware,Asia,In-bound,9,7092,Won
+O-901173,2024-01-12,C-7000,CRM-Pro,Software,EU,Outbound,11,8767,Won
+O-901174,2023-01-29,C-2930,CRM-Pro,Hardware,asia,Inbound,14,24920,Won
+O-901175,2023-12-28,C-3087,POS Terminal,hardware,North America,OUTBOUND,13,5187,Won
+O-901176,2023-04-28,C-1058,AnalyticsSuite,Software,europe,partner,13,18759,Won
+O-901177,2023-06-09,C-2975,CRM-Pro,hardware,Europe,Outbound,15,28725,Won
+O-901178,2023-01-07,C-5423,CRM Pro,Soft ware,Europe,inbound,10,4930,Won
+O-901179,2024-05-04,C-2037,POS Terminal,Software,N. America,Inbound,5,7580,Won
+O-901180,2023-08-12,C-4176,POS Terminal,Soft ware,north america,Inbound,15,9825,Won
+O-901181,2023-01-11,C-1071,CRM Pro,hardware,Europe,out bound,5,4660,Won
+O-901182,2024-06-01,C-1051,Analytics Suite,Software,EU,Outbound,12,9624,Won
+O-901183,2023-02-14,C-5596,AnalyticsSuite,Hardware,N. America,Outbound,2,2954,Won
+O-901184,2024-04-15,C-1813,AnalyticsSuite,hardware,asia,partner,14,9828,Won
+O-901185,2024-04-25,C-6444,POS-Terminal,Soft ware,north america,Outbound,13,10595,Won
+O-901186,2023-06-10,C-2785,CRM-Pro,Hardware,europe,OUTBOUND,4,5408,Won
+O-901187,2024-07-25,C-4496,CRM Pro,hardware,asia,Partner,11,13178,Won
+O-901188,2023-11-14,C-2012,POS Terminal,Hard ware,North-America,partner,14,18200,Won
+O-901189,2024-07-16,C-2827,Analytics Suite,hardware,Asia,Outbound,6,5184,Won
+O-901190,2023-03-05,C-1255,Analytics Suite,Software,North America,In-bound,10,11510,Won
+O-901191,2024-09-24,C-5534,POS Terminal,Software,asia,OUTBOUND,1,1538,Won
+O-901192,2024-06-10,C-2604,AnalyticsSuite,Hardware,N. America,Partner,8,14880,Won
+O-901193,2024-08-23,C-5377,POS-Terminal,Software,Europe,out bound,6,11580,Won
+O-901194,2023-08-22,C-2068,POS-Terminal,Hardware,Asia,inbound,6,8724,Won
+O-901195,2023-09-08,C-6196,POS-Terminal,Soft ware,north america,Inbound,10,13770,Won
+O-901196,2024-02-21,C-5321,POS Terminal,hardware,Europe,out bound,9,14895,Won
+O-901197,2023-11-07,C-1870,CRM-Pro,Hard ware,EU,Outbound,7,4641,Won
+O-901198,2023-01-19,C-4602,AnalyticsSuite,Software,APAC,In-bound,6,6354,Won
+O-901199,2024-12-29,C-2370,POS Terminal,Software,EU,out bound,12,4764,Won
+O-901200,2023-06-20,C-3121,AnalyticsSuite,Hardware,Europe,inbound,8,15304,Won
+O-901201,2023-12-08,C-5645,POS-Terminal,Hard ware,north america,Outbound,13,20176,Won
+O-901202,2024-03-06,C-4944,Analytics Suite,hardware,North America,inbound,2,1022,Won
+O-901203,2024-02-13,C-4863,POS-Terminal,Soft ware,APAC,Inbound,12,15444,Won
+O-901204,2024-11-26,C-5203,POS-Terminal,Soft ware,Asia,Partner,10,19890,Won
+O-901205,2023-12-09,C-2946,POS-Terminal,Soft ware,Europe,In-bound,8,3552,Won
+O-901206,2024-10-26,C-5782,POS Terminal,software,europe,Outbound,1,872,Won
+O-901207,2024-11-08,C-4859,CRM Pro,Software,North America,In-bound,10,8010,Won
+O-901208,2023-11-12,C-6634,POS Terminal,Software,NA,Partner,8,7952,Won
+O-901209,2024-04-02,C-3219,CRM-Pro,Hard ware,EU,Outbound,4,7384,Won
+O-901210,2023-08-15,C-6426,CRM Pro,Soft ware,asia,OUTBOUND,10,7680,Won
+O-901211,2024-09-07,C-4680,CRM-Pro,hardware,Asia,In-bound,15,9060,Won
+O-901212,2024-04-15,C-3793,POS-Terminal,Software,North America,OUTBOUND,8,10880,Won
+O-901213,2024-09-11,C-2946,CRM-Pro,hardware,europe,partner,12,4068,Won
+O-901214,2024-09-16,C-1469,CRM Pro,hardware,APAC,inbound,10,13530,Won
+O-901215,2023-10-22,C-5384,CRM-Pro,hardware,APAC,out bound,15,25575,Won
+O-901216,2024-08-14,C-1136,Analytics Suite,hardware,N. America,In-bound,3,4233,Won
+O-901217,2024-12-12,C-1690,POS Terminal,Hard ware,N. America,In-bound,8,13128,Won
+O-901218,2024-11-03,C-5226,POS Terminal,software,NA,Partner,3,4284,Won
+O-901219,2023-12-30,C-3855,CRM Pro,software,EU,Outbound,12,14424,Won
+O-901220,2023-11-29,C-5590,CRM-Pro,Software,asia,partner,15,9960,Won
+O-901221,2023-10-19,C-3736,CRM Pro,software,EU,Outbound,6,9258,Won
+O-901222,2023-12-21,C-2464,POS-Terminal,Software,asia,inbound,5,7660,Won
+O-901223,2023-10-14,C-2070,CRM Pro,Soft ware,North America,OUTBOUND,7,3003,Won
+O-901224,2023-02-23,C-4337,POS-Terminal,Hard ware,North America,inbound,4,2296,Won
+O-901225,2024-12-12,C-2167,CRM Pro,Hardware,Europe,inbound,4,5464,Won
+O-901226,2024-04-20,C-1333,CRM-Pro,hardware,North-America,Partner,2,3632,Won
+O-901227,2024-01-01,C-3277,AnalyticsSuite,Hardware,APAC,In-bound,15,22140,Won
+O-901228,2024-04-09,C-4803,AnalyticsSuite,software,NA,In-bound,3,4722,Won
+O-901229,2024-04-07,C-4800,CRM Pro,software,europe,out bound,12,5940,Won
+O-901230,2024-09-09,C-3257,POS-Terminal,software,Asia,OUTBOUND,9,8829,Won
+O-901231,2023-11-30,C-3360,POS Terminal,Soft ware,europe,out bound,9,6966,Won
+O-901232,2023-05-28,C-4688,AnalyticsSuite,hardware,north america,Outbound,13,19747,Won
+O-901233,2024-06-12,C-2125,AnalyticsSuite,Hardware,asia,Inbound,15,25695,Won
+O-901234,2023-01-13,C-4287,CRM Pro,Soft ware,APAC,out bound,8,9768,Won
+O-901235,2023-08-22,C-1704,POS-Terminal,software,north america,Inbound,14,6888,Won
+O-901236,2024-05-19,C-3704,Analytics Suite,hardware,N. America,Outbound,9,8334,Won
+O-901237,2024-06-10,C-6081,AnalyticsSuite,Software,Asia,out bound,7,13545,Won
+O-901238,2023-09-26,C-6261,CRM-Pro,hardware,N. America,Partner,1,417,Won
+O-901239,2023-02-12,C-1029,Analytics Suite,software,North America,OUTBOUND,11,9801,Won
+O-901240,2023-02-26,C-2143,CRM-Pro,Hard ware,EU,Partner,2,1778,Won
+O-901241,2023-02-01,C-5042,POS Terminal,Software,EU,inbound,11,13156,Won
+O-901242,2024-06-10,C-4625,POS Terminal,software,Asia,Outbound,8,6656,Won
+O-901243,2024-05-27,C-5826,CRM Pro,hardware,Asia,OUTBOUND,3,4566,Won
+O-901244,2023-09-15,C-1096,CRM Pro,Soft ware,north america,out bound,11,10582,Won
+O-901245,2024-11-24,C-2142,Analytics Suite,hardware,Europe,OUTBOUND,11,20471,Won
+O-901246,2024-09-03,C-1365,CRM Pro,Soft ware,NA,partner,2,1278,Won
+O-901247,2023-02-20,C-5174,AnalyticsSuite,Software,N. America,In-bound,15,15765,Won
+O-901248,2024-03-10,C-2350,AnalyticsSuite,Soft ware,Asia,Outbound,14,4718,Won
+O-901249,2024-01-21,C-6980,AnalyticsSuite,Soft ware,NA,In-bound,15,25320,Won
+O-901250,2024-06-07,C-1790,POS Terminal,Hard ware,NA,out bound,10,13240,Won
+O-901251,2023-02-20,C-6574,CRM-Pro,Software,NA,partner,8,14032,Won
+O-901252,2024-06-18,C-3107,Analytics Suite,Software,NA,Partner,9,15993,Won
+O-901253,2023-06-28,C-5968,POS Terminal,Soft ware,N. America,partner,11,17391,Won
+O-901254,2024-01-09,C-1280,AnalyticsSuite,Hard ware,asia,Partner,6,9144,Won
+O-901255,2023-05-21,C-2068,POS Terminal,Soft ware,Asia,partner,5,2260,Won
+O-901256,2023-01-05,C-6295,POS-Terminal,Hard ware,Asia,out bound,3,4899,Won
+O-901257,2023-05-11,C-5866,POS-Terminal,Software,N. America,In-bound,6,9390,Won
+O-901258,2023-07-08,C-2610,POS Terminal,Hard ware,north america,inbound,10,17940,Won
+O-901259,2023-05-19,C-3930,AnalyticsSuite,software,Europe,inbound,15,29070,Won
+O-901260,2023-07-04,C-3596,CRM-Pro,Software,north america,OUTBOUND,9,6588,Won
+O-901261,2023-03-31,C-4852,CRM-Pro,hardware,NA,Inbound,15,10425,Won
+O-901262,2023-06-12,C-3478,CRM-Pro,software,Europe,OUTBOUND,5,1555,Won
+O-901263,2024-08-07,C-6529,CRM-Pro,Hard ware,EU,Outbound,6,4824,Won
+O-901264,2024-02-15,C-6009,Analytics Suite,software,Europe,partner,2,2638,Won
+O-901265,2024-09-09,C-4732,CRM Pro,Hardware,EU,out bound,15,20715,Won
+O-901266,2023-06-02,C-5876,CRM Pro,Soft ware,NA,inbound,15,25710,Won
+O-901267,2023-09-15,C-3615,CRM-Pro,Soft ware,asia,Partner,12,11100,Won
+O-901268,2023-06-21,C-1750,AnalyticsSuite,Software,EU,In-bound,13,22243,Won
+O-901269,2023-05-12,C-3363,AnalyticsSuite,hardware,North America,Outbound,2,3394,Won
+O-901270,2023-08-15,C-1893,Analytics Suite,Hard ware,Asia,Inbound,1,1821,Won
+O-901271,2023-09-24,C-3695,CRM Pro,Hard ware,North America,partner,5,6260,Won
+O-901272,2024-12-30,C-4574,POS-Terminal,hardware,Asia,out bound,14,21462,Won
+O-901273,2023-10-21,C-1254,Analytics Suite,software,APAC,Inbound,4,2996,Won
+O-901274,2023-10-16,C-5707,POS Terminal,Software,north america,Partner,10,9940,Won
+O-901275,2024-01-08,C-5066,CRM Pro,Hard ware,EU,Outbound,10,5210,Won
+O-901276,2024-10-21,C-3861,POS-Terminal,hardware,Europe,inbound,15,22200,Won
+O-901277,2024-09-15,C-2437,AnalyticsSuite,hardware,north america,Inbound,9,14391,Won
+O-901278,2024-03-04,C-6022,POS Terminal,Hard ware,north america,inbound,13,12909,Won
+O-901279,2023-08-03,C-5874,CRM-Pro,software,North America,out bound,7,5621,Won
+O-901280,2023-12-24,C-3965,POS Terminal,Soft ware,europe,out bound,7,4186,Won
+O-901281,2024-02-28,C-1976,AnalyticsSuite,Hard ware,N. America,Outbound,10,11550,Won
+O-901282,2024-02-05,C-1550,Analytics Suite,Software,Asia,partner,11,10263,Won
+O-901283,2023-11-01,C-2879,CRM Pro,Software,N. America,inbound,3,3750,Won
+O-901284,2023-05-11,C-6138,CRM Pro,hardware,north america,out bound,13,22477,Won
+O-901285,2024-04-19,C-4595,AnalyticsSuite,software,asia,partner,5,2565,Won
+O-901286,2024-12-06,C-1961,CRM Pro,software,north america,In-bound,8,10120,Won
+O-901287,2024-03-19,C-3593,POS Terminal,Hard ware,europe,Partner,11,7964,Won
+O-901288,2024-08-28,C-2921,AnalyticsSuite,Hard ware,Europe,Outbound,1,868,Won
+O-901289,2024-03-18,C-1740,Analytics Suite,Software,europe,Inbound,8,10016,Won
+O-901290,2023-10-14,C-5688,CRM-Pro,hardware,EU,Outbound,14,7784,Won
+O-901291,2023-05-29,C-3779,Analytics Suite,Hard ware,Europe,Inbound,6,7752,Won
+O-901292,2024-06-30,C-1188,POS Terminal,Hard ware,N. America,partner,10,8210,Won
+O-901293,2023-12-18,C-2506,CRM Pro,software,N. America,Inbound,6,8118,Won
+O-901294,2024-05-14,C-5360,AnalyticsSuite,Hardware,North America,inbound,15,7695,Won
+O-901295,2023-02-17,C-1141,CRM-Pro,Software,Asia,OUTBOUND,8,5632,Won
+O-901296,2023-01-15,C-3105,CRM-Pro,hardware,North-America,partner,4,6084,Won
+O-901297,2024-07-07,C-6719,POS Terminal,software,APAC,OUTBOUND,15,13590,Won
+O-901298,2024-10-28,C-1796,CRM-Pro,software,north america,Partner,13,15197,Won
+O-901299,2024-09-15,C-6303,Analytics Suite,software,Europe,In-bound,6,3792,Won
+O-901300,2023-06-27,C-4357,CRM Pro,hardware,North-America,Inbound,3,4647,Won
+O-901301,2024-05-06,C-5883,POS-Terminal,software,EU,partner,11,6402,Won
+O-901302,2023-06-24,C-4994,AnalyticsSuite,software,asia,partner,10,8020,Won
+O-901303,2024-06-22,C-2282,CRM-Pro,Hard ware,Europe,Inbound,14,21700,Won
+O-901304,2024-06-20,C-4097,Analytics Suite,Soft ware,asia,Partner,7,5180,Won
+O-901305,2023-09-14,C-3949,POS Terminal,Hard ware,APAC,partner,15,13605,Won
+O-901306,2024-08-17,C-3379,POS Terminal,hardware,N. America,out bound,6,10248,Won
+O-901307,2024-08-15,C-5393,CRM Pro,Software,europe,Partner,12,18744,Won
+O-901308,2024-05-05,C-3440,Analytics Suite,Hard ware,Asia,out bound,2,2440,Won
+O-901309,2024-03-06,C-1661,CRM Pro,Software,north america,out bound,3,4794,Won
+O-901310,2023-06-30,C-5704,CRM Pro,Soft ware,Asia,Partner,1,734,Won
+O-901311,2023-01-05,C-3471,POS Terminal,Hardware,APAC,OUTBOUND,15,7230,Won
+O-901312,2023-12-30,C-5692,CRM-Pro,Hardware,north america,partner,14,19460,Won
+O-901313,2023-11-15,C-4914,POS-Terminal,software,North America,Inbound,3,1464,Won
+O-901314,2024-07-17,C-1416,Analytics Suite,software,north america,Inbound,12,19236,Won
+O-901315,2023-07-15,C-5678,Analytics Suite,Software,NA,out bound,11,5060,Won
+O-901316,2024-09-20,C-5162,CRM-Pro,software,EU,partner,13,9841,Won
+O-901317,2024-12-19,C-1995,AnalyticsSuite,Hard ware,Asia,OUTBOUND,4,5040,Won
+O-901318,2024-02-18,C-2368,CRM-Pro,hardware,asia,Partner,12,24000,Won
+O-901319,2023-09-05,C-5465,POS-Terminal,Soft ware,North-America,Outbound,12,14784,Won
+O-901320,2024-11-30,C-3954,CRM-Pro,Hard ware,europe,OUTBOUND,1,631,Won
+O-901321,2024-05-19,C-1113,POS-Terminal,hardware,NA,Inbound,2,3672,Won
+O-901322,2024-10-18,C-6598,AnalyticsSuite,Hardware,north america,inbound,10,8630,Won
+O-901323,2023-12-29,C-3534,CRM-Pro,Hardware,europe,out bound,10,18160,Won
+O-901324,2024-11-07,C-6147,CRM-Pro,software,North-America,OUTBOUND,5,4235,Won
+O-901325,2023-12-06,C-4814,CRM-Pro,Hard ware,Asia,In-bound,15,20025,Won
+O-901326,2024-02-13,C-1354,POS Terminal,Hard ware,Asia,Outbound,11,15620,Won
+O-901327,2023-12-31,C-4068,POS-Terminal,hardware,asia,Inbound,10,18640,Won
+O-901328,2024-11-30,C-4695,Analytics Suite,Software,N. America,Inbound,10,14630,Won
+O-901329,2023-08-24,C-4899,AnalyticsSuite,software,europe,Inbound,15,22215,Won
+O-901330,2024-12-10,C-2959,POS Terminal,Hardware,europe,In-bound,8,2760,Won
+O-901331,2024-11-13,C-5679,AnalyticsSuite,hardware,North-America,OUTBOUND,6,4224,Won
+O-901332,2024-04-01,C-3388,POS Terminal,Software,EU,inbound,10,9270,Won
+O-901333,2024-04-03,C-2710,AnalyticsSuite,Soft ware,Europe,Outbound,9,5751,Won
+O-901334,2024-11-15,C-5402,POS Terminal,Software,NA,partner,11,19954,Won
+O-901335,2023-12-23,C-3563,AnalyticsSuite,Software,N. America,partner,11,4169,Won
+O-901336,2024-07-27,C-4511,POS Terminal,hardware,EU,Outbound,4,6232,Won
+O-901337,2023-03-25,C-4017,AnalyticsSuite,Hard ware,EU,partner,10,16440,Won
+O-901338,2024-12-28,C-5328,POS Terminal,Hard ware,North America,out bound,1,1857,Won
+O-901339,2023-03-08,C-1970,POS-Terminal,software,europe,Outbound,13,25311,Won
+O-901340,2023-07-21,C-4015,AnalyticsSuite,hardware,europe,out bound,11,13156,Won
+O-901341,2024-12-13,C-2269,POS-Terminal,software,North America,inbound,12,12048,Won
+O-901342,2023-02-17,C-6771,CRM-Pro,Soft ware,Europe,partner,13,9464,Won
+O-901343,2023-07-11,C-3553,CRM-Pro,hardware,EU,inbound,11,13574,Won
+O-901344,2023-01-16,C-2150,POS Terminal,Software,APAC,Inbound,2,1054,Won
+O-901345,2023-09-16,C-1174,Analytics Suite,Hardware,NA,In-bound,2,1822,Won
+O-901346,2023-10-11,C-4048,CRM Pro,software,north america,inbound,12,8952,Won
+O-901347,2024-08-12,C-1691,CRM Pro,Hardware,N. America,partner,13,12103,Won
+O-901348,2023-02-19,C-3067,Analytics Suite,Software,N. America,partner,10,3400,Won
+O-901349,2024-08-29,C-1951,CRM-Pro,hardware,APAC,Inbound,7,7777,Won
+O-901350,2023-01-03,C-1781,AnalyticsSuite,Hard ware,APAC,Outbound,5,8695,Won
+O-901351,2024-01-15,C-6069,CRM-Pro,Soft ware,asia,out bound,11,5665,Won
+O-901352,2024-03-16,C-1825,Analytics Suite,Soft ware,asia,partner,13,12974,Won
+O-901353,2024-04-24,C-6180,POS-Terminal,Hardware,north america,Outbound,9,16164,Won
+O-901354,2023-05-12,C-2726,POS-Terminal,Soft ware,north america,Partner,5,8270,Won
+O-901355,2024-06-08,C-2968,CRM-Pro,hardware,europe,OUTBOUND,5,7830,Won
+O-901356,2023-04-06,C-4788,CRM-Pro,Soft ware,north america,Outbound,6,10290,Won
+O-901357,2023-05-21,C-6168,POS Terminal,Soft ware,NA,inbound,15,11685,Won
+O-901358,2024-03-25,C-5786,CRM-Pro,Hard ware,North America,In-bound,7,3227,Won
+O-901359,2024-01-20,C-3390,CRM Pro,software,APAC,partner,2,2866,Won
+O-901360,2023-08-09,C-1017,AnalyticsSuite,hardware,asia,OUTBOUND,12,6648,Won
+O-901361,2024-03-24,C-1679,CRM Pro,Software,North America,OUTBOUND,2,3766,Won
+O-901362,2024-12-19,C-5975,Analytics Suite,Hard ware,North America,inbound,14,25424,Won
+O-901363,2024-04-22,C-4202,POS Terminal,software,north america,Partner,9,3942,Won
+O-901364,2023-04-21,C-6777,Analytics Suite,hardware,NA,OUTBOUND,11,18018,Won
+O-901365,2023-05-31,C-6481,Analytics Suite,Soft ware,APAC,OUTBOUND,14,15456,Won
+O-901366,2023-07-31,C-6895,Analytics Suite,hardware,APAC,Inbound,15,5895,Won
+O-901367,2024-07-31,C-6226,Analytics Suite,Software,EU,OUTBOUND,5,1760,Won
+O-901368,2024-12-10,C-5325,CRM-Pro,software,NA,OUTBOUND,12,9108,Won
+O-901369,2023-10-15,C-1556,Analytics Suite,hardware,EU,OUTBOUND,6,6288,Won
+O-901370,2024-06-02,C-4168,POS Terminal,software,EU,partner,8,15864,Won
+O-901371,2024-11-07,C-6090,Analytics Suite,Software,North-America,Inbound,12,5808,Won
+O-901372,2024-02-02,C-4728,POS Terminal,Software,North America,Partner,7,12516,Won
+O-901373,2024-11-08,C-4304,AnalyticsSuite,hardware,NA,out bound,7,10101,Won
+O-901374,2024-10-20,C-3598,CRM-Pro,Hard ware,Europe,In-bound,13,15912,Won
+O-901375,2024-12-19,C-3842,Analytics Suite,hardware,N. America,In-bound,1,1422,Won
+O-901376,2023-09-05,C-2017,CRM-Pro,Soft ware,europe,OUTBOUND,7,4991,Won
+O-901377,2024-12-26,C-1642,POS-Terminal,software,asia,partner,12,6792,Won
+O-901378,2023-01-14,C-5325,CRM-Pro,hardware,Europe,In-bound,14,25256,Won
+O-901379,2023-08-22,C-5912,CRM Pro,Soft ware,europe,Outbound,7,12369,Won
+O-901380,2024-09-12,C-5999,CRM Pro,Soft ware,asia,Outbound,4,7468,Won
+O-901381,2024-08-16,C-1410,POS Terminal,Hard ware,N. America,out bound,13,10777,Won
+O-901382,2023-03-20,C-1744,CRM Pro,Hardware,North-America,Outbound,7,2184,Won
+O-901383,2023-02-06,C-1794,POS-Terminal,Hardware,europe,inbound,5,4875,Won
+O-901384,2024-08-22,C-1997,CRM Pro,Hard ware,N. America,Inbound,14,15596,Won
+O-901385,2023-11-20,C-2614,POS-Terminal,Hard ware,Europe,partner,1,1110,Won
+O-901386,2024-10-04,C-1446,POS-Terminal,Soft ware,N. America,Inbound,3,5361,Won
+O-901387,2023-01-17,C-3279,AnalyticsSuite,Hard ware,EU,Outbound,9,3087,Won
+O-901388,2023-09-14,C-3402,Analytics Suite,Hardware,north america,Outbound,6,4962,Won
+O-901389,2023-05-01,C-6493,POS Terminal,Hardware,North America,Inbound,3,5091,Won
+O-901390,2023-08-19,C-6631,POS-Terminal,Software,asia,OUTBOUND,13,13078,Won
+O-901391,2023-02-25,C-5357,CRM-Pro,Software,North America,Partner,4,4784,Won
+O-901392,2024-04-24,C-4068,AnalyticsSuite,Software,North America,inbound,11,13156,Won
+O-901393,2024-12-19,C-5672,POS-Terminal,hardware,Europe,Inbound,13,6630,Won
+O-901394,2023-10-05,C-2083,CRM-Pro,software,EU,In-bound,4,7456,Won
+O-901395,2024-03-24,C-5068,POS-Terminal,hardware,asia,In-bound,12,7344,Won
+O-901396,2023-10-20,C-4035,Analytics Suite,software,Asia,Outbound,9,13329,Won
+O-901397,2024-01-17,C-6711,POS Terminal,hardware,europe,partner,15,9135,Won
+O-901398,2024-11-30,C-4126,Analytics Suite,Hardware,North America,partner,1,1332,Won
+O-901399,2023-12-23,C-4223,CRM Pro,software,North America,Inbound,14,15554,Won
+O-901400,2024-05-04,C-6945,POS Terminal,software,North-America,partner,13,6747,Won
+O-901401,2024-08-27,C-5491,POS Terminal,Hardware,Asia,out bound,1,1575,Won
+O-901402,2023-11-01,C-1580,CRM Pro,Hardware,EU,Partner,13,13572,Won
+O-901403,2023-09-12,C-4270,CRM-Pro,Soft ware,APAC,Outbound,5,8300,Won
+O-901404,2023-11-13,C-4225,CRM-Pro,Hard ware,NA,Partner,7,11368,Won
+O-901405,2023-07-10,C-3825,CRM-Pro,Hard ware,N. America,partner,14,9534,Won
+O-901406,2024-08-27,C-4752,POS Terminal,Soft ware,asia,Outbound,8,6784,Won
+O-901407,2024-03-20,C-2047,CRM Pro,Hard ware,Europe,Partner,2,3148,Won
+O-901408,2024-11-18,C-6968,CRM Pro,software,EU,partner,3,1653,Won
+O-901409,2023-10-15,C-4303,POS Terminal,Software,North America,inbound,14,12474,Won
+O-901410,2024-01-28,C-2707,CRM Pro,Hard ware,North-America,inbound,3,3315,Won
+O-901411,2023-11-18,C-1096,AnalyticsSuite,Hard ware,APAC,In-bound,2,3060,Won
+O-901412,2024-08-14,C-5116,Analytics Suite,hardware,EU,Outbound,2,3886,Won
+O-901413,2024-10-16,C-3577,POS-Terminal,Software,North America,partner,8,15024,Won
+O-901414,2024-05-22,C-1954,Analytics Suite,software,Europe,Inbound,4,5740,Won
+O-901415,2024-11-04,C-4488,CRM Pro,software,NA,Inbound,6,10686,Won
+O-901416,2024-03-06,C-2660,Analytics Suite,software,asia,Outbound,3,4557,Won
+O-901417,2024-01-27,C-4154,AnalyticsSuite,hardware,north america,Partner,9,11151,Won
+O-901418,2024-08-31,C-2410,POS-Terminal,hardware,europe,In-bound,12,22656,Won
+O-901419,2024-12-12,C-2404,POS Terminal,Software,APAC,inbound,10,3760,Won
+O-901420,2023-01-31,C-3468,POS Terminal,software,N. America,Inbound,7,6979,Won
+O-901421,2023-07-25,C-1916,Analytics Suite,Software,N. America,Outbound,3,5085,Won
+O-901422,2024-02-16,C-5053,CRM Pro,Soft ware,asia,Partner,10,18500,Won
+O-901423,2023-04-06,C-6553,POS Terminal,software,North America,OUTBOUND,4,1500,Won
+O-901424,2024-12-25,C-2817,Analytics Suite,Hard ware,Asia,out bound,2,3942,Won
+O-901425,2023-09-23,C-1345,Analytics Suite,Hard ware,Asia,Partner,15,4710,Won
+O-901426,2024-08-31,C-3283,AnalyticsSuite,Hard ware,europe,out bound,2,1750,Won
+O-901427,2024-07-24,C-2631,AnalyticsSuite,software,north america,OUTBOUND,13,12051,Won
+O-901428,2023-01-11,C-5514,Analytics Suite,Soft ware,NA,In-bound,3,4683,Won
+O-901429,2024-03-04,C-2517,AnalyticsSuite,Soft ware,europe,Inbound,4,4680,Won
+O-901430,2023-12-12,C-3299,Analytics Suite,Hard ware,Asia,OUTBOUND,12,20412,Won
+O-901431,2023-02-07,C-5851,POS-Terminal,software,Asia,Outbound,9,15273,Won
+O-901432,2024-12-29,C-6953,POS-Terminal,Hard ware,north america,Inbound,11,3971,Won
+O-901433,2023-02-26,C-3665,POS-Terminal,Soft ware,North-America,OUTBOUND,3,1554,Won
+O-901434,2024-02-22,C-5923,CRM Pro,software,EU,Outbound,14,6678,Won
+O-901435,2024-12-28,C-6750,POS-Terminal,Hard ware,EU,OUTBOUND,15,29520,Won
+O-901436,2023-11-23,C-1859,CRM-Pro,software,asia,Inbound,7,6048,Won
+O-901437,2024-06-18,C-1692,CRM Pro,Software,North-America,partner,14,25760,Won
+O-901438,2023-06-12,C-4895,Analytics Suite,Hard ware,NA,Partner,10,6400,Won
+O-901439,2024-08-01,C-6849,AnalyticsSuite,Software,APAC,partner,8,10728,Won
+O-901440,2024-11-27,C-2387,POS Terminal,Hardware,north america,out bound,6,9084,Won
+O-901441,2024-07-19,C-4007,CRM-Pro,hardware,NA,Outbound,9,6435,Won
+O-901442,2024-10-24,C-1662,Analytics Suite,Hard ware,asia,Outbound,11,17358,Won
+O-901443,2024-06-02,C-5744,Analytics Suite,Soft ware,asia,Inbound,7,6930,Won
+O-901444,2024-05-03,C-1652,CRM-Pro,hardware,europe,OUTBOUND,9,4257,Won
+O-901445,2024-12-02,C-6713,CRM-Pro,Hard ware,Europe,OUTBOUND,4,3920,Won
+O-901446,2023-05-17,C-1483,AnalyticsSuite,Soft ware,Asia,Partner,15,10065,Won
+O-901447,2023-11-04,C-6513,POS-Terminal,hardware,europe,inbound,3,5316,Won
+O-901448,2023-07-21,C-3841,POS-Terminal,Hard ware,APAC,Partner,1,1442,Won
+O-901449,2024-03-06,C-4573,CRM Pro,Hard ware,europe,Partner,5,9385,Won
+O-901450,2023-02-07,C-1684,CRM-Pro,Software,EU,Inbound,3,1677,Won
+O-901451,2023-03-24,C-1313,AnalyticsSuite,software,Asia,partner,7,8022,Won
+O-901452,2024-10-20,C-5982,CRM-Pro,Soft ware,APAC,Outbound,9,9252,Won
+O-901453,2023-01-16,C-5453,CRM Pro,Hardware,APAC,partner,8,6200,Won
+O-901454,2023-01-14,C-5099,CRM Pro,Hard ware,APAC,OUTBOUND,14,9562,Won
+O-901455,2024-05-08,C-2141,AnalyticsSuite,Software,North-America,Partner,9,10314,Won
+O-901456,2023-12-03,C-1808,CRM-Pro,hardware,EU,Inbound,10,17000,Won
+O-901457,2023-01-21,C-1918,CRM Pro,Hardware,North-America,Partner,4,7660,Won
+O-901458,2024-06-11,C-3714,POS Terminal,Hardware,NA,OUTBOUND,15,21270,Won
+O-901459,2023-03-10,C-2218,POS-Terminal,Soft ware,Europe,inbound,4,6692,Won
+O-901460,2023-08-15,C-4416,POS-Terminal,Hard ware,europe,Inbound,8,11328,Won
+O-901461,2024-10-23,C-5123,CRM Pro,Software,Asia,Outbound,10,6530,Won
+O-901462,2023-11-25,C-3274,CRM Pro,Software,EU,inbound,6,11214,Won
+O-901463,2023-03-24,C-4169,CRM-Pro,Hardware,north america,partner,9,10737,Won
+O-901464,2023-10-10,C-2722,CRM Pro,Hard ware,europe,OUTBOUND,5,5135,Won
+O-901465,2023-11-10,C-5577,POS Terminal,Software,Europe,In-bound,14,11102,Won
+O-901466,2024-07-15,C-1382,Analytics Suite,Software,N. America,OUTBOUND,15,6330,Won
+O-901467,2024-08-14,C-2081,POS Terminal,Hard ware,APAC,Inbound,13,16640,Won
+O-901468,2023-02-24,C-3552,POS Terminal,Hard ware,asia,inbound,15,10305,Won
+O-901469,2024-11-13,C-4706,AnalyticsSuite,Software,North America,partner,13,15691,Won
+O-901470,2023-03-14,C-5488,AnalyticsSuite,Soft ware,asia,In-bound,2,784,Won
+O-901471,2024-04-21,C-2755,CRM Pro,Soft ware,N. America,out bound,9,5013,Won
+O-901472,2024-03-04,C-4681,CRM Pro,Hardware,APAC,out bound,4,2996,Won
+O-901473,2023-03-22,C-6418,CRM Pro,software,asia,OUTBOUND,7,5187,Won
+O-901474,2023-05-09,C-2599,POS Terminal,hardware,north america,out bound,5,3040,Won
+O-901475,2024-03-16,C-2041,CRM-Pro,software,NA,inbound,10,19910,Won
+O-901476,2023-05-30,C-4879,POS-Terminal,hardware,asia,out bound,13,9893,Won
+O-901477,2024-08-08,C-4183,AnalyticsSuite,Hard ware,north america,In-bound,12,18756,Won
+O-901478,2023-12-05,C-4124,CRM-Pro,Soft ware,N. America,partner,7,7021,Won
+O-901479,2023-03-03,C-1435,AnalyticsSuite,software,N. America,In-bound,8,7808,Won
+O-901480,2023-06-03,C-3767,CRM Pro,Soft ware,EU,inbound,8,2416,Won
+O-901481,2023-05-08,C-1048,Analytics Suite,Hard ware,europe,out bound,1,683,Won
+O-901482,2024-04-16,C-6826,CRM-Pro,Software,N. America,inbound,14,24206,Won
+O-901483,2023-01-29,C-5934,CRM Pro,software,North America,In-bound,1,1410,Won
+O-901484,2023-01-13,C-4986,CRM-Pro,Software,Europe,inbound,13,8424,Won
+O-901485,2024-08-23,C-2408,CRM-Pro,Hardware,EU,partner,12,6684,Won
+O-901486,2024-05-09,C-2021,Analytics Suite,hardware,APAC,OUTBOUND,13,16874,Won
+O-901487,2023-01-09,C-2363,Analytics Suite,Soft ware,NA,In-bound,13,5369,Won
+O-901488,2024-07-02,C-6341,Analytics Suite,software,NA,out bound,5,8905,Won
+O-901489,2023-04-12,C-6743,POS Terminal,Software,APAC,Outbound,8,11032,Won
+O-901490,2024-06-19,C-2207,CRM Pro,Soft ware,APAC,inbound,10,8010,Won
+O-901491,2023-09-03,C-5852,CRM-Pro,Hard ware,N. America,Partner,6,4272,Won
+O-901492,2024-10-29,C-4785,Analytics Suite,Software,Europe,partner,11,13772,Won
+O-901493,2023-07-10,C-6259,CRM-Pro,Software,North America,Outbound,15,17640,Won
+O-901494,2023-10-19,C-4289,POS-Terminal,Hardware,europe,partner,15,20850,Won
+O-901495,2023-04-02,C-4259,CRM-Pro,software,EU,out bound,3,906,Won
+O-901496,2023-02-25,C-3147,POS-Terminal,Soft ware,north america,Outbound,2,2228,Won
+O-901497,2023-09-06,C-4312,CRM Pro,Hard ware,Asia,OUTBOUND,14,15932,Won
+O-901498,2023-08-23,C-4660,POS Terminal,Hardware,NA,Inbound,10,10020,Won
+O-901499,2023-04-20,C-2938,POS Terminal,software,asia,OUTBOUND,9,16371,Won
+O-901500,2024-04-21,C-6293,CRM Pro,Hardware,North-America,out bound,12,10848,Won
+O-901501,2023-02-04,C-5420,Analytics Suite,software,europe,out bound,11,6853,Won
+O-901502,2024-09-23,C-5742,AnalyticsSuite,Soft ware,asia,Outbound,11,5115,Won
+O-901503,2024-11-02,C-4559,POS-Terminal,Software,Asia,Outbound,8,7440,Won
+O-901504,2024-12-26,C-1388,POS Terminal,Hardware,APAC,Inbound,14,15918,Won
+O-901505,2024-08-13,C-1582,CRM Pro,hardware,North America,OUTBOUND,11,15664,Won
+O-901506,2023-08-29,C-1662,Analytics Suite,Hard ware,Asia,inbound,3,3669,Won
+O-901507,2024-12-06,C-4417,POS Terminal,software,North America,inbound,3,3663,Won
+O-901508,2023-05-25,C-5928,POS Terminal,hardware,North-America,Partner,3,4107,Won
+O-901509,2023-11-19,C-2025,POS Terminal,hardware,APAC,Partner,12,16884,Won
+O-901510,2024-03-31,C-2244,CRM Pro,Software,europe,partner,4,1712,Won
+O-901511,2023-10-09,C-2563,Analytics Suite,hardware,APAC,Partner,9,10224,Won
+O-901512,2023-01-16,C-1551,POS Terminal,hardware,asia,Outbound,14,6328,Won
+O-901513,2023-05-29,C-3526,CRM Pro,software,North America,out bound,9,3276,Won
+O-901514,2024-04-06,C-4244,CRM Pro,Hardware,Asia,partner,8,11368,Won
+O-901515,2023-11-03,C-5602,CRM-Pro,software,North America,partner,10,6230,Won
+O-901516,2023-12-15,C-1629,AnalyticsSuite,hardware,North America,OUTBOUND,7,8463,Won
+O-901517,2023-08-05,C-6354,Analytics Suite,software,europe,inbound,14,15708,Won
+O-901518,2023-04-25,C-6668,POS-Terminal,Hardware,asia,OUTBOUND,13,20384,Won
+O-901519,2023-06-04,C-2451,CRM-Pro,hardware,APAC,partner,14,21854,Won
+O-901520,2024-06-13,C-2679,CRM Pro,Hardware,Europe,In-bound,7,7588,Won
+O-901521,2023-03-11,C-3438,Analytics Suite,software,north america,inbound,13,14521,Won
+O-901522,2023-01-16,C-5499,AnalyticsSuite,Hard ware,N. America,Inbound,10,18760,Won
+O-901523,2024-10-31,C-4524,POS Terminal,Software,north america,partner,7,13216,Won
+O-901524,2023-10-17,C-2079,POS Terminal,hardware,North-America,out bound,2,2064,Won
+O-901525,2024-03-24,C-6553,POS Terminal,Hard ware,NA,Partner,3,1236,Won
+O-901526,2024-06-14,C-3308,CRM-Pro,Software,North-America,partner,1,468,Won
+O-901527,2023-02-17,C-1335,CRM-Pro,Soft ware,EU,Outbound,4,7896,Won
+O-901528,2024-02-02,C-4407,Analytics Suite,Soft ware,Europe,Inbound,13,24440,Won
+O-901529,2023-02-13,C-3465,AnalyticsSuite,Soft ware,europe,OUTBOUND,15,17130,Won
+O-901530,2023-03-19,C-6259,POS Terminal,hardware,North America,out bound,13,6019,Won
+O-901531,2023-06-05,C-1634,CRM-Pro,hardware,asia,out bound,14,27020,Won
+O-901532,2024-11-05,C-2553,Analytics Suite,Soft ware,North America,inbound,7,11501,Won
+O-901533,2024-09-02,C-3605,AnalyticsSuite,Soft ware,North America,out bound,5,3585,Won
+O-901534,2023-09-16,C-6715,CRM-Pro,Soft ware,North America,inbound,8,9176,Won
+O-901535,2023-11-28,C-1376,CRM-Pro,software,Asia,inbound,6,1860,Won
+O-901536,2023-03-12,C-5038,POS Terminal,Soft ware,North America,inbound,11,12727,Won
+O-901537,2023-02-15,C-2539,CRM-Pro,Hard ware,north america,In-bound,11,15851,Won
+O-901538,2023-06-29,C-4323,POS Terminal,Software,North-America,OUTBOUND,4,1372,Won
+O-901539,2023-05-13,C-2372,AnalyticsSuite,Hard ware,north america,out bound,6,3324,Won
+O-901540,2023-10-14,C-6094,POS-Terminal,Hardware,Europe,out bound,4,7352,Won
+O-901541,2024-02-08,C-1710,POS-Terminal,hardware,north america,partner,6,10146,Won
+O-901542,2024-01-02,C-6708,POS Terminal,Software,EU,partner,7,11592,Won
+O-901543,2024-09-17,C-4970,CRM Pro,software,europe,inbound,10,14610,Won
+O-901544,2023-05-24,C-6457,AnalyticsSuite,hardware,N. America,In-bound,15,11700,Won
+O-901545,2024-01-11,C-1107,POS-Terminal,Hardware,APAC,Partner,9,13608,Won
+O-901546,2023-07-14,C-3227,POS-Terminal,software,N. America,OUTBOUND,8,4424,Won
+O-901547,2023-05-20,C-5026,Analytics Suite,Software,NA,partner,9,6804,Won
+O-901548,2024-01-18,C-6444,CRM Pro,Soft ware,North-America,out bound,5,3385,Won
+O-901549,2024-11-07,C-2196,CRM Pro,Hardware,europe,Partner,5,7680,Won
+O-901550,2024-02-20,C-6738,AnalyticsSuite,software,europe,out bound,3,4077,Won
+O-901551,2023-06-09,C-1508,CRM-Pro,Hardware,europe,Inbound,10,16930,Won
+O-901552,2024-11-18,C-1565,POS Terminal,hardware,NA,OUTBOUND,8,5896,Won
+O-901553,2024-07-26,C-2113,CRM-Pro,hardware,europe,Partner,3,3876,Won
+O-901554,2024-02-19,C-3083,POS-Terminal,Hardware,asia,partner,1,1248,Won
+O-901555,2023-10-29,C-3941,POS-Terminal,Software,EU,partner,15,28755,Won
+O-901556,2024-07-05,C-3210,AnalyticsSuite,Software,EU,OUTBOUND,1,1699,Won
+O-901557,2024-02-15,C-1900,CRM Pro,Soft ware,europe,partner,8,15744,Won
+O-901558,2024-12-09,C-1595,CRM Pro,Hard ware,asia,inbound,4,5276,Won
+O-901559,2024-10-22,C-2902,Analytics Suite,hardware,EU,Inbound,6,7494,Won
+O-901560,2024-05-10,C-1964,Analytics Suite,Software,Europe,Partner,6,2832,Won
+O-901561,2024-02-01,C-4294,POS Terminal,Software,APAC,In-bound,1,462,Won
+O-901562,2023-09-11,C-1307,CRM-Pro,Hardware,N. America,Inbound,12,22824,Won
+O-901563,2023-11-19,C-2531,POS Terminal,hardware,EU,inbound,5,8870,Won
+O-901564,2023-06-21,C-4243,POS Terminal,hardware,europe,inbound,5,6450,Won
+O-901565,2023-03-09,C-6392,CRM-Pro,hardware,N. America,Partner,11,9339,Won
+O-901566,2024-07-06,C-4538,POS-Terminal,Software,NA,Outbound,11,17006,Won
+O-901567,2024-12-02,C-3050,CRM Pro,Software,Asia,inbound,13,17277,Won
+O-901568,2023-11-10,C-4224,CRM-Pro,Hardware,Asia,OUTBOUND,15,15360,Won
+O-901569,2023-10-14,C-5827,POS-Terminal,software,N. America,Outbound,6,5922,Won
+O-901570,2024-11-23,C-2308,Analytics Suite,Software,N. America,out bound,8,13744,Won
+O-901571,2023-08-11,C-4261,AnalyticsSuite,Hardware,North America,out bound,15,10020,Won
+O-901572,2023-02-26,C-6200,POS-Terminal,Soft ware,asia,partner,7,6706,Won
+O-901573,2024-08-06,C-4794,POS-Terminal,Hard ware,EU,OUTBOUND,9,17505,Won
+O-901574,2023-12-03,C-1744,POS-Terminal,Hardware,Europe,out bound,1,317,Won
+O-901575,2024-01-06,C-4685,POS Terminal,Hardware,APAC,Inbound,6,10788,Won
+O-901576,2023-06-11,C-2795,CRM-Pro,Hard ware,North America,out bound,2,1750,Won
+O-901577,2023-06-05,C-5232,Analytics Suite,Soft ware,europe,out bound,1,921,Won
+O-901578,2024-07-12,C-5846,CRM Pro,Software,europe,Outbound,13,24271,Won
+O-901579,2024-01-04,C-3381,AnalyticsSuite,software,Asia,Inbound,2,2470,Won
+O-901580,2024-06-13,C-2114,AnalyticsSuite,Hard ware,EU,In-bound,4,3700,Won
+O-901581,2024-11-30,C-5016,POS-Terminal,hardware,Europe,inbound,9,9333,Won
+O-901582,2023-10-27,C-6871,CRM-Pro,Hardware,APAC,Outbound,13,14001,Won
+O-901583,2023-03-03,C-5448,CRM-Pro,Software,North America,out bound,5,4710,Won
+O-901584,2023-04-29,C-5353,CRM Pro,Hard ware,north america,In-bound,7,4732,Won
+O-901585,2023-11-01,C-3720,AnalyticsSuite,Soft ware,North-America,Partner,4,7232,Won
+O-901586,2024-05-09,C-5008,POS Terminal,Hard ware,europe,Partner,4,6348,Won
+O-901587,2024-10-23,C-5926,CRM Pro,Hardware,North-America,Inbound,12,13908,Won
+O-901588,2024-04-19,C-6277,POS-Terminal,software,N. America,OUTBOUND,2,1726,Won
+O-901589,2023-03-20,C-4235,CRM Pro,software,EU,Inbound,15,24630,Won
+O-901590,2024-08-25,C-4385,POS Terminal,software,North America,Inbound,4,4276,Won
+O-901591,2024-10-19,C-3252,CRM Pro,software,N. America,inbound,11,16192,Won
+O-901592,2023-05-03,C-1437,AnalyticsSuite,Hard ware,North-America,partner,13,9295,Won
+O-901593,2024-12-25,C-6688,POS Terminal,Software,North-America,Partner,7,2646,Won
+O-901594,2024-02-10,C-2010,AnalyticsSuite,software,europe,Partner,4,6304,Won
+O-901595,2024-02-10,C-6939,POS Terminal,Soft ware,europe,In-bound,14,19180,Won
+O-901596,2024-12-03,C-6988,POS-Terminal,Hardware,asia,Inbound,5,3525,Won
+O-901597,2023-03-25,C-1411,POS Terminal,Soft ware,EU,out bound,6,9096,Won
+O-901598,2024-08-10,C-4052,CRM Pro,hardware,North-America,inbound,7,5369,Won
+O-901599,2024-03-06,C-2791,Analytics Suite,hardware,Asia,inbound,3,4992,Won
+O-901600,2023-01-11,C-5021,CRM Pro,hardware,europe,In-bound,11,13805,Won
+O-901601,2024-04-15,C-5330,POS Terminal,Hardware,asia,Inbound,4,2600,Won
+O-901602,2024-03-04,C-1674,AnalyticsSuite,Hardware,N. America,OUTBOUND,11,8052,Won
+O-901603,2023-10-21,C-5627,CRM-Pro,Software,Europe,In-bound,9,15003,Won
+O-901604,2024-12-15,C-1992,CRM-Pro,software,NA,out bound,11,14278,Won
+O-901605,2023-03-30,C-3493,AnalyticsSuite,software,NA,OUTBOUND,8,5896,Won
+O-901606,2023-04-25,C-5073,CRM-Pro,software,EU,inbound,10,16970,Won
+O-901607,2023-12-06,C-2243,CRM-Pro,Hard ware,asia,partner,6,3720,Won
+O-901608,2023-07-19,C-4920,AnalyticsSuite,Software,North-America,partner,12,10584,Won
+O-901609,2023-10-08,C-1709,POS Terminal,hardware,asia,Partner,12,17820,Won
+O-901610,2023-04-19,C-2290,CRM Pro,Hardware,N. America,In-bound,11,18711,Won
+O-901611,2024-03-09,C-2375,POS-Terminal,software,N. America,OUTBOUND,9,12402,Won
+O-901612,2024-02-12,C-2099,Analytics Suite,Software,North-America,partner,2,3096,Won
+O-901613,2023-08-21,C-4340,AnalyticsSuite,software,APAC,partner,5,5825,Won
+O-901614,2023-07-04,C-5929,POS-Terminal,Soft ware,asia,Outbound,2,3208,Won
+O-901615,2024-09-18,C-1754,CRM Pro,Hard ware,asia,Outbound,3,2250,Won
+O-901616,2023-11-25,C-2702,AnalyticsSuite,software,North America,Outbound,9,3357,Won
+O-901617,2023-07-15,C-6744,POS-Terminal,hardware,NA,inbound,4,3976,Won
+O-901618,2024-11-10,C-4108,POS Terminal,Software,north america,Outbound,12,22284,Won
+O-901619,2024-12-08,C-6975,POS-Terminal,software,North America,Partner,4,2180,Won
+O-901620,2023-09-18,C-2917,CRM-Pro,software,Asia,Inbound,3,5400,Won
+O-901621,2024-03-09,C-4440,POS Terminal,hardware,North America,inbound,4,7244,Won
+O-901622,2023-08-23,C-2439,Analytics Suite,Hardware,N. America,Inbound,1,480,Won
+O-901623,2023-05-07,C-6128,POS-Terminal,Software,North-America,Outbound,8,14664,Won
+O-901624,2024-11-07,C-2083,CRM-Pro,software,N. America,partner,14,23268,Won
+O-901625,2024-04-24,C-5248,Analytics Suite,Soft ware,N. America,Inbound,7,12810,Won
+O-901626,2023-12-19,C-4684,Analytics Suite,Software,Europe,Outbound,4,7792,Won
+O-901627,2024-09-19,C-5682,CRM Pro,Software,NA,Outbound,12,11316,Won
+O-901628,2023-03-21,C-3795,AnalyticsSuite,Hard ware,europe,Outbound,15,16620,Won
+O-901629,2023-04-26,C-6816,AnalyticsSuite,software,North America,partner,2,3636,Won
+O-901630,2023-01-13,C-5784,Analytics Suite,Hardware,North America,OUTBOUND,15,12390,Won
+O-901631,2024-11-29,C-2488,AnalyticsSuite,Hardware,North-America,Inbound,9,9828,Won
+O-901632,2024-02-04,C-5692,POS Terminal,Soft ware,N. America,OUTBOUND,3,2949,Won
+O-901633,2024-10-24,C-4014,AnalyticsSuite,software,europe,In-bound,3,3054,Won
+O-901634,2024-03-13,C-4403,AnalyticsSuite,hardware,North America,partner,6,2976,Won
+O-901635,2023-05-24,C-3919,AnalyticsSuite,Soft ware,North America,Inbound,11,6281,Won
+O-901636,2023-04-01,C-4292,AnalyticsSuite,Hardware,europe,out bound,1,469,Won
+O-901637,2023-04-24,C-6340,POS-Terminal,Soft ware,asia,partner,6,6912,Won
+O-901638,2023-02-27,C-1775,AnalyticsSuite,software,North-America,In-bound,3,1746,Won
+O-901639,2023-07-05,C-4783,POS-Terminal,Hardware,north america,Outbound,2,2878,Won
+O-901640,2023-09-01,C-1441,CRM-Pro,Soft ware,N. America,partner,8,15080,Won
+O-901641,2024-11-01,C-4207,AnalyticsSuite,Software,north america,inbound,9,13311,Won
+O-901642,2024-06-09,C-3459,AnalyticsSuite,software,europe,partner,13,24037,Won
+O-901643,2023-03-23,C-2599,CRM-Pro,hardware,europe,Inbound,2,1144,Won
+O-901644,2024-04-07,C-5336,POS Terminal,Software,EU,Inbound,9,9981,Won
+O-901645,2023-01-21,C-2619,POS-Terminal,Hardware,asia,inbound,15,25950,Won
+O-901646,2023-07-20,C-4898,Analytics Suite,software,North-America,OUTBOUND,13,10400,Won
+O-901647,2023-03-19,C-2854,POS Terminal,hardware,EU,OUTBOUND,7,7273,Won
+O-901648,2023-09-09,C-4441,POS Terminal,hardware,N. America,Inbound,12,8136,Won
+O-901649,2023-04-18,C-6754,AnalyticsSuite,Soft ware,North-America,In-bound,6,10614,Won
+O-901650,2024-05-01,C-3636,AnalyticsSuite,hardware,North America,inbound,12,4080,Won
+O-901651,2024-11-10,C-4962,CRM-Pro,Hard ware,asia,OUTBOUND,7,9597,Won
+O-901652,2023-08-08,C-2211,CRM-Pro,Hardware,APAC,out bound,11,6688,Won
+O-901653,2023-11-15,C-2508,Analytics Suite,Software,europe,Outbound,15,6090,Won
+O-901654,2023-01-10,C-5712,POS-Terminal,software,europe,OUTBOUND,14,8848,Won
+O-901655,2023-05-25,C-6348,Analytics Suite,Soft ware,Asia,inbound,2,634,Won
+O-901656,2023-03-15,C-6183,POS Terminal,Software,North America,Inbound,6,10818,Won
+O-901657,2023-11-22,C-2965,CRM Pro,software,North-America,Partner,8,7216,Won
+O-901658,2024-05-08,C-2016,CRM Pro,Hard ware,asia,out bound,7,5733,Won
+O-901659,2024-07-22,C-6646,POS Terminal,Hard ware,North America,In-bound,11,15015,Won
+O-901660,2023-09-23,C-4304,POS Terminal,Hardware,North-America,Inbound,14,13286,Won
+O-901661,2024-05-02,C-2924,CRM-Pro,hardware,europe,Partner,10,14710,Won
+O-901662,2024-12-23,C-5876,POS Terminal,hardware,NA,Partner,7,8113,Won
+O-901663,2024-09-30,C-5284,CRM Pro,Hard ware,North America,Outbound,5,7955,Won
+O-901664,2024-10-07,C-4386,CRM Pro,hardware,North-America,OUTBOUND,13,17992,Won
+O-901665,2023-11-03,C-4397,CRM-Pro,software,Europe,Inbound,9,5076,Won
+O-901666,2023-08-18,C-3103,Analytics Suite,software,APAC,out bound,8,4664,Won
+O-901667,2024-04-25,C-4126,CRM-Pro,Software,north america,out bound,1,1377,Won
+O-901668,2023-12-19,C-2144,AnalyticsSuite,Hard ware,Asia,Inbound,9,10278,Won
+O-901669,2023-06-06,C-6853,AnalyticsSuite,software,Europe,partner,7,13055,Won
+O-901670,2024-04-16,C-6035,CRM Pro,Software,APAC,inbound,1,922,Won
+O-901671,2023-04-19,C-2675,CRM-Pro,Soft ware,NA,In-bound,11,3410,Won
+O-901672,2023-10-27,C-6339,AnalyticsSuite,Software,Asia,inbound,2,3708,Won
+O-901673,2024-03-17,C-1245,CRM-Pro,Hard ware,North America,out bound,7,13293,Won
+O-901674,2023-12-21,C-1057,POS Terminal,software,North-America,out bound,11,20504,Won
+O-901675,2023-06-15,C-1653,CRM-Pro,hardware,Asia,OUTBOUND,7,3269,Won
+O-901676,2023-10-11,C-4743,AnalyticsSuite,software,N. America,Inbound,13,18980,Won
+O-901677,2024-04-23,C-6130,AnalyticsSuite,Soft ware,Europe,OUTBOUND,11,5005,Won
+O-901678,2023-02-26,C-3307,CRM Pro,Software,APAC,partner,15,20895,Won
+O-901679,2023-11-03,C-5234,AnalyticsSuite,Software,N. America,inbound,7,7693,Won
+O-901680,2023-04-14,C-4635,CRM-Pro,hardware,europe,inbound,8,9416,Won
+O-901681,2024-04-22,C-3757,Analytics Suite,Hard ware,North America,partner,11,21197,Won
+O-901682,2023-10-01,C-5807,CRM-Pro,software,EU,Outbound,9,16191,Won
+O-901683,2023-02-23,C-3535,CRM-Pro,Software,APAC,out bound,11,13871,Won
+O-901684,2024-02-28,C-3133,AnalyticsSuite,Software,Europe,Inbound,14,20440,Won
+O-901685,2023-11-02,C-5518,CRM Pro,Hardware,Europe,Inbound,12,21972,Won
+O-901686,2024-08-04,C-5960,POS Terminal,software,Asia,partner,1,1100,Won
+O-901687,2023-02-28,C-6907,Analytics Suite,Hard ware,europe,In-bound,13,15990,Won
+O-901688,2023-04-12,C-3592,CRM Pro,Hard ware,north america,Outbound,6,11568,Won
+O-901689,2023-05-30,C-3456,Analytics Suite,Soft ware,North-America,In-bound,13,13104,Won
+O-901690,2024-05-24,C-6315,POS Terminal,Hardware,Asia,out bound,1,1276,Won
+O-901691,2023-08-06,C-2853,CRM-Pro,Hard ware,asia,out bound,6,2184,Won
+O-901692,2023-02-15,C-3480,Analytics Suite,Software,europe,Inbound,12,12624,Won
+O-901693,2024-12-03,C-1928,Analytics Suite,Soft ware,Asia,out bound,2,852,Won
+O-901694,2024-07-20,C-5777,AnalyticsSuite,Hard ware,APAC,inbound,4,3476,Won
+O-901695,2023-01-26,C-1193,POS Terminal,Software,NA,out bound,9,3114,Won
+O-901696,2024-12-09,C-4676,Analytics Suite,Software,N. America,OUTBOUND,1,1080,Won
+O-901697,2024-03-31,C-6117,Analytics Suite,software,N. America,In-bound,9,13536,Won
+O-901698,2023-04-21,C-6201,CRM-Pro,software,North America,Partner,10,14870,Won
+O-901699,2023-07-26,C-6820,AnalyticsSuite,Hard ware,Europe,Inbound,8,10128,Won
+O-901700,2023-02-09,C-2154,CRM Pro,Hard ware,North-America,Partner,9,14832,Won
+O-901701,2024-12-13,C-1944,POS Terminal,Software,Europe,In-bound,13,21255,Won
+O-901702,2023-11-09,C-1001,POS-Terminal,Software,asia,inbound,11,4268,Won
+O-901703,2024-01-28,C-4706,CRM-Pro,software,asia,inbound,7,5173,Won
+O-901704,2024-01-26,C-1133,CRM-Pro,hardware,North-America,In-bound,12,10620,Won
+O-901705,2024-11-08,C-5175,POS Terminal,software,North-America,Inbound,5,3190,Won
+O-901706,2023-10-02,C-1650,CRM-Pro,Hard ware,asia,Inbound,4,3276,Won
+O-901707,2023-05-03,C-1078,CRM Pro,Soft ware,north america,Outbound,14,24738,Won
+O-901708,2023-07-13,C-3897,POS-Terminal,software,europe,In-bound,11,14201,Won
+O-901709,2023-11-20,C-6337,POS Terminal,hardware,N. America,Partner,4,5516,Won
+O-901710,2023-10-05,C-5477,CRM Pro,hardware,North-America,out bound,8,15744,Won
+O-901711,2023-06-11,C-4847,CRM Pro,hardware,NA,out bound,5,2195,Won
+O-901712,2024-02-06,C-1460,Analytics Suite,Hardware,Europe,OUTBOUND,8,14208,Won
+O-901713,2024-03-21,C-3150,CRM Pro,Hard ware,europe,In-bound,14,24752,Won
+O-901714,2024-05-15,C-1210,POS-Terminal,Hard ware,asia,inbound,10,7180,Won
+O-901715,2024-11-24,C-4277,POS-Terminal,Soft ware,Europe,Partner,3,5946,Won
+O-901716,2024-04-13,C-5841,Analytics Suite,Hard ware,North-America,partner,8,11872,Won
+O-901717,2023-02-20,C-1811,Analytics Suite,Soft ware,north america,OUTBOUND,10,8240,Won
+O-901718,2024-10-03,C-5274,AnalyticsSuite,Hardware,europe,inbound,3,4308,Won
+O-901719,2024-12-03,C-2333,CRM-Pro,software,europe,out bound,1,411,Won
+O-901720,2023-04-29,C-6773,POS-Terminal,Software,north america,inbound,11,7513,Won
+O-901721,2024-08-25,C-1444,CRM-Pro,Soft ware,asia,Outbound,14,8470,Won
+O-901722,2023-12-03,C-5851,Analytics Suite,software,North America,In-bound,2,2060,Won
+O-901723,2024-01-20,C-1058,POS-Terminal,Software,europe,out bound,11,9284,Won
+O-901724,2023-10-02,C-3129,CRM-Pro,Hard ware,Europe,partner,10,11240,Won
+O-901725,2024-10-26,C-4113,POS-Terminal,hardware,N. America,OUTBOUND,12,15036,Won
+O-901726,2024-08-06,C-5330,CRM-Pro,Soft ware,north america,Inbound,14,16982,Won
+O-901727,2024-12-23,C-5547,CRM-Pro,hardware,europe,inbound,12,14928,Won
+O-901728,2023-03-16,C-2357,Analytics Suite,Hardware,N. America,Inbound,5,9090,Won
+O-901729,2024-07-05,C-2042,CRM-Pro,Hardware,NA,partner,10,13290,Won
+O-901730,2024-11-25,C-2898,POS Terminal,Hardware,NA,Outbound,1,1981,Won
+O-901731,2023-04-05,C-6344,CRM-Pro,Software,europe,out bound,8,11864,Won
+O-901732,2024-12-25,C-1599,POS-Terminal,Soft ware,NA,out bound,1,1844,Won
+O-901733,2024-06-04,C-4752,CRM-Pro,Software,Europe,out bound,4,2772,Won
+O-901734,2024-02-20,C-5695,CRM Pro,Hardware,N. America,In-bound,10,8110,Won
+O-901735,2023-06-15,C-4930,POS Terminal,hardware,europe,Inbound,14,16968,Won
+O-901736,2024-12-07,C-3399,POS-Terminal,Soft ware,Asia,out bound,14,9982,Won
+O-901737,2024-06-02,C-6415,CRM-Pro,Soft ware,Asia,out bound,12,6468,Won
+O-901738,2023-11-14,C-2939,CRM Pro,hardware,N. America,partner,1,1674,Won
+O-901739,2024-10-01,C-5116,CRM-Pro,hardware,EU,out bound,7,6629,Won
+O-901740,2024-08-11,C-1392,CRM-Pro,Soft ware,asia,Outbound,2,924,Won
+O-901741,2024-01-13,C-1872,CRM-Pro,Hard ware,N. America,Inbound,5,3495,Won
+O-901742,2023-03-01,C-2980,POS-Terminal,Soft ware,APAC,out bound,14,15176,Won
+O-901743,2023-10-09,C-5981,AnalyticsSuite,Hard ware,EU,In-bound,4,2296,Won
+O-901744,2023-07-14,C-6679,AnalyticsSuite,Software,North America,inbound,1,495,Won
+O-901745,2023-08-17,C-4153,POS Terminal,Soft ware,europe,OUTBOUND,14,17710,Won
+O-901746,2023-01-20,C-1906,CRM Pro,Software,north america,partner,7,11704,Won
+O-901747,2024-08-30,C-5817,CRM Pro,Hardware,N. America,inbound,2,1822,Won
+O-901748,2023-02-28,C-5860,CRM Pro,Soft ware,NA,Outbound,4,7056,Won
+O-901749,2023-02-26,C-2064,AnalyticsSuite,Software,APAC,inbound,14,16296,Won
+O-901750,2023-05-11,C-5058,CRM Pro,Software,North America,inbound,1,1250,Won
+O-901751,2023-05-21,C-2263,AnalyticsSuite,Soft ware,north america,out bound,2,860,Won
+O-901752,2023-12-27,C-1359,Analytics Suite,Soft ware,europe,In-bound,12,10776,Won
+O-901753,2024-11-02,C-2746,POS-Terminal,software,Europe,In-bound,9,13185,Won
+O-901754,2024-10-17,C-2865,POS-Terminal,Software,EU,out bound,11,15521,Won
+O-901755,2024-09-24,C-5989,CRM Pro,software,N. America,Inbound,5,9920,Won
+O-901756,2023-10-24,C-4624,CRM-Pro,software,north america,OUTBOUND,9,4716,Won
+O-901757,2024-01-18,C-4261,AnalyticsSuite,Soft ware,asia,partner,5,2655,Won
+O-901758,2024-07-26,C-3741,Analytics Suite,Hard ware,EU,inbound,11,13684,Won
+O-901759,2024-07-12,C-3151,CRM Pro,hardware,N. America,inbound,12,23796,Won
+O-901760,2024-03-14,C-3786,POS Terminal,software,europe,Partner,11,14201,Won
+O-901761,2024-08-09,C-5151,POS Terminal,hardware,North-America,Outbound,4,6980,Won
+O-901762,2023-08-19,C-2534,CRM Pro,Software,north america,inbound,2,714,Won
+O-901763,2024-11-02,C-5110,POS-Terminal,Software,asia,partner,13,8489,Won
+O-901764,2023-04-09,C-4530,POS-Terminal,Hard ware,N. America,Outbound,14,6272,Won
+O-901765,2023-03-04,C-3538,CRM Pro,Hard ware,asia,In-bound,10,13520,Won
+O-901766,2023-03-21,C-6971,POS Terminal,Hardware,asia,Partner,11,8316,Won
+O-901767,2023-07-04,C-2018,POS-Terminal,Hard ware,Asia,In-bound,8,13032,Won
+O-901768,2024-05-06,C-3914,AnalyticsSuite,Hardware,north america,Inbound,9,7407,Won
+O-901769,2024-09-07,C-1737,POS Terminal,hardware,asia,Partner,9,7056,Won
+O-901770,2023-04-20,C-1017,POS Terminal,Hardware,north america,out bound,13,23946,Won
+O-901771,2023-03-22,C-4819,CRM Pro,Hard ware,asia,partner,2,2040,Won
+O-901772,2024-09-26,C-6411,AnalyticsSuite,Software,North America,Inbound,4,7636,Won
+O-901773,2024-11-29,C-3111,CRM-Pro,software,europe,In-bound,7,13895,Won
+O-901774,2023-04-13,C-3287,Analytics Suite,Soft ware,North America,Partner,3,1527,Won
+O-901775,2023-10-07,C-2411,CRM-Pro,Software,EU,Outbound,8,8224,Won
+O-901776,2023-05-28,C-6218,CRM Pro,Software,North America,Inbound,5,6215,Won
+O-901777,2023-06-09,C-4380,AnalyticsSuite,Hard ware,NA,Inbound,15,16995,Won
+O-901778,2024-11-09,C-2736,POS Terminal,Soft ware,North-America,In-bound,13,13507,Won
+O-901779,2023-04-10,C-1664,AnalyticsSuite,Soft ware,N. America,Partner,15,9030,Won
+O-901780,2024-02-14,C-6662,CRM-Pro,Hardware,NA,Outbound,7,3507,Won
+O-901781,2023-06-07,C-1389,AnalyticsSuite,Hard ware,europe,In-bound,2,2720,Won
+O-901782,2023-02-08,C-6553,CRM-Pro,hardware,EU,OUTBOUND,11,19822,Won
+O-901783,2023-07-11,C-2938,AnalyticsSuite,Soft ware,Asia,OUTBOUND,12,17772,Won
+O-901784,2024-04-12,C-4618,Analytics Suite,Hardware,Europe,In-bound,2,754,Won
+O-901785,2024-09-09,C-2317,POS-Terminal,software,north america,out bound,15,28575,Won
+O-901786,2024-09-30,C-6518,POS-Terminal,Hardware,APAC,out bound,10,9750,Won
+O-901787,2023-03-07,C-4806,POS-Terminal,Soft ware,NA,inbound,5,7125,Won
+O-901788,2023-06-15,C-6358,POS Terminal,Hard ware,North-America,inbound,3,4899,Won
+O-901789,2024-11-27,C-6489,CRM-Pro,Hardware,N. America,OUTBOUND,3,4923,Won
+O-901790,2024-06-25,C-1006,POS-Terminal,hardware,North-America,out bound,10,18790,Won
+O-901791,2023-09-10,C-5534,CRM-Pro,hardware,North America,Outbound,15,19410,Won
+O-901792,2024-08-04,C-2297,POS Terminal,Soft ware,Europe,Partner,7,3206,Won
+O-901793,2024-07-06,C-5374,CRM Pro,Soft ware,europe,partner,7,3717,Won
+O-901794,2024-11-28,C-3255,CRM Pro,Software,N. America,Inbound,10,17740,Won
+O-901795,2023-11-27,C-3362,POS Terminal,hardware,Asia,out bound,10,9110,Won
+O-901796,2023-03-02,C-3142,AnalyticsSuite,Hardware,Europe,inbound,5,4385,Won
+O-901797,2024-05-19,C-1080,CRM Pro,hardware,NA,inbound,1,1799,Won
+O-901798,2024-03-17,C-5399,POS Terminal,software,north america,out bound,5,4255,Won
+O-901799,2024-07-26,C-6243,CRM-Pro,Hardware,Asia,partner,5,4930,Won
+O-901800,2023-02-26,C-3248,Analytics Suite,Hardware,North America,Outbound,6,4206,Won
+O-901801,2024-02-24,C-5211,AnalyticsSuite,Hardware,asia,partner,9,11304,Won
+O-901802,2024-09-24,C-5006,AnalyticsSuite,hardware,Asia,inbound,4,1288,Won
+O-901803,2023-06-23,C-1824,AnalyticsSuite,software,north america,Inbound,7,2702,Won
+O-901804,2023-09-30,C-6976,CRM Pro,Hardware,North-America,Inbound,5,4485,Won
+O-901805,2023-12-10,C-3111,Analytics Suite,hardware,north america,Inbound,13,10868,Won
+O-901806,2024-08-28,C-3896,Analytics Suite,Hardware,EU,OUTBOUND,12,22656,Won
+O-901807,2023-10-28,C-4262,POS-Terminal,Hard ware,APAC,Partner,3,3657,Won
+O-901808,2024-06-06,C-2746,Analytics Suite,Hard ware,APAC,Inbound,13,24362,Won
+O-901809,2024-05-30,C-2450,AnalyticsSuite,software,Asia,Inbound,9,6129,Won
+O-901810,2023-04-10,C-1382,CRM Pro,hardware,asia,partner,4,5308,Won
+O-901811,2023-04-14,C-5122,CRM Pro,Software,EU,inbound,5,4520,Won
+O-901812,2023-11-22,C-5952,CRM-Pro,Soft ware,N. America,inbound,2,1706,Won
+O-901813,2023-01-26,C-6078,CRM-Pro,hardware,North America,Partner,5,8360,Won
+O-901814,2023-09-19,C-4973,CRM Pro,software,EU,OUTBOUND,7,12544,Won
+O-901815,2024-07-03,C-4743,CRM Pro,Soft ware,North America,In-bound,10,17420,Won
+O-901816,2023-04-21,C-5520,AnalyticsSuite,Software,North-America,Partner,7,6713,Won
+O-901817,2023-03-04,C-6757,CRM-Pro,Software,Europe,out bound,13,19344,Won
+O-901818,2023-09-09,C-3190,AnalyticsSuite,Soft ware,europe,OUTBOUND,12,12024,Won
+O-901819,2024-02-02,C-5343,POS-Terminal,hardware,North-America,inbound,3,5055,Won
+O-901820,2024-06-30,C-4873,AnalyticsSuite,Hardware,Europe,Outbound,8,7256,Won
+O-901821,2024-07-19,C-6445,POS Terminal,Hardware,NA,partner,12,16068,Won
+O-901822,2024-07-04,C-1259,CRM Pro,Hardware,Europe,Partner,10,4340,Won
+O-901823,2024-10-15,C-6547,POS Terminal,Hard ware,North-America,Inbound,3,4731,Won
+O-901824,2023-01-16,C-5046,POS-Terminal,Soft ware,Asia,Inbound,6,7278,Won
+O-901825,2024-11-02,C-4193,Analytics Suite,Hardware,APAC,Inbound,12,21408,Won
+O-901826,2024-01-04,C-3757,CRM-Pro,hardware,N. America,inbound,9,12600,Won
+O-901827,2024-02-17,C-6461,CRM-Pro,Hard ware,North America,partner,2,2856,Won
+O-901828,2023-05-09,C-3203,AnalyticsSuite,Hard ware,NA,Partner,9,12051,Won
+O-901829,2024-06-02,C-2014,CRM-Pro,software,europe,out bound,14,19558,Won
+O-901830,2024-12-21,C-6582,POS Terminal,software,APAC,Inbound,2,620,Won
+O-901831,2024-12-28,C-3114,CRM Pro,hardware,Europe,Outbound,2,998,Won
+O-901832,2024-02-13,C-3364,CRM-Pro,Hard ware,north america,inbound,2,888,Won
+O-901833,2024-05-01,C-3939,Analytics Suite,Software,N. America,out bound,12,7980,Won
+O-901834,2024-03-07,C-2740,CRM-Pro,hardware,europe,Inbound,1,859,Won
+O-901835,2023-03-29,C-6680,CRM Pro,Soft ware,North America,Outbound,11,5742,Won
+O-901836,2024-07-12,C-2189,AnalyticsSuite,Hard ware,N. America,partner,10,7250,Won
+O-901837,2023-11-26,C-2823,POS Terminal,Software,asia,Partner,9,14958,Won
+O-901838,2024-06-23,C-1052,Analytics Suite,Software,Asia,Outbound,15,14670,Won
+O-901839,2023-01-28,C-5824,POS-Terminal,Hardware,EU,OUTBOUND,1,1397,Won
+O-901840,2024-05-13,C-4349,CRM Pro,Hard ware,europe,out bound,3,2781,Won
+O-901841,2023-06-20,C-2189,Analytics Suite,Hard ware,north america,inbound,8,12776,Won
+O-901842,2023-01-19,C-6861,Analytics Suite,software,North-America,OUTBOUND,2,2524,Won
+O-901843,2024-08-26,C-3310,CRM Pro,Soft ware,asia,inbound,5,1585,Won
+O-901844,2024-01-05,C-3733,AnalyticsSuite,Software,North-America,inbound,5,2695,Won
+O-901845,2023-07-28,C-1251,CRM Pro,hardware,North-America,In-bound,3,5967,Won
+O-901846,2023-10-14,C-5309,POS Terminal,Software,asia,Inbound,2,2270,Won
+O-901847,2023-12-02,C-4687,CRM Pro,Hard ware,Europe,OUTBOUND,6,10314,Won
+O-901848,2023-04-25,C-1246,AnalyticsSuite,Soft ware,europe,out bound,3,3879,Won
+O-901849,2023-05-05,C-6051,Analytics Suite,Hardware,asia,OUTBOUND,8,15776,Won
+O-901850,2024-04-26,C-4159,AnalyticsSuite,software,Europe,partner,11,14993,Won
+O-901851,2024-07-27,C-3587,CRM Pro,Software,North America,out bound,8,6008,Won
+O-901852,2023-03-28,C-1421,Analytics Suite,hardware,North-America,partner,12,6876,Won
+O-901853,2023-07-09,C-2930,CRM Pro,Software,North-America,Outbound,7,10465,Won
+O-901854,2023-04-13,C-4117,POS Terminal,Hardware,North America,In-bound,5,8580,Won
+O-901855,2023-01-20,C-5701,AnalyticsSuite,Soft ware,EU,out bound,9,3195,Won
+O-901856,2024-01-01,C-4943,POS Terminal,Hard ware,north america,inbound,9,3357,Won
+O-901857,2024-12-12,C-4711,AnalyticsSuite,Hard ware,asia,out bound,8,6152,Won
+O-901858,2023-05-02,C-6512,CRM-Pro,Hard ware,APAC,In-bound,7,10332,Won
+O-901859,2024-09-13,C-3723,POS-Terminal,Software,Europe,In-bound,14,13104,Won
+O-901860,2023-04-02,C-3677,Analytics Suite,Soft ware,Asia,partner,12,5760,Won
+O-901861,2023-04-23,C-6451,AnalyticsSuite,Hardware,europe,Outbound,14,25424,Won
+O-901862,2023-12-14,C-4716,AnalyticsSuite,software,north america,out bound,5,8405,Won
+O-901863,2023-12-18,C-5598,CRM-Pro,Hardware,N. America,Outbound,13,12155,Won
+O-901864,2024-03-03,C-1851,AnalyticsSuite,hardware,North America,Outbound,15,6795,Won
+O-901865,2023-11-10,C-1915,AnalyticsSuite,hardware,Asia,In-bound,8,4232,Won
+O-901866,2024-12-28,C-3434,POS-Terminal,Hard ware,Asia,Inbound,6,11076,Won
+O-901867,2024-07-21,C-2848,CRM-Pro,Soft ware,asia,Partner,5,2545,Won
+O-901868,2023-04-14,C-1385,AnalyticsSuite,software,north america,OUTBOUND,14,13776,Won
+O-901869,2024-08-24,C-4423,POS Terminal,Hard ware,North America,Partner,8,11784,Won
+O-901870,2024-12-07,C-6205,CRM Pro,software,Asia,inbound,6,9750,Won
+O-901871,2023-06-02,C-1933,POS Terminal,Soft ware,europe,OUTBOUND,9,12825,Won
+O-901872,2023-04-11,C-5897,POS Terminal,Soft ware,europe,Partner,12,20892,Won
+O-901873,2024-07-11,C-4407,Analytics Suite,hardware,europe,partner,13,17394,Won
+O-901874,2024-09-11,C-5937,POS Terminal,Soft ware,N. America,partner,5,5990,Won
+O-901875,2024-09-11,C-1636,CRM Pro,Hard ware,APAC,Inbound,4,4324,Won
+O-901876,2023-06-21,C-6524,CRM-Pro,software,asia,Outbound,12,9876,Won
+O-901877,2023-12-01,C-6095,CRM Pro,software,North-America,out bound,4,4852,Won
+O-901878,2024-03-03,C-1917,AnalyticsSuite,hardware,North America,OUTBOUND,1,970,Won
+O-901879,2024-07-19,C-6092,Analytics Suite,Hardware,North America,partner,6,7968,Won
+O-901880,2024-05-24,C-4138,CRM Pro,software,Asia,Inbound,3,3495,Won
+O-901881,2023-01-21,C-6268,Analytics Suite,Software,north america,OUTBOUND,6,3204,Won
+O-901882,2023-10-04,C-2553,POS-Terminal,Hardware,Asia,OUTBOUND,5,3535,Won
+O-901883,2023-01-15,C-5576,POS-Terminal,software,EU,partner,9,9675,Won
+O-901884,2023-06-20,C-1059,Analytics Suite,hardware,north america,inbound,10,13870,Won
+O-901885,2024-04-20,C-5842,POS Terminal,hardware,N. America,Partner,11,5280,Won
+O-901886,2023-12-19,C-3442,AnalyticsSuite,software,north america,Outbound,15,11355,Won
+O-901887,2024-04-29,C-6534,AnalyticsSuite,Hardware,EU,In-bound,14,20160,Won
+O-901888,2023-04-07,C-5616,CRM-Pro,hardware,North-America,partner,9,16182,Won
+O-901889,2024-02-18,C-5585,CRM Pro,hardware,Europe,partner,7,12656,Won
+O-901890,2024-09-29,C-6313,AnalyticsSuite,Hardware,Europe,inbound,11,8173,Won
+O-901891,2024-03-04,C-4766,POS-Terminal,Hard ware,North-America,partner,12,5316,Won
+O-901892,2023-01-05,C-1914,CRM-Pro,hardware,N. America,inbound,5,7180,Won
+O-901893,2023-09-05,C-4329,CRM Pro,Software,Europe,Outbound,3,2625,Won
+O-901894,2024-07-09,C-3933,Analytics Suite,hardware,N. America,OUTBOUND,3,5502,Won
+O-901895,2023-07-17,C-1947,CRM Pro,Hard ware,EU,Outbound,1,1002,Won
+O-901896,2023-12-11,C-1810,POS-Terminal,Software,APAC,OUTBOUND,1,428,Won
+O-901897,2023-11-16,C-5107,CRM Pro,software,europe,In-bound,9,4554,Won
+O-901898,2023-06-16,C-4497,AnalyticsSuite,software,Asia,In-bound,15,22455,Won
+O-901899,2023-11-25,C-1704,AnalyticsSuite,Hardware,Asia,Outbound,11,17380,Won
+O-901900,2023-09-04,C-2188,POS-Terminal,Soft ware,APAC,inbound,4,1276,Won
+O-901901,2024-03-06,C-3700,Analytics Suite,Software,NA,out bound,6,6102,Won
+O-901902,2023-03-24,C-6176,AnalyticsSuite,Hard ware,N. America,OUTBOUND,5,3030,Won
+O-901903,2024-01-04,C-4198,POS-Terminal,Software,North-America,Inbound,15,29265,Won
+O-901904,2023-06-23,C-6337,CRM Pro,software,EU,partner,10,18050,Won
+O-901905,2024-01-12,C-6519,POS-Terminal,hardware,North-America,Outbound,14,12292,Won
+O-901906,2024-05-12,C-4447,POS Terminal,Soft ware,North-America,Outbound,2,2632,Won
+O-901907,2023-04-28,C-3050,CRM-Pro,hardware,EU,inbound,13,24310,Won
+O-901908,2024-05-22,C-6722,Analytics Suite,Hardware,North-America,inbound,4,4872,Won
+O-901909,2024-10-25,C-4993,POS Terminal,Software,europe,OUTBOUND,10,6450,Won
+O-901910,2024-11-02,C-1849,POS Terminal,Software,Europe,OUTBOUND,10,19720,Won
+O-901911,2024-02-20,C-6065,AnalyticsSuite,Soft ware,North-America,out bound,2,2418,Won
+O-901912,2024-04-11,C-1291,CRM Pro,hardware,asia,out bound,4,3136,Won
+O-901913,2024-10-06,C-3513,POS Terminal,Hard ware,Europe,partner,15,27765,Won
+O-901914,2024-10-21,C-1348,CRM-Pro,hardware,EU,inbound,12,22344,Won
+O-901915,2023-01-10,C-3616,AnalyticsSuite,Hard ware,north america,partner,13,5304,Won
+O-901916,2023-10-06,C-6591,POS-Terminal,Hardware,Asia,out bound,4,6804,Won
+O-901917,2024-09-09,C-6257,POS-Terminal,software,europe,partner,8,4656,Won
+O-901918,2024-02-01,C-3995,Analytics Suite,Hard ware,North-America,partner,10,6970,Won
+O-901919,2023-10-05,C-3101,POS-Terminal,Hard ware,APAC,out bound,2,2004,Won
+O-901920,2024-05-08,C-5318,CRM-Pro,Soft ware,EU,Inbound,13,12766,Won
+O-901921,2024-02-15,C-3399,AnalyticsSuite,hardware,europe,Outbound,15,23310,Won
+O-901922,2024-05-13,C-1942,POS-Terminal,Hard ware,NA,partner,10,19640,Won
+O-901923,2023-09-29,C-3958,AnalyticsSuite,Hardware,APAC,partner,6,4974,Won
+O-901924,2024-02-14,C-3840,POS-Terminal,Hard ware,Asia,Outbound,14,23268,Won
+O-901925,2024-06-18,C-2930,Analytics Suite,software,North America,partner,12,16164,Won
+O-901926,2024-05-13,C-5865,Analytics Suite,software,APAC,partner,8,15344,Won
+O-901927,2024-08-19,C-5820,Analytics Suite,Hardware,europe,Partner,13,20787,Won
+O-901928,2024-06-03,C-2197,POS Terminal,hardware,NA,Outbound,13,8021,Won
+O-901929,2023-04-01,C-4734,Analytics Suite,software,Asia,Inbound,1,411,Won
+O-901930,2023-06-19,C-3201,Analytics Suite,Soft ware,europe,Partner,15,11400,Won
+O-901931,2024-11-27,C-6811,CRM Pro,Hard ware,asia,partner,5,7860,Won
+O-901932,2023-08-21,C-6311,AnalyticsSuite,Hardware,Europe,Outbound,7,7819,Won
+O-901933,2024-02-10,C-4556,Analytics Suite,Hard ware,asia,Inbound,13,11869,Won
+O-901934,2023-02-05,C-2463,POS-Terminal,Software,Asia,Outbound,9,4392,Won
+O-901935,2023-12-07,C-4941,CRM-Pro,Hard ware,Asia,Inbound,11,21274,Won
+O-901936,2023-01-18,C-1006,POS Terminal,Soft ware,North America,inbound,14,21630,Won
+O-901937,2024-10-31,C-4167,POS Terminal,Soft ware,N. America,Outbound,15,9015,Won
+O-901938,2023-07-09,C-4149,POS Terminal,hardware,europe,Partner,12,20844,Won
+O-901939,2024-06-13,C-6957,AnalyticsSuite,Hardware,North America,out bound,10,19990,Won
+O-901940,2023-02-22,C-3311,AnalyticsSuite,Soft ware,N. America,out bound,13,24778,Won
+O-901941,2023-02-20,C-6192,CRM Pro,software,EU,Partner,2,3674,Won
+O-901942,2023-02-09,C-3036,AnalyticsSuite,Software,Asia,In-bound,1,1385,Won
+O-901943,2023-11-24,C-4429,Analytics Suite,hardware,NA,partner,8,4696,Won
+O-901944,2024-07-13,C-3210,POS Terminal,Hardware,europe,out bound,12,6240,Won
+O-901945,2023-12-28,C-3640,CRM-Pro,Software,Asia,Inbound,8,4432,Won
+O-901946,2023-08-22,C-2736,POS Terminal,Hard ware,N. America,Outbound,14,8092,Won
+O-901947,2024-05-17,C-3871,Analytics Suite,Software,asia,In-bound,1,490,Won
+O-901948,2024-01-13,C-5760,POS Terminal,Software,Europe,inbound,6,8748,Won
+O-901949,2023-08-28,C-4016,AnalyticsSuite,Hard ware,Asia,OUTBOUND,14,21630,Won
+O-901950,2023-04-13,C-5571,CRM Pro,Soft ware,North-America,Partner,3,2256,Won
+O-901951,2024-05-28,C-2817,AnalyticsSuite,Soft ware,North America,Outbound,4,3756,Won
+O-901952,2023-07-21,C-6797,Analytics Suite,Hard ware,APAC,partner,12,14136,Won
+O-901953,2023-12-19,C-5311,AnalyticsSuite,Hardware,north america,inbound,3,2838,Won
+O-901954,2024-02-22,C-5654,CRM Pro,Hard ware,NA,In-bound,7,11900,Won
+O-901955,2024-06-07,C-6764,AnalyticsSuite,software,asia,Inbound,3,2670,Won
+O-901956,2023-09-16,C-3702,CRM Pro,Hardware,asia,partner,1,1119,Won
+O-901957,2023-06-16,C-6286,POS-Terminal,Software,N. America,Partner,11,7370,Won
+O-901958,2024-05-30,C-5362,POS-Terminal,Hard ware,N. America,OUTBOUND,5,4875,Won
+O-901959,2023-04-29,C-2449,CRM-Pro,Software,NA,In-bound,8,7928,Won
+O-901960,2024-04-30,C-2838,CRM-Pro,Software,North-America,Partner,10,4760,Won
+O-901961,2023-08-14,C-4567,Analytics Suite,Hardware,Europe,OUTBOUND,9,17685,Won
+O-901962,2023-05-09,C-3937,AnalyticsSuite,Software,europe,partner,12,22560,Won
+O-901963,2023-02-18,C-6049,POS-Terminal,Hardware,EU,partner,11,11330,Won
+O-901964,2023-11-07,C-3464,Analytics Suite,hardware,Asia,partner,2,2104,Won
+O-901965,2023-04-19,C-1187,Analytics Suite,software,APAC,OUTBOUND,14,4578,Won
+O-901966,2023-08-22,C-1143,CRM-Pro,software,North America,Outbound,10,18210,Won
+O-901967,2024-10-13,C-3301,POS-Terminal,Hard ware,NA,Outbound,9,10836,Won
+O-901968,2023-03-23,C-5834,CRM Pro,Hard ware,APAC,partner,2,2908,Won
+O-901969,2023-03-27,C-2403,AnalyticsSuite,Hardware,N. America,inbound,4,3304,Won
+O-901970,2023-06-15,C-2884,POS Terminal,software,NA,partner,8,14144,Won
+O-901971,2023-05-19,C-3724,CRM Pro,software,europe,inbound,7,6181,Won
+O-901972,2023-05-29,C-6660,CRM-Pro,hardware,NA,Partner,1,1272,Won
+O-901973,2024-05-04,C-1291,POS Terminal,Hard ware,Europe,Partner,12,13056,Won
+O-901974,2024-11-16,C-2435,POS Terminal,software,asia,Outbound,1,858,Won
+O-901975,2023-04-08,C-4199,AnalyticsSuite,Soft ware,NA,out bound,5,9815,Won
+O-901976,2024-11-23,C-3033,CRM-Pro,software,asia,Partner,9,16380,Won
+O-901977,2024-01-22,C-6696,Analytics Suite,Hardware,N. America,Inbound,9,17307,Won
+O-901978,2024-07-24,C-1736,Analytics Suite,Hardware,europe,inbound,1,1735,Won
+O-901979,2023-08-06,C-2395,CRM-Pro,Soft ware,north america,inbound,3,2793,Won
+O-901980,2023-07-08,C-4884,POS Terminal,software,Europe,Outbound,7,13426,Won
+O-901981,2024-02-05,C-2524,POS Terminal,hardware,asia,Outbound,4,4024,Won
+O-901982,2023-03-18,C-1618,POS-Terminal,Hard ware,Asia,out bound,9,17703,Won
+O-901983,2023-02-14,C-6784,POS-Terminal,Software,NA,partner,6,10110,Won
+O-901984,2023-04-29,C-3931,Analytics Suite,hardware,europe,Outbound,5,2120,Won
+O-901985,2024-11-25,C-6942,POS-Terminal,Software,NA,Partner,4,7608,Won
+O-901986,2024-03-03,C-6947,CRM Pro,hardware,Europe,In-bound,11,15202,Won
+O-901987,2023-05-14,C-1630,POS-Terminal,software,N. America,In-bound,9,5949,Won
+O-901988,2024-02-20,C-3906,POS Terminal,Hard ware,asia,partner,5,4465,Won
+O-901989,2024-11-10,C-1222,CRM-Pro,hardware,Europe,partner,13,15743,Won
+O-901990,2024-04-26,C-2965,CRM Pro,hardware,North America,partner,5,7730,Won
+O-901991,2024-08-06,C-3186,POS-Terminal,software,North America,Inbound,11,19030,Won
+O-901992,2023-09-18,C-1693,CRM Pro,Software,Europe,Partner,6,3972,Won
+O-901993,2023-01-28,C-4701,CRM-Pro,Soft ware,europe,In-bound,10,18040,Won
+O-901994,2024-06-25,C-5218,POS Terminal,hardware,North America,Outbound,6,10962,Won
+O-901995,2024-12-30,C-4137,POS Terminal,Software,Asia,Inbound,12,10680,Won
+O-901996,2024-06-02,C-6846,POS Terminal,Hard ware,asia,Outbound,5,8435,Won
+O-901997,2024-08-11,C-3945,Analytics Suite,Hard ware,EU,out bound,9,16200,Won
+O-901998,2023-10-14,C-3975,CRM-Pro,Soft ware,north america,OUTBOUND,14,18928,Won
+O-901999,2023-12-01,C-5947,AnalyticsSuite,software,NA,Partner,9,3195,Won
+O-902000,2024-03-02,C-5222,AnalyticsSuite,Software,Europe,OUTBOUND,8,11280,Won
+O-902001,2024-08-25,C-6369,CRM Pro,Soft ware,europe,partner,10,19030,Won
+O-902002,2024-12-22,C-4043,POS-Terminal,Soft ware,europe,OUTBOUND,12,21984,Won
+O-902003,2024-10-23,C-1254,Analytics Suite,software,Europe,Outbound,5,9125,Won
+O-902004,2024-12-04,C-4712,CRM-Pro,Hard ware,asia,partner,4,6964,Won
+O-902005,2024-03-13,C-3752,CRM Pro,Hard ware,Europe,Outbound,1,1066,Won
+O-902006,2023-04-24,C-1066,AnalyticsSuite,Hardware,APAC,Outbound,7,2835,Won
+O-902007,2024-07-17,C-3572,AnalyticsSuite,hardware,APAC,Partner,10,14510,Won
+O-902008,2024-02-14,C-3826,Analytics Suite,Hardware,Europe,inbound,2,2998,Won
+O-902009,2024-08-11,C-6744,CRM Pro,hardware,N. America,In-bound,2,1250,Won
+O-902010,2024-07-28,C-1446,POS-Terminal,Hardware,North-America,Partner,3,2982,Won
+O-902011,2024-01-06,C-2089,CRM Pro,Hardware,north america,inbound,2,1546,Won
+O-902012,2023-08-21,C-6785,POS Terminal,Soft ware,NA,inbound,2,3552,Won
+O-902013,2023-02-16,C-4721,AnalyticsSuite,Soft ware,EU,In-bound,15,19650,Won
+O-902014,2024-10-16,C-2136,CRM-Pro,Hard ware,asia,In-bound,11,5247,Won
+O-902015,2023-03-07,C-5529,CRM Pro,Soft ware,Europe,In-bound,11,8525,Won
+O-902016,2023-03-17,C-3389,CRM-Pro,Hardware,EU,In-bound,1,1327,Won
+O-902017,2023-02-03,C-3159,POS Terminal,Hardware,APAC,Inbound,13,15691,Won
+O-902018,2023-07-29,C-3340,AnalyticsSuite,Hardware,europe,partner,4,5252,Won
+O-902019,2024-04-26,C-5103,AnalyticsSuite,hardware,EU,partner,5,6950,Won
+O-902020,2023-10-04,C-5123,CRM-Pro,hardware,NA,Outbound,7,10647,Won
+O-902021,2023-10-06,C-4147,POS Terminal,Hardware,North America,partner,3,1089,Won
+O-902022,2024-07-26,C-5787,POS-Terminal,Hard ware,EU,Outbound,10,8650,Won
+O-902023,2024-12-02,C-2290,CRM Pro,Hard ware,Europe,Partner,7,12012,Won
+O-902024,2024-09-19,C-4700,AnalyticsSuite,hardware,NA,Outbound,12,14976,Won
+O-902025,2024-05-04,C-4342,CRM-Pro,Software,NA,out bound,12,19584,Won
+O-902026,2024-05-31,C-5058,POS Terminal,Software,Europe,Inbound,7,6636,Won
+O-902027,2024-05-09,C-4465,CRM-Pro,Software,APAC,partner,2,3490,Won
+O-902028,2023-01-19,C-1841,AnalyticsSuite,Soft ware,Asia,Outbound,4,7680,Won
+O-902029,2023-10-18,C-6451,AnalyticsSuite,Hardware,EU,partner,10,17970,Won
+O-902030,2024-05-07,C-5803,CRM Pro,software,NA,inbound,4,6996,Won
+O-902031,2024-09-15,C-2830,CRM-Pro,hardware,Europe,In-bound,3,3987,Won
+O-902032,2024-08-12,C-4508,Analytics Suite,software,NA,out bound,1,1672,Won
+O-902033,2023-05-31,C-3114,Analytics Suite,Hard ware,NA,In-bound,3,2211,Won
+O-902034,2023-01-27,C-5551,POS Terminal,Software,north america,In-bound,1,1239,Won
+O-902035,2023-08-08,C-4019,POS-Terminal,hardware,APAC,out bound,7,4977,Won
+O-902036,2024-11-25,C-1456,CRM-Pro,Hard ware,North America,partner,13,10673,Won
+O-902037,2024-10-11,C-4959,Analytics Suite,Hard ware,Asia,out bound,10,16710,Won
+O-902038,2023-09-09,C-4437,POS Terminal,Software,APAC,out bound,6,9942,Won
+O-902039,2023-03-12,C-4801,CRM Pro,Soft ware,north america,OUTBOUND,15,8310,Won
+O-902040,2024-05-14,C-5922,POS-Terminal,hardware,North-America,Partner,9,2727,Won
+O-902041,2023-02-04,C-3348,Analytics Suite,Soft ware,EU,partner,13,17121,Won
+O-902042,2023-07-12,C-6827,POS-Terminal,software,North-America,Outbound,2,906,Won
+O-902043,2023-09-20,C-4007,CRM-Pro,software,Asia,Partner,2,2134,Won
+O-902044,2023-12-05,C-1073,POS-Terminal,Soft ware,APAC,In-bound,8,10736,Won
+O-902045,2024-07-01,C-4610,CRM-Pro,Hard ware,Europe,out bound,1,570,Won
+O-902046,2024-01-01,C-4897,POS-Terminal,hardware,N. America,Inbound,7,5761,Won
+O-902047,2024-03-11,C-5371,AnalyticsSuite,Soft ware,Europe,Partner,3,4017,Won
+O-902048,2024-03-30,C-2127,POS Terminal,Hard ware,N. America,In-bound,14,14182,Won
+O-902049,2024-03-24,C-2189,POS-Terminal,Hardware,EU,In-bound,15,18075,Won
+O-902050,2023-10-23,C-6053,AnalyticsSuite,Hardware,North-America,Outbound,13,18226,Won
+O-902051,2024-05-24,C-5594,POS-Terminal,hardware,NA,OUTBOUND,13,8424,Won
+O-902052,2023-12-22,C-2210,CRM-Pro,Soft ware,EU,out bound,5,2175,Won
+O-902053,2023-04-01,C-2415,CRM Pro,Soft ware,North America,partner,2,3366,Won
+O-902054,2024-08-02,C-1974,CRM Pro,Hardware,asia,OUTBOUND,14,5824,Won
+O-902055,2023-09-13,C-1675,CRM-Pro,software,Asia,Outbound,4,7204,Won
+O-902056,2023-03-28,C-4737,CRM-Pro,Soft ware,North America,Inbound,14,14392,Won
+O-902057,2023-11-16,C-6728,POS-Terminal,software,APAC,Inbound,9,5292,Won
+O-902058,2024-10-12,C-4472,POS-Terminal,software,NA,In-bound,10,15840,Won
+O-902059,2023-11-27,C-4613,CRM-Pro,Hard ware,asia,Inbound,12,18300,Won
+O-902060,2024-05-07,C-2920,Analytics Suite,software,North America,Outbound,7,10178,Won
+O-902061,2024-04-19,C-4406,AnalyticsSuite,Hardware,asia,inbound,3,3321,Won
+O-902062,2023-02-20,C-1517,AnalyticsSuite,Soft ware,NA,Outbound,2,3692,Won
+O-902063,2023-12-21,C-1466,POS Terminal,Hard ware,asia,Outbound,3,2358,Won
+O-902064,2023-04-18,C-2593,Analytics Suite,Software,North-America,OUTBOUND,7,5901,Won
+O-902065,2023-02-18,C-3728,AnalyticsSuite,software,NA,OUTBOUND,11,6754,Won
+O-902066,2023-06-11,C-5934,CRM Pro,hardware,Asia,Partner,15,4905,Won
+O-902067,2023-04-16,C-5806,AnalyticsSuite,Hard ware,North America,out bound,14,13286,Won
+O-902068,2024-01-01,C-5023,Analytics Suite,hardware,N. America,Outbound,14,6398,Won
+O-902069,2024-01-31,C-2859,POS Terminal,Software,europe,OUTBOUND,3,2934,Won
+O-902070,2024-08-18,C-2772,POS-Terminal,Hardware,asia,Partner,12,12360,Won
+O-902071,2024-11-08,C-1659,CRM Pro,Soft ware,North-America,out bound,11,21923,Won
+O-902072,2023-03-24,C-1139,AnalyticsSuite,software,asia,partner,10,14580,Won
+O-902073,2023-03-14,C-5415,AnalyticsSuite,Software,APAC,out bound,5,6595,Won
+O-902074,2024-03-04,C-1866,Analytics Suite,Soft ware,APAC,OUTBOUND,7,10661,Won
+O-902075,2024-01-26,C-6585,POS Terminal,Soft ware,North-America,In-bound,8,9816,Won
+O-902076,2024-06-07,C-5799,CRM-Pro,software,APAC,Outbound,7,11620,Won
+O-902077,2024-03-23,C-6339,Analytics Suite,software,north america,out bound,5,5735,Won
+O-902078,2024-05-20,C-1517,POS Terminal,software,APAC,Outbound,6,5430,Won
+O-902079,2023-03-28,C-5834,CRM-Pro,Hardware,N. America,Outbound,13,15470,Won
+O-902080,2024-10-22,C-1438,CRM-Pro,hardware,Europe,partner,7,4172,Won
+O-902081,2024-02-10,C-1584,POS Terminal,Soft ware,North-America,In-bound,1,1524,Won
+O-902082,2024-04-04,C-5256,Analytics Suite,Soft ware,North-America,OUTBOUND,10,9200,Won
+O-902083,2024-12-27,C-1286,AnalyticsSuite,Soft ware,north america,Outbound,12,5148,Won
+O-902084,2023-04-24,C-2308,CRM Pro,Soft ware,Asia,Outbound,4,7336,Won
+O-902085,2023-01-08,C-4763,AnalyticsSuite,Hard ware,Asia,OUTBOUND,11,21912,Won
+O-902086,2024-09-01,C-2874,CRM-Pro,Hardware,N. America,out bound,9,8469,Won
+O-902087,2023-06-13,C-6252,Analytics Suite,Hardware,NA,Outbound,8,3816,Won
+O-902088,2024-03-31,C-5725,AnalyticsSuite,Hard ware,NA,In-bound,12,23112,Won
+O-902089,2024-01-23,C-6276,POS-Terminal,Software,europe,Partner,11,15026,Won
+O-902090,2023-08-31,C-1554,POS-Terminal,Software,Europe,Outbound,15,24330,Won
+O-902091,2023-10-20,C-1840,POS-Terminal,Hardware,europe,inbound,1,1602,Won
+O-902092,2023-07-29,C-4656,POS Terminal,Software,Europe,OUTBOUND,4,4016,Won
+O-902093,2023-01-05,C-1954,CRM-Pro,Hardware,Europe,inbound,14,27902,Won
+O-902094,2024-09-17,C-3818,CRM-Pro,Soft ware,North-America,Partner,4,4276,Won
+O-902095,2024-03-07,C-2218,AnalyticsSuite,software,APAC,In-bound,5,8510,Won
+O-902096,2023-01-14,C-4369,AnalyticsSuite,Soft ware,APAC,OUTBOUND,10,12660,Won
+O-902097,2024-06-05,C-4433,POS-Terminal,software,North America,out bound,1,1433,Won
+O-902098,2024-09-12,C-4025,Analytics Suite,software,APAC,OUTBOUND,4,4276,Won
+O-902099,2023-04-07,C-1353,AnalyticsSuite,Hardware,Europe,partner,12,16692,Won
+O-902100,2023-01-20,C-1810,POS-Terminal,Hardware,Asia,In-bound,11,4257,Won
+O-902101,2024-09-26,C-4679,CRM-Pro,Soft ware,NA,inbound,15,15150,Won
+O-902102,2024-02-13,C-1953,CRM-Pro,Hard ware,Europe,inbound,12,8376,Won
+O-902103,2023-07-21,C-3647,Analytics Suite,Soft ware,north america,inbound,13,11492,Won
+O-902104,2023-07-31,C-4238,CRM Pro,Hardware,NA,out bound,14,21014,Won
+O-902105,2023-09-27,C-6211,POS Terminal,Hardware,NA,Partner,14,21994,Won
+O-902106,2023-08-27,C-3305,AnalyticsSuite,software,EU,OUTBOUND,2,3322,Won
+O-902107,2024-02-18,C-4220,POS Terminal,Hardware,asia,OUTBOUND,8,12512,Won
+O-902108,2024-01-12,C-3305,CRM-Pro,software,North-America,In-bound,11,14146,Won
+O-902109,2023-12-06,C-3044,POS Terminal,Hard ware,EU,partner,4,7176,Won
+O-902110,2023-04-01,C-2502,AnalyticsSuite,Soft ware,Europe,inbound,3,1953,Won
+O-902111,2023-08-13,C-3918,POS-Terminal,Hardware,EU,OUTBOUND,5,6975,Won
+O-902112,2024-08-08,C-1568,AnalyticsSuite,hardware,EU,OUTBOUND,1,1036,Won
+O-902113,2023-01-17,C-2558,AnalyticsSuite,hardware,NA,Inbound,9,8226,Won
+O-902114,2024-03-08,C-1158,POS Terminal,Hard ware,north america,inbound,13,9100,Won
+O-902115,2024-10-27,C-3181,POS-Terminal,Hardware,North-America,inbound,12,5868,Won
+O-902116,2024-09-04,C-6251,POS Terminal,software,Asia,Inbound,15,24240,Won
+O-902117,2023-09-05,C-6251,Analytics Suite,hardware,Asia,inbound,1,947,Won
+O-902118,2024-06-14,C-4605,POS Terminal,Hard ware,APAC,inbound,4,5204,Won
+O-902119,2024-03-01,C-5217,POS Terminal,software,North America,In-bound,3,5061,Won
+O-902120,2024-08-14,C-2485,POS Terminal,Soft ware,Europe,Partner,5,2240,Won
+O-902121,2023-04-09,C-3446,Analytics Suite,Hard ware,north america,In-bound,2,3068,Won
+O-902122,2023-10-10,C-6415,POS-Terminal,Software,APAC,OUTBOUND,6,6264,Won
+O-902123,2023-11-12,C-6581,CRM Pro,Hardware,APAC,inbound,9,17379,Won
+O-902124,2024-02-08,C-1517,CRM-Pro,Soft ware,North-America,inbound,14,14826,Won
+O-902125,2024-05-31,C-6960,CRM Pro,hardware,europe,partner,11,19393,Won
+O-902126,2024-05-13,C-3933,POS-Terminal,software,asia,In-bound,3,3021,Won
+O-902127,2023-03-12,C-2870,POS Terminal,Hard ware,North-America,Outbound,8,8048,Won
+O-902128,2023-09-09,C-5549,Analytics Suite,Hardware,EU,Inbound,10,16950,Won
+O-902129,2023-01-16,C-6381,CRM-Pro,Soft ware,APAC,Partner,12,13776,Won
+O-902130,2023-01-05,C-5281,CRM Pro,Hardware,APAC,Partner,6,5010,Won
+O-902131,2024-12-20,C-5054,Analytics Suite,hardware,north america,Outbound,7,13055,Won
+O-902132,2023-01-24,C-3653,Analytics Suite,Soft ware,APAC,out bound,8,13336,Won
+O-902133,2024-09-02,C-2380,Analytics Suite,Soft ware,Europe,out bound,5,7760,Won
+O-902134,2023-10-16,C-1603,CRM Pro,hardware,EU,partner,6,2220,Won
+O-902135,2023-12-23,C-3926,AnalyticsSuite,Hard ware,Europe,Outbound,12,5520,Won
+O-902136,2024-09-15,C-3140,CRM Pro,Hard ware,Asia,Inbound,7,13720,Won
+O-902137,2024-03-11,C-6690,POS Terminal,Hard ware,Asia,partner,15,25170,Won
+O-902138,2024-06-03,C-5050,AnalyticsSuite,hardware,APAC,Outbound,2,2044,Won
+O-902139,2024-08-09,C-2672,Analytics Suite,Hardware,N. America,Partner,15,21750,Won
+O-902140,2024-08-08,C-1797,CRM Pro,Hardware,Asia,Inbound,4,4444,Won
+O-902141,2023-02-11,C-1468,POS Terminal,Hard ware,North America,inbound,4,7632,Won
+O-902142,2023-06-08,C-3034,Analytics Suite,Soft ware,north america,partner,4,3548,Won
+O-902143,2024-09-26,C-4806,AnalyticsSuite,software,north america,inbound,15,20520,Won
+O-902144,2024-06-30,C-6123,CRM-Pro,Soft ware,Europe,inbound,2,1614,Won
+O-902145,2024-11-03,C-5199,Analytics Suite,Soft ware,N. America,inbound,15,4650,Won
+O-902146,2023-02-28,C-4000,POS Terminal,Soft ware,North-America,In-bound,5,3340,Won
+O-902147,2024-11-03,C-3320,POS-Terminal,software,EU,Outbound,2,736,Won
+O-902148,2023-10-09,C-3043,Analytics Suite,Hardware,asia,inbound,10,14050,Won
+O-902149,2023-06-07,C-4716,POS Terminal,software,europe,partner,14,7070,Won
+O-902150,2023-04-10,C-6966,CRM Pro,Hardware,Europe,OUTBOUND,10,12440,Won
+O-902151,2023-01-18,C-1922,AnalyticsSuite,software,Asia,partner,9,10827,Won
+O-902152,2023-08-13,C-6199,POS-Terminal,hardware,North-America,In-bound,15,28545,Won
+O-902153,2024-01-05,C-4184,CRM-Pro,software,NA,In-bound,1,1914,Won
+O-902154,2023-05-13,C-2930,CRM-Pro,Hard ware,EU,Partner,12,16188,Won
+O-902155,2024-12-14,C-2868,POS-Terminal,software,Asia,inbound,11,9152,Won
+O-902156,2024-08-23,C-4624,POS Terminal,Soft ware,europe,partner,9,12276,Won
+O-902157,2024-03-04,C-2984,POS Terminal,Hard ware,NA,In-bound,15,19110,Won
+O-902158,2023-09-15,C-1916,Analytics Suite,Hard ware,North America,Outbound,8,13360,Won
+O-902159,2024-10-07,C-5171,POS-Terminal,Hard ware,North America,Inbound,1,736,Won
+O-902160,2023-05-09,C-2373,AnalyticsSuite,Soft ware,N. America,inbound,11,14586,Won
+O-902161,2024-12-22,C-1203,AnalyticsSuite,hardware,Asia,partner,7,7112,Won
+O-902162,2023-11-07,C-2149,POS-Terminal,hardware,APAC,partner,5,2810,Won
+O-902163,2024-04-19,C-1595,Analytics Suite,Software,asia,Inbound,6,4914,Won
+O-902164,2023-09-28,C-4629,Analytics Suite,Hardware,Asia,Outbound,12,15036,Won
+O-902165,2024-05-21,C-5083,POS-Terminal,Soft ware,EU,Outbound,1,896,Won
+O-902166,2023-05-12,C-2150,POS Terminal,Hardware,North America,Inbound,4,7592,Won
+O-902167,2023-11-04,C-3656,CRM-Pro,Soft ware,North America,partner,12,12780,Won
+O-902168,2024-07-23,C-5537,POS Terminal,software,N. America,Outbound,8,12712,Won
+O-902169,2024-10-19,C-6140,POS Terminal,hardware,asia,inbound,9,3303,Won
+O-902170,2024-05-13,C-4657,CRM Pro,Hardware,North America,Inbound,1,1997,Won
+O-902171,2024-04-24,C-3589,Analytics Suite,Soft ware,N. America,inbound,9,11142,Won
+O-902172,2024-06-08,C-4103,AnalyticsSuite,Hard ware,asia,Inbound,13,14625,Won
+O-902173,2023-08-24,C-6459,Analytics Suite,software,europe,Partner,3,2157,Won
+O-902174,2023-08-19,C-5299,Analytics Suite,Software,N. America,Outbound,12,13152,Won
+O-902175,2023-04-13,C-4637,AnalyticsSuite,Hardware,Europe,out bound,7,9961,Won
+O-902176,2023-12-24,C-5574,AnalyticsSuite,hardware,NA,inbound,13,11271,Won
+O-902177,2024-05-28,C-2452,CRM-Pro,Hard ware,asia,Partner,12,21108,Won
+O-902178,2024-09-01,C-3065,Analytics Suite,software,North America,Partner,14,21714,Won
+O-902179,2024-02-28,C-4563,Analytics Suite,Hardware,EU,Outbound,3,4866,Won
+O-902180,2023-11-19,C-2861,Analytics Suite,software,EU,Outbound,6,9642,Won
+O-902181,2024-04-06,C-3271,CRM-Pro,Hardware,europe,Outbound,13,15041,Won
+O-902182,2023-11-25,C-6365,CRM-Pro,Software,N. America,partner,1,1101,Won
+O-902183,2023-10-31,C-6865,CRM Pro,Software,APAC,OUTBOUND,7,5236,Won
+O-902184,2024-06-14,C-4912,CRM Pro,hardware,NA,partner,15,29820,Won
+O-902185,2024-08-21,C-5262,POS-Terminal,hardware,North-America,partner,4,1720,Won
+O-902186,2024-05-04,C-6641,AnalyticsSuite,Hardware,Europe,In-bound,15,15255,Won
+O-902187,2024-04-16,C-4862,AnalyticsSuite,Soft ware,N. America,out bound,7,13342,Won
+O-902188,2024-05-05,C-3566,POS Terminal,Hardware,North America,partner,13,4368,Won
+O-902189,2024-06-07,C-6138,POS Terminal,Hardware,asia,Outbound,10,3150,Won
+O-902190,2024-11-21,C-4114,CRM-Pro,software,north america,partner,7,6923,Won
+O-902191,2023-09-01,C-6279,POS Terminal,Hard ware,Asia,Outbound,7,12929,Won
+O-902192,2024-01-19,C-3355,POS Terminal,Hardware,europe,Outbound,10,12630,Won
+O-902193,2024-08-26,C-4868,AnalyticsSuite,software,EU,OUTBOUND,13,7124,Won
+O-902194,2024-12-30,C-6729,POS-Terminal,software,north america,out bound,2,3134,Won
+O-902195,2023-07-01,C-6381,AnalyticsSuite,Hard ware,NA,inbound,3,1413,Won
+O-902196,2023-04-30,C-2702,POS Terminal,Hard ware,europe,Inbound,11,21307,Won
+O-902197,2024-01-17,C-2188,Analytics Suite,Soft ware,Asia,In-bound,4,4612,Won
+O-902198,2023-05-31,C-6862,CRM Pro,Soft ware,Asia,inbound,6,10242,Won
+O-902199,2023-11-19,C-2537,POS-Terminal,Hard ware,N. America,Outbound,2,2028,Won
+O-902200,2024-03-23,C-3459,AnalyticsSuite,software,Europe,out bound,8,7472,Won
+O-902201,2024-08-21,C-4124,POS-Terminal,Soft ware,NA,In-bound,15,22815,Won
+O-902202,2024-08-19,C-4645,POS Terminal,Hardware,North-America,In-bound,7,13825,Won
+O-902203,2024-03-11,C-5358,CRM Pro,Hardware,north america,inbound,4,5268,Won
+O-902204,2023-11-07,C-1985,CRM-Pro,Software,asia,partner,6,7590,Won
+O-902205,2023-12-29,C-1840,AnalyticsSuite,software,NA,partner,9,14607,Won
+O-902206,2023-05-26,C-1004,CRM Pro,Soft ware,Europe,out bound,6,2478,Won
+O-902207,2024-01-26,C-1451,AnalyticsSuite,Hardware,europe,Inbound,6,5148,Won
+O-902208,2023-11-26,C-2122,CRM Pro,Hardware,Europe,Partner,13,23192,Won
+O-902209,2023-02-26,C-1944,POS Terminal,Hardware,APAC,OUTBOUND,2,1098,Won
+O-902210,2024-05-06,C-3309,Analytics Suite,Software,asia,Partner,7,10052,Won
+O-902211,2023-02-19,C-4496,Analytics Suite,Soft ware,NA,Outbound,4,2644,Won
+O-902212,2023-03-04,C-1599,CRM-Pro,Hard ware,EU,In-bound,3,3891,Won
+O-902213,2023-07-04,C-4613,Analytics Suite,Hard ware,EU,OUTBOUND,6,4902,Won
+O-902214,2024-03-13,C-3803,Analytics Suite,Hard ware,N. America,In-bound,13,17342,Won
+O-902215,2023-05-05,C-6744,Analytics Suite,Hard ware,europe,Outbound,10,9100,Won
+O-902216,2023-11-18,C-2047,POS-Terminal,software,EU,Inbound,2,1842,Won
+O-902217,2023-02-17,C-1238,CRM Pro,Hardware,APAC,Partner,9,11151,Won
+O-902218,2023-01-27,C-2120,CRM-Pro,hardware,EU,Outbound,8,15432,Won
+O-902219,2024-09-04,C-1634,AnalyticsSuite,Hardware,europe,Partner,3,2574,Won
+O-902220,2023-09-28,C-6835,CRM Pro,software,North-America,out bound,6,2154,Won
+O-902221,2023-06-15,C-4064,AnalyticsSuite,Hard ware,north america,out bound,14,14490,Won
+O-902222,2024-10-16,C-2552,Analytics Suite,Hardware,Asia,OUTBOUND,14,9002,Won
+O-902223,2024-06-30,C-2446,CRM Pro,hardware,North America,Partner,13,8645,Won
+O-902224,2024-08-18,C-5584,Analytics Suite,Hardware,asia,Inbound,5,8360,Won
+O-902225,2023-07-05,C-5978,AnalyticsSuite,software,N. America,partner,8,11544,Won
+O-902226,2023-04-21,C-4684,CRM-Pro,Hardware,europe,partner,1,956,Won
+O-902227,2024-06-05,C-2068,Analytics Suite,Hard ware,Europe,OUTBOUND,5,3510,Won
+O-902228,2024-09-03,C-3700,CRM-Pro,hardware,north america,out bound,9,9171,Won
+O-902229,2024-01-30,C-4547,CRM Pro,hardware,North America,Outbound,11,16852,Won
+O-902230,2024-03-08,C-2790,AnalyticsSuite,hardware,north america,Inbound,5,6115,Won
+O-902231,2024-12-30,C-3532,POS Terminal,hardware,Europe,inbound,3,1851,Won
+O-902232,2023-06-23,C-5701,POS Terminal,Hardware,NA,out bound,5,2920,Won
+O-902233,2024-01-20,C-2976,POS Terminal,hardware,North-America,inbound,3,3618,Won
+O-902234,2024-06-20,C-5956,Analytics Suite,Hardware,Europe,out bound,15,5850,Won
+O-902235,2023-11-30,C-3026,POS-Terminal,hardware,Europe,Inbound,10,5730,Won
+O-902236,2023-06-20,C-3866,POS Terminal,Hard ware,North America,partner,11,3718,Won
+O-902237,2023-08-23,C-4385,POS-Terminal,Hardware,EU,inbound,5,2085,Won
+O-902238,2024-02-06,C-4658,POS Terminal,Hardware,North America,partner,14,22792,Won
+O-902239,2024-01-25,C-2676,CRM Pro,hardware,EU,Outbound,12,22188,Won
+O-902240,2023-12-04,C-4655,AnalyticsSuite,Hardware,APAC,Partner,15,10455,Won
+O-902241,2023-02-27,C-5542,CRM-Pro,software,EU,Partner,15,26940,Won
+O-902242,2023-07-15,C-4219,POS Terminal,Hard ware,NA,Inbound,13,21060,Won
+O-902243,2023-09-28,C-5998,AnalyticsSuite,hardware,N. America,OUTBOUND,11,13882,Won
+O-902244,2023-09-24,C-2703,POS-Terminal,software,North America,OUTBOUND,13,25909,Won
+O-902245,2023-05-30,C-3970,POS-Terminal,hardware,Asia,Inbound,8,4560,Won
+O-902246,2023-10-25,C-4587,POS Terminal,Software,europe,Inbound,9,5877,Won
+O-902247,2024-07-24,C-5740,CRM-Pro,Soft ware,NA,Inbound,11,17193,Won
+O-902248,2024-07-20,C-5418,POS Terminal,Hardware,NA,Partner,10,12880,Won
+O-902249,2023-12-04,C-2486,AnalyticsSuite,Hard ware,EU,out bound,15,4530,Won
+O-902250,2023-03-22,C-6250,POS-Terminal,hardware,APAC,out bound,9,10890,Won
+O-902251,2024-01-05,C-2566,AnalyticsSuite,software,europe,inbound,6,1884,Won
+O-902252,2023-07-14,C-1305,POS-Terminal,software,North-America,inbound,14,4788,Won
+O-902253,2023-05-22,C-4252,Analytics Suite,Hardware,NA,Partner,5,2120,Won
+O-902254,2023-07-10,C-5602,AnalyticsSuite,Software,north america,OUTBOUND,12,6000,Won
+O-902255,2023-09-06,C-5570,POS-Terminal,Software,north america,Outbound,1,1651,Won
+O-902256,2023-09-07,C-6577,POS-Terminal,hardware,asia,In-bound,4,4976,Won
+O-902257,2024-08-03,C-1384,CRM-Pro,software,North America,inbound,12,3864,Won
+O-902258,2024-07-09,C-2612,POS Terminal,Soft ware,asia,Inbound,15,23730,Won
+O-902259,2024-10-03,C-1965,CRM-Pro,Software,North America,inbound,9,14022,Won
+O-902260,2023-06-30,C-2983,POS-Terminal,hardware,EU,Inbound,12,4872,Won
+O-902261,2024-08-14,C-5264,AnalyticsSuite,software,APAC,Inbound,10,4540,Won
+O-902262,2024-06-08,C-2415,AnalyticsSuite,Hard ware,north america,Inbound,14,6538,Won
+O-902263,2024-08-01,C-1646,Analytics Suite,Soft ware,APAC,Inbound,8,10040,Won
+O-902264,2024-01-04,C-3073,POS Terminal,software,North America,Partner,14,16184,Won
+O-902265,2024-04-02,C-3076,CRM-Pro,hardware,North-America,Inbound,11,15268,Won
+O-902266,2023-01-06,C-6335,POS-Terminal,hardware,Asia,Partner,12,6060,Won
+O-902267,2024-03-08,C-3057,Analytics Suite,Hard ware,north america,partner,2,2078,Won
+O-902268,2024-08-07,C-2184,Analytics Suite,Software,North America,Inbound,10,14420,Won
+O-902269,2024-01-20,C-1834,Analytics Suite,Hard ware,europe,In-bound,5,1965,Won
+O-902270,2024-09-06,C-4754,POS Terminal,hardware,north america,OUTBOUND,6,3666,Won
+O-902271,2024-09-21,C-4273,Analytics Suite,Soft ware,Asia,Inbound,15,15555,Won
+O-902272,2023-09-04,C-3230,POS Terminal,Software,Europe,Inbound,4,5240,Won
+O-902273,2023-07-17,C-4631,Analytics Suite,Hard ware,Asia,out bound,15,6915,Won
+O-902274,2023-06-15,C-1435,AnalyticsSuite,Software,NA,In-bound,9,15804,Won
+O-902275,2024-11-23,C-1275,POS-Terminal,Soft ware,NA,Partner,1,555,Won
+O-902276,2024-04-06,C-3077,CRM Pro,Soft ware,Europe,Partner,10,14330,Won
+O-902277,2023-05-15,C-4861,CRM Pro,hardware,EU,OUTBOUND,1,504,Won
+O-902278,2024-04-13,C-4715,Analytics Suite,Software,North America,OUTBOUND,2,1484,Won
+O-902279,2024-08-18,C-1980,CRM-Pro,Hardware,NA,Inbound,4,3984,Won
+O-902280,2024-08-26,C-1267,Analytics Suite,Hardware,North-America,Inbound,6,6228,Won
+O-902281,2024-04-25,C-4383,CRM-Pro,Software,N. America,OUTBOUND,12,7560,Won
+O-902282,2023-07-08,C-4951,POS-Terminal,Soft ware,Europe,partner,3,1458,Won
+O-902283,2024-04-06,C-5821,Analytics Suite,Hard ware,NA,Outbound,7,2261,Won
+O-902284,2024-07-18,C-3315,POS Terminal,Software,NA,Outbound,4,7952,Won
+O-902285,2024-12-28,C-3320,POS-Terminal,hardware,Europe,Partner,1,1031,Won
+O-902286,2023-11-04,C-3471,CRM-Pro,Hard ware,europe,out bound,5,2930,Won
+O-902287,2023-04-14,C-4007,POS-Terminal,Hardware,APAC,Partner,8,13992,Won
+O-902288,2024-04-25,C-4667,POS Terminal,software,EU,partner,3,3738,Won
+O-902289,2024-03-13,C-1179,POS-Terminal,Hardware,asia,inbound,2,2222,Won
+O-902290,2023-07-07,C-6422,POS-Terminal,software,North-America,Partner,9,8802,Won
+O-902291,2024-09-04,C-1051,POS-Terminal,Hard ware,North America,out bound,4,6744,Won
+O-902292,2023-11-14,C-6274,CRM Pro,Hard ware,europe,out bound,9,10278,Won
+O-902293,2023-05-01,C-4608,AnalyticsSuite,Hardware,Europe,Inbound,15,21615,Won
+O-902294,2024-02-06,C-2264,POS Terminal,Hardware,APAC,inbound,15,14520,Won
+O-902295,2023-02-28,C-2145,CRM Pro,Software,Asia,out bound,12,15108,Won
+O-902296,2023-07-14,C-1516,CRM-Pro,software,europe,Inbound,5,8835,Won
+O-902297,2024-05-21,C-3564,Analytics Suite,Hard ware,APAC,In-bound,9,15201,Won
+O-902298,2023-04-29,C-3981,POS-Terminal,hardware,North-America,Inbound,14,26418,Won
+O-902299,2023-04-12,C-3332,CRM-Pro,Hard ware,NA,Inbound,14,17948,Won
+O-902300,2023-09-30,C-2883,AnalyticsSuite,hardware,asia,Outbound,12,9996,Won
+O-902301,2023-08-01,C-6150,POS Terminal,Soft ware,N. America,out bound,5,9915,Won
+O-902302,2024-03-17,C-5201,AnalyticsSuite,hardware,north america,out bound,6,5088,Won
+O-902303,2024-08-27,C-2067,Analytics Suite,hardware,Asia,Partner,14,18928,Won
+O-902304,2024-11-18,C-3124,CRM-Pro,Hard ware,EU,Partner,6,8250,Won
+O-902305,2024-05-02,C-2280,POS-Terminal,Hardware,EU,OUTBOUND,11,19305,Won
+O-902306,2024-05-21,C-6830,POS-Terminal,hardware,NA,Outbound,3,3579,Won
+O-902307,2023-08-19,C-5829,POS Terminal,software,EU,partner,11,3597,Won
+O-902308,2024-10-17,C-1627,POS-Terminal,Soft ware,N. America,out bound,13,13455,Won
+O-902309,2024-04-10,C-5300,CRM-Pro,hardware,North-America,OUTBOUND,7,8834,Won
+O-902310,2024-06-20,C-6614,POS-Terminal,Software,europe,Partner,3,3939,Won
+O-902311,2024-07-30,C-4542,AnalyticsSuite,Hard ware,North-America,In-bound,4,3364,Won
+O-902312,2024-08-16,C-3488,POS-Terminal,Hardware,EU,OUTBOUND,15,24990,Won
+O-902313,2024-05-10,C-2336,CRM Pro,Hardware,europe,inbound,6,5412,Won
+O-902314,2023-12-19,C-2589,POS-Terminal,Hardware,North America,Partner,10,3520,Won
+O-902315,2023-04-18,C-1111,POS Terminal,Soft ware,europe,OUTBOUND,13,16406,Won
+O-902316,2023-06-13,C-4084,Analytics Suite,Soft ware,North America,Outbound,8,11064,Won
+O-902317,2023-06-30,C-2320,CRM Pro,Hard ware,NA,Outbound,5,9100,Won
+O-902318,2024-11-08,C-3182,Analytics Suite,software,europe,Partner,7,5390,Won
+O-902319,2024-10-25,C-2891,AnalyticsSuite,software,Europe,OUTBOUND,10,14430,Won
+O-902320,2023-02-24,C-6261,CRM-Pro,Software,asia,OUTBOUND,5,7330,Won
+O-902321,2023-08-10,C-6842,CRM Pro,software,Europe,In-bound,5,9875,Won
+O-902322,2024-04-05,C-2655,AnalyticsSuite,Soft ware,APAC,In-bound,2,902,Won
+O-902323,2023-03-08,C-5576,POS-Terminal,Software,North America,Partner,7,3997,Won
+O-902324,2024-06-13,C-6213,AnalyticsSuite,software,North-America,Inbound,12,12720,Won
+O-902325,2023-12-07,C-3520,CRM-Pro,software,NA,Inbound,7,10339,Won
+O-902326,2023-01-23,C-6709,AnalyticsSuite,Hard ware,N. America,Partner,2,2710,Won
+O-902327,2023-01-22,C-3979,CRM-Pro,software,North America,In-bound,13,6305,Won
+O-902328,2024-04-02,C-6415,CRM Pro,software,North America,partner,2,1772,Won
+O-902329,2024-02-01,C-2686,Analytics Suite,Software,north america,out bound,3,5904,Won
+O-902330,2023-08-21,C-6218,CRM-Pro,Soft ware,EU,inbound,14,9576,Won
+O-902331,2023-11-01,C-4890,Analytics Suite,Soft ware,North-America,out bound,14,7308,Won
+O-902332,2024-12-12,C-1185,CRM Pro,Hardware,NA,Outbound,14,16436,Won
+O-902333,2024-07-15,C-5840,CRM Pro,software,Europe,Partner,3,1965,Won
+O-902334,2024-10-27,C-5983,CRM Pro,Hardware,north america,OUTBOUND,11,17743,Won
+O-902335,2023-06-08,C-6310,CRM Pro,Hard ware,north america,partner,4,5392,Won
+O-902336,2023-03-07,C-5972,Analytics Suite,Software,North America,Outbound,13,6435,Won
+O-902337,2023-07-28,C-2175,POS Terminal,hardware,NA,Inbound,5,8830,Won
+O-902338,2024-06-01,C-5913,Analytics Suite,Software,europe,OUTBOUND,10,17940,Won
+O-902339,2023-03-18,C-3340,POS Terminal,Hardware,N. America,inbound,6,10044,Won
+O-902340,2024-05-14,C-1131,CRM-Pro,Hardware,north america,Inbound,7,12628,Won
+O-902341,2023-06-06,C-2646,Analytics Suite,Hardware,NA,Outbound,1,966,Won
+O-902342,2024-11-08,C-3711,CRM Pro,hardware,North-America,inbound,13,14079,Won
+O-902343,2023-05-26,C-2279,POS Terminal,Hard ware,North-America,partner,7,2849,Won
+O-902344,2023-10-02,C-1916,POS Terminal,hardware,Europe,partner,11,14509,Won
+O-902345,2023-12-04,C-1899,Analytics Suite,Hardware,North-America,Partner,3,1431,Won
+O-902346,2024-09-08,C-4482,CRM-Pro,Hardware,North-America,OUTBOUND,15,13515,Won
+O-902347,2024-01-06,C-5396,CRM-Pro,hardware,europe,In-bound,14,23142,Won
+O-902348,2024-05-05,C-6514,AnalyticsSuite,Soft ware,europe,OUTBOUND,8,9584,Won
+O-902349,2024-05-13,C-2284,CRM Pro,Hardware,EU,partner,10,15400,Won
+O-902350,2024-05-01,C-5482,CRM Pro,Hardware,north america,Inbound,2,3954,Won
+O-902351,2024-09-11,C-2289,CRM-Pro,Hardware,EU,Outbound,10,10470,Won
+O-902352,2023-10-26,C-5867,POS-Terminal,hardware,N. America,Inbound,7,8568,Won
+O-902353,2024-07-25,C-4596,CRM-Pro,software,North-America,out bound,7,7539,Won
+O-902354,2023-09-03,C-5540,CRM-Pro,Hardware,North-America,OUTBOUND,6,5958,Won
+O-902355,2024-11-18,C-3633,CRM-Pro,Hard ware,Europe,OUTBOUND,13,9438,Won
+O-902356,2024-12-04,C-3521,Analytics Suite,Software,N. America,OUTBOUND,9,8118,Won
+O-902357,2024-08-28,C-5860,POS-Terminal,Software,north america,inbound,13,16757,Won
+O-902358,2023-09-26,C-5003,POS Terminal,Hardware,APAC,partner,13,24427,Won
+O-902359,2024-08-29,C-2984,AnalyticsSuite,Hardware,N. America,OUTBOUND,2,2348,Won
+O-902360,2024-11-15,C-2947,Analytics Suite,Software,N. America,Outbound,5,4575,Won
+O-902361,2024-10-17,C-5847,Analytics Suite,Hard ware,asia,Partner,6,8568,Won
+O-902362,2024-03-12,C-5685,POS-Terminal,hardware,APAC,Partner,8,9216,Won
+O-902363,2024-10-24,C-2405,POS-Terminal,Soft ware,North-America,OUTBOUND,9,11214,Won
+O-902364,2023-08-22,C-2733,POS Terminal,Hardware,APAC,Partner,5,4440,Won
+O-902365,2023-04-05,C-5193,AnalyticsSuite,Software,APAC,inbound,3,5997,Won
+O-902366,2023-03-17,C-6618,AnalyticsSuite,Hard ware,APAC,Outbound,11,16929,Won
+O-902367,2023-07-17,C-2298,CRM Pro,Hard ware,EU,Partner,4,4380,Won
+O-902368,2023-03-29,C-2422,CRM-Pro,Soft ware,Europe,out bound,13,21944,Won
+O-902369,2024-10-24,C-1038,CRM-Pro,software,europe,partner,1,1510,Won
+O-902370,2023-02-14,C-4020,AnalyticsSuite,Soft ware,EU,partner,6,10662,Won
+O-902371,2024-10-14,C-2723,AnalyticsSuite,Soft ware,north america,partner,3,2733,Won
+O-902372,2023-11-26,C-6687,CRM Pro,Hard ware,NA,Inbound,6,6540,Won
+O-902373,2023-08-30,C-2221,CRM Pro,Software,APAC,Outbound,11,8041,Won
+O-902374,2024-07-19,C-1603,CRM Pro,Hardware,APAC,inbound,2,2672,Won
+O-902375,2023-07-16,C-6891,POS-Terminal,Hardware,EU,Partner,11,3597,Won
+O-902376,2023-06-06,C-2679,Analytics Suite,Software,North America,out bound,6,4338,Won
+O-902377,2023-02-15,C-1596,POS-Terminal,Hard ware,north america,Partner,9,3546,Won
+O-902378,2023-09-22,C-3337,AnalyticsSuite,hardware,NA,partner,11,16478,Won
+O-902379,2024-07-31,C-3691,Analytics Suite,software,north america,OUTBOUND,15,18675,Won
+O-902380,2024-11-30,C-4927,POS-Terminal,software,EU,Outbound,5,8095,Won
+O-902381,2024-07-26,C-2589,POS-Terminal,Software,North-America,Inbound,9,12114,Won
+O-902382,2024-07-13,C-6540,CRM-Pro,hardware,europe,In-bound,15,28335,Won
+O-902383,2023-05-17,C-2751,AnalyticsSuite,Software,asia,Partner,6,8772,Won
+O-902384,2023-05-25,C-2581,POS-Terminal,Soft ware,NA,Outbound,14,10934,Won
+O-902385,2024-02-16,C-2082,CRM-Pro,software,North America,Inbound,14,23310,Won
+O-902386,2023-04-19,C-4740,CRM Pro,hardware,Asia,partner,12,19764,Won
+O-902387,2023-03-21,C-4982,POS-Terminal,Soft ware,europe,Inbound,3,4869,Won
+O-902388,2024-12-16,C-6589,POS-Terminal,Software,N. America,OUTBOUND,8,6400,Won
+O-902389,2023-12-23,C-2254,AnalyticsSuite,Soft ware,NA,inbound,11,15972,Won
+O-902390,2023-02-02,C-4174,POS Terminal,hardware,N. America,partner,4,5716,Won
+O-902391,2024-02-19,C-1562,AnalyticsSuite,Hardware,Asia,out bound,11,11869,Won
+O-902392,2023-04-08,C-4261,CRM Pro,software,north america,Inbound,10,19320,Won
+O-902393,2024-06-20,C-6664,AnalyticsSuite,Hardware,EU,Outbound,6,4746,Won
+O-902394,2024-11-03,C-4449,POS Terminal,software,North-America,out bound,6,3534,Won
+O-902395,2024-03-06,C-1966,CRM-Pro,Soft ware,north america,Inbound,12,10476,Won
+O-902396,2023-08-06,C-5298,AnalyticsSuite,Software,EU,Partner,13,5317,Won
+O-902397,2023-09-01,C-5403,POS Terminal,Soft ware,EU,OUTBOUND,5,7845,Won
+O-902398,2023-11-08,C-3383,POS Terminal,Software,north america,Inbound,7,8624,Won
+O-902399,2024-10-10,C-6711,AnalyticsSuite,Hardware,asia,OUTBOUND,10,19690,Won

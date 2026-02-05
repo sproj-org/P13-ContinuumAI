@@ -1,0 +1,36 @@
+# Sprint 2 – Phase 2 Update
+
+## Overview
+This document summarizes the progress and planning for **Sprint 2**, with a clear division of phases and current status.
+
+---
+
+## Phase Breakdown
+
+### Phase 1: UI & Planning
+- Completed UI design
+- Explored all dashboard variations
+- Generated datasets for testing and visualization (synthtic gen)
+- Compiled some real world datasets
+- Identified build issues
+- Developed a structured plan to resolve identified issues
+
+> **Status:** Phase 1 tasks are fully completed.
+
+---
+
+### Phase 2: Core Build & Data Pipeline
+- Complete the main PoC build
+- Reach approximately 80–90% overall completion
+- Analyse limitations of the current MCP-based approach
+- Convene with industry supervisors to map out MVP development
+- Finalise Data Schemas and Business Use Cases
+- Finalise end-to-end pipelines and logical approach 
+- Arrive at a complete application architecture to accomodate the above
+
+> **Status:** Phase 2 work has been completed.
+
+---
+
+## Deployment
+https://p13-continuum-ai-vizro-v1.vercel.app

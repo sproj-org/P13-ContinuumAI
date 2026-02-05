@@ -1,0 +1,16 @@
+fastapi==0.128.0
+httpx==0.28.1
+python-jose[cryptography]>=3.3.0
+mcp==1.25.0
+numpy==2.4.1
+openai==2.15.0
+pandas==2.3.3
+passlib==1.7.4
+bcrypt==3.2.2
+plotly==6.5.1
+pydantic==2.12.5
+pydantic_settings==2.12.0
+python-dotenv==1.2.1
+SQLAlchemy==2.0.45
+vizro==0.1.50
+email-validator>=2.0
