@@ -1,0 +1,25 @@
+SUBMISSION GUIDELINES [0/150]
+
+1. Properly tested working system deployed on an online hosting platform. [/30 ]
+
+2. Code with readable comments uploaded in “Sprint 2” folder of your project’s Github repository.[/10]
+
+3. 3-4 minutes video that explains the functionality of your system developed so far. This must be uploaded in “Sprint 2” folder of your project’s Github repository.[0/10]
+
+4. Update project schedule on Github. The schedule must reflect the status of development (completed, in progress, to be done).[0/10]
+
+5. This "Readme" file should be uploaded in Sprint 2 folder.[0/10]
+
+6. Size of the work completed.[0/30]
+7. Docker demo during biweekly meeting.[0/40]
+8. Updated threat modelling document. [0/10]
+
+
+
+General Comments
+Zero marks have been assigned for this sprint as no new feature was implemented.
+
+Individual grading:
+
+
+
