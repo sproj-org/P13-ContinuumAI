@@ -8,7 +8,7 @@ import json
 from typing import Dict, List, Any
 
 # Set API key
-openai.api_key = "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"
+# openai.api_key 
 
 def enrich_all_columns_batch(column_profiles: List[Dict]) -> List[Dict]:
     """
