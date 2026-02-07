@@ -1,0 +1,4121 @@
+{
+  "dataset_name": "sales",
+  "row_count": 29924,
+  "column_count": 44,
+  "profiled_at": "2026-02-06T21:49:16.838407Z",
+  "columns": [
+    {
+      "name": "line_id",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 29924,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "L00039266",
+        "L00002190",
+        "L00032680"
+      ],
+      "stats": {},
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "identifier",
+      "agent_display_name": "Line Item ID",
+      "agent_description": "A unique identifier for each line item in a transaction. There are 29,924 distinct line IDs, indicating a high level of granularity in the dataset.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "A unique identifier for each line item in a transaction. There are 29,924 distinct line IDs, indicating a high level of granularity in the dataset.",
+      "llm_analytical_uses": [
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "bar",
+          "why": "to visualize the distribution of line items across transactions"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Total Line Items",
+          "how": "count of unique line IDs"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "No missing values.",
+        "dominance_note": "All values are unique.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "high",
+      "llm_confidence_reason": "The column has no missing values and high distinctiveness.",
+      "effective_role": "dimension",
+      "effective_logical_type": "categorical",
+      "effective_semantic_type": "identifier",
+      "effective_display_name": "Line Item ID",
+      "effective_description": "A unique identifier for each line item in a transaction. There are 29,924 distinct line IDs, indicating a high level of granularity in the dataset.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "transaction_id",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 11402,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "medium",
+      "sample_values": [
+        "T0007439",
+        "T0005969",
+        "T0015709"
+      ],
+      "stats": {},
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "identifier",
+      "agent_display_name": "Transaction ID",
+      "agent_description": "A unique identifier for each transaction. With 11,402 distinct transaction IDs, this column allows for effective transaction-level analysis.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "A unique identifier for each transaction. With 11,402 distinct transaction IDs, this column allows for effective transaction-level analysis.",
+      "llm_analytical_uses": [
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "bar",
+          "why": "to visualize the number of transactions over time"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Total Transactions",
+          "how": "count of unique transaction IDs"
+        }
+      ],
+      "llm_relationship_hints": [
+        {
+          "with_column": "customer_id",
+          "why": "to analyze customer behavior per transaction"
+        }
+      ],
+      "llm_quality_signals": {
+        "missingness_note": "No missing values.",
+        "dominance_note": "All values are unique.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "high",
+      "llm_confidence_reason": "The column has no missing values and high distinctiveness.",
+      "effective_role": "dimension",
+      "effective_logical_type": "categorical",
+      "effective_semantic_type": "identifier",
+      "effective_display_name": "Transaction ID",
+      "effective_description": "A unique identifier for each transaction. With 11,402 distinct transaction IDs, this column allows for effective transaction-level analysis.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "sku_id",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 150,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "SKU00165",
+        "SKU00115",
+        "SKU00099"
+      ],
+      "stats": {
+        "class_frequencies": [
+          {
+            "value": "SKU00022",
+            "count": 456,
+            "percent": 0.0152
+          },
+          {
+            "value": "SKU00082",
+            "count": 431,
+            "percent": 0.0144
+          },
+          {
+            "value": "SKU00162",
+            "count": 430,
+            "percent": 0.0144
+          },
+          {
+            "value": "SKU00077",
+            "count": 428,
+            "percent": 0.0143
+          },
+          {
+            "value": "SKU00071",
+            "count": 426,
+            "percent": 0.0142
+          },
+          {
+            "value": "SKU00085",
+            "count": 418,
+            "percent": 0.014
+          },
+          {
+            "value": "SKU00035",
+            "count": 409,
+            "percent": 0.0137
+          },
+          {
+            "value": "SKU00087",
+            "count": 407,
+            "percent": 0.0136
+          },
+          {
+            "value": "SKU00092",
+            "count": 376,
+            "percent": 0.0126
+          },
+          {
+            "value": "SKU00137",
+            "count": 368,
+            "percent": 0.0123
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "identifier",
+      "agent_display_name": "SKU ID",
+      "agent_description": "A unique identifier for each stock-keeping unit. With 150 distinct SKUs, this column is useful for inventory and product-level analysis.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "A unique identifier for each stock-keeping unit. With 150 distinct SKUs, this column is useful for inventory and product-level analysis.",
+      "llm_analytical_uses": [
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "bar",
+          "why": "to show sales distribution by SKU"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Total SKUs Sold",
+          "how": "count of unique SKU IDs"
+        }
+      ],
+      "llm_relationship_hints": [
+        {
+          "with_column": "product_id",
+          "why": "to analyze sales performance by product"
+        }
+      ],
+      "llm_quality_signals": {
+        "missingness_note": "No missing values.",
+        "dominance_note": "Values are evenly distributed across SKUs.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "high",
+      "llm_confidence_reason": "The column has no missing values and a manageable number of distinct values.",
+      "effective_role": "dimension",
+      "effective_logical_type": "categorical",
+      "effective_semantic_type": "identifier",
+      "effective_display_name": "SKU ID",
+      "effective_description": "A unique identifier for each stock-keeping unit. With 150 distinct SKUs, this column is useful for inventory and product-level analysis.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "product_id",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 86,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "PR0040",
+        "PR0044",
+        "PR0046"
+      ],
+      "stats": {
+        "class_frequencies": [
+          {
+            "value": "PR0038",
+            "count": 1044,
+            "percent": 0.0349
+          },
+          {
+            "value": "PR0032",
+            "count": 1023,
+            "percent": 0.0342
+          },
+          {
+            "value": "PR0015",
+            "count": 849,
+            "percent": 0.0284
+          },
+          {
+            "value": "PR0030",
+            "count": 848,
+            "percent": 0.0283
+          },
+          {
+            "value": "PR0089",
+            "count": 843,
+            "percent": 0.0282
+          },
+          {
+            "value": "PR0016",
+            "count": 836,
+            "percent": 0.0279
+          },
+          {
+            "value": "PR0042",
+            "count": 790,
+            "percent": 0.0264
+          },
+          {
+            "value": "PR0056",
+            "count": 654,
+            "percent": 0.0219
+          },
+          {
+            "value": "PR0023",
+            "count": 652,
+            "percent": 0.0218
+          },
+          {
+            "value": "PR0044",
+            "count": 647,
+            "percent": 0.0216
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "identifier",
+      "agent_display_name": "Product ID",
+      "agent_description": "A unique identifier for each product. With 86 distinct product IDs, this column is essential for product-level sales analysis.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "A unique identifier for each product. With 86 distinct product IDs, this column is essential for product-level sales analysis.",
+      "llm_analytical_uses": [
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "bar",
+          "why": "to visualize sales by product"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Total Products Sold",
+          "how": "count of unique product IDs"
+        }
+      ],
+      "llm_relationship_hints": [
+        {
+          "with_column": "sku_id",
+          "why": "to analyze sales performance at SKU level"
+        }
+      ],
+      "llm_quality_signals": {
+        "missingness_note": "No missing values.",
+        "dominance_note": "All values are unique.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "high",
+      "llm_confidence_reason": "The column has no missing values and high distinctiveness.",
+      "effective_role": "dimension",
+      "effective_logical_type": "categorical",
+      "effective_semantic_type": "identifier",
+      "effective_display_name": "Product ID",
+      "effective_description": "A unique identifier for each product. With 86 distinct product IDs, this column is essential for product-level sales analysis.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "customer_id",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 2420,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "medium",
+      "sample_values": [
+        "C01585",
+        "C02286",
+        "C00222"
+      ],
+      "stats": {},
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "identifier",
+      "agent_display_name": "Customer ID",
+      "agent_description": "A unique identifier for each customer. With 2,420 distinct customer IDs, this column is crucial for customer segmentation and loyalty analysis.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "A unique identifier for each customer. With 2,420 distinct customer IDs, this column is crucial for customer segmentation and loyalty analysis.",
+      "llm_analytical_uses": [
+        "segmentation",
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "bar",
+          "why": "to visualize customer purchase frequency"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Total Customers",
+          "how": "count of unique customer IDs"
+        }
+      ],
+      "llm_relationship_hints": [
+        {
+          "with_column": "customer_segment",
+          "why": "to analyze customer behavior by segment"
+        }
+      ],
+      "llm_quality_signals": {
+        "missingness_note": "No missing values.",
+        "dominance_note": "All values are unique.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "high",
+      "llm_confidence_reason": "The column has no missing values and high distinctiveness.",
+      "effective_role": "dimension",
+      "effective_logical_type": "categorical",
+      "effective_semantic_type": "identifier",
+      "effective_display_name": "Customer ID",
+      "effective_description": "A unique identifier for each customer. With 2,420 distinct customer IDs, this column is crucial for customer segmentation and loyalty analysis.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "customer_segment",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 5,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "price_sensitive",
+        "loyal",
+        "regular"
+      ],
+      "stats": {
+        "class_frequencies": [
+          {
+            "value": "loyal",
+            "count": 9169,
+            "percent": 0.3064
+          },
+          {
+            "value": "regular",
+            "count": 9028,
+            "percent": 0.3017
+          },
+          {
+            "value": "price_sensitive",
+            "count": 5617,
+            "percent": 0.1877
+          },
+          {
+            "value": "one_time",
+            "count": 3204,
+            "percent": 0.1071
+          },
+          {
+            "value": "high_return",
+            "count": 2906,
+            "percent": 0.0971
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "identifier",
+      "agent_display_name": "Customer Segment",
+      "agent_description": "Categorical segmentation of customers into 5 segments, such as 'loyal' and 'price_sensitive'. This helps in targeted marketing strategies.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "Categorical segmentation of customers into 5 segments, such as 'loyal' and 'price_sensitive'. This helps in targeted marketing strategies.",
+      "llm_analytical_uses": [
+        "segmentation",
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "pie",
+          "why": "to visualize customer distribution across segments"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Customer Segment Distribution",
+          "how": "percentage of total customers in each segment"
+        }
+      ],
+      "llm_relationship_hints": [
+        {
+          "with_column": "customer_id",
+          "why": "to analyze customer behavior within segments"
+        }
+      ],
+      "llm_quality_signals": {
+        "missingness_note": "No missing values.",
+        "dominance_note": "The 'loyal' segment is predominant.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "high",
+      "llm_confidence_reason": "The column has no missing values and a clear distribution.",
+      "effective_role": "dimension",
+      "effective_logical_type": "categorical",
+      "effective_semantic_type": "identifier",
+      "effective_display_name": "Customer Segment",
+      "effective_description": "Categorical segmentation of customers into 5 segments, such as 'loyal' and 'price_sensitive'. This helps in targeted marketing strategies.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "customer_city",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 3,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "Lahore",
+        "Islamabad",
+        "Karachi"
+      ],
+      "stats": {
+        "class_frequencies": [
+          {
+            "value": "Lahore",
+            "count": 10710,
+            "percent": 0.3579
+          },
+          {
+            "value": "Islamabad",
+            "count": 9718,
+            "percent": 0.3248
+          },
+          {
+            "value": "Karachi",
+            "count": 9496,
+            "percent": 0.3173
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "identifier",
+      "agent_display_name": "Customer City",
+      "agent_description": "The city where the customer resides. With 3 distinct cities, this column can help analyze geographic sales trends.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The city where the customer resides. With 3 distinct cities, this column can help analyze geographic sales trends.",
+      "llm_analytical_uses": [
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "bar",
+          "why": "to visualize sales by city"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Sales by City",
+          "how": "total sales amount per city"
+        }
+      ],
+      "llm_relationship_hints": [
+        {
+          "with_column": "customer_region",
+          "why": "to analyze sales trends by region"
+        }
+      ],
+      "llm_quality_signals": {
+        "missingness_note": "No missing values.",
+        "dominance_note": "Sales are fairly distributed across cities.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "high",
+      "llm_confidence_reason": "The column has no missing values and a clear distribution.",
+      "effective_role": "dimension",
+      "effective_logical_type": "categorical",
+      "effective_semantic_type": "identifier",
+      "effective_display_name": "Customer City",
+      "effective_description": "The city where the customer resides. With 3 distinct cities, this column can help analyze geographic sales trends.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "customer_region",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 3,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "Punjab",
+        "Punjab",
+        "Sindh"
+      ],
+      "stats": {
+        "class_frequencies": [
+          {
+            "value": "Punjab",
+            "count": 10710,
+            "percent": 0.3579
+          },
+          {
+            "value": "ICT",
+            "count": 9718,
+            "percent": 0.3248
+          },
+          {
+            "value": "Sindh",
+            "count": 9496,
+            "percent": 0.3173
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "identifier",
+      "agent_display_name": "Customer Region",
+      "agent_description": "The region where the customer resides. With 3 distinct regions, it is useful for geographic sales analysis.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The region where the customer resides. With 3 distinct regions, it is useful for geographic sales analysis.",
+      "llm_analytical_uses": [
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "bar",
+          "why": "to visualize sales by region"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Sales by Region",
+          "how": "total sales amount per region"
+        }
+      ],
+      "llm_relationship_hints": [
+        {
+          "with_column": "customer_city",
+          "why": "to analyze geographic trends in sales"
+        }
+      ],
+      "llm_quality_signals": {
+        "missingness_note": "No missing values.",
+        "dominance_note": "Sales are fairly distributed across regions.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "high",
+      "llm_confidence_reason": "The column has no missing values and a clear distribution.",
+      "effective_role": "dimension",
+      "effective_logical_type": "categorical",
+      "effective_semantic_type": "identifier",
+      "effective_display_name": "Customer Region",
+      "effective_description": "The region where the customer resides. With 3 distinct regions, it is useful for geographic sales analysis.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "transaction_ts",
+      "physical_type": "datetime",
+      "logical_type": "datetime",
+      "base_role": "time_dimension",
+      "row_count": 29924,
+      "distinct_count": 11286,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "medium",
+      "sample_values": [
+        "2025-11-30 07:27:00",
+        "2025-07-17 19:14:00",
+        "2025-12-23 17:27:00"
+      ],
+      "stats": {
+        "min": "2025-01-01 02:16:00",
+        "max": "2025-12-31 23:54:00"
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "date",
+      "agent_display_name": "Transaction Timestamp",
+      "agent_description": "The exact timestamp of when the transaction occurred. With 11,286 distinct timestamps, it allows for detailed time-based analysis.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The exact timestamp of when the transaction occurred. With 11,286 distinct timestamps, it allows for detailed time-based analysis.",
+      "llm_analytical_uses": [
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "line",
+          "why": "to visualize sales trends over time"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Sales Over Time",
+          "how": "total sales amount per day"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "No missing values.",
+        "dominance_note": "Timestamps are evenly distributed.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "high",
+      "llm_confidence_reason": "The column has no missing values and a high level of distinctiveness.",
+      "effective_role": "time_dimension",
+      "effective_logical_type": "datetime",
+      "effective_semantic_type": "date",
+      "effective_display_name": "Transaction Timestamp",
+      "effective_description": "The exact timestamp of when the transaction occurred. With 11,286 distinct timestamps, it allows for detailed time-based analysis.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "sales_date",
+      "physical_type": "datetime",
+      "logical_type": "datetime",
+      "base_role": "time_dimension",
+      "row_count": 29924,
+      "distinct_count": 365,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "2025-03-17",
+        "2025-10-15",
+        "2025-05-04"
+      ],
+      "stats": {
+        "min": "2025-01-01",
+        "max": "2025-12-31"
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "date",
+      "agent_display_name": "Sales Date",
+      "agent_description": "The date of the sale. With 365 distinct sales dates, this column is useful for daily sales analysis.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The date of the sale. With 365 distinct sales dates, this column is useful for daily sales analysis.",
+      "llm_analytical_uses": [
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "line",
+          "why": "to visualize daily sales trends"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Daily Sales",
+          "how": "total sales amount per day"
+        }
+      ],
+      "llm_relationship_hints": [
+        {
+          "with_column": "transaction_ts",
+          "why": "to analyze sales timing in detail"
+        }
+      ],
+      "llm_quality_signals": {
+        "missingness_note": "No missing values.",
+        "dominance_note": "Sales are evenly distributed across days.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "high",
+      "llm_confidence_reason": "The column has no missing values and a clear distribution.",
+      "effective_role": "time_dimension",
+      "effective_logical_type": "datetime",
+      "effective_semantic_type": "date",
+      "effective_display_name": "Sales Date",
+      "effective_description": "The date of the sale. With 365 distinct sales dates, this column is useful for daily sales analysis.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "channel_type",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 2,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "store",
+        "store",
+        "store"
+      ],
+      "stats": {
+        "class_frequencies": [
+          {
+            "value": "store",
+            "count": 20487,
+            "percent": 0.6846
+          },
+          {
+            "value": "online",
+            "count": 9437,
+            "percent": 0.3154
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "identifier",
+      "agent_display_name": "Channel Type",
+      "agent_description": "The sales channel, either 'store' or 'online'. This column helps in analyzing sales performance across different channels.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The sales channel, either 'store' or 'online'. This column helps in analyzing sales performance across different channels.",
+      "llm_analytical_uses": [
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "pie",
+          "why": "to visualize sales distribution by channel"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Sales by Channel",
+          "how": "total sales amount for each channel type"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "No missing values.",
+        "dominance_note": "Sales are predominantly from the store channel.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "high",
+      "llm_confidence_reason": "The column has no missing values and a clear distribution.",
+      "effective_role": "dimension",
+      "effective_logical_type": "categorical",
+      "effective_semantic_type": "identifier",
+      "effective_display_name": "Channel Type",
+      "effective_description": "The sales channel, either 'store' or 'online'. This column helps in analyzing sales performance across different channels.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "store_id",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 6,
+      "null_fraction": 0.3154,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "S004",
+        "S004",
+        "S006"
+      ],
+      "stats": {
+        "class_frequencies": [
+          {
+            "value": "S005",
+            "count": 4066,
+            "percent": 0.1985
+          },
+          {
+            "value": "S001",
+            "count": 3914,
+            "percent": 0.191
+          },
+          {
+            "value": "S004",
+            "count": 3798,
+            "percent": 0.1854
+          },
+          {
+            "value": "S006",
+            "count": 3703,
+            "percent": 0.1807
+          },
+          {
+            "value": "S003",
+            "count": 2561,
+            "percent": 0.125
+          },
+          {
+            "value": "S002",
+            "count": 2445,
+            "percent": 0.1193
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "identifier",
+      "agent_display_name": "Store ID",
+      "agent_description": "A unique identifier for each store. With 6 distinct store IDs, this column is useful for analyzing store-level performance.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "A unique identifier for each store. With 6 distinct store IDs, this column is useful for analyzing store-level performance.",
+      "llm_analytical_uses": [
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "bar",
+          "why": "to visualize sales performance by store"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Sales by Store",
+          "how": "total sales amount per store"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "31.5% missing values.",
+        "dominance_note": "Sales are concentrated in a few stores.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "medium",
+      "llm_confidence_reason": "The column has significant missing values which may affect analysis.",
+      "effective_role": "dimension",
+      "effective_logical_type": "categorical",
+      "effective_semantic_type": "identifier",
+      "effective_display_name": "Store ID",
+      "effective_description": "A unique identifier for each store. With 6 distinct store IDs, this column is useful for analyzing store-level performance.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "salesperson_id",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 26,
+      "null_fraction": 0.3154,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "P0026",
+        "P0014",
+        "P0011"
+      ],
+      "stats": {
+        "class_frequencies": [
+          {
+            "value": "P0005",
+            "count": 1924,
+            "percent": 0.0939
+          },
+          {
+            "value": "P0026",
+            "count": 1874,
+            "percent": 0.0915
+          },
+          {
+            "value": "P0025",
+            "count": 1296,
+            "percent": 0.0633
+          },
+          {
+            "value": "P0014",
+            "count": 1017,
+            "percent": 0.0496
+          },
+          {
+            "value": "P0016",
+            "count": 956,
+            "percent": 0.0467
+          },
+          {
+            "value": "P0024",
+            "count": 920,
+            "percent": 0.0449
+          },
+          {
+            "value": "P0003",
+            "count": 918,
+            "percent": 0.0448
+          },
+          {
+            "value": "P0011",
+            "count": 909,
+            "percent": 0.0444
+          },
+          {
+            "value": "P0012",
+            "count": 908,
+            "percent": 0.0443
+          },
+          {
+            "value": "P0008",
+            "count": 845,
+            "percent": 0.0412
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "identifier",
+      "agent_display_name": "Salesperson ID",
+      "agent_description": "A unique identifier for each salesperson. With 26 distinct IDs, this column helps in analyzing individual salesperson performance.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "A unique identifier for each salesperson. With 26 distinct IDs, this column helps in analyzing individual salesperson performance.",
+      "llm_analytical_uses": [
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "bar",
+          "why": "to visualize sales performance by salesperson"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Sales by Salesperson",
+          "how": "total sales amount per salesperson"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "31.5% missing values.",
+        "dominance_note": "Sales are concentrated among a few salespersons.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "medium",
+      "llm_confidence_reason": "The column has significant missing values which may affect analysis.",
+      "effective_role": "dimension",
+      "effective_logical_type": "categorical",
+      "effective_semantic_type": "identifier",
+      "effective_display_name": "Salesperson ID",
+      "effective_description": "A unique identifier for each salesperson. With 26 distinct IDs, this column helps in analyzing individual salesperson performance.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "payment_method",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 4,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "card",
+        "cash",
+        "cod"
+      ],
+      "stats": {
+        "class_frequencies": [
+          {
+            "value": "card",
+            "count": 13373,
+            "percent": 0.4469
+          },
+          {
+            "value": "cash",
+            "count": 10199,
+            "percent": 0.3408
+          },
+          {
+            "value": "cod",
+            "count": 3275,
+            "percent": 0.1094
+          },
+          {
+            "value": "wallet",
+            "count": 3077,
+            "percent": 0.1028
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "identifier",
+      "agent_display_name": "Payment Method",
+      "agent_description": "The method of payment used for the transaction, such as 'card' or 'cash'. This column is useful for understanding customer payment preferences.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The method of payment used for the transaction, such as 'card' or 'cash'. This column is useful for understanding customer payment preferences.",
+      "llm_analytical_uses": [
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "pie",
+          "why": "to visualize payment method distribution"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Sales by Payment Method",
+          "how": "total sales amount for each payment method"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "No missing values.",
+        "dominance_note": "Sales are predominantly made via card payments.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "high",
+      "llm_confidence_reason": "The column has no missing values and a clear distribution.",
+      "effective_role": "dimension",
+      "effective_logical_type": "categorical",
+      "effective_semantic_type": "identifier",
+      "effective_display_name": "Payment Method",
+      "effective_description": "The method of payment used for the transaction, such as 'card' or 'cash'. This column is useful for understanding customer payment preferences.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "product_name",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 74,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "Baseus Warranty Extensions",
+        "Outfitters Formal Leather Shoes",
+        "Baseus Warranty Extensions"
+      ],
+      "stats": {
+        "class_frequencies": [
+          {
+            "value": "Adidas Sandals",
+            "count": 1297,
+            "percent": 0.0433
+          },
+          {
+            "value": "Adidas Hoodies",
+            "count": 1044,
+            "percent": 0.0349
+          },
+          {
+            "value": "Levis Belts",
+            "count": 1027,
+            "percent": 0.0343
+          },
+          {
+            "value": "Outfitters Casual Shirts",
+            "count": 1023,
+            "percent": 0.0342
+          },
+          {
+            "value": "Khaadi Casual Shirts",
+            "count": 880,
+            "percent": 0.0294
+          },
+          {
+            "value": "Nike Running Shoes",
+            "count": 849,
+            "percent": 0.0284
+          },
+          {
+            "value": "Outfitters Hoodies",
+            "count": 848,
+            "percent": 0.0283
+          },
+          {
+            "value": "Belkin Warranty Extensions",
+            "count": 846,
+            "percent": 0.0283
+          },
+          {
+            "value": "Sapphire Denim Jeans",
+            "count": 843,
+            "percent": 0.0282
+          },
+          {
+            "value": "Adidas Caps",
+            "count": 836,
+            "percent": 0.0279
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "identifier",
+      "agent_display_name": "Product Name",
+      "agent_description": "The name of the product sold. With 74 distinct product names, this column is useful for product-level sales analysis.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The name of the product sold. With 74 distinct product names, this column is useful for product-level sales analysis.",
+      "llm_analytical_uses": [
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "bar",
+          "why": "to visualize sales by product name"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Total Products Sold",
+          "how": "count of unique product names"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "No missing values.",
+        "dominance_note": "Sales are concentrated among a few popular products.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "high",
+      "llm_confidence_reason": "The column has no missing values and a clear distribution.",
+      "effective_role": "dimension",
+      "effective_logical_type": "categorical",
+      "effective_semantic_type": "identifier",
+      "effective_display_name": "Product Name",
+      "effective_description": "The name of the product sold. With 74 distinct product names, this column is useful for product-level sales analysis.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "brand",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 19,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "Sapphire",
+        "Sapphire",
+        "Anker"
+      ],
+      "stats": {
+        "class_frequencies": [
+          {
+            "value": "Outfitters",
+            "count": 3788,
+            "percent": 0.1266
+          },
+          {
+            "value": "Adidas",
+            "count": 3781,
+            "percent": 0.1264
+          },
+          {
+            "value": "Sapphire",
+            "count": 2431,
+            "percent": 0.0812
+          },
+          {
+            "value": "Baseus",
+            "count": 2428,
+            "percent": 0.0811
+          },
+          {
+            "value": "Khaadi",
+            "count": 2403,
+            "percent": 0.0803
+          },
+          {
+            "value": "Anker",
+            "count": 2125,
+            "percent": 0.071
+          },
+          {
+            "value": "Levis",
+            "count": 2059,
+            "percent": 0.0688
+          },
+          {
+            "value": "Nike",
+            "count": 1931,
+            "percent": 0.0645
+          },
+          {
+            "value": "Spigen",
+            "count": 1366,
+            "percent": 0.0456
+          },
+          {
+            "value": "JBL",
+            "count": 1227,
+            "percent": 0.041
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "identifier",
+      "agent_display_name": "Brand",
+      "agent_description": "The brand associated with the product sold. With 19 distinct brands, this column helps in brand performance analysis.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The brand associated with the product sold. With 19 distinct brands, this column helps in brand performance analysis.",
+      "llm_analytical_uses": [
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "bar",
+          "why": "to visualize sales by brand"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Sales by Brand",
+          "how": "total sales amount for each brand"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "No missing values.",
+        "dominance_note": "Sales are concentrated among a few leading brands.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "high",
+      "llm_confidence_reason": "The column has no missing values and a clear distribution.",
+      "effective_role": "dimension",
+      "effective_logical_type": "categorical",
+      "effective_semantic_type": "identifier",
+      "effective_display_name": "Brand",
+      "effective_description": "The brand associated with the product sold. With 19 distinct brands, this column helps in brand performance analysis.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "category",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 3,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "Attach & Addons",
+        "Fashion",
+        "Attach & Addons"
+      ],
+      "stats": {
+        "class_frequencies": [
+          {
+            "value": "Fashion",
+            "count": 16393,
+            "percent": 0.5478
+          },
+          {
+            "value": "Attach & Addons",
+            "count": 7114,
+            "percent": 0.2377
+          },
+          {
+            "value": "Electronics",
+            "count": 6417,
+            "percent": 0.2144
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "identifier",
+      "agent_display_name": "Category",
+      "agent_description": "The category of the product sold. With 3 distinct categories, this column is useful for high-level product analysis.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The category of the product sold. With 3 distinct categories, this column is useful for high-level product analysis.",
+      "llm_analytical_uses": [
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "pie",
+          "why": "to visualize sales distribution by category"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Sales by Category",
+          "how": "total sales amount for each category"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "No missing values.",
+        "dominance_note": "Sales are predominantly from the 'Fashion' category.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "high",
+      "llm_confidence_reason": "The column has no missing values and a clear distribution.",
+      "effective_role": "dimension",
+      "effective_logical_type": "categorical",
+      "effective_semantic_type": "identifier",
+      "effective_display_name": "Category",
+      "effective_description": "The category of the product sold. With 3 distinct categories, this column is useful for high-level product analysis.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "subcategory",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 32,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "Extended services > warranty extensions",
+        "Laptops > gaming laptops",
+        "Footwear > sandals"
+      ],
+      "stats": {
+        "class_frequencies": [
+          {
+            "value": "Apparel > hoodies",
+            "count": 2546,
+            "percent": 0.0851
+          },
+          {
+            "value": "Extended services > warranty extensions",
+            "count": 2438,
+            "percent": 0.0815
+          },
+          {
+            "value": "Accessories > belts",
+            "count": 2249,
+            "percent": 0.0752
+          },
+          {
+            "value": "Apparel > casual shirts",
+            "count": 1903,
+            "percent": 0.0636
+          },
+          {
+            "value": "Apparel > denim jeans",
+            "count": 1891,
+            "percent": 0.0632
+          },
+          {
+            "value": "Footwear > sandals",
+            "count": 1740,
+            "percent": 0.0581
+          },
+          {
+            "value": "Accessories > caps",
+            "count": 1471,
+            "percent": 0.0492
+          },
+          {
+            "value": "Accessories > wallets",
+            "count": 1003,
+            "percent": 0.0335
+          },
+          {
+            "value": "Audio devices > Bluetooth speakers",
+            "count": 908,
+            "percent": 0.0303
+          },
+          {
+            "value": "Chargers > fast chargers",
+            "count": 907,
+            "percent": 0.0303
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "identifier",
+      "agent_display_name": "Subcategory",
+      "agent_description": "The subcategory of the product sold. With 32 distinct subcategories, this column allows for detailed product analysis.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The subcategory of the product sold. With 32 distinct subcategories, this column allows for detailed product analysis.",
+      "llm_analytical_uses": [
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "bar",
+          "why": "to visualize sales by subcategory"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Sales by Subcategory",
+          "how": "total sales amount for each subcategory"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "No missing values.",
+        "dominance_note": "Sales are concentrated in a few popular subcategories.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "high",
+      "llm_confidence_reason": "The column has no missing values and a clear distribution.",
+      "effective_role": "dimension",
+      "effective_logical_type": "categorical",
+      "effective_semantic_type": "identifier",
+      "effective_display_name": "Subcategory",
+      "effective_description": "The subcategory of the product sold. With 32 distinct subcategories, this column allows for detailed product analysis.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "product_status",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 1,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "active",
+        "active",
+        "active"
+      ],
+      "stats": {
+        "class_frequencies": [
+          {
+            "value": "active",
+            "count": 29924,
+            "percent": 1.0
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "identifier",
+      "agent_display_name": "Product Status",
+      "agent_description": "The status of the product, which is 'active' for all entries. This column indicates that all products are currently available for sale.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The status of the product, which is 'active' for all entries. This column indicates that all products are currently available for sale.",
+      "llm_analytical_uses": [
+        "filtering"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [],
+      "llm_kpi_ideas": [],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "No missing values.",
+        "dominance_note": "All values are 'active'.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "high",
+      "llm_confidence_reason": "The column has no missing values and uniform values.",
+      "effective_role": "dimension",
+      "effective_logical_type": "categorical",
+      "effective_semantic_type": "identifier",
+      "effective_display_name": "Product Status",
+      "effective_description": "The status of the product, which is 'active' for all entries. This column indicates that all products are currently available for sale.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "size",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 5,
+      "null_fraction": 0.4522,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "XL",
+        "XS",
+        "XS"
+      ],
+      "stats": {
+        "class_frequencies": [
+          {
+            "value": "XS",
+            "count": 3637,
+            "percent": 0.2219
+          },
+          {
+            "value": "S",
+            "count": 3605,
+            "percent": 0.2199
+          },
+          {
+            "value": "L",
+            "count": 3497,
+            "percent": 0.2133
+          },
+          {
+            "value": "M",
+            "count": 3325,
+            "percent": 0.2028
+          },
+          {
+            "value": "XL",
+            "count": 2329,
+            "percent": 0.1421
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "identifier",
+      "agent_display_name": "Size",
+      "agent_description": "The size of the product, with 5 distinct values. This column is useful for analyzing sales trends based on product sizes.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The size of the product, with 5 distinct values. This column is useful for analyzing sales trends based on product sizes.",
+      "llm_analytical_uses": [
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "bar",
+          "why": "to visualize sales by size"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Sales by Size",
+          "how": "total sales amount for each size"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "45.2% missing values.",
+        "dominance_note": "Some sizes are more popular than others.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "medium",
+      "llm_confidence_reason": "The column has significant missing values which may affect analysis.",
+      "effective_role": "dimension",
+      "effective_logical_type": "categorical",
+      "effective_semantic_type": "identifier",
+      "effective_display_name": "Size",
+      "effective_description": "The size of the product, with 5 distinct values. This column is useful for analyzing sales trends based on product sizes.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "color",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 10,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "Silver",
+        "Red",
+        "Red"
+      ],
+      "stats": {
+        "class_frequencies": [
+          {
+            "value": "Blue",
+            "count": 5856,
+            "percent": 0.1957
+          },
+          {
+            "value": "Black",
+            "count": 3903,
+            "percent": 0.1304
+          },
+          {
+            "value": "Red",
+            "count": 3494,
+            "percent": 0.1168
+          },
+          {
+            "value": "Grey",
+            "count": 3233,
+            "percent": 0.108
+          },
+          {
+            "value": "Navy",
+            "count": 2974,
+            "percent": 0.0994
+          },
+          {
+            "value": "White",
+            "count": 2755,
+            "percent": 0.0921
+          },
+          {
+            "value": "Green",
+            "count": 2320,
+            "percent": 0.0775
+          },
+          {
+            "value": "Transparent",
+            "count": 2012,
+            "percent": 0.0672
+          },
+          {
+            "value": "Gold",
+            "count": 1866,
+            "percent": 0.0624
+          },
+          {
+            "value": "Silver",
+            "count": 1511,
+            "percent": 0.0505
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "identifier",
+      "agent_display_name": "Color",
+      "agent_description": "The color of the product, with 10 distinct values. This column helps in analyzing sales trends based on product colors.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The color of the product, with 10 distinct values. This column helps in analyzing sales trends based on product colors.",
+      "llm_analytical_uses": [
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "bar",
+          "why": "to visualize sales by color"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Sales by Color",
+          "how": "total sales amount for each color"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "No missing values.",
+        "dominance_note": "Sales are concentrated in a few popular colors.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "high",
+      "llm_confidence_reason": "The column has no missing values and a clear distribution.",
+      "effective_role": "dimension",
+      "effective_logical_type": "categorical",
+      "effective_semantic_type": "identifier",
+      "effective_display_name": "Color",
+      "effective_description": "The color of the product, with 10 distinct values. This column helps in analyzing sales trends based on product colors.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "base_price",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 149,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "11726.0",
+        "5774.0",
+        "13143.0"
+      ],
+      "stats": {},
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "currency_usd",
+      "agent_display_name": "Base Price",
+      "agent_description": "The base price of the product before any discounts. With 149 distinct values, this column is vital for pricing analysis.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The base price of the product before any discounts. With 149 distinct values, this column is vital for pricing analysis.",
+      "llm_analytical_uses": [
+        "filtering",
+        "aggregation"
+      ],
+      "llm_not_suitable_for": [
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [
+          {
+            "operation": "AVG",
+            "reason": "to find the average base price"
+          }
+        ],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not all products have the same base price"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "histogram",
+          "why": "to visualize the distribution of base prices"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Average Base Price",
+          "how": "average of base prices"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "No missing values.",
+        "dominance_note": "Base prices are varied across products.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "high",
+      "llm_confidence_reason": "The column has no missing values and a reasonable number of distinct values.",
+      "effective_role": "dimension",
+      "effective_logical_type": "numeric",
+      "effective_semantic_type": "currency_usd",
+      "effective_display_name": "Base Price",
+      "effective_description": "The base price of the product before any discounts. With 149 distinct values, this column is vital for pricing analysis.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "active_flag",
+      "physical_type": "boolean",
+      "logical_type": "boolean",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 1,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "True",
+        "True",
+        "True"
+      ],
+      "stats": {},
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "null",
+      "agent_display_name": "Active Flag",
+      "agent_description": "A boolean flag indicating if the product is active. All entries are 'True', indicating all products are currently available.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "A boolean flag indicating if the product is active. All entries are 'True', indicating all products are currently available.",
+      "llm_analytical_uses": [
+        "filtering"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [],
+      "llm_kpi_ideas": [],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "No missing values.",
+        "dominance_note": "All values are 'True'.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "high",
+      "llm_confidence_reason": "The column has no missing values and uniform values.",
+      "effective_role": "dimension",
+      "effective_logical_type": "boolean",
+      "effective_semantic_type": "null",
+      "effective_display_name": "Active Flag",
+      "effective_description": "A boolean flag indicating if the product is active. All entries are 'True', indicating all products are currently available.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "store_name",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 3,
+      "null_fraction": 0.3154,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "SilkRoute Islamabad 3",
+        "SilkRoute Islamabad 3",
+        "SilkRoute Lahore 2"
+      ],
+      "stats": {
+        "class_frequencies": [
+          {
+            "value": "SilkRoute Karachi 1",
+            "count": 7712,
+            "percent": 0.3764
+          },
+          {
+            "value": "SilkRoute Lahore 2",
+            "count": 6511,
+            "percent": 0.3178
+          },
+          {
+            "value": "SilkRoute Islamabad 3",
+            "count": 6264,
+            "percent": 0.3058
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "identifier",
+      "agent_display_name": "Store Name",
+      "agent_description": "The name of the store where the transaction took place. With 3 distinct store names, this column is useful for analyzing store performance.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The name of the store where the transaction took place. With 3 distinct store names, this column is useful for analyzing store performance.",
+      "llm_analytical_uses": [
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "bar",
+          "why": "to visualize sales performance by store name"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Sales by Store Name",
+          "how": "total sales amount per store name"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "31.5% missing values.",
+        "dominance_note": "Sales are concentrated in a few store names.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "medium",
+      "llm_confidence_reason": "The column has significant missing values which may affect analysis.",
+      "effective_role": "dimension",
+      "effective_logical_type": "categorical",
+      "effective_semantic_type": "identifier",
+      "effective_display_name": "Store Name",
+      "effective_description": "The name of the store where the transaction took place. With 3 distinct store names, this column is useful for analyzing store performance.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "store_city",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 3,
+      "null_fraction": 0.3154,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "Islamabad",
+        "Islamabad",
+        "Islamabad"
+      ],
+      "stats": {
+        "class_frequencies": [
+          {
+            "value": "Karachi",
+            "count": 7712,
+            "percent": 0.3764
+          },
+          {
+            "value": "Lahore",
+            "count": 6511,
+            "percent": 0.3178
+          },
+          {
+            "value": "Islamabad",
+            "count": 6264,
+            "percent": 0.3058
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "identifier",
+      "agent_display_name": "Store City",
+      "agent_description": "The city where the store is located. With 3 distinct cities, this column helps in analyzing geographic store performance.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The city where the store is located. With 3 distinct cities, this column helps in analyzing geographic store performance.",
+      "llm_analytical_uses": [
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "bar",
+          "why": "to visualize sales by store city"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Sales by Store City",
+          "how": "total sales amount per city"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "31.5% missing values.",
+        "dominance_note": "Sales are concentrated in a few cities.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "medium",
+      "llm_confidence_reason": "The column has significant missing values which may affect analysis.",
+      "effective_role": "dimension",
+      "effective_logical_type": "categorical",
+      "effective_semantic_type": "identifier",
+      "effective_display_name": "Store City",
+      "effective_description": "The city where the store is located. With 3 distinct cities, this column helps in analyzing geographic store performance.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "store_region",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 3,
+      "null_fraction": 0.3154,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "Punjab",
+        "ICT",
+        "Punjab"
+      ],
+      "stats": {
+        "class_frequencies": [
+          {
+            "value": "Sindh",
+            "count": 7712,
+            "percent": 0.3764
+          },
+          {
+            "value": "Punjab",
+            "count": 6511,
+            "percent": 0.3178
+          },
+          {
+            "value": "ICT",
+            "count": 6264,
+            "percent": 0.3058
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "identifier",
+      "agent_display_name": "Store Region",
+      "agent_description": "The region where the store is located. With 3 distinct regions, this column is useful for analyzing regional store performance.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The region where the store is located. With 3 distinct regions, this column is useful for analyzing regional store performance.",
+      "llm_analytical_uses": [
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "bar",
+          "why": "to visualize sales by store region"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Sales by Store Region",
+          "how": "total sales amount per region"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "31.5% missing values.",
+        "dominance_note": "Sales are concentrated in a few regions.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "medium",
+      "llm_confidence_reason": "The column has significant missing values which may affect analysis.",
+      "effective_role": "dimension",
+      "effective_logical_type": "categorical",
+      "effective_semantic_type": "identifier",
+      "effective_display_name": "Store Region",
+      "effective_description": "The region where the store is located. With 3 distinct regions, this column is useful for analyzing regional store performance.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "store_type",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 3,
+      "null_fraction": 0.3154,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "mall",
+        "flagship",
+        "mall"
+      ],
+      "stats": {
+        "class_frequencies": [
+          {
+            "value": "mall",
+            "count": 8709,
+            "percent": 0.4251
+          },
+          {
+            "value": "flagship",
+            "count": 7712,
+            "percent": 0.3764
+          },
+          {
+            "value": "high_street",
+            "count": 4066,
+            "percent": 0.1985
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "identifier",
+      "agent_display_name": "Store Type",
+      "agent_description": "The type of store, such as 'mall' or 'flagship'. With 3 distinct types, this column helps in analyzing performance by store type.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The type of store, such as 'mall' or 'flagship'. With 3 distinct types, this column helps in analyzing performance by store type.",
+      "llm_analytical_uses": [
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "pie",
+          "why": "to visualize sales distribution by store type"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Sales by Store Type",
+          "how": "total sales amount for each store type"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "31.5% missing values.",
+        "dominance_note": "Sales are concentrated in a few store types.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "medium",
+      "llm_confidence_reason": "The column has significant missing values which may affect analysis.",
+      "effective_role": "dimension",
+      "effective_logical_type": "categorical",
+      "effective_semantic_type": "identifier",
+      "effective_display_name": "Store Type",
+      "effective_description": "The type of store, such as 'mall' or 'flagship'. With 3 distinct types, this column helps in analyzing performance by store type.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "salesperson_name",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 26,
+      "null_fraction": 0.3154,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "Michele Williams",
+        "Tommy Walter",
+        "Gina Moore"
+      ],
+      "stats": {
+        "class_frequencies": [
+          {
+            "value": "Cristian Santos",
+            "count": 1924,
+            "percent": 0.0939
+          },
+          {
+            "value": "Judy Baker",
+            "count": 1874,
+            "percent": 0.0915
+          },
+          {
+            "value": "Matthew Foster",
+            "count": 1296,
+            "percent": 0.0633
+          },
+          {
+            "value": "Michele Williams",
+            "count": 1017,
+            "percent": 0.0496
+          },
+          {
+            "value": "Brian Ramirez",
+            "count": 956,
+            "percent": 0.0467
+          },
+          {
+            "value": "Tommy Walter",
+            "count": 920,
+            "percent": 0.0449
+          },
+          {
+            "value": "Angie Henderson",
+            "count": 918,
+            "percent": 0.0448
+          },
+          {
+            "value": "Monica Herrera",
+            "count": 909,
+            "percent": 0.0444
+          },
+          {
+            "value": "Jamie Arnold",
+            "count": 908,
+            "percent": 0.0443
+          },
+          {
+            "value": "Gina Moore",
+            "count": 845,
+            "percent": 0.0412
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "identifier",
+      "agent_display_name": "Salesperson Name",
+      "agent_description": "The name of the salesperson. With 26 distinct names, this column is useful for analyzing individual performance.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The name of the salesperson. With 26 distinct names, this column is useful for analyzing individual performance.",
+      "llm_analytical_uses": [
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "bar",
+          "why": "to visualize sales performance by salesperson"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Sales by Salesperson",
+          "how": "total sales amount per salesperson"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "31.5% missing values.",
+        "dominance_note": "Sales are concentrated among a few salespersons.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "medium",
+      "llm_confidence_reason": "The column has significant missing values which may affect analysis.",
+      "effective_role": "dimension",
+      "effective_logical_type": "categorical",
+      "effective_semantic_type": "identifier",
+      "effective_display_name": "Salesperson Name",
+      "effective_description": "The name of the salesperson. With 26 distinct names, this column is useful for analyzing individual performance.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "salesperson_role",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 3,
+      "null_fraction": 0.3154,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "senior_associate",
+        "sales_associate",
+        "sales_associate"
+      ],
+      "stats": {
+        "class_frequencies": [
+          {
+            "value": "floor_supervisor",
+            "count": 7403,
+            "percent": 0.3614
+          },
+          {
+            "value": "sales_associate",
+            "count": 7356,
+            "percent": 0.3591
+          },
+          {
+            "value": "senior_associate",
+            "count": 5728,
+            "percent": 0.2796
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "identifier",
+      "agent_display_name": "Salesperson Role",
+      "agent_description": "The role of the salesperson, such as 'senior_associate'. With 3 distinct roles, this column helps in analyzing performance by role.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The role of the salesperson, such as 'senior_associate'. With 3 distinct roles, this column helps in analyzing performance by role.",
+      "llm_analytical_uses": [
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "bar",
+          "why": "to visualize sales performance by role"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Sales by Role",
+          "how": "total sales amount per role"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "31.5% missing values.",
+        "dominance_note": "Sales are concentrated among a few roles.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "medium",
+      "llm_confidence_reason": "The column has significant missing values which may affect analysis.",
+      "effective_role": "dimension",
+      "effective_logical_type": "categorical",
+      "effective_semantic_type": "identifier",
+      "effective_display_name": "Salesperson Role",
+      "effective_description": "The role of the salesperson, such as 'senior_associate'. With 3 distinct roles, this column helps in analyzing performance by role.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "quantity",
+      "physical_type": "int",
+      "logical_type": "numeric",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 3,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "1",
+        "1",
+        "1"
+      ],
+      "stats": {},
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "quantity",
+      "agent_display_name": "Quantity",
+      "agent_description": "The quantity of the product sold in each transaction. With only 3 distinct values, this column is primarily useful for understanding sales volume.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The quantity of the product sold in each transaction. With only 3 distinct values, this column is primarily useful for understanding sales volume.",
+      "llm_analytical_uses": [
+        "filtering",
+        "aggregation"
+      ],
+      "llm_not_suitable_for": [
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [
+          {
+            "operation": "SUM",
+            "reason": "to find total quantity sold"
+          }
+        ],
+        "blocked": [
+          {
+            "operation": "AVG",
+            "reason": "not meaningful with low distinct values"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "bar",
+          "why": "to visualize total quantity sold"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Total Quantity Sold",
+          "how": "sum of quantity"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "No missing values.",
+        "dominance_note": "Sales are primarily single units.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "medium",
+      "llm_confidence_reason": "The column has low distinctiveness which may limit analysis.",
+      "effective_role": "dimension",
+      "effective_logical_type": "numeric",
+      "effective_semantic_type": "quantity",
+      "effective_display_name": "Quantity",
+      "effective_description": "The quantity of the product sold in each transaction. With only 3 distinct values, this column is primarily useful for understanding sales volume.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "unit_price",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "row_count": 29924,
+      "distinct_count": 29601,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "6081.39",
+        "5541.27",
+        "7168.9"
+      ],
+      "stats": {
+        "min": 997.57,
+        "max": 400895.08,
+        "mean": 26586.55,
+        "five_number_summary": {
+          "min": 997.57,
+          "q1": 3736.75,
+          "median": 6206.02,
+          "q3": 12156.58,
+          "max": 400895.08
+        }
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "currency_usd",
+      "agent_display_name": "Unit Price",
+      "agent_description": "The price of a single unit of the product. With 29,601 distinct values, this column is crucial for pricing and revenue analysis.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The price of a single unit of the product. With 29,601 distinct values, this column is crucial for pricing and revenue analysis.",
+      "llm_analytical_uses": [
+        "filtering",
+        "aggregation"
+      ],
+      "llm_not_suitable_for": [
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [
+          {
+            "operation": "AVG",
+            "reason": "to find average unit price"
+          }
+        ],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not all products have the same unit price"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "histogram",
+          "why": "to visualize the distribution of unit prices"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Average Unit Price",
+          "how": "average of unit prices"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "No missing values.",
+        "dominance_note": "Unit prices are varied across products.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "high",
+      "llm_confidence_reason": "The column has no missing values and a reasonable number of distinct values.",
+      "effective_role": "measure",
+      "effective_logical_type": "numeric",
+      "effective_semantic_type": "currency_usd",
+      "effective_display_name": "Unit Price",
+      "effective_description": "The price of a single unit of the product. With 29,601 distinct values, this column is crucial for pricing and revenue analysis.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "discount_pct",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "row_count": 29924,
+      "distinct_count": 2021,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "medium",
+      "sample_values": [
+        "0.015",
+        "0.0129",
+        "0.0062"
+      ],
+      "stats": {
+        "min": 0.0,
+        "max": 0.45,
+        "mean": 0.05,
+        "five_number_summary": {
+          "min": 0.0,
+          "q1": 0.01,
+          "median": 0.03,
+          "q3": 0.07,
+          "max": 0.45
+        }
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "percentage",
+      "agent_display_name": "Discount Percentage",
+      "agent_description": "The percentage discount applied to the product. With 2,021 distinct values, this column is useful for analyzing discount strategies.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The percentage discount applied to the product. With 2,021 distinct values, this column is useful for analyzing discount strategies.",
+      "llm_analytical_uses": [
+        "filtering",
+        "aggregation"
+      ],
+      "llm_not_suitable_for": [
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [
+          {
+            "operation": "AVG",
+            "reason": "to find average discount percentage"
+          }
+        ],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not all products have the same discount percentage"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "histogram",
+          "why": "to visualize the distribution of discount percentages"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Average Discount Percentage",
+          "how": "average of discount percentages"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "No missing values.",
+        "dominance_note": "Discount percentages vary widely.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "high",
+      "llm_confidence_reason": "The column has no missing values and a reasonable number of distinct values.",
+      "effective_role": "measure",
+      "effective_logical_type": "numeric",
+      "effective_semantic_type": "percentage",
+      "effective_display_name": "Discount Percentage",
+      "effective_description": "The percentage discount applied to the product. With 2,021 distinct values, this column is useful for analyzing discount strategies.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "gross_line_amount",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "row_count": 29924,
+      "distinct_count": 29624,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "1749.82",
+        "5567.66",
+        "7699.61"
+      ],
+      "stats": {
+        "min": 997.57,
+        "max": 400895.08,
+        "mean": 27008.19,
+        "five_number_summary": {
+          "min": 997.57,
+          "q1": 3788.66,
+          "median": 6448.74,
+          "q3": 12712.21,
+          "max": 400895.08
+        }
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "currency_usd",
+      "agent_display_name": "Gross Line Amount",
+      "agent_description": "The total amount for the line item before discounts. With 29,624 distinct values, this column is critical for revenue analysis.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The total amount for the line item before discounts. With 29,624 distinct values, this column is critical for revenue analysis.",
+      "llm_analytical_uses": [
+        "filtering",
+        "aggregation"
+      ],
+      "llm_not_suitable_for": [
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [
+          {
+            "operation": "AVG",
+            "reason": "to find average gross line amount"
+          }
+        ],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not all products have the same gross line amount"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "histogram",
+          "why": "to visualize the distribution of gross line amounts"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Average Gross Line Amount",
+          "how": "average of gross line amounts"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "No missing values.",
+        "dominance_note": "Gross amounts vary widely.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "high",
+      "llm_confidence_reason": "The column has no missing values and a reasonable number of distinct values.",
+      "effective_role": "measure",
+      "effective_logical_type": "numeric",
+      "effective_semantic_type": "currency_usd",
+      "effective_display_name": "Gross Line Amount",
+      "effective_description": "The total amount for the line item before discounts. With 29,624 distinct values, this column is critical for revenue analysis.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "discount_amount",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "row_count": 29924,
+      "distinct_count": 25008,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "medium",
+      "sample_values": [
+        "787.618856",
+        "402.850222",
+        "14.16961"
+      ],
+      "stats": {
+        "min": 0.0,
+        "max": 158474.16,
+        "mean": 1221.85,
+        "five_number_summary": {
+          "min": 0.0,
+          "q1": 42.1,
+          "median": 198.55,
+          "q3": 595.17,
+          "max": 158474.16
+        }
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "currency_usd",
+      "agent_display_name": "Discount Amount",
+      "agent_description": "The total discount amount applied to the line item. With 25,008 distinct values, this column is useful for analyzing discount effectiveness.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The total discount amount applied to the line item. With 25,008 distinct values, this column is useful for analyzing discount effectiveness.",
+      "llm_analytical_uses": [
+        "filtering",
+        "aggregation"
+      ],
+      "llm_not_suitable_for": [
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [
+          {
+            "operation": "AVG",
+            "reason": "to find average discount amount"
+          }
+        ],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not all products have the same discount amount"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "histogram",
+          "why": "to visualize the distribution of discount amounts"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Average Discount Amount",
+          "how": "average of discount amounts"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "No missing values.",
+        "dominance_note": "Discount amounts vary widely.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "high",
+      "llm_confidence_reason": "The column has no missing values and a reasonable number of distinct values.",
+      "effective_role": "measure",
+      "effective_logical_type": "numeric",
+      "effective_semantic_type": "currency_usd",
+      "effective_display_name": "Discount Amount",
+      "effective_description": "The total discount amount applied to the line item. With 25,008 distinct values, this column is useful for analyzing discount effectiveness.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "net_line_amount",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "row_count": 29924,
+      "distinct_count": 29630,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "5638.6",
+        "8930.53",
+        "12939.09"
+      ],
+      "stats": {
+        "min": 840.58,
+        "max": 392590.64,
+        "mean": 25786.35,
+        "five_number_summary": {
+          "min": 840.58,
+          "q1": 3608.44,
+          "median": 6140.89,
+          "q3": 12240.21,
+          "max": 392590.64
+        }
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "currency_usd",
+      "agent_display_name": "Net Line Amount",
+      "agent_description": "The total amount for the line item after discounts. With 29,630 distinct values, this column is crucial for revenue and profit analysis.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The total amount for the line item after discounts. With 29,630 distinct values, this column is crucial for revenue and profit analysis.",
+      "llm_analytical_uses": [
+        "filtering",
+        "aggregation"
+      ],
+      "llm_not_suitable_for": [
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [
+          {
+            "operation": "AVG",
+            "reason": "to find average net line amount"
+          }
+        ],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not all products have the same net line amount"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "histogram",
+          "why": "to visualize the distribution of net line amounts"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Average Net Line Amount",
+          "how": "average of net line amounts"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "No missing values.",
+        "dominance_note": "Net amounts vary widely.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "high",
+      "llm_confidence_reason": "The column has no missing values and a reasonable number of distinct values.",
+      "effective_role": "measure",
+      "effective_logical_type": "numeric",
+      "effective_semantic_type": "currency_usd",
+      "effective_display_name": "Net Line Amount",
+      "effective_description": "The total amount for the line item after discounts. With 29,630 distinct values, this column is crucial for revenue and profit analysis.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "margin_line_amount",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "row_count": 29924,
+      "distinct_count": 28069,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "-154.120000000001",
+        "-380.57",
+        "-48.5"
+      ],
+      "stats": {
+        "min": -149495.45,
+        "max": 24125.2,
+        "mean": -1038.43,
+        "five_number_summary": {
+          "min": -149495.45,
+          "q1": -563.42,
+          "median": -178.4,
+          "q3": -17.82,
+          "max": 24125.2
+        }
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "currency_usd",
+      "agent_display_name": "Margin Line Amount",
+      "agent_description": "The profit margin for the line item. With 28,069 distinct values, this column is essential for profitability analysis.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The profit margin for the line item. With 28,069 distinct values, this column is essential for profitability analysis.",
+      "llm_analytical_uses": [
+        "filtering",
+        "aggregation"
+      ],
+      "llm_not_suitable_for": [
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [
+          {
+            "operation": "AVG",
+            "reason": "to find average margin line amount"
+          }
+        ],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not all products have the same margin line amount"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "histogram",
+          "why": "to visualize the distribution of margin amounts"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Average Margin Line Amount",
+          "how": "average of margin line amounts"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "No missing values.",
+        "dominance_note": "Margins vary widely, including negative values.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "high",
+      "llm_confidence_reason": "The column has no missing values and a reasonable number of distinct values.",
+      "effective_role": "measure",
+      "effective_logical_type": "numeric",
+      "effective_semantic_type": "currency_usd",
+      "effective_display_name": "Margin Line Amount",
+      "effective_description": "The profit margin for the line item. With 28,069 distinct values, this column is essential for profitability analysis.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "is_returned",
+      "physical_type": "boolean",
+      "logical_type": "boolean",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 2,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "False",
+        "False",
+        "False"
+      ],
+      "stats": {},
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "null",
+      "agent_display_name": "Is Returned",
+      "agent_description": "A boolean flag indicating if the item was returned. With 2 distinct values, this column helps in analyzing return rates.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "A boolean flag indicating if the item was returned. With 2 distinct values, this column helps in analyzing return rates.",
+      "llm_analytical_uses": [
+        "filtering"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [],
+      "llm_kpi_ideas": [],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "No missing values.",
+        "dominance_note": "Most items are not returned.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "high",
+      "llm_confidence_reason": "The column has no missing values and a clear distribution.",
+      "effective_role": "dimension",
+      "effective_logical_type": "boolean",
+      "effective_semantic_type": "null",
+      "effective_display_name": "Is Returned",
+      "effective_description": "A boolean flag indicating if the item was returned. With 2 distinct values, this column helps in analyzing return rates.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "return_reason",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 7,
+      "null_fraction": 0.9565,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "defective",
+        "changed_mind",
+        "size_issue"
+      ],
+      "stats": {
+        "class_frequencies": [
+          {
+            "value": "size_issue",
+            "count": 525,
+            "percent": 0.4035
+          },
+          {
+            "value": "not_as_described",
+            "count": 206,
+            "percent": 0.1583
+          },
+          {
+            "value": "defective",
+            "count": 179,
+            "percent": 0.1376
+          },
+          {
+            "value": "compatibility_issue",
+            "count": 151,
+            "percent": 0.1161
+          },
+          {
+            "value": "delivery_issue",
+            "count": 96,
+            "percent": 0.0738
+          },
+          {
+            "value": "quality_issue",
+            "count": 81,
+            "percent": 0.0623
+          },
+          {
+            "value": "changed_mind",
+            "count": 63,
+            "percent": 0.0484
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "identifier",
+      "agent_display_name": "Return Reason",
+      "agent_description": "The reason for the return, with 7 distinct values. This column is useful for understanding customer dissatisfaction.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The reason for the return, with 7 distinct values. This column is useful for understanding customer dissatisfaction.",
+      "llm_analytical_uses": [
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "bar",
+          "why": "to visualize the distribution of return reasons"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Return Rate by Reason",
+          "how": "percentage of returns for each reason"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "95.7% missing values.",
+        "dominance_note": "Most items are not returned.",
+        "rare_values_note": "Some return reasons are rare."
+      },
+      "llm_confidence": "medium",
+      "llm_confidence_reason": "The column has significant missing values which may affect analysis.",
+      "effective_role": "dimension",
+      "effective_logical_type": "categorical",
+      "effective_semantic_type": "identifier",
+      "effective_display_name": "Return Reason",
+      "effective_description": "The reason for the return, with 7 distinct values. This column is useful for understanding customer dissatisfaction.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "refund_amount",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 1286,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "medium",
+      "sample_values": [
+        "0.0",
+        "0.0",
+        "0.0"
+      ],
+      "stats": {},
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "currency_usd",
+      "agent_display_name": "Refund Amount",
+      "agent_description": "The total amount refunded for returned items. With 1,286 distinct values, this column is useful for analyzing the financial impact of returns.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The total amount refunded for returned items. With 1,286 distinct values, this column is useful for analyzing the financial impact of returns.",
+      "llm_analytical_uses": [
+        "filtering",
+        "aggregation"
+      ],
+      "llm_not_suitable_for": [
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [
+          {
+            "operation": "AVG",
+            "reason": "to find average refund amount"
+          }
+        ],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not all products have the same refund amount"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "histogram",
+          "why": "to visualize the distribution of refund amounts"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Average Refund Amount",
+          "how": "average of refund amounts"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "No missing values.",
+        "dominance_note": "Refund amounts vary widely.",
+        "rare_values_note": "No rare values."
+      },
+      "llm_confidence": "high",
+      "llm_confidence_reason": "The column has no missing values and a reasonable number of distinct values.",
+      "effective_role": "dimension",
+      "effective_logical_type": "numeric",
+      "effective_semantic_type": "currency_usd",
+      "effective_display_name": "Refund Amount",
+      "effective_description": "The total amount refunded for returned items. With 1,286 distinct values, this column is useful for analyzing the financial impact of returns.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "promo_id",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 11,
+      "null_fraction": 0.9916,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "PROMO009",
+        "PROMO005",
+        "PROMO011"
+      ],
+      "stats": {
+        "class_frequencies": [
+          {
+            "value": "PROMO005",
+            "count": 70,
+            "percent": 0.2789
+          },
+          {
+            "value": "PROMO004",
+            "count": 41,
+            "percent": 0.1633
+          },
+          {
+            "value": "PROMO006",
+            "count": 30,
+            "percent": 0.1195
+          },
+          {
+            "value": "PROMO011",
+            "count": 23,
+            "percent": 0.0916
+          },
+          {
+            "value": "PROMO012",
+            "count": 21,
+            "percent": 0.0837
+          },
+          {
+            "value": "PROMO009",
+            "count": 18,
+            "percent": 0.0717
+          },
+          {
+            "value": "PROMO002",
+            "count": 14,
+            "percent": 0.0558
+          },
+          {
+            "value": "PROMO007",
+            "count": 12,
+            "percent": 0.0478
+          },
+          {
+            "value": "PROMO001",
+            "count": 10,
+            "percent": 0.0398
+          },
+          {
+            "value": "PROMO008",
+            "count": 9,
+            "percent": 0.0359
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "identifier",
+      "agent_display_name": "Promo ID",
+      "agent_description": "A unique identifier for promotional offers. With 11 distinct promo IDs, this column helps in analyzing the effectiveness of promotions.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "A unique identifier for promotional offers. With 11 distinct promo IDs, this column helps in analyzing the effectiveness of promotions.",
+      "llm_analytical_uses": [
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "bar",
+          "why": "to visualize sales performance by promo ID"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Sales by Promo ID",
+          "how": "total sales amount for each promo ID"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "99.2% missing values.",
+        "dominance_note": "Most transactions do not use promotions.",
+        "rare_values_note": "Some promo IDs are rarely used."
+      },
+      "llm_confidence": "medium",
+      "llm_confidence_reason": "The column has significant missing values which may affect analysis.",
+      "effective_role": "dimension",
+      "effective_logical_type": "categorical",
+      "effective_semantic_type": "identifier",
+      "effective_display_name": "Promo ID",
+      "effective_description": "A unique identifier for promotional offers. With 11 distinct promo IDs, this column helps in analyzing the effectiveness of promotions.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "promo_type",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 4,
+      "null_fraction": 0.9916,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "seasonal_sale",
+        "seasonal_sale",
+        "seasonal_sale"
+      ],
+      "stats": {
+        "class_frequencies": [
+          {
+            "value": "seasonal_sale",
+            "count": 123,
+            "percent": 0.49
+          },
+          {
+            "value": "clearance",
+            "count": 53,
+            "percent": 0.2112
+          },
+          {
+            "value": "flash_sale",
+            "count": 53,
+            "percent": 0.2112
+          },
+          {
+            "value": "bundle_offer",
+            "count": 22,
+            "percent": 0.0876
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "identifier",
+      "agent_display_name": "Promo Type",
+      "agent_description": "The type of promotion applied, such as 'seasonal_sale'. With 4 distinct types, this column helps in analyzing promotional strategies.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The type of promotion applied, such as 'seasonal_sale'. With 4 distinct types, this column helps in analyzing promotional strategies.",
+      "llm_analytical_uses": [
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "bar",
+          "why": "to visualize sales performance by promo type"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Sales by Promo Type",
+          "how": "total sales amount for each promo type"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "99.2% missing values.",
+        "dominance_note": "Most transactions do not use promotions.",
+        "rare_values_note": "Some promo types are rarely used."
+      },
+      "llm_confidence": "medium",
+      "llm_confidence_reason": "The column has significant missing values which may affect analysis.",
+      "effective_role": "dimension",
+      "effective_logical_type": "categorical",
+      "effective_semantic_type": "identifier",
+      "effective_display_name": "Promo Type",
+      "effective_description": "The type of promotion applied, such as 'seasonal_sale'. With 4 distinct types, this column helps in analyzing promotional strategies.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "promo_start_date",
+      "physical_type": "datetime",
+      "logical_type": "datetime",
+      "base_role": "time_dimension",
+      "row_count": 29924,
+      "distinct_count": 11,
+      "null_fraction": 0.9916,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "2025-11-29",
+        "2025-11-29",
+        "2025-11-29"
+      ],
+      "stats": {
+        "min": "2025-01-16",
+        "max": "2025-12-09"
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "date",
+      "agent_display_name": "Promo Start Date",
+      "agent_description": "The start date of the promotional offer. With 11 distinct dates, this column helps in analyzing the timing of promotions.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The start date of the promotional offer. With 11 distinct dates, this column helps in analyzing the timing of promotions.",
+      "llm_analytical_uses": [
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "line",
+          "why": "to visualize sales trends during promotions"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Sales During Promotions",
+          "how": "total sales amount during promo periods"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "99.2% missing values.",
+        "dominance_note": "Most transactions do not involve promotions.",
+        "rare_values_note": "Some promo start dates are rarely used."
+      },
+      "llm_confidence": "medium",
+      "llm_confidence_reason": "The column has significant missing values which may affect analysis.",
+      "effective_role": "time_dimension",
+      "effective_logical_type": "datetime",
+      "effective_semantic_type": "date",
+      "effective_display_name": "Promo Start Date",
+      "effective_description": "The start date of the promotional offer. With 11 distinct dates, this column helps in analyzing the timing of promotions.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "promo_end_date",
+      "physical_type": "datetime",
+      "logical_type": "datetime",
+      "base_role": "time_dimension",
+      "row_count": 29924,
+      "distinct_count": 11,
+      "null_fraction": 0.9916,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "2025-11-18",
+        "2025-12-27",
+        "2025-04-17"
+      ],
+      "stats": {
+        "min": "2025-02-03",
+        "max": "2025-12-27"
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "date",
+      "agent_display_name": "Promo End Date",
+      "agent_description": "The end date of the promotional offer. With 11 distinct dates, this column helps in analyzing the timing of promotions.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The end date of the promotional offer. With 11 distinct dates, this column helps in analyzing the timing of promotions.",
+      "llm_analytical_uses": [
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "line",
+          "why": "to visualize sales trends during promotions"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Sales During Promotions",
+          "how": "total sales amount during promo periods"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "99.2% missing values.",
+        "dominance_note": "Most transactions do not involve promotions.",
+        "rare_values_note": "Some promo end dates are rarely used."
+      },
+      "llm_confidence": "medium",
+      "llm_confidence_reason": "The column has significant missing values which may affect analysis.",
+      "effective_role": "time_dimension",
+      "effective_logical_type": "datetime",
+      "effective_semantic_type": "date",
+      "effective_display_name": "Promo End Date",
+      "effective_description": "The end date of the promotional offer. With 11 distinct dates, this column helps in analyzing the timing of promotions.",
+      "needs_review": false,
+      "issues": []
+    },
+    {
+      "name": "promo_discount_type",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "row_count": 29924,
+      "distinct_count": 2,
+      "null_fraction": 0.9916,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "fixed",
+        "percent",
+        "percent"
+      ],
+      "stats": {
+        "class_frequencies": [
+          {
+            "value": "fixed",
+            "count": 148,
+            "percent": 0.5896
+          },
+          {
+            "value": "percent",
+            "count": 103,
+            "percent": 0.4104
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_semantic_type": "identifier",
+      "agent_display_name": "Promo Discount Type",
+      "agent_description": "The type of discount applied in the promotion, such as 'fixed' or 'percent'. With 2 distinct types, this column helps in analyzing promotional effectiveness.",
+      "agent_suggested_role": null,
+      "agent_suggested_logical_type": null,
+      "agent_needs_review": false,
+      "agent_issues": [],
+      "llm_description": "The type of discount applied in the promotion, such as 'fixed' or 'percent'. With 2 distinct types, this column helps in analyzing promotional effectiveness.",
+      "llm_analytical_uses": [
+        "filtering",
+        "grouping"
+      ],
+      "llm_not_suitable_for": [
+        "sum",
+        "average"
+      ],
+      "llm_operation_constraints": {
+        "allowed": [],
+        "blocked": [
+          {
+            "operation": "SUM",
+            "reason": "not a numeric field"
+          }
+        ]
+      },
+      "llm_suggested_visualizations": [
+        {
+          "chart": "bar",
+          "why": "to visualize sales performance by discount type"
+        }
+      ],
+      "llm_kpi_ideas": [
+        {
+          "kpi": "Sales by Promo Discount Type",
+          "how": "total sales amount for each discount type"
+        }
+      ],
+      "llm_relationship_hints": [],
+      "llm_quality_signals": {
+        "missingness_note": "99.2% missing values.",
+        "dominance_note": "Most transactions do not involve promotions.",
+        "rare_values_note": "Some discount types are rarely used."
+      },
+      "llm_confidence": "medium",
+      "llm_confidence_reason": "The column has significant missing values which may affect analysis.",
+      "effective_role": "dimension",
+      "effective_logical_type": "categorical",
+      "effective_semantic_type": "identifier",
+      "effective_display_name": "Promo Discount Type",
+      "effective_description": "The type of discount applied in the promotion, such as 'fixed' or 'percent'. With 2 distinct types, this column helps in analyzing promotional effectiveness.",
+      "needs_review": false,
+      "issues": []
+    }
+  ],
+  "dataset_llm_analytical_uses": [
+    "Sales performance analysis by product and category",
+    "Customer segmentation and behavior analysis",
+    "Sales channel effectiveness evaluation",
+    "Trend analysis over time for sales and transactions",
+    "Inventory management insights based on sales data"
+  ],
+  "dataset_llm_kpi_ideas": [
+    {
+      "kpi": "Total Sales Revenue",
+      "how": "Sum of all sales transactions over a specified time period"
+    },
+    {
+      "kpi": "Average Transaction Value",
+      "how": "Total Sales Revenue divided by the number of transactions"
+    },
+    {
+      "kpi": "Sales by Customer Segment",
+      "how": "Sum of sales grouped by customer_segment"
+    },
+    {
+      "kpi": "Sales Growth Rate",
+      "how": "((Sales Revenue in Current Period - Sales Revenue in Previous Period) / Sales Revenue in Previous Period) * 100"
+    },
+    {
+      "kpi": "Top Selling Products",
+      "how": "Count of sales grouped by product_id, sorted by highest count"
+    }
+  ],
+  "dataset_llm_supported_questions": [
+    "What are the top 5 products by sales revenue?",
+    "How does sales performance vary by customer segment?",
+    "What is the trend of sales over the last year?",
+    "Which sales channel generates the highest revenue?",
+    "What percentage of sales comes from repeat customers?"
+  ],
+  "dataset_llm_confidence": "high",
+  "dataset_llm_confidence_reason": "The dataset contains a comprehensive set of dimensions and metrics that allow for in-depth sales analysis, and the data is complete without null values in key columns."
+}
