@@ -4,7 +4,7 @@ accurately reflect the actual database schema.
 """
 from sqlalchemy import create_engine, text
 
-DB = 'postgresql://postgres.mffusogkupczpxchfjtt:missionSPROJ098@aws-1-ap-northeast-2.pooler.supabase.com:5432/postgres'
+DB = 'add_your_db_url_here'
 e = create_engine(DB)
 
 # Expected from silkroute_schema.sql

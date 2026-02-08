@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine, inspect
 
-DB_URL = 'postgresql://postgres.mffusogkupczpxchfjtt:missionSPROJ098@aws-1-ap-northeast-2.pooler.supabase.com:5432/postgres'
+DB_URL = 'add_your_db_url_here'
 e = create_engine(DB_URL)
 i = inspect(e)
 

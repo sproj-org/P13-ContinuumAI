@@ -1,7 +1,7 @@
 """Sanity check on aggregations schema: tables, columns, constraints, data quality."""
 from sqlalchemy import create_engine, text
 
-DB = 'postgresql://postgres.mffusogkupczpxchfjtt:missionSPROJ098@aws-1-ap-northeast-2.pooler.supabase.com:5432/postgres'
+DB = 'add_your_db_url_here'
 e = create_engine(DB)
 
 with e.connect() as c:

@@ -7,7 +7,7 @@ from sqlalchemy import create_engine, text, inspect
 from typing import Dict, List, Any
 import os
 
-DATABASE_URL = "postgresql://postgres.mffusogkupczpxchfjtt:missionSPROJ098@aws-1-ap-northeast-2.pooler.supabase.com:5432/postgres"
+DATABASE_URL = "add_your_db_url_here"
 
 def get_column_metadata(schema: str, table: str, db_engine) -> List[Dict]:
     """Get all columns with physical types from information_schema"""

@@ -2,7 +2,7 @@
 from sqlalchemy import create_engine, text
 from pathlib import Path
 
-DB_URL = 'postgresql://postgres.mffusogkupczpxchfjtt:missionSPROJ098@aws-1-ap-northeast-2.pooler.supabase.com:5432/postgres'
+DB_URL = 'add_your_db_url_here'
 engine = create_engine(DB_URL)
 
 sql_path = Path(__file__).parent / 'database' / 'migrate_silkroute_constraints.sql'

@@ -4,7 +4,7 @@ Checks: PKs, UNIQUE constraints, FKs, column existence, row counts.
 """
 from sqlalchemy import create_engine, text
 
-DB_URL = 'postgresql://postgres.mffusogkupczpxchfjtt:missionSPROJ098@aws-1-ap-northeast-2.pooler.supabase.com:5432/postgres'
+DB_URL = 'add_your_db_url_here'
 engine = create_engine(DB_URL)
 
 # ── TARGET_SCHEMAS (copied from notebook) ──

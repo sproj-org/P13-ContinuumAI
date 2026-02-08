@@ -10,7 +10,7 @@ from pathlib import Path
 import sys
 
 # Database connection
-DATABASE_URL = "postgresql://postgres.mffusogkupczpxchfjtt:missionSPROJ098@aws-1-ap-northeast-2.pooler.supabase.com:5432/postgres"
+DATABASE_URL = "add_your_db_url_here"
 
 def main():
     print("=" * 80)

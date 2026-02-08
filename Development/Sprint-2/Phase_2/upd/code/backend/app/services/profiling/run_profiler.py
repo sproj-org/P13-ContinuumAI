@@ -17,7 +17,7 @@ from services.profiling.base_profiler import profile_dataset_base
 from services.profiling.stats_calculator import enrich_column_with_stats
 from services.profiling.llm_enricher import enrich_all_columns_batch, enrich_dataset_level
 
-DATABASE_URL = "postgresql://postgres.mffusogkupczpxchfjtt:missionSPROJ098@aws-1-ap-northeast-2.pooler.supabase.com:5432/postgres"
+DATABASE_URL = "add_your_db_url_here"
 
 def profile_mart(schema_name: str, table_name: str, output_path: str = None):
     """

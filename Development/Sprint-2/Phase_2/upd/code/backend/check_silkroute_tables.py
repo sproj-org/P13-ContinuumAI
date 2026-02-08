@@ -4,7 +4,7 @@ Check silkroute schema tables to understand structure
 
 from sqlalchemy import create_engine, text
 
-DATABASE_URL = "postgresql://postgres.mffusogkupczpxchfjtt:missionSPROJ098@aws-1-ap-northeast-2.pooler.supabase.com:5432/postgres"
+DATABASE_URL = "add_your_db_url_here"
 
 engine = create_engine(DATABASE_URL)
 

@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine, text
 
-e = create_engine('postgresql://postgres.mffusogkupczpxchfjtt:missionSPROJ098@aws-1-ap-northeast-2.pooler.supabase.com:5432/postgres')
+e = create_engine('add_your_db_url_here')
 
 with e.connect() as c:
     print('=== DISCOUNT ANALYSIS ===')
