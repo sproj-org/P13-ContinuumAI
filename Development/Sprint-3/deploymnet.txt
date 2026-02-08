@@ -1,0 +1,3 @@
+https://p13-continuum-ai-three.vercel.app
+
+We have used free tiers of hosting providers for deployment. The backend goes into sleep after a period of inactivity, once it does, it has to be spun back manually so in case you face backend api issues like "Not found" or "bad request", let us know, we ll spin it back up.
