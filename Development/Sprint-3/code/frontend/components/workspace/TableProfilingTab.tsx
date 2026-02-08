@@ -1,7 +1,14 @@
 "use client";
 
-import { useAppStore, AggregationTable } from "@/lib/store";
-import { tableProfiles } from "@/lib/mock-data";
+import { useAppStore, aggregationTables } from "@/lib/store";
+import { useTableProfile } from "@/lib/hooks";
+import {
+  getColumnRoleDistribution,
+  calculateTableMissingPercentage,
+  generateInsights,
+  generateSuggestedQuestions,
+  formatDate,
+} from "@/lib/transformers";
 import { motion } from "framer-motion";
 import {
   Table2,
@@ -12,19 +19,18 @@ import {
   PieChart,
   Lightbulb,
   HelpCircle,
-  CheckCircle,
-  XCircle,
+  Loader2,
 } from "lucide-react";
-
-const aggregationTables: { id: AggregationTable; label: string; description: string }[] = [
-  { id: "sales_detailed", label: "Sales Detailed", description: "Transaction-level sales data" },
-  { id: "customer_360", label: "Customer 360", description: "Customer profiles and metrics" },
-  { id: "store_daily_performance", label: "Store Daily Performance", description: "Store KPIs by day" },
-];
 
 export default function TableProfilingTab() {
   const { selectedAggregation, setSelectedAggregation } = useAppStore();
-  const profile = selectedAggregation ? tableProfiles[selectedAggregation] : null;
+  const { data: profile, isLoading, error } = useTableProfile(selectedAggregation);
+
+  // Derive values from profile using transformers
+  const missingPercentage = profile ? calculateTableMissingPercentage(profile) : 0;
+  const columnRoleDistribution = profile ? getColumnRoleDistribution(profile) : { dimensions: 0, measures: 0, temporal: 0 };
+  const keyInsights = profile ? generateInsights(profile) : [];
+  const suggestedQuestions = profile ? generateSuggestedQuestions(profile) : [];
 
   const getMissingDataColor = (percentage: number) => {
     if (percentage < 5) return "text-emerald-400";
@@ -78,6 +84,21 @@ export default function TableProfilingTab() {
               <p className="text-gray-500">Choose an aggregation table from the left panel</p>
             </div>
           </div>
+        ) : isLoading ? (
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center">
+              <Loader2 className="w-12 h-12 text-[#5237ff] mx-auto mb-4 animate-spin" />
+              <h3 className="text-lg font-medium text-gray-400">Loading profile...</h3>
+            </div>
+          </div>
+        ) : error ? (
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center">
+              <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-400 mb-2">Failed to load profile</h3>
+              <p className="text-gray-500 text-sm">Please try again later</p>
+            </div>
+          </div>
         ) : profile ? (
           <motion.div
             initial={{ opacity: 0 }}
@@ -88,12 +109,14 @@ export default function TableProfilingTab() {
             {/* Header */}
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold text-white">{profile.tableName.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}</h2>
-                <p className="text-gray-400 mt-1">aggregations.{profile.tableName}</p>
+                <h2 className="text-2xl font-bold text-white">
+                  {(profile.table_name ?? profile.dataset_name).replaceAll(/_/g, " ").replaceAll(/\b\w/g, l => l.toUpperCase())}
+                </h2>
+                <p className="text-gray-400 mt-1">aggregations.{profile.table_name ?? profile.dataset_name}</p>
               </div>
               <div className="flex items-center gap-2 text-gray-400 text-sm">
                 <Clock className="w-4 h-4" />
-                Last updated: {profile.lastUpdated}
+                Last profiled: {formatDate(profile.profiled_at)}
               </div>
             </div>
 
@@ -105,7 +128,7 @@ export default function TableProfilingTab() {
                   Row Count
                 </div>
                 <div className="text-2xl font-bold text-white">
-                  {profile.rowCount.toLocaleString()}
+                  {profile.row_count.toLocaleString()}
                 </div>
               </div>
 
@@ -115,7 +138,7 @@ export default function TableProfilingTab() {
                   Columns
                 </div>
                 <div className="text-2xl font-bold text-white">
-                  {profile.columnCount}
+                  {profile.column_count}
                 </div>
               </div>
 
@@ -124,18 +147,18 @@ export default function TableProfilingTab() {
                   <AlertTriangle className="w-4 h-4" />
                   Missing Data
                 </div>
-                <div className={`text-2xl font-bold ${getMissingDataColor(profile.missingPercentage)}`}>
-                  {profile.missingPercentage}%
+                <div className={`text-2xl font-bold ${getMissingDataColor(missingPercentage)}`}>
+                  {missingPercentage.toFixed(1)}%
                 </div>
               </div>
 
               <div className="bg-white/5 border border-white/10 rounded-xl p-4">
                 <div className="flex items-center gap-2 text-gray-400 text-sm mb-2">
-                  <CheckCircle className="w-4 h-4" />
-                  Duplicates
+                  <Columns3 className="w-4 h-4" />
+                  Dimensions
                 </div>
-                <div className={`text-2xl font-bold ${profile.duplicateRows === 0 ? "text-emerald-400" : "text-amber-400"}`}>
-                  {profile.duplicateRows}
+                <div className="text-2xl font-bold text-blue-400">
+                  {columnRoleDistribution.dimensions}
                 </div>
               </div>
             </div>
@@ -152,47 +175,30 @@ export default function TableProfilingTab() {
                   <div>
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-gray-400">Missing Data %</span>
-                      <span className={getMissingDataColor(profile.missingPercentage)}>
-                        {profile.missingPercentage}%
+                      <span className={getMissingDataColor(missingPercentage)}>
+                        {missingPercentage.toFixed(1)}%
                       </span>
                     </div>
                     <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                       <div
-                        className={`h-full rounded-full ${getMissingDataBg(profile.missingPercentage)} transition-all`}
-                        style={{ width: `${Math.min(profile.missingPercentage * 2, 100)}%` }}
+                        className={`h-full rounded-full ${getMissingDataBg(missingPercentage)} transition-all`}
+                        style={{ width: `${Math.min(missingPercentage * 2, 100)}%` }}
                       />
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between py-2 border-t border-white/10">
-                    <span className="text-gray-400">Duplicate Rows</span>
-                    <div className="flex items-center gap-2">
-                      {profile.duplicateRows === 0 ? (
-                        <CheckCircle className="w-4 h-4 text-emerald-400" />
-                      ) : (
-                        <XCircle className="w-4 h-4 text-red-400" />
-                      )}
-                      <span className={profile.duplicateRows === 0 ? "text-emerald-400" : "text-red-400"}>
-                        {profile.duplicateRows}
-                      </span>
-                    </div>
+                    <span className="text-gray-400">Total Rows</span>
+                    <span className="text-emerald-400 font-medium">
+                      {profile.row_count.toLocaleString()}
+                    </span>
                   </div>
 
                   <div className="flex items-center justify-between py-2 border-t border-white/10">
-                    <span className="text-gray-400">Outliers Present</span>
-                    <div className="flex items-center gap-2">
-                      {profile.hasOutliers ? (
-                        <>
-                          <AlertTriangle className="w-4 h-4 text-amber-400" />
-                          <span className="text-amber-400">Yes</span>
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle className="w-4 h-4 text-emerald-400" />
-                          <span className="text-emerald-400">No</span>
-                        </>
-                      )}
-                    </div>
+                    <span className="text-gray-400">Column Count</span>
+                    <span className="text-emerald-400 font-medium">
+                      {profile.column_count}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -209,21 +215,21 @@ export default function TableProfilingTab() {
                       <div className="w-3 h-3 rounded-full bg-blue-500" />
                       <span className="text-gray-300">Dimensions</span>
                     </div>
-                    <span className="text-white font-medium">{profile.columnRoleDistribution.dimensions}</span>
+                    <span className="text-white font-medium">{columnRoleDistribution.dimensions}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-emerald-500" />
                       <span className="text-gray-300">Measures</span>
                     </div>
-                    <span className="text-white font-medium">{profile.columnRoleDistribution.measures}</span>
+                    <span className="text-white font-medium">{columnRoleDistribution.measures}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-amber-500" />
                       <span className="text-gray-300">Temporal</span>
                     </div>
-                    <span className="text-white font-medium">{profile.columnRoleDistribution.temporal}</span>
+                    <span className="text-white font-medium">{columnRoleDistribution.temporal}</span>
                   </div>
                 </div>
 
@@ -232,19 +238,19 @@ export default function TableProfilingTab() {
                   <div
                     className="bg-blue-500 h-full"
                     style={{
-                      width: `${(profile.columnRoleDistribution.dimensions / profile.columnCount) * 100}%`,
+                      width: `${(columnRoleDistribution.dimensions / profile.column_count) * 100}%`,
                     }}
                   />
                   <div
                     className="bg-emerald-500 h-full"
                     style={{
-                      width: `${(profile.columnRoleDistribution.measures / profile.columnCount) * 100}%`,
+                      width: `${(columnRoleDistribution.measures / profile.column_count) * 100}%`,
                     }}
                   />
                   <div
                     className="bg-amber-500 h-full"
                     style={{
-                      width: `${(profile.columnRoleDistribution.temporal / profile.columnCount) * 100}%`,
+                      width: `${(columnRoleDistribution.temporal / profile.column_count) * 100}%`,
                     }}
                   />
                 </div>
@@ -258,7 +264,7 @@ export default function TableProfilingTab() {
                 Key Insights
               </h3>
               <div className="grid grid-cols-1 gap-3">
-                {profile.keyInsights.map((insight, index) => (
+                {keyInsights.map((insight, index) => (
                   <div
                     key={index}
                     className="flex items-start gap-3 p-3 bg-white/5 rounded-lg border border-white/10"
@@ -279,7 +285,7 @@ export default function TableProfilingTab() {
                 Suggested Questions
               </h3>
               <div className="flex flex-wrap gap-2">
-                {profile.suggestedQuestions.map((question, index) => (
+                {suggestedQuestions.map((question, index) => (
                   <button
                     key={index}
                     className="px-4 py-2 bg-white/5 hover:bg-[#5237ff]/20 border border-white/10 hover:border-[#5237ff]/30 rounded-full text-sm text-gray-300 hover:text-[#5237ff] transition-all"

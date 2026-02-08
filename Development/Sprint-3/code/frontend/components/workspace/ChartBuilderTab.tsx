@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useAppStore, AggregationTable, ChartConfig } from "@/lib/store";
-import { tableProfiles } from "@/lib/mock-data";
-import { ColumnRole } from "@/lib/types";
+import { useAppStore, AggregationTable, ChartConfig, aggregationTables } from "@/lib/store";
+import { useTableProfile } from "@/lib/hooks";
+import { 
+  transformColumnProfile,
+  type ColumnRole,
+} from "@/lib/transformers";
 import { motion, AnimatePresence } from "framer-motion";
 import dynamic from "next/dynamic";
 import {
@@ -25,15 +28,10 @@ import {
   X,
   Sparkles,
   RefreshCw,
+  Loader2,
 } from "lucide-react";
 
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
-
-const aggregationTables: { id: AggregationTable; label: string }[] = [
-  { id: "sales_detailed", label: "Sales Detailed" },
-  { id: "customer_360", label: "Customer 360" },
-  { id: "store_daily_performance", label: "Store Daily Performance" },
-];
 
 const chartTypes: { id: ChartConfig["chartType"]; label: string; icon: React.ReactNode }[] = [
   { id: "bar", label: "Bar", icon: <BarChart3 className="w-4 h-4" /> },
@@ -139,11 +137,10 @@ function DropZone({
 }
 
 // Generate mock chart data based on config
-function generateChartData(config: ChartConfig, tableName: string) {
-  const profile = tableProfiles[tableName];
-  if (!profile || !config.xAxis || !config.yAxis) return null;
+function generateChartData(config: ChartConfig, columns: ReturnType<typeof transformColumnProfile>[]) {
+  if (!config.xAxis || !config.yAxis) return null;
 
-  const xColumn = profile.columns.find((c) => c.name === config.xAxis);
+  const xColumn = columns.find((c) => c.name === config.xAxis);
 
   if (!xColumn) return null;
 
@@ -151,13 +148,14 @@ function generateChartData(config: ChartConfig, tableName: string) {
   let xValues: string[] = [];
   let yValues: number[] = [];
 
-  if (xColumn.topValues) {
+  if (xColumn.topValues && xColumn.topValues.length > 0) {
     xValues = xColumn.topValues.slice(0, 6).map((v) => v.value);
     // Generate mock y values
     yValues = xValues.map(() => Math.floor(Math.random() * 50000) + 10000);
-  } else if (xColumn.role === "temporal" && xColumn.timeSeriesData) {
-    xValues = xColumn.timeSeriesData.map((d) => d.date);
-    yValues = xColumn.timeSeriesData.map((d) => d.count * (Math.random() * 100 + 50));
+  } else if (xColumn.role === "temporal" && xColumn.minDate && xColumn.maxDate) {
+    // Generate some date range values
+    xValues = ["Week 1", "Week 2", "Week 3", "Week 4", "Week 5", "Week 6"];
+    yValues = xValues.map(() => Math.floor(Math.random() * 50000) + 10000);
   } else {
     // Fallback data
     xValues = ["Category A", "Category B", "Category C", "Category D", "Category E"];
@@ -189,24 +187,29 @@ export default function ChartBuilderTab() {
 
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
 
-  const profile = selectedAggregation ? tableProfiles[selectedAggregation] : null;
+  const { data: profile, isLoading } = useTableProfile(selectedAggregation);
+  
+  // Transform columns for frontend use
+  const transformedColumns = useMemo(() => {
+    return profile?.columns.map(transformColumnProfile) ?? [];
+  }, [profile]);
 
   // Group columns by role
   const groupedColumns = useMemo(() => {
-    if (!profile) return { dimensions: [], measures: [], temporal: [] };
+    if (transformedColumns.length === 0) return { dimensions: [], measures: [], temporal: [] };
 
     return {
-      dimensions: profile.columns.filter((c) => c.role === "dimension"),
-      measures: profile.columns.filter((c) => c.role === "measure"),
-      temporal: profile.columns.filter((c) => c.role === "temporal"),
+      dimensions: transformedColumns.filter((c) => c.role === "dimension"),
+      measures: transformedColumns.filter((c) => c.role === "measure"),
+      temporal: transformedColumns.filter((c) => c.role === "temporal"),
     };
-  }, [profile]);
+  }, [transformedColumns]);
 
   // Generate chart data
   const chartData = useMemo(() => {
-    if (!selectedAggregation || !chartConfig.xAxis || !chartConfig.yAxis) return null;
-    return generateChartData(chartConfig, selectedAggregation);
-  }, [selectedAggregation, chartConfig]);
+    if (!selectedAggregation || !chartConfig.xAxis || !chartConfig.yAxis || transformedColumns.length === 0) return null;
+    return generateChartData(chartConfig, transformedColumns);
+  }, [selectedAggregation, chartConfig, transformedColumns]);
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveDragId(event.active.id as string);
@@ -231,7 +234,7 @@ export default function ChartBuilderTab() {
   };
 
   const activeColumn = activeDragId
-    ? profile?.columns.find((c) => c.name === activeDragId)
+    ? transformedColumns.find((c) => c.name === activeDragId)
     : null;
 
   return (
@@ -262,7 +265,11 @@ export default function ChartBuilderTab() {
           </div>
 
           {/* Fields */}
-          {profile && (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 text-[#5237ff] animate-spin" />
+            </div>
+          ) : transformedColumns.length > 0 ? (
             <>
               {/* Dimensions */}
               <div className="mb-6">
@@ -303,7 +310,9 @@ export default function ChartBuilderTab() {
                 </div>
               </div>
             </>
-          )}
+          ) : selectedAggregation ? (
+            <p className="text-gray-500 text-sm text-center">No columns found</p>
+          ) : null}
         </div>
 
         {/* Center - Chart Canvas */}

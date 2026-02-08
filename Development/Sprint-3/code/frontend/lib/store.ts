@@ -1,8 +1,16 @@
 import { create } from 'zustand';
 
 export type DatasetId = 'silkroute' | null;
-export type AggregationTable = 'sales_detailed' | 'customer_360' | 'store_daily_performance';
+// Updated to match actual backend table names
+export type AggregationTable = 'mart_sales' | 'mart_customers' | 'mart_stores';
 export type WorkspaceTab = 'table-profiling' | 'column-profiling' | 'chart-builder';
+
+// Table metadata for display
+export const aggregationTables: { id: AggregationTable; label: string; description: string }[] = [
+  { id: 'mart_sales', label: 'Sales Mart', description: 'Transaction-level sales data' },
+  { id: 'mart_customers', label: 'Customers Mart', description: 'Customer 360 view' },
+  { id: 'mart_stores', label: 'Stores Mart', description: 'Store performance metrics' },
+];
 
 interface AppState {
   // Dataset selection

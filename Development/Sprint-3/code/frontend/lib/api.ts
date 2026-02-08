@@ -1,5 +1,11 @@
 // API client for backend communication
 
+import type { 
+  DatasetProfileAPI, 
+  ColumnProfileAPI, 
+  AggregationsResponse 
+} from './api-types';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 export interface User {
@@ -90,6 +96,31 @@ class ApiClient {
     return this.request<{ valid: boolean; user_id: number }>("/auth/verify", {
       method: "POST",
     });
+  }
+
+  // ============================================
+  // Profiling Endpoints
+  // ============================================
+
+  /**
+   * Get list of available aggregation tables (mart_sales, mart_customers, mart_stores)
+   */
+  async getAggregations(): Promise<AggregationsResponse> {
+    return this.request<AggregationsResponse>("/profiling/aggregations");
+  }
+
+  /**
+   * Get full profile for a specific aggregation table
+   */
+  async getTableProfile(tableName: string): Promise<DatasetProfileAPI> {
+    return this.request<DatasetProfileAPI>(`/profiling/aggregations/${tableName}/profile`);
+  }
+
+  /**
+   * Get detailed profile for a specific column
+   */
+  async getColumnProfile(tableName: string, columnName: string): Promise<ColumnProfileAPI> {
+    return this.request<ColumnProfileAPI>(`/profiling/aggregations/${tableName}/columns/${columnName}`);
   }
 }
 
