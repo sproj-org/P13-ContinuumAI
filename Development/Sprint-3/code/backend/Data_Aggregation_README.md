@@ -1,231 +1,325 @@
-# Data Aggregations
+---
 
-This plan outlines the creation of an **Analytical Layer** within the `aggregations` schema. These three denormalized tables transform raw data into insight-ready formats, catering to the descriptive, diagnostic, and predictive use cases defined in the ContinuumAI document.
+# ContinuumAI – Data Aggregation & Datamart Design
+
+## Overview
+
+The data aggregation layer in ContinuumAI is responsible for transforming the **universal SilkRoute benchmark schema** into a small number of **purpose-built analytical datamarts**.
+
+These datamarts:
+
+* act as the **primary datasets** exposed to profiling, chart builder, and agents
+* replace raw-table selection with **use-case aligned datasets**
+* mirror the “gold layer” concept from modern analytics architectures (e.g. Databricks medallion)
+
+The goal is **clarity, relevance, and explainability**, not maximal normalization or minimal storage.
 
 ---
 
-### 1. Table: `sales_detailed`
+## Design Rationale
 
-* **Granularity:** Transaction Line (Item Level)
-* 
-**Source Tables Joined:** `Transaction Lines`, `Transaction`, `Product Variant`, `Product`, `Returns`.
+### Why datamarts instead of raw tables?
 
+The raw SilkRoute schema is intentionally rich and normalized:
 
-* **Purpose & Use Cases:**
-* Calculates **Profit Margin** by subtracting base price and discounts from the unit price.
+* transactions, customers, stores, products, promotions, etc.
+* suitable for data generation and integrity testing
+* **not suitable for direct analytical interaction**
 
+If agents or users operate directly on raw tables:
 
-* Flags returned items to support **High Returns Detection** and **Returns Overview**.
+* context is fragmented
+* joins become implicit and error-prone
+* profiling and visualization become noisy
+* decision intelligence degrades into SQL gymnastics
 
+Datamarts solve this by:
 
-* Enables **Price & Discount Impact** analysis by linking line-level pricing to product metadata.
-
-
-
-
-
-### 2. Table: `store_daily_performance`
-
-* **Granularity:** Store per Day
-* 
-**Source Tables Joined:** `Store`, `Transaction`, `Inventory Snapshot`.
-
-
-* **Purpose & Use Cases:**
-* Aggregates daily revenue and footfall for **Store Performance** benchmarking.
-
-
-* Combines sales velocity with inventory levels to detect **Stock-out Risk**.
-
-
-* Supports **Store Underperformance** diagnostics by tracking conversion and volume trends over time.
-
-
-
-
-
-### 3. Table: `customer_360`
-
-* **Granularity:** Unique Customer Profile
-* 
-**Source Tables Joined:** `Customer`, `Transaction`, `Returns`, `Transaction Lines`.
-
-
-* **Purpose & Use Cases:**
-* Consolidates lifetime spend, frequency, and recency for **Customer Segmentation** (RFM analysis).
-
-
-* Calculates return rates to identify high-risk behaviors for **Return Risk Prediction**.
-
-
-* Identifies preferred categories to support **Customer Overview** and churn analysis.
-
-
-
-
+* pre-joining relevant entities
+* aligning datasets to **decision domains**
+* embedding business semantics directly into the schema
 
 ---
 
-### SQL Implementation
+## Guiding Principles
 
-#### Part 1: Schema & Table Creation (DDL)
+1. **Domain-oriented datasets**
 
-```sql
--- Create the dedicated schema for analytical tables
-CREATE SCHEMA IF NOT EXISTS aggregations;
+   * Each mart maps to a clear analytical domain:
 
--- (1) Sales Detailed Table: Item-level grain
-CREATE TABLE aggregations.sales_detailed (
-    line_id VARCHAR(50) PRIMARY KEY,
-    transaction_id VARCHAR(50),
-    transaction_ts TIMESTAMP, -- Converted from string for trend analysis
-    channel_type VARCHAR(20),  
-    store_id VARCHAR(50),      
-    customer_id VARCHAR(50),
-    sku_id VARCHAR(50),
-    product_name VARCHAR(255),
-    brand VARCHAR(100),
-    category VARCHAR(100),     
-    subcategory VARCHAR(100),
-    quantity INTEGER,
-    unit_price DECIMAL(12, 2),
-    discount DECIMAL(12, 2),
-    base_price DECIMAL(12, 2), 
-    margin DECIMAL(12, 2),     -- Calculated as (unit_price - discount) - base_price
-    is_returned BOOLEAN DEFAULT FALSE,
-    return_reason TEXT
-);
+     * Sales
+     * Customers
+     * Stores
 
--- (2) Store Daily Performance: Store-Day grain
--- Note: No Primary Key to allow historical logging; uniqueness is (store_id + calendar_date)
-CREATE TABLE aggregations.store_daily_performance (
-    calendar_date DATE,        
-    store_id VARCHAR(50),
-    store_name VARCHAR(100),
-    city VARCHAR(100),         
-    region VARCHAR(100),
-    daily_revenue DECIMAL(15, 2),
-    transaction_count INTEGER,
-    units_sold_count INTEGER,
-    avg_basket_value DECIMAL(12, 2),
-    stock_on_hand_eod INTEGER  
-);
+2. **Single dataset per decision surface**
 
--- (3) Customer 360: Customer-level grain
-CREATE TABLE aggregations.customer_360 (
-    customer_id VARCHAR(50) PRIMARY KEY,
-    segment VARCHAR(50),       
-    city VARCHAR(100),
-    first_purchase_date DATE,  
-    last_purchase_date DATE,
-    total_lifetime_spend DECIMAL(15, 2),
-    total_order_count INTEGER,
-    preferred_category VARCHAR(100),
-    return_rate_pct DECIMAL(5, 2) 
-);
+   * One mart = one primary context for profiling, charts, and agents
+   * No dataset picker full of low-level tables
+
+3. **No pre-aggregation by time**
+
+   * No daily / weekly / monthly rollups
+   * Temporal aggregation is a **query concern**, not a data model concern
+
+4. **Preserve analytical flexibility**
+
+   * All relevant dimensions are retained
+   * Measures remain atomic (line-level where appropriate)
+
+5. **Explainable joins**
+
+   * All joins follow explicit relationships from the universal schema
+   * No hidden logic or inference at query time
+
+---
+
+## Universal Schema → Datamarts
+
+The SilkRoute universal schema includes entities such as:
+
+* transactions
+* transaction_lines
+* customers
+* stores
+* products
+* promotions
+* salespeople
+* returns
+
+Datamarts are **derived views over this schema**, not independent models.
+
+All relationships in datamarts:
+
+* respect original primary/foreign keys
+* maintain referential meaning
+* avoid denormalization that breaks traceability
+
+---
+
+## Datamart Definitions
+
+### 1. `mart_sales` – Transactional Sales Analytics
+
+#### Purpose
+
+Designed for:
+
+* revenue analysis
+* discount and refund analysis
+* sales performance by product, store, customer, promotion
+* time-based trend analysis
+
+This is the **primary analytical mart**.
+
+#### Grain
+
+**One row per transaction line**
+
+This ensures:
+
+* atomic revenue and quantity measures
+* flexible aggregation at any level
+* correct handling of refunds and discounts
+
+#### Key Measures
+
+* gross_line_amount
+* net_line_amount
+* discount_amount
+* refund_amount
+* quantity
+* unit_price
+
+#### Key Dimensions
+
+* transaction date / timestamp
+* product (category, subcategory, brand)
+* customer (segment, region)
+* store (store_id, city, region)
+* promotion (promo_type, discount_type)
+* channel / payment method
+
+#### Why this design?
+
+* Line-level grain avoids double counting
+* All slicing dimensions are present
+* No joins required downstream
+
+---
+
+### 2. `mart_customers` – Customer-Centric Analytics
+
+#### Purpose
+
+Designed for:
+
+* customer segmentation
+* behavioral analysis
+* lifetime value style analysis
+* churn / retention indicators
+
+#### Grain
+
+**One row per customer**
+
+This mart collapses transactional history into **customer-level features**.
+
+#### Key Measures
+
+* orders
+* returned_orders
+* total_spend
+* average_order_value
+* tenure_days
+* recency_days
+
+#### Key Dimensions
+
+* customer segment
+* region / city
+* acquisition channel
+* demographic attributes (if present)
+
+#### Why this design?
+
+* Enables customer profiling without joins
+* Suitable for cohort analysis and clustering
+* Clean separation from transaction noise
+
+---
+
+### 3. `mart_stores` – Store-Level Performance Analytics
+
+#### Purpose
+
+Designed for:
+
+* store performance comparison
+* footprint and utilization analysis
+* regional rollups
+* operational decision-making
+
+#### Grain
+
+**One row per store**
+
+This mart is intentionally small.
+
+#### Key Measures
+
+* orders
+* unique_customers
+* active_days
+* total_revenue
+* average_daily_revenue
+
+#### Key Dimensions
+
+* store type
+* city / region
+* opening date
+* store size (if applicable)
+
+#### Why this design?
+
+* Supports executive dashboards
+* Works well with small row counts
+* Stable context for agents and profiling
+
+---
+
+## Physical Storage Strategy
+
+### Physical tables (current)
+
+Datamarts are stored as **physical tables** under the `marts` schema:
 
 ```
-
-#### Part 2: Data Population (DML)
-
-```sql
--- Populate Sales Detailed
-INSERT INTO aggregations.sales_detailed (
-    line_id, transaction_id, transaction_ts, channel_type, store_id, 
-    customer_id, sku_id, product_name, brand, category, subcategory, 
-    quantity, unit_price, discount, base_price, margin, is_returned, return_reason
-)
-SELECT 
-    tl.line_id,
-    tl.transaction_id,
-    CAST(t.transaction_ts AS TIMESTAMP),
-    t.channel_type,
-    t.store_id,
-    t.customer_id,
-    tl.sku_id,
-    p.product_name,
-    p.brand,
-    p.category,
-    p.subcategory,
-    CAST(tl.quantity AS INTEGER),
-    CAST(tl.unit_price AS DECIMAL(12, 2)),
-    CAST(tl.discount AS DECIMAL(12, 2)),
-    CAST(pv.base_price AS DECIMAL(12, 2)),
-    (CAST(tl.unit_price AS DECIMAL(12, 2)) * (1 - CAST(tl.discount AS DECIMAL(12, 2)))) - CAST(pv.base_price AS DECIMAL(12, 2)),
-    CASE WHEN r.return_id IS NOT NULL THEN TRUE ELSE FALSE END,
-    r.return_reason
-FROM silkroute.transaction_lines tl
-JOIN silkroute.transactions t ON tl.transaction_id = t.transaction_id
-JOIN silkroute.product_variants_skus pv ON tl.sku_id = pv.sku_id
-JOIN silkroute.products p ON pv.product_id = p.product_id
-LEFT JOIN silkroute.returns r ON tl.transaction_id = r.transaction_id AND tl.sku_id = r.sku_id;
-
--- Populate Store Daily Performance
-INSERT INTO aggregations.store_daily_performance (
-    calendar_date, store_id, store_name, city, region, 
-    daily_revenue, transaction_count, units_sold_count, 
-    avg_basket_value, stock_on_hand_eod
-)
-WITH daily_sales AS (
-    SELECT 
-        CAST(transaction_ts AS DATE) as d,
-        store_id,
-        SUM(total_amount) as rev,
-        COUNT(DISTINCT transaction_id) as txns
-    FROM silkroute.transactions
-    WHERE store_id IS NOT NULL
-    GROUP BY 1, 2
-),
-daily_inventory AS (
-    SELECT 
-        CAST(snapshot_date AS DATE) as d,
-        store_id,
-        SUM(stock_on_hand) as total_stock
-    FROM silkroute.inventory_snapshots
-    GROUP BY 1, 2
-)
-SELECT 
-    ds.d,
-    ds.store_id,
-    s.store_name,
-    s.city,
-    s.region,
-    ds.rev,
-    ds.txns,
-    (SELECT SUM(quantity) FROM silkroute.transaction_lines tl 
-     JOIN silkroute.transactions t ON tl.transaction_id = t.transaction_id 
-     WHERE t.store_id = ds.store_id AND CAST(t.transaction_ts AS DATE) = ds.d) as units,
-    ds.rev / ds.txns as abv,
-    di.total_stock
-FROM daily_sales ds
-JOIN silkroute.stores s ON ds.store_id = s.store_id
-LEFT JOIN daily_inventory di ON ds.d = di.d AND ds.store_id = di.store_id;
-
--- Populate Customer 360
-INSERT INTO aggregations.customer_360 (
-    customer_id, segment, city, first_purchase_date, 
-    last_purchase_date, total_lifetime_spend, 
-    total_order_count, preferred_category, return_rate_pct
-)
-SELECT 
-    c.customer_id,
-    c.segment,
-    c.city,
-    CAST(c.first_purchase_date AS DATE),
-    MAX(CAST(t.transaction_ts AS DATE)),
-    SUM(CAST(t.total_amount AS DECIMAL(15, 2))),
-    COUNT(DISTINCT t.transaction_id),
-    (SELECT p.category 
-     FROM silkroute.transaction_lines tl 
-     JOIN silkroute.transactions t2 ON tl.transaction_id = t2.transaction_id
-     JOIN silkroute.product_variants_skus pv ON tl.sku_id = pv.sku_id
-     JOIN silkroute.products p ON pv.product_id = p.product_id
-     WHERE t2.customer_id = c.customer_id 
-     GROUP BY p.category ORDER BY COUNT(*) DESC LIMIT 1),
-    (COUNT(DISTINCT r.transaction_id)::DECIMAL / NULLIF(COUNT(DISTINCT t.transaction_id), 0)) * 100
-FROM silkroute.customers c
-LEFT JOIN silkroute.transactions t ON c.customer_id = t.customer_id
-LEFT JOIN silkroute.returns r ON t.transaction_id = r.transaction_id
-GROUP BY c.customer_id, c.segment, c.city, c.first_purchase_date;
-
+marts.mart_sales
+marts.mart_customers
+marts.mart_stores
 ```
+
+#### Why physical tables?
+
+* faster profiling
+* stable query performance
+* predictable behavior for agents
+* simpler mental model during MVP phase
+
+Views can be introduced later if needed.
+
+---
+
+## Relationship to Profiling
+
+Each datamart is:
+
+* profiled independently
+* produces a uniform profile JSON
+* adheres to the same profiling contract
+
+This guarantees:
+
+* frontend components can switch marts seamlessly
+* agents can reason over any mart using the same logic
+* no dataset-specific code paths
+
+---
+
+## Relationship to Chart Builder & VizAgent
+
+Because datamarts:
+
+* embed joins
+* align to decision domains
+* preserve clean measures vs dimensions
+
+The chart builder can:
+
+* suggest sensible defaults
+* avoid invalid aggregations
+* generate explainable visualizations
+
+VizAgent can:
+
+* reason over schema safely
+* generate charts and summaries without guessing joins
+* focus on decisions, not plumbing
+
+---
+
+## Extensibility & Future Directions
+
+### Future enhancements
+
+* LLM-assisted aggregation generation
+* dynamic datamart definition from use cases
+* incremental refresh strategies
+* feature marts for ML use cases
+
+### What will *not* change
+
+* domain-driven mart design
+* separation between raw schema and analytical context
+* use of datamarts as the primary decision surface
+
+---
+
+## Summary
+
+The data aggregation layer is **not just ETL**.
+
+It is:
+
+* a semantic boundary
+* a decision-alignment layer
+* the foundation that makes profiling, visualization, and agents viable
+
+By defining **Sales, Customers, and Stores** datamarts explicitly, ContinuumAI ensures that:
+
+* analytics are explainable
+* interfaces are intuitive
+* agents operate on meaning, not mechanics
+
+This layer, together with profiling, forms the **core intelligence substrate** of ContinuumAI.
