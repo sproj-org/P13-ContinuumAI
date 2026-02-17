@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useAppStore, AggregationTable, ChartConfig, aggregationTables } from "@/lib/store";
-import { useTableProfile, useChartData } from "@/lib/hooks";
+import { useTableProfile, useExecuteChartSpec } from "@/lib/hooks";
 import { 
   transformColumnProfile,
+  aggregateResponseToChartData,
   type ColumnRole,
 } from "@/lib/transformers";
+import type { ChartSpec, ChartKind, AggregationFn } from "@/lib/api-types";
 import { motion, AnimatePresence } from "framer-motion";
 import dynamic from "next/dynamic";
 import {
@@ -208,17 +210,59 @@ export default function ChartBuilderTab() {
     }
   }, [chartConfig.yAxis, chartConfig.aggregationFn, validAggregations, setChartConfig]);
 
-  // Fetch real chart data from the database
-  const { 
-    data: chartData, 
-    isLoading: isChartLoading, 
-    error: chartError 
-  } = useChartData(
-    selectedAggregation,
-    chartConfig.xAxis,
-    chartConfig.yAxis,
-    chartConfig.aggregationFn
-  );
+  // --- ChartSpec pipeline ---
+  const {
+    mutate: executeSpec,
+    data: aggregateResponse,
+    isPending: isChartLoading,
+    error: chartError,
+  } = useExecuteChartSpec("silkroute");
+
+  // Build a ChartSpec from the current chart config state
+  const buildChartSpec = useCallback((): ChartSpec | null => {
+    if (!selectedAggregation || !chartConfig.xAxis || !chartConfig.yAxis) {
+      return null;
+    }
+    const xRole = columnRoleMap.get(chartConfig.xAxis);
+    return {
+      version: "1.0" as const,
+      dataset_id: "silkroute",
+      table: selectedAggregation,
+      chart: { type: chartConfig.chartType as ChartKind },
+      encoding: {
+        x: {
+          field: chartConfig.xAxis,
+          role: xRole === "temporal" ? "temporal" : "dimension",
+        },
+        y: [
+          {
+            field: chartConfig.yAxis,
+            agg: chartConfig.aggregationFn as AggregationFn,
+          },
+        ],
+      },
+      filters: [],
+      sort: [],
+      limit: 50,
+    };
+  }, [selectedAggregation, chartConfig, columnRoleMap]);
+
+  // Auto-execute whenever the spec inputs change
+  useEffect(() => {
+    const spec = buildChartSpec();
+    if (spec) {
+      executeSpec(spec);
+    }
+  }, [buildChartSpec, executeSpec]);
+
+  // Transform AggregateResponse → simple {x, y} for Plotly
+  const chartData = useMemo(() => {
+    if (!aggregateResponse) return null;
+    return aggregateResponseToChartData(
+      aggregateResponse,
+      chartConfig.chartType as ChartKind,
+    );
+  }, [aggregateResponse, chartConfig.chartType]);
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveDragId(event.active.id as string);
@@ -449,11 +493,11 @@ export default function ChartBuilderTab() {
                       font: { color: "#94a3b8" },
                       xaxis: {
                         gridcolor: "#334155",
-                        title: { text: chartConfig.xAxis || "" },
+                        title: { text: chartData.xLabel },
                       },
                       yaxis: {
                         gridcolor: "#334155",
-                        title: { text: chartConfig.yAxis || "" },
+                        title: { text: chartData.yLabel },
                       },
                       margin: { t: 60, b: 60, l: 80, r: 40 },
                       showlegend: chartConfig.chartType === "pie",

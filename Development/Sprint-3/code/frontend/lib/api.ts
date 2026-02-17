@@ -4,8 +4,8 @@ import type {
   DatasetProfileAPI, 
   ColumnProfileAPI, 
   AggregationsResponse,
-  ChartDataRequest,
-  ChartDataResponse,
+  ChartSpec,
+  AggregateResponse,
 } from './api-types';
 
 const API_URL = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api`;
@@ -126,17 +126,24 @@ class ApiClient {
   }
 
   // ============================================
-  // Chart Data Endpoints
+  // ChartSpec / Aggregate Endpoint (new pipeline)
   // ============================================
 
   /**
-   * Get aggregated chart data from the database
+   * Execute a ChartSpec against the aggregate engine.
+   * POST /api/datasets/{datasetId}/query/aggregate
    */
-  async getChartData(request: ChartDataRequest): Promise<ChartDataResponse> {
-    return this.request<ChartDataResponse>("/profiling/chart-data", {
-      method: "POST",
-      body: JSON.stringify(request),
-    });
+  async executeChartSpec(
+    datasetId: string,
+    spec: ChartSpec
+  ): Promise<AggregateResponse> {
+    return this.request<AggregateResponse>(
+      `/datasets/${datasetId}/query/aggregate`,
+      {
+        method: "POST",
+        body: JSON.stringify(spec),
+      }
+    );
   }
 }
 

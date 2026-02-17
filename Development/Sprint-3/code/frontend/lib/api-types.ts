@@ -115,23 +115,65 @@ export interface AggregationsResponse {
 }
 
 // ============================================
-// Chart Data Types
+// ChartSpec v1 Types (new pipeline)
 // ============================================
 
 export type AggregationFn = 'sum' | 'avg' | 'count' | 'min' | 'max';
+export type FilterOp = '=' | '!=' | '<' | '>' | '<=' | '>=' | 'in' | 'between' | 'contains';
+export type ChartKind = 'bar' | 'line' | 'pie' | 'histogram' | 'scatter' | 'kpi';
+export type SortDir = 'asc' | 'desc';
 
-export interface ChartDataRequest {
-  table_name: string;
-  x_axis: string;
-  y_axis: string;
-  aggregation_fn: AggregationFn;
-  limit?: number;
+export interface EncodingField {
+  field: string;
+  role?: 'dimension' | 'temporal';
 }
 
-export interface ChartDataResponse {
-  x: string[];
-  y: number[];
-  title: string;
-  x_axis_label: string;
-  y_axis_label: string;
+export interface MetricField {
+  field: string;
+  agg: AggregationFn;
+  alias?: string;
+}
+
+export interface ChartEncoding {
+  x: EncodingField;
+  y: MetricField[];
+}
+
+export interface FilterSpec {
+  field: string;
+  op: FilterOp;
+  value: unknown;
+}
+
+export interface SortSpec {
+  field: string;
+  dir: SortDir;
+}
+
+export interface ChartSpec {
+  version: '1.0';
+  dataset_id: string;
+  table: string;
+  chart: { type: ChartKind };
+  encoding: ChartEncoding;
+  filters: FilterSpec[];
+  sort: SortSpec[];
+  limit: number;
+}
+
+export interface CacheMeta {
+  hit: boolean;
+  key?: string;
+  ttl_seconds?: number;
+}
+
+export interface ResponseMeta {
+  query_ms?: number;
+  cache?: CacheMeta;
+}
+
+export interface AggregateResponse {
+  columns: string[];
+  rows: unknown[][];
+  meta: ResponseMeta;
 }

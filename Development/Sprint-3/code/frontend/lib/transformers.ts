@@ -9,7 +9,9 @@ import type {
   NumericStats,
   CategoricalStats,
   DatetimeStats,
-  TopKItem
+  TopKItem,
+  AggregateResponse,
+  ChartKind,
 } from './api-types';
 
 // Frontend column role (simplified from backend's Role enum)
@@ -398,4 +400,54 @@ export function transformColumnProfile(column: ColumnProfileAPI): TransformedCol
  */
 export function transformAllColumns(profile: DatasetProfileAPI): TransformedColumnProfile[] {
   return profile.columns.map(transformColumnProfile);
+}
+
+
+// ============================================
+// AggregateResponse → Chart-renderable data
+// ============================================
+
+export interface ChartRenderData {
+  /** X-axis values (first column = dimension) */
+  x: string[];
+  /** Y-axis values (second column = metric) */
+  y: number[];
+  /** Chart title */
+  title: string;
+  /** X-axis label */
+  xLabel: string;
+  /** Y-axis label */
+  yLabel: string;
+}
+
+/**
+ * Convert an AggregateResponse (columns + rows) into the simple
+ * {x, y, title, ...} format that ChartBuilderTab's Plotly renderer expects.
+ *
+ * Assumes the first column is the dimension and the second column is the metric.
+ * For multi-metric support in the future, this can be extended.
+ */
+export function aggregateResponseToChartData(
+  resp: AggregateResponse,
+  chartType: ChartKind,
+): ChartRenderData {
+  const dimCol = resp.columns[0] ?? 'x';
+  const metricCol = resp.columns[1] ?? 'y';
+
+  const x = resp.rows.map((row) =>
+    row[0] != null ? String(row[0]) : 'NULL'
+  );
+  const y = resp.rows.map((row) =>
+    row[1] != null ? Number(row[1]) : 0
+  );
+
+  const title = `${metricCol} by ${dimCol}`;
+
+  return {
+    x,
+    y,
+    title,
+    xLabel: dimCol,
+    yLabel: metricCol,
+  };
 }
