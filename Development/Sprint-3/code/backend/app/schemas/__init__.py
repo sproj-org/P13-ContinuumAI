@@ -6,6 +6,7 @@ from app.schemas.user import (
     Token,
     TokenData,
 )
+from app.schemas.chart_data import LegacyChartDataResponse
 
 __all__ = [
     "UserCreate",
@@ -13,4 +14,5 @@ __all__ = [
     "UserResponse",
     "Token",
     "TokenData",
+    "LegacyChartDataResponse",
 ]

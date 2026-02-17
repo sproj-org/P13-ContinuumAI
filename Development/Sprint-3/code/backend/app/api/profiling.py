@@ -23,13 +23,12 @@ from app.core.mart_registry import (
     list_marts,
 )
 from app.db.database import get_db
+from app.schemas.chart_data import LegacyChartDataResponse
 from services.profiling.json_sanitize import sanitize_for_json
 
 router = APIRouter(prefix="/profiling", tags=["profiling"])
 
 OUT_DIR = Path(__file__).resolve().parents[2] / "out"
-MARTS_SCHEMA = "marts"  # Fallback only if registry lookup fails.
-ALLOWED_AGGREGATIONS = {"sum", "avg", "count", "min", "max"}
 
 
 def _validate_dataset_id(dataset_id: str) -> None:
@@ -71,23 +70,6 @@ class ChartDataRequest(BaseModel):
         if value > 5000:
             raise ValueError("limit must be <= 5000")
         return value
-
-
-class ChartDataPoint(BaseModel):
-    """Single data point for chart."""
-
-    x: str
-    y: float
-
-
-class ChartDataResponse(BaseModel):
-    """Response for chart data query."""
-
-    x: list[str]
-    y: list[float]
-    title: str
-    x_axis_label: str
-    y_axis_label: str
 
 
 def load_profile(dataset_id: str, table_name: str) -> dict:
@@ -226,14 +208,14 @@ def get_chart_data_for_dataset(
     dataset_id: str,
     request: ChartDataRequest,
     db: Session,
-) -> ChartDataResponse:
+) -> LegacyChartDataResponse:
     """
     Query aggregated data from mart tables for chart visualization.
     """
     _validate_dataset_id(dataset_id)
 
     try:
-        mart = get_mart(dataset_id, request.table_name)
+        get_mart(dataset_id, request.table_name)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
@@ -271,7 +253,6 @@ def get_chart_data_for_dataset(
     raw_x_values = [row.get(request.x_axis) for row in rows]
     raw_y_values = [row.get("agg_value") for row in rows]
     agg_fn = request.aggregation_fn.upper()
-    schema_name = str(mart["schema"]) if mart else MARTS_SCHEMA
     title = f"{agg_fn}({request.y_axis}) by {request.x_axis}"
 
     payload = {
@@ -280,7 +261,6 @@ def get_chart_data_for_dataset(
         "title": title,
         "x_axis_label": request.x_axis,
         "y_axis_label": f"{agg_fn}({request.y_axis})",
-        "schema_name": schema_name,
     }
     payload = sanitize_for_json(payload)
 
@@ -288,13 +268,15 @@ def get_chart_data_for_dataset(
     x_values = [str(value) if value is not None else "NULL" for value in payload.get("x", [])]
     y_values = [float(value) if value is not None else 0.0 for value in payload.get("y", [])]
 
-    return ChartDataResponse(
-        x=x_values,
-        y=y_values,
-        title=str(payload["title"]),
-        x_axis_label=str(payload["x_axis_label"]),
-        y_axis_label=str(payload["y_axis_label"]),
-    )
+    response_payload = {
+        "x": x_values,
+        "y": y_values,
+        "title": str(payload["title"]),
+        "x_axis_label": str(payload["x_axis_label"]),
+        "y_axis_label": str(payload["y_axis_label"]),
+    }
+    response_payload = sanitize_for_json(response_payload)
+    return LegacyChartDataResponse.model_validate(response_payload)
 
 
 @router.get("/aggregations")
@@ -312,6 +294,6 @@ def get_column_profile(table_name: str, column_name: str):
     return get_column_profile_for_dataset(DEFAULT_DATASET_ID, table_name, column_name)
 
 
-@router.post("/chart-data", response_model=ChartDataResponse)
+@router.post("/chart-data", response_model=LegacyChartDataResponse)
 def get_chart_data(request: ChartDataRequest, db: Session = Depends(get_db)):
     return get_chart_data_for_dataset(DEFAULT_DATASET_ID, request, db)

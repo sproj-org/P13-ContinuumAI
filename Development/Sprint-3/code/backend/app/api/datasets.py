@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session
 
 from app.api.profiling import (
     ChartDataRequest,
-    ChartDataResponse,
     get_chart_data_for_dataset,
     get_column_profile_for_dataset,
     get_table_profile_for_dataset,
@@ -15,6 +14,7 @@ from app.api.profiling import (
 )
 from app.api.query import router as query_router
 from app.db.database import get_db
+from app.schemas.chart_data import LegacyChartDataResponse
 
 router = APIRouter(prefix="/datasets/{dataset_id}", tags=["datasets"])
 router.include_router(query_router)
@@ -35,7 +35,7 @@ def get_dataset_column_profile(dataset_id: str, table_name: str, column_name: st
     return get_column_profile_for_dataset(dataset_id, table_name, column_name)
 
 
-@router.post("/profiling/chart-data", response_model=ChartDataResponse)
+@router.post("/profiling/chart-data", response_model=LegacyChartDataResponse)
 def get_dataset_chart_data(
     dataset_id: str,
     request: ChartDataRequest,

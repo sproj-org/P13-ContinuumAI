@@ -19,6 +19,16 @@ TOKENS = (
     "aggregationTables",
 )
 PATTERN = re.compile(r"\b(" + "|".join(re.escape(token) for token in TOKENS) + r")\b")
+EXTRA_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
+    (
+        "MARTS_SCHEMA = 'marts'",
+        re.compile(r"""\bMARTS_SCHEMA\s*=\s*["']marts["']"""),
+    ),
+    (
+        "FROM marts.",
+        re.compile(r"""\bFROM\s+["']?marts["']?\.""", re.IGNORECASE),
+    ),
+]
 
 EXCLUDED_DIR_NAMES = {
     ".git",
@@ -93,12 +103,19 @@ def main() -> int:
             for line_no, line in enumerate(content.splitlines(), start=1):
                 match = PATTERN.search(line)
                 if not match:
-                    continue
-                if "mart_sales_profile.json" in line or "mart_customers_profile.json" in line or "mart_stores_profile.json" in line:
-                    continue
-                failures.append(
-                    f"{path}:{line_no}: found forbidden hardcoded token '{match.group(1)}'"
-                )
+                    pass
+                else:
+                    if "mart_sales_profile.json" in line or "mart_customers_profile.json" in line or "mart_stores_profile.json" in line:
+                        continue
+                    failures.append(
+                        f"{path}:{line_no}: found forbidden hardcoded token '{match.group(1)}'"
+                    )
+
+                for label, regex in EXTRA_PATTERNS:
+                    if regex.search(line):
+                        failures.append(
+                            f"{path}:{line_no}: found forbidden pattern '{label}'"
+                        )
 
     if failures:
         print("[ERROR] Hardcoded mart check failed:")

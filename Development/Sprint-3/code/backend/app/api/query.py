@@ -39,7 +39,8 @@ ALLOWED_FILTER_OPS = {
 }
 IDENTIFIER_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
 NUMERIC_PHYSICAL_TYPES = {"int", "float", "decimal", "numeric", "double", "real", "bigint", "smallint"}
-DIMENSION_LIKE_ROLES = {"dimension", "datetime", "temporal", "id", "boolean", "text"}
+GROUPABLE_BASE_ROLES = {"dimension", "datetime", "temporal", "boolean", "id", "text"}
+FLAG_LIKE_RE = re.compile(r"(_flag|^is_|^has_|indicator)", re.IGNORECASE)
 INVENTORY_NON_FINITE_COLUMNS = {"days_of_inventory", "adj_days_of_inventory"}
 
 
@@ -105,6 +106,22 @@ def _resolve_effective_role(column_profile: dict[str, Any]) -> str:
 
 def _resolve_physical_type(column_profile: dict[str, Any]) -> str:
     return str(column_profile.get("physical_type", "")).lower()
+
+
+def _is_flag_like(column_name: str) -> bool:
+    return bool(FLAG_LIKE_RE.search(column_name))
+
+
+def _is_groupable_column(column_name: str, column_profile: dict[str, Any]) -> bool:
+    role = _resolve_effective_role(column_profile)
+    if role in GROUPABLE_BASE_ROLES:
+        return True
+
+    physical_type = _resolve_physical_type(column_profile)
+    if _is_flag_like(column_name) and physical_type in (NUMERIC_PHYSICAL_TYPES | {"boolean"}):
+        return True
+
+    return False
 
 
 def _safe_measure_expression(table_name: str, column_name: str) -> str:
@@ -320,12 +337,14 @@ def execute_aggregate_request(
                 status_code=400,
                 detail=f"Grouping column '{group_col}' not found in table profile",
             )
-        role = _resolve_effective_role(column_map[group_col])
-        if role not in DIMENSION_LIKE_ROLES:
+        column_profile = column_map[group_col]
+        role = _resolve_effective_role(column_profile)
+        if not _is_groupable_column(group_col, column_profile):
             raise HTTPException(
                 status_code=400,
                 detail=(
-                    f"Grouping column '{group_col}' has role '{role}', expected dimension/datetime"
+                    f"Grouping column '{group_col}' has role '{role}' and is not allowed "
+                    "for x/group_by (expected dimension/datetime/boolean or flag-like column)"
                 ),
             )
 
@@ -391,7 +410,7 @@ def execute_aggregate_request(
     else:
         order_by_clause = ""
 
-    schema_name = str(mart.get("schema", "gold"))
+    schema_name = str(mart["schema"])
     sql = f"""
         SELECT {", ".join(select_parts)}
         FROM "{schema_name}"."{request.table_name}"
