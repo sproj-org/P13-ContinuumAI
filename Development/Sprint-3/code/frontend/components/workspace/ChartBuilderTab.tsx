@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useAppStore, AggregationTable, ChartConfig, aggregationTables } from "@/lib/store";
-import { useTableProfile } from "@/lib/hooks";
+import { useTableProfile, useChartData } from "@/lib/hooks";
 import { 
   transformColumnProfile,
   type ColumnRole,
@@ -29,6 +29,7 @@ import {
   Sparkles,
   RefreshCw,
   Loader2,
+  AlertTriangle,
 } from "lucide-react";
 
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
@@ -136,46 +137,6 @@ function DropZone({
   );
 }
 
-// Generate mock chart data based on config
-function generateChartData(config: ChartConfig, columns: ReturnType<typeof transformColumnProfile>[]) {
-  if (!config.xAxis || !config.yAxis) return null;
-
-  const xColumn = columns.find((c) => c.name === config.xAxis);
-
-  if (!xColumn) return null;
-
-  // Generate mock data based on column profiles
-  let xValues: string[] = [];
-  let yValues: number[] = [];
-
-  if (xColumn.topValues && xColumn.topValues.length > 0) {
-    xValues = xColumn.topValues.slice(0, 6).map((v) => v.value);
-    // Generate mock y values
-    yValues = xValues.map(() => Math.floor(Math.random() * 50000) + 10000);
-  } else if (xColumn.role === "temporal" && xColumn.minDate && xColumn.maxDate) {
-    // Generate some date range values
-    xValues = ["Week 1", "Week 2", "Week 3", "Week 4", "Week 5", "Week 6"];
-    yValues = xValues.map(() => Math.floor(Math.random() * 50000) + 10000);
-  } else {
-    // Fallback data
-    xValues = ["Category A", "Category B", "Category C", "Category D", "Category E"];
-    yValues = [42000, 38000, 31000, 26000, 22000];
-  }
-
-  // Adjust based on aggregation
-  if (config.aggregationFn === "avg") {
-    yValues = yValues.map((v) => Math.round(v / 100));
-  } else if (config.aggregationFn === "count") {
-    yValues = yValues.map(() => Math.floor(Math.random() * 5000) + 500);
-  }
-
-  return {
-    x: xValues,
-    y: yValues,
-    title: `${config.aggregationFn.toUpperCase()}(${config.yAxis}) by ${config.xAxis}`,
-  };
-}
-
 export default function ChartBuilderTab() {
   const {
     selectedAggregation,
@@ -194,22 +155,70 @@ export default function ChartBuilderTab() {
     return profile?.columns.map(transformColumnProfile) ?? [];
   }, [profile]);
 
-  // Group columns by role
-  const groupedColumns = useMemo(() => {
-    if (transformedColumns.length === 0) return { dimensions: [], measures: [], temporal: [] };
+  // Group columns by role and create a map for quick lookup
+  const { groupedColumns, columnRoleMap } = useMemo(() => {
+    if (transformedColumns.length === 0) {
+      return {
+        groupedColumns: { dimensions: [], measures: [], temporal: [] },
+        columnRoleMap: new Map<string, ColumnRole>(),
+      };
+    }
+
+    const roleMap = new Map<string, ColumnRole>();
+    transformedColumns.forEach((c) => roleMap.set(c.name, c.role));
 
     return {
-      dimensions: transformedColumns.filter((c) => c.role === "dimension"),
-      measures: transformedColumns.filter((c) => c.role === "measure"),
-      temporal: transformedColumns.filter((c) => c.role === "temporal"),
+      groupedColumns: {
+        dimensions: transformedColumns.filter((c) => c.role === "dimension"),
+        measures: transformedColumns.filter((c) => c.role === "measure"),
+        temporal: transformedColumns.filter((c) => c.role === "temporal"),
+      },
+      columnRoleMap: roleMap,
     };
   }, [transformedColumns]);
 
-  // Generate chart data
-  const chartData = useMemo(() => {
-    if (!selectedAggregation || !chartConfig.xAxis || !chartConfig.yAxis || transformedColumns.length === 0) return null;
-    return generateChartData(chartConfig, transformedColumns);
-  }, [selectedAggregation, chartConfig, transformedColumns]);
+  // Get valid aggregation functions based on the selected y-axis column role
+  const validAggregations = useMemo(() => {
+    if (!chartConfig.yAxis) {
+      return aggregationFns; // All aggregations available when no column selected
+    }
+
+    const role = columnRoleMap.get(chartConfig.yAxis);
+
+    if (role === "measure") {
+      // Measures support all aggregations
+      return aggregationFns;
+    } else if (role === "temporal") {
+      // Temporal columns: COUNT, MIN, MAX (no SUM/AVG on dates)
+      return aggregationFns.filter((agg) => ["count", "min", "max"].includes(agg.id));
+    } else {
+      // Dimensions: only COUNT makes sense
+      return aggregationFns.filter((agg) => agg.id === "count");
+    }
+  }, [chartConfig.yAxis, columnRoleMap]);
+
+  // Auto-switch aggregation when y-axis changes to an incompatible column
+  useEffect(() => {
+    if (chartConfig.yAxis && validAggregations.length > 0) {
+      const currentAggValid = validAggregations.some((agg) => agg.id === chartConfig.aggregationFn);
+      if (!currentAggValid) {
+        // Switch to first valid aggregation
+        setChartConfig({ aggregationFn: validAggregations[0].id });
+      }
+    }
+  }, [chartConfig.yAxis, chartConfig.aggregationFn, validAggregations, setChartConfig]);
+
+  // Fetch real chart data from the database
+  const { 
+    data: chartData, 
+    isLoading: isChartLoading, 
+    error: chartError 
+  } = useChartData(
+    selectedAggregation,
+    chartConfig.xAxis,
+    chartConfig.yAxis,
+    chartConfig.aggregationFn
+  );
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveDragId(event.active.id as string);
@@ -336,6 +345,32 @@ export default function ChartBuilderTab() {
                     <p className="text-gray-500 max-w-sm">
                       Drag fields from the left panel to the axis drop zones on the right
                     </p>
+                  </div>
+                </motion.div>
+              ) : isChartLoading ? (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="h-full flex items-center justify-center"
+                >
+                  <div className="text-center">
+                    <Loader2 className="w-12 h-12 text-[#5237ff] mx-auto mb-4 animate-spin" />
+                    <h3 className="text-lg font-medium text-gray-400">Loading chart data...</h3>
+                    <p className="text-gray-500 text-sm mt-1">Querying database</p>
+                  </div>
+                </motion.div>
+              ) : chartError ? (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="h-full flex items-center justify-center"
+                >
+                  <div className="text-center">
+                    <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-400 mb-2">Failed to load chart data</h3>
+                    <p className="text-gray-500 text-sm max-w-sm">{chartError.message}</p>
                   </div>
                 </motion.div>
               ) : chartData ? (
@@ -495,20 +530,32 @@ export default function ChartBuilderTab() {
               Aggregation
             </h3>
             <div className="flex flex-wrap gap-2">
-              {aggregationFns.map((agg) => (
-                <button
-                  key={agg.id}
-                  onClick={() => setChartConfig({ aggregationFn: agg.id })}
-                  className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
-                    chartConfig.aggregationFn === agg.id
-                      ? "bg-emerald-500/20 border border-emerald-500/30 text-emerald-300"
-                      : "bg-white/5 border border-white/10 text-gray-400 hover:text-white"
-                  }`}
-                >
-                  {agg.label}
-                </button>
-              ))}
+              {aggregationFns.map((agg) => {
+                const isValid = validAggregations.some((v) => v.id === agg.id);
+                return (
+                  <button
+                    key={agg.id}
+                    onClick={() => isValid && setChartConfig({ aggregationFn: agg.id })}
+                    disabled={!isValid}
+                    title={!isValid ? `${agg.label} is not available for this column type` : undefined}
+                    className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
+                      !isValid
+                        ? "bg-white/5 border border-white/5 text-gray-600 cursor-not-allowed opacity-50"
+                        : chartConfig.aggregationFn === agg.id
+                        ? "bg-emerald-500/20 border border-emerald-500/30 text-emerald-300"
+                        : "bg-white/5 border border-white/10 text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    {agg.label}
+                  </button>
+                );
+              })}
             </div>
+            {chartConfig.yAxis && validAggregations.length < aggregationFns.length && (
+              <p className="text-xs text-gray-500 mt-2">
+                Some aggregations are disabled for {columnRoleMap.get(chartConfig.yAxis)} columns
+              </p>
+            )}
           </div>
 
           {/* Reset Button */}

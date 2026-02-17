@@ -113,3 +113,25 @@ export interface AggregationSummary {
 export interface AggregationsResponse {
   aggregations: AggregationSummary[];
 }
+
+// ============================================
+// Chart Data Types
+// ============================================
+
+export type AggregationFn = 'sum' | 'avg' | 'count' | 'min' | 'max';
+
+export interface ChartDataRequest {
+  table_name: string;
+  x_axis: string;
+  y_axis: string;
+  aggregation_fn: AggregationFn;
+  limit?: number;
+}
+
+export interface ChartDataResponse {
+  x: string[];
+  y: number[];
+  title: string;
+  x_axis_label: string;
+  y_axis_label: string;
+}

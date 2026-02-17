@@ -1,12 +1,17 @@
 # ContinuumAI - Project Update & Developer Guide
 
-> Last Updated: February 8, 2026
+> Last Updated: February 17, 2026
 
 ---
 
 ## Overview
 
-ContinuumAI is a data profiling and analytics web application that helps users explore aggregation tables, understand column statistics, and build visualizations. The app currently supports profiling three pre-generated mart tables: `mart_sales`, `mart_customers`, and `mart_stores`.
+ContinuumAI is a data profiling and analytics web application that helps users explore aggregation tables, understand column statistics, and build visualizations. The app supports three mart tables in the `marts` schema: `mart_sales`, `mart_customers`, and `mart_stores`.
+
+**Key Capabilities:**
+- **Table Profiling** - View table metadata from pre-generated profile JSONs
+- **Column Profiling** - Explore column statistics, distributions, and data quality
+- **Chart Builder** - Build visualizations with real data from PostgreSQL database
 
 ---
 
@@ -14,7 +19,7 @@ ContinuumAI is a data profiling and analytics web application that helps users e
 
 ### Backend
 - **Framework:** FastAPI (Python)
-- **Database:** SQLite (via SQLAlchemy ORM)
+- **Database:** PostgreSQL (Supabase) via SQLAlchemy ORM
 - **Authentication:** JWT tokens (python-jose)
 - **Password Hashing:** bcrypt (passlib)
 
@@ -116,13 +121,40 @@ Response: { "access_token": "...", "token_type": "bearer", "user": {...} }
 | GET | `/api/profiling/aggregations` | List all available tables | No* |
 | GET | `/api/profiling/aggregations/{table_name}/profile` | Get full table profile | No* |
 | GET | `/api/profiling/aggregations/{table_name}/columns/{column_name}` | Get column profile | No* |
+| POST | `/api/profiling/chart-data` | Query aggregated data for charts | No* |
 
 *Note: Auth not currently enforced on profiling endpoints; can be added if needed.
 
-**Available Tables:**
+**Available Tables (in `marts` schema):**
 - `mart_sales` (29,924 rows, 44 columns)
 - `mart_customers` 
 - `mart_stores`
+
+**Chart Data Endpoint:**
+
+```json
+// POST /api/profiling/chart-data
+Request: {
+  "table_name": "mart_sales",
+  "x_axis": "channel_name",
+  "y_axis": "revenue",
+  "aggregation_fn": "sum",  // sum | avg | count | min | max
+  "limit": 20
+}
+
+Response: {
+  "x": ["Online", "Retail", "Wholesale"],
+  "y": [125000.50, 98000.00, 45000.25],
+  "title": "SUM(revenue) by channel_name",
+  "x_axis_label": "channel_name",
+  "y_axis_label": "SUM(revenue)"
+}
+```
+
+**Validation Rules:**
+- Table name must be in allowed list (`mart_sales`, `mart_customers`, `mart_stores`)
+- Column names validated against table profile (prevents SQL injection)
+- Aggregation function validated against column type (see Aggregation Compatibility)
 
 ---
 
@@ -172,12 +204,25 @@ Response: { "access_token": "...", "token_type": "bearer", "user": {...} }
 - Drop zones for X-axis, Y-axis, Color/Group
 - Chart type selector: Bar, Line, Pie, Histogram
 - Aggregation function selector: SUM, AVG, COUNT, MIN, MAX
+- **Real-time data fetching from PostgreSQL database**
+- **Smart aggregation validation** - disables invalid aggregations based on column type
 - Live chart preview with Plotly.js
+
+#### Aggregation Compatibility
+
+| Y-Axis Column Role | Available Aggregations | Disabled |
+|--------------------|------------------------|----------|
+| **Measure** (numeric) | SUM, AVG, COUNT, MIN, MAX | None |
+| **Temporal** (date/datetime) | COUNT, MIN, MAX | SUM, AVG |
+| **Dimension** (categorical) | COUNT | SUM, AVG, MIN, MAX |
+
+The frontend auto-switches to a valid aggregation if the user selects an incompatible column.
 
 ---
 
 ## Data Flow Architecture
 
+### Profiling Flow (Table & Column Profiling)
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  Frontend                                                    │
@@ -192,16 +237,115 @@ Response: { "access_token": "...", "token_type": "bearer", "user": {...} }
 │  │  ApiClient   │                                           │
 │  └──────────────┘                                           │
 └─────────│───────────────────────────────────────────────────┘
-          │ HTTP
+          │ HTTP (GET)
           ▼
 ┌─────────────────────────────────────────────────────────────┐
 │  Backend (FastAPI)                                          │
 │  ┌──────────────┐    ┌──────────────┐                      │
-│  │  Routers     │───▶│  out/*.json  │                      │
+│  │  Routers     │───▶│  out/*.json  │  (Static profiles)   │
 │  │  (profiling) │    │  (profiles)  │                      │
 │  └──────────────┘    └──────────────┘                      │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+### Chart Builder Flow (Real Data)
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Frontend                                                    │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐  │
+│  │ useChartData │───▶│   api.ts     │───▶│ ChartBuilder │  │
+│  │   Hook       │    │ getChartData │    │   + Plotly   │  │
+│  └──────────────┘    └──────────────┘    └──────────────┘  │
+└─────────│───────────────────────────────────────────────────┘
+          │ HTTP (POST /api/profiling/chart-data)
+          ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Backend (FastAPI)                                          │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐  │
+│  │  Validation  │───▶│ SQL Builder  │───▶│  PostgreSQL  │  │
+│  │  (profile +  │    │ (GROUP BY)   │    │  (Supabase)  │  │
+│  │   agg compat)│    │              │    │  marts.*     │  │
+│  └──────────────┘    └──────────────┘    └──────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Chart Builder Technical Workflow
+
+### 1. User Interaction (Frontend)
+```
+User selects table → User drags columns to X/Y axes → User picks aggregation
+```
+
+### 2. Frontend Validation
+```typescript
+// ChartBuilderTab.tsx
+const validAggregations = useMemo(() => {
+  const role = columnRoleMap.get(chartConfig.yAxis);
+  if (role === "measure") return ["sum", "avg", "count", "min", "max"];
+  if (role === "temporal") return ["count", "min", "max"];
+  return ["count"]; // dimension
+}, [chartConfig.yAxis]);
+
+// Auto-switch if current aggregation invalid
+useEffect(() => {
+  if (!validAggregations.includes(chartConfig.aggregationFn)) {
+    setChartConfig({ aggregationFn: validAggregations[0] });
+  }
+}, [chartConfig.yAxis]);
+```
+
+### 3. API Request
+```typescript
+// hooks.ts - useChartData hook
+POST /api/profiling/chart-data
+{
+  "table_name": "mart_sales",
+  "x_axis": "channel_name",
+  "y_axis": "revenue",
+  "aggregation_fn": "sum",
+  "limit": 20
+}
+```
+
+### 4. Backend Validation (profiling.py)
+```python
+# Step 1: Validate table name against whitelist
+if request.table_name not in AVAILABLE_TABLES:
+    raise HTTPException(400, "Invalid table")
+
+# Step 2: Validate columns exist in profile
+x_column_profile = get_column_profile_info(table_name, x_axis)
+y_column_profile = get_column_profile_info(table_name, y_axis)
+
+# Step 3: Validate aggregation compatibility
+is_valid, error = validate_aggregation_compatibility(y_column_profile, aggregation_fn)
+# e.g., SUM on "city" (dimension) → Error: "Cannot apply SUM to 'city' - it's a dimension"
+```
+
+### 5. SQL Query Generation
+```sql
+-- Generated query (column names validated against profile)
+SELECT 
+    CAST("channel_name" AS TEXT) as x_value,
+    SUM("revenue") as y_value
+FROM marts."mart_sales"
+WHERE "channel_name" IS NOT NULL
+GROUP BY "channel_name"
+ORDER BY y_value DESC
+LIMIT 20
+```
+
+### 6. Response & Rendering
+```json
+{
+  "x": ["Online", "Retail", "Wholesale"],
+  "y": [125000.50, 98000.00, 45000.25],
+  "title": "SUM(revenue) by channel_name"
+}
+```
+Rendered via Plotly.js as bar/line/pie chart.
 
 ---
 
@@ -238,10 +382,16 @@ ColumnProfile:
 
 ### Backend (`.env`)
 ```env
-SECRET_KEY=your-secret-key
-ACCESS_TOKEN_EXPIRE_MINUTES=60
+# PostgreSQL (Supabase)
+DATABASE_URL=postgresql://user:password@host:5432/postgres
+
+# JWT
+JWT_SECRET_KEY=your-secret-key
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# CORS
 FRONTEND_URL=http://localhost:3000
-DATABASE_URL=sqlite:///./app.db
 ```
 
 ### Frontend (`.env`)
@@ -277,8 +427,8 @@ npm run dev
 
 ### High Priority
 - [ ] **Natural Language Query Interface** - Chat/prompt to query data
-- [ ] **Actual Data Queries** - Connect to real database instead of static profiles
-- [ ] **Chart Data from API** - Currently generates mock data for charts
+- [x] ~~**Actual Data Queries** - Connect to real database instead of static profiles~~ ✅ Done (Chart Builder)
+- [x] ~~**Chart Data from API** - Currently generates mock data for charts~~ ✅ Done
 - [ ] **Save/Export Charts** - Persist chart configurations
 
 ### Medium Priority
@@ -286,6 +436,9 @@ npm run dev
 - [ ] **User Preferences** - Save selected table, chart configs per user
 - [ ] **Dataset Upload** - Allow users to upload their own data
 - [ ] **More Chart Types** - Scatter, heatmap, box plot, etc.
+- [ ] **Chart Filters** - Add WHERE clause support to chart queries
+- [ ] **Date Truncation** - Group temporal X-axis by day/week/month/year
+- [ ] **Color/Group By** - Actually use the color drop zone in queries
 
 ### Low Priority
 - [ ] **Dark/Light Mode Toggle** - Currently dark mode only
@@ -297,6 +450,14 @@ npm run dev
 ### Known Issues
 - ESLint warnings about ternary complexity in some components
 - `lib/types.ts` has some legacy types not fully migrated
+
+### Recently Completed (Feb 17, 2026)
+- ✅ Chart Builder fetches real data from PostgreSQL (`marts` schema)
+- ✅ Backend validates aggregation compatibility with column types
+- ✅ Frontend filters aggregation options based on Y-axis column role
+- ✅ Auto-switch to valid aggregation when column changes
+- ✅ Clear error messages for invalid queries (e.g., "Cannot apply SUM to 'city'")
+- ✅ SQL injection prevention via column validation against profiles
 
 ---
 

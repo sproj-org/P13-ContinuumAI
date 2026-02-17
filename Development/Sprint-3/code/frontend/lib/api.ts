@@ -3,7 +3,9 @@
 import type { 
   DatasetProfileAPI, 
   ColumnProfileAPI, 
-  AggregationsResponse 
+  AggregationsResponse,
+  ChartDataRequest,
+  ChartDataResponse,
 } from './api-types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
@@ -121,6 +123,20 @@ class ApiClient {
    */
   async getColumnProfile(tableName: string, columnName: string): Promise<ColumnProfileAPI> {
     return this.request<ColumnProfileAPI>(`/profiling/aggregations/${tableName}/columns/${columnName}`);
+  }
+
+  // ============================================
+  // Chart Data Endpoints
+  // ============================================
+
+  /**
+   * Get aggregated chart data from the database
+   */
+  async getChartData(request: ChartDataRequest): Promise<ChartDataResponse> {
+    return this.request<ChartDataResponse>("/profiling/chart-data", {
+      method: "POST",
+      body: JSON.stringify(request),
+    });
   }
 }
 

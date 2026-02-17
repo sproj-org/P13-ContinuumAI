@@ -4,7 +4,14 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from './api';
-import type { DatasetProfileAPI, ColumnProfileAPI, AggregationsResponse } from './api-types';
+import type { 
+  DatasetProfileAPI, 
+  ColumnProfileAPI, 
+  AggregationsResponse,
+  ChartDataRequest,
+  ChartDataResponse,
+  AggregationFn,
+} from './api-types';
 
 /**
  * Fetch list of available aggregation tables
@@ -38,5 +45,30 @@ export function useColumnProfile(tableName: string | null, columnName: string | 
     queryFn: () => apiClient.getColumnProfile(tableName!, columnName!),
     enabled: !!tableName && !!columnName,
     staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+/**
+ * Fetch real chart data from the database.
+ * Only executes when all required parameters are provided.
+ */
+export function useChartData(
+  tableName: string | null,
+  xAxis: string | null,
+  yAxis: string | null,
+  aggregationFn: AggregationFn,
+  limit: number = 20
+) {
+  return useQuery<ChartDataResponse, Error>({
+    queryKey: ['chartData', tableName, xAxis, yAxis, aggregationFn, limit],
+    queryFn: () => apiClient.getChartData({
+      table_name: tableName!,
+      x_axis: xAxis!,
+      y_axis: yAxis!,
+      aggregation_fn: aggregationFn,
+      limit,
+    }),
+    enabled: !!tableName && !!xAxis && !!yAxis,
+    staleTime: 1 * 60 * 1000, // 1 minute (shorter for chart data)
   });
 }
