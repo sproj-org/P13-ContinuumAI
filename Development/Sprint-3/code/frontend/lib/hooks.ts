@@ -8,7 +8,6 @@ import type {
   DatasetProfileAPI, 
   ColumnProfileAPI, 
   AggregationsResponse,
-  ChartDataRequest,
   ChartDataResponse,
   AggregationFn,
 } from './api-types';

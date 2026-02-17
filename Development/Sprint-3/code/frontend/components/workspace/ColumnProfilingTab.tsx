@@ -1,7 +1,7 @@
 "use client";
 
-import { useAppStore, aggregationTables, AggregationTable } from "@/lib/store";
-import { useTableProfile } from "@/lib/hooks";
+import { useAppStore } from "@/lib/store";
+import { useAggregations, useTableProfile } from "@/lib/hooks";
 import { 
   transformColumnProfile, 
   generateSuggestedCharts,
@@ -200,7 +200,10 @@ function TemporalDetails({ column }: { column: TransformedColumnProfile }) {
 
 export default function ColumnProfilingTab() {
   const { selectedAggregation, setSelectedAggregation, selectedColumn, setSelectedColumn, setActiveTab, setChartConfig } = useAppStore();
-  const { data: profile, isLoading, error } = useTableProfile(selectedAggregation);
+  const { data: aggregationsData, isLoading: isAggregationsLoading } = useAggregations();
+  const { data: profile, isLoading: isProfileLoading, error } = useTableProfile(selectedAggregation);
+  const aggregationTables = aggregationsData?.aggregations ?? [];
+  const isLoading = isAggregationsLoading || (!!selectedAggregation && isProfileLoading);
   
   // Transform columns for frontend use
   const transformedColumns = profile?.columns.map(transformColumnProfile) ?? [];
@@ -234,13 +237,13 @@ export default function ColumnProfilingTab() {
           </h3>
           <select
             value={selectedAggregation || ""}
-            onChange={(e) => setSelectedAggregation(e.target.value as AggregationTable)}
+            onChange={(e) => setSelectedAggregation(e.target.value || null)}
             className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#5237ff]/50"
           >
             <option value="">Select a table</option>
             {aggregationTables.map((table) => (
-              <option key={table.id} value={table.id}>
-                {table.label}
+              <option key={table.table_name} value={table.table_name}>
+                {table.label ?? table.table_name}
               </option>
             ))}
           </select>

@@ -105,7 +105,7 @@ class ApiClient {
   // ============================================
 
   /**
-   * Get list of available aggregation tables (mart_sales, mart_customers, mart_stores)
+   * Get list of available aggregation tables from backend registry.
    */
   async getAggregations(): Promise<AggregationsResponse> {
     return this.request<AggregationsResponse>("/profiling/aggregations");

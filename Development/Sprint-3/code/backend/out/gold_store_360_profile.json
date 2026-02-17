@@ -1,0 +1,1399 @@
+{
+  "dataset_name": "gold_store_360",
+  "schema_name": "gold",
+  "table_name": "gold_store_360",
+  "row_count": 7,
+  "column_count": 19,
+  "profiled_at": "2026-02-17T14:42:49.958089Z",
+  "columns": [
+    {
+      "name": "store_id",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "id",
+      "effective_role": "id",
+      "row_count": 7,
+      "distinct_count": 7,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "S000",
+        "S001",
+        "S002",
+        "S003",
+        "S004"
+      ],
+      "stats": {
+        "kind": "categorical",
+        "null_count": 0,
+        "distinct_count": 7,
+        "top_k": []
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "city",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "effective_role": "dimension",
+      "row_count": 7,
+      "distinct_count": 3,
+      "null_count": 1,
+      "null_fraction": 0.14285714285714285,
+      "cardinality_bucket": "medium",
+      "sample_values": [
+        "Karachi",
+        "Lahore",
+        "Islamabad"
+      ],
+      "stats": {
+        "kind": "categorical",
+        "null_count": 1,
+        "distinct_count": 3,
+        "top_k": [
+          {
+            "value": "Lahore",
+            "count": 2,
+            "percent": 0.3333333333333333
+          },
+          {
+            "value": "Islamabad",
+            "count": 2,
+            "percent": 0.3333333333333333
+          },
+          {
+            "value": "Karachi",
+            "count": 2,
+            "percent": 0.3333333333333333
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "region",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "effective_role": "dimension",
+      "row_count": 7,
+      "distinct_count": 3,
+      "null_count": 1,
+      "null_fraction": 0.14285714285714285,
+      "cardinality_bucket": "medium",
+      "sample_values": [
+        "Sindh",
+        "Punjab",
+        "ICT"
+      ],
+      "stats": {
+        "kind": "categorical",
+        "null_count": 1,
+        "distinct_count": 3,
+        "top_k": [
+          {
+            "value": "ICT",
+            "count": 2,
+            "percent": 0.3333333333333333
+          },
+          {
+            "value": "Sindh",
+            "count": 2,
+            "percent": 0.3333333333333333
+          },
+          {
+            "value": "Punjab",
+            "count": 2,
+            "percent": 0.3333333333333333
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "store_type",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "effective_role": "dimension",
+      "row_count": 7,
+      "distinct_count": 3,
+      "null_count": 1,
+      "null_fraction": 0.14285714285714285,
+      "cardinality_bucket": "medium",
+      "sample_values": [
+        "flagship",
+        "mall",
+        "high_street"
+      ],
+      "stats": {
+        "kind": "categorical",
+        "null_count": 1,
+        "distinct_count": 3,
+        "top_k": [
+          {
+            "value": "mall",
+            "count": 3,
+            "percent": 0.5
+          },
+          {
+            "value": "flagship",
+            "count": 2,
+            "percent": 0.3333333333333333
+          },
+          {
+            "value": "high_street",
+            "count": 1,
+            "percent": 0.16666666666666666
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "first_date",
+      "physical_type": "datetime",
+      "logical_type": "datetime",
+      "base_role": "datetime",
+      "effective_role": "datetime",
+      "row_count": 7,
+      "distinct_count": 1,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "medium",
+      "sample_values": [
+        "2025-01-01T00:00:00"
+      ],
+      "stats": {
+        "kind": "datetime",
+        "null_count": 0,
+        "min": "2025-01-01T00:00:00",
+        "max": "2025-01-01T00:00:00",
+        "distinct_days": 1
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "last_date",
+      "physical_type": "datetime",
+      "logical_type": "datetime",
+      "base_role": "datetime",
+      "effective_role": "datetime",
+      "row_count": 7,
+      "distinct_count": 1,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "medium",
+      "sample_values": [
+        "2025-12-31T00:00:00"
+      ],
+      "stats": {
+        "kind": "datetime",
+        "null_count": 0,
+        "min": "2025-12-31T00:00:00",
+        "max": "2025-12-31T00:00:00",
+        "distinct_days": 1
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "active_days",
+      "physical_type": "int",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 7,
+      "distinct_count": 6,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "365",
+        "361",
+        "330",
+        "335",
+        "358"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 330.0,
+        "max": 365.0,
+        "mean": 351.57142857142856,
+        "stddev": 13.476611132589959,
+        "p05": 331.5,
+        "p50": 356.0,
+        "p95": 363.8,
+        "zero_count": 0
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "net_sales",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 7,
+      "distinct_count": 7,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "250765366.63",
+        "104483065.89",
+        "60294239.07",
+        "67415169.99",
+        "91815771.96"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 60294239.07,
+        "max": 250765366.63,
+        "mean": 110232949.465714,
+        "stddev": 64234693.4408023,
+        "p05": 62430518.346,
+        "p50": 94618341.23,
+        "p95": 206880676.408,
+        "zero_count": 0
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "orders",
+      "physical_type": "int",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 7,
+      "distinct_count": 7,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "3700",
+        "1467",
+        "904",
+        "922",
+        "1498"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 904.0,
+        "max": 3700.0,
+        "mean": 1628.857142857143,
+        "stddev": 950.281437008958,
+        "p05": 909.4,
+        "p50": 1462.0,
+        "p95": 3039.4,
+        "zero_count": 0
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "units",
+      "physical_type": "int",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 7,
+      "distinct_count": 7,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "9907",
+        "4109",
+        "2580",
+        "2692",
+        "4005"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 2580.0,
+        "max": 9907.0,
+        "mean": 4488.714285714285,
+        "stddev": 2485.309150071389,
+        "p05": 2613.6,
+        "p50": 4005.0,
+        "p95": 8218.6,
+        "zero_count": 0
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "avg_order_value",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 7,
+      "distinct_count": 7,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "67774.4234135135",
+        "71222.2671370143",
+        "66697.1671128319",
+        "73118.4056290672",
+        "61292.237623498"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 61292.237623498,
+        "max": 73118.4056290672,
+        "mean": 67904.8955314246,
+        "stddev": 3964.06337339683,
+        "p05": 62494.285017608,
+        "p50": 67774.4234135135,
+        "p95": 72549.5640814514,
+        "zero_count": 0
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "weighted_discount_ratio",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 7,
+      "distinct_count": 7,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "0.0329568832332815",
+        "0.0244272918508267",
+        "0.0279029335865554",
+        "0.0150483712749146",
+        "0.113978227820949"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 0.0150483712749146,
+        "max": 0.113978227820949,
+        "mean": 0.0452255294867539,
+        "stddev": 0.0346651812966234,
+        "p05": 0.0178620474476882,
+        "p50": 0.0329568832332815,
+        "p95": 0.100404471243875,
+        "zero_count": 0
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "returns_rate_amount",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 7,
+      "distinct_count": 7,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "0.0377418604378669",
+        "0.0402564785419697",
+        "0.0414817677207316",
+        "0.032617401103137",
+        "0.0495454459826555"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 0.0282221646027445,
+        "max": 0.0495454459826555,
+        "mean": 0.0393804844049544,
+        "stddev": 0.00733291312704753,
+        "p05": 0.0295407355528623,
+        "p50": 0.0402564785419697,
+        "p95": 0.0484212939215316,
+        "zero_count": 0
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "net_sales_after_returns",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 7,
+      "distinct_count": 7,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "241301015.16",
+        "100276945.59",
+        "57793127.45",
+        "65216262.35",
+        "87266718.59"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 57793127.45,
+        "max": 241301015.16,
+        "mean": 105927478.301429,
+        "stddev": 61871335.9765478,
+        "p05": 60020067.92,
+        "p50": 90284984.66,
+        "p95": 198993794.289,
+        "zero_count": 0
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "channel_mix_online_pct",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 7,
+      "distinct_count": 2,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "medium",
+      "sample_values": [
+        "1.0",
+        "0.0"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.142857142857143,
+        "stddev": 0.377964473009227,
+        "p05": 0.0,
+        "p50": 0.0,
+        "p95": 0.7,
+        "zero_count": 6
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "last_28d_net_sales",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 7,
+      "distinct_count": 7,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "27364005.76",
+        "9523199.69",
+        "4694003.8",
+        "4683602.67",
+        "6659908.88"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 4683602.67,
+        "max": 27364005.76,
+        "mean": 9999451.78428571,
+        "stddev": 7907465.62467452,
+        "p05": 4686723.009,
+        "p50": 7649737.96,
+        "p95": 22011763.939,
+        "zero_count": 0
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "prev_28d_net_sales",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 7,
+      "distinct_count": 7,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "30859845.99",
+        "6621030.62",
+        "3240804.0",
+        "4787726.63",
+        "8130003.24"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 3240804.0,
+        "max": 30859845.99,
+        "mean": 10061755.7414286,
+        "stddev": 9389535.43390057,
+        "p05": 3704880.789,
+        "p50": 7702855.26,
+        "p95": 24328899.528,
+        "zero_count": 0
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "net_sales_28d_growth_pct",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 7,
+      "distinct_count": 7,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "-0.113281194959068",
+        "0.438325879544112",
+        "0.448407185377456",
+        "-0.0217481005175936",
+        "-0.180823342451706"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": -0.180823342451706,
+        "max": 0.448407185377456,
+        "mean": 0.090796831964815,
+        "stddev": 0.275799335253307,
+        "p05": -0.17411041945126,
+        "p50": -0.0217481005175936,
+        "p95": 0.445382793627453,
+        "zero_count": 0
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "needs_attention",
+      "physical_type": "datetime",
+      "logical_type": "datetime",
+      "base_role": "datetime",
+      "effective_role": "datetime",
+      "row_count": 7,
+      "distinct_count": 1,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "medium",
+      "sample_values": [
+        "1970-01-01T00:00:00"
+      ],
+      "stats": {
+        "kind": "datetime",
+        "null_count": 0,
+        "min": "1970-01-01T00:00:00",
+        "max": "1970-01-01T00:00:00",
+        "distinct_days": 1
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    }
+  ],
+  "dataset_meta": {
+    "dataset_key": "gold.gold_store_360",
+    "generated_at": "2026-02-17T14:42:54.552475+00:00",
+    "profiler_version": "sprint3-profiler-mvp-v1",
+    "columns_map": {
+      "store_id": {
+        "name": "store_id",
+        "physical_type": "string",
+        "logical_type": "categorical",
+        "base_role": "id",
+        "effective_role": "id",
+        "row_count": 7,
+        "distinct_count": 7,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "S000",
+          "S001",
+          "S002",
+          "S003",
+          "S004"
+        ],
+        "stats": {
+          "kind": "categorical",
+          "null_count": 0,
+          "distinct_count": 7,
+          "top_k": []
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "city": {
+        "name": "city",
+        "physical_type": "string",
+        "logical_type": "categorical",
+        "base_role": "dimension",
+        "effective_role": "dimension",
+        "row_count": 7,
+        "distinct_count": 3,
+        "null_count": 1,
+        "null_fraction": 0.14285714285714285,
+        "cardinality_bucket": "medium",
+        "sample_values": [
+          "Karachi",
+          "Lahore",
+          "Islamabad"
+        ],
+        "stats": {
+          "kind": "categorical",
+          "null_count": 1,
+          "distinct_count": 3,
+          "top_k": [
+            {
+              "value": "Lahore",
+              "count": 2,
+              "percent": 0.3333333333333333
+            },
+            {
+              "value": "Islamabad",
+              "count": 2,
+              "percent": 0.3333333333333333
+            },
+            {
+              "value": "Karachi",
+              "count": 2,
+              "percent": 0.3333333333333333
+            }
+          ]
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "region": {
+        "name": "region",
+        "physical_type": "string",
+        "logical_type": "categorical",
+        "base_role": "dimension",
+        "effective_role": "dimension",
+        "row_count": 7,
+        "distinct_count": 3,
+        "null_count": 1,
+        "null_fraction": 0.14285714285714285,
+        "cardinality_bucket": "medium",
+        "sample_values": [
+          "Sindh",
+          "Punjab",
+          "ICT"
+        ],
+        "stats": {
+          "kind": "categorical",
+          "null_count": 1,
+          "distinct_count": 3,
+          "top_k": [
+            {
+              "value": "ICT",
+              "count": 2,
+              "percent": 0.3333333333333333
+            },
+            {
+              "value": "Sindh",
+              "count": 2,
+              "percent": 0.3333333333333333
+            },
+            {
+              "value": "Punjab",
+              "count": 2,
+              "percent": 0.3333333333333333
+            }
+          ]
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "store_type": {
+        "name": "store_type",
+        "physical_type": "string",
+        "logical_type": "categorical",
+        "base_role": "dimension",
+        "effective_role": "dimension",
+        "row_count": 7,
+        "distinct_count": 3,
+        "null_count": 1,
+        "null_fraction": 0.14285714285714285,
+        "cardinality_bucket": "medium",
+        "sample_values": [
+          "flagship",
+          "mall",
+          "high_street"
+        ],
+        "stats": {
+          "kind": "categorical",
+          "null_count": 1,
+          "distinct_count": 3,
+          "top_k": [
+            {
+              "value": "mall",
+              "count": 3,
+              "percent": 0.5
+            },
+            {
+              "value": "flagship",
+              "count": 2,
+              "percent": 0.3333333333333333
+            },
+            {
+              "value": "high_street",
+              "count": 1,
+              "percent": 0.16666666666666666
+            }
+          ]
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "first_date": {
+        "name": "first_date",
+        "physical_type": "datetime",
+        "logical_type": "datetime",
+        "base_role": "datetime",
+        "effective_role": "datetime",
+        "row_count": 7,
+        "distinct_count": 1,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "medium",
+        "sample_values": [
+          "2025-01-01T00:00:00"
+        ],
+        "stats": {
+          "kind": "datetime",
+          "null_count": 0,
+          "min": "2025-01-01T00:00:00",
+          "max": "2025-01-01T00:00:00",
+          "distinct_days": 1
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "last_date": {
+        "name": "last_date",
+        "physical_type": "datetime",
+        "logical_type": "datetime",
+        "base_role": "datetime",
+        "effective_role": "datetime",
+        "row_count": 7,
+        "distinct_count": 1,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "medium",
+        "sample_values": [
+          "2025-12-31T00:00:00"
+        ],
+        "stats": {
+          "kind": "datetime",
+          "null_count": 0,
+          "min": "2025-12-31T00:00:00",
+          "max": "2025-12-31T00:00:00",
+          "distinct_days": 1
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "active_days": {
+        "name": "active_days",
+        "physical_type": "int",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 7,
+        "distinct_count": 6,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "365",
+          "361",
+          "330",
+          "335",
+          "358"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 330.0,
+          "max": 365.0,
+          "mean": 351.57142857142856,
+          "stddev": 13.476611132589959,
+          "p05": 331.5,
+          "p50": 356.0,
+          "p95": 363.8,
+          "zero_count": 0
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "net_sales": {
+        "name": "net_sales",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 7,
+        "distinct_count": 7,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "250765366.63",
+          "104483065.89",
+          "60294239.07",
+          "67415169.99",
+          "91815771.96"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 60294239.07,
+          "max": 250765366.63,
+          "mean": 110232949.465714,
+          "stddev": 64234693.4408023,
+          "p05": 62430518.346,
+          "p50": 94618341.23,
+          "p95": 206880676.408,
+          "zero_count": 0
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "orders": {
+        "name": "orders",
+        "physical_type": "int",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 7,
+        "distinct_count": 7,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "3700",
+          "1467",
+          "904",
+          "922",
+          "1498"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 904.0,
+          "max": 3700.0,
+          "mean": 1628.857142857143,
+          "stddev": 950.281437008958,
+          "p05": 909.4,
+          "p50": 1462.0,
+          "p95": 3039.4,
+          "zero_count": 0
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "units": {
+        "name": "units",
+        "physical_type": "int",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 7,
+        "distinct_count": 7,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "9907",
+          "4109",
+          "2580",
+          "2692",
+          "4005"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 2580.0,
+          "max": 9907.0,
+          "mean": 4488.714285714285,
+          "stddev": 2485.309150071389,
+          "p05": 2613.6,
+          "p50": 4005.0,
+          "p95": 8218.6,
+          "zero_count": 0
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "avg_order_value": {
+        "name": "avg_order_value",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 7,
+        "distinct_count": 7,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "67774.4234135135",
+          "71222.2671370143",
+          "66697.1671128319",
+          "73118.4056290672",
+          "61292.237623498"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 61292.237623498,
+          "max": 73118.4056290672,
+          "mean": 67904.8955314246,
+          "stddev": 3964.06337339683,
+          "p05": 62494.285017608,
+          "p50": 67774.4234135135,
+          "p95": 72549.5640814514,
+          "zero_count": 0
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "weighted_discount_ratio": {
+        "name": "weighted_discount_ratio",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 7,
+        "distinct_count": 7,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "0.0329568832332815",
+          "0.0244272918508267",
+          "0.0279029335865554",
+          "0.0150483712749146",
+          "0.113978227820949"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 0.0150483712749146,
+          "max": 0.113978227820949,
+          "mean": 0.0452255294867539,
+          "stddev": 0.0346651812966234,
+          "p05": 0.0178620474476882,
+          "p50": 0.0329568832332815,
+          "p95": 0.100404471243875,
+          "zero_count": 0
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "returns_rate_amount": {
+        "name": "returns_rate_amount",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 7,
+        "distinct_count": 7,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "0.0377418604378669",
+          "0.0402564785419697",
+          "0.0414817677207316",
+          "0.032617401103137",
+          "0.0495454459826555"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 0.0282221646027445,
+          "max": 0.0495454459826555,
+          "mean": 0.0393804844049544,
+          "stddev": 0.00733291312704753,
+          "p05": 0.0295407355528623,
+          "p50": 0.0402564785419697,
+          "p95": 0.0484212939215316,
+          "zero_count": 0
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "net_sales_after_returns": {
+        "name": "net_sales_after_returns",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 7,
+        "distinct_count": 7,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "241301015.16",
+          "100276945.59",
+          "57793127.45",
+          "65216262.35",
+          "87266718.59"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 57793127.45,
+          "max": 241301015.16,
+          "mean": 105927478.301429,
+          "stddev": 61871335.9765478,
+          "p05": 60020067.92,
+          "p50": 90284984.66,
+          "p95": 198993794.289,
+          "zero_count": 0
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "channel_mix_online_pct": {
+        "name": "channel_mix_online_pct",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 7,
+        "distinct_count": 2,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "medium",
+        "sample_values": [
+          "1.0",
+          "0.0"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 0.0,
+          "max": 1.0,
+          "mean": 0.142857142857143,
+          "stddev": 0.377964473009227,
+          "p05": 0.0,
+          "p50": 0.0,
+          "p95": 0.7,
+          "zero_count": 6
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "last_28d_net_sales": {
+        "name": "last_28d_net_sales",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 7,
+        "distinct_count": 7,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "27364005.76",
+          "9523199.69",
+          "4694003.8",
+          "4683602.67",
+          "6659908.88"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 4683602.67,
+          "max": 27364005.76,
+          "mean": 9999451.78428571,
+          "stddev": 7907465.62467452,
+          "p05": 4686723.009,
+          "p50": 7649737.96,
+          "p95": 22011763.939,
+          "zero_count": 0
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "prev_28d_net_sales": {
+        "name": "prev_28d_net_sales",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 7,
+        "distinct_count": 7,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "30859845.99",
+          "6621030.62",
+          "3240804.0",
+          "4787726.63",
+          "8130003.24"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 3240804.0,
+          "max": 30859845.99,
+          "mean": 10061755.7414286,
+          "stddev": 9389535.43390057,
+          "p05": 3704880.789,
+          "p50": 7702855.26,
+          "p95": 24328899.528,
+          "zero_count": 0
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "net_sales_28d_growth_pct": {
+        "name": "net_sales_28d_growth_pct",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 7,
+        "distinct_count": 7,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "-0.113281194959068",
+          "0.438325879544112",
+          "0.448407185377456",
+          "-0.0217481005175936",
+          "-0.180823342451706"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": -0.180823342451706,
+          "max": 0.448407185377456,
+          "mean": 0.090796831964815,
+          "stddev": 0.275799335253307,
+          "p05": -0.17411041945126,
+          "p50": -0.0217481005175936,
+          "p95": 0.445382793627453,
+          "zero_count": 0
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "needs_attention": {
+        "name": "needs_attention",
+        "physical_type": "datetime",
+        "logical_type": "datetime",
+        "base_role": "datetime",
+        "effective_role": "datetime",
+        "row_count": 7,
+        "distinct_count": 1,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "medium",
+        "sample_values": [
+          "1970-01-01T00:00:00"
+        ],
+        "stats": {
+          "kind": "datetime",
+          "null_count": 0,
+          "min": "1970-01-01T00:00:00",
+          "max": "1970-01-01T00:00:00",
+          "distinct_days": 1
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      }
+    }
+  }
+}

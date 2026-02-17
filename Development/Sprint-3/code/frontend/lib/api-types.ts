@@ -107,6 +107,8 @@ export interface AggregationSummary {
   row_count: number;
   column_count: number;
   profiled_at: string;
+  label?: string;
+  description?: string;
 }
 
 // API response for listing aggregations

@@ -6,6 +6,7 @@ python-multipart==0.0.20
 # Database
 SQLAlchemy==2.0.34
 psycopg2-binary==2.9.11
+pandas==2.2.3
 
 # Authentication & Security
 python-jose[cryptography]==3.5.0
