@@ -7,6 +7,7 @@ from app.db.database import create_tables
 from app.api.auth import router as auth_router
 from app.api.profiling import router as profiling_router
 from app.api.query import router as query_router
+from app.api.health import router as health_router
 
 settings = get_settings()
 
@@ -40,11 +41,12 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api")
 app.include_router(profiling_router, prefix="/api")
 app.include_router(query_router, prefix="/api")
+app.include_router(health_router, prefix="/api")
 
 
 @app.get("/")
-def health_check():
-    """Health check endpoint."""
+def root_check():
+    """Root endpoint."""
     return {"status": "Backend Running."}
 
 
