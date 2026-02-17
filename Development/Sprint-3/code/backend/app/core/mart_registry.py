@@ -1,8 +1,10 @@
-"""Central registry for supported marts."""
+"""Dataset-aware registry for supported marts."""
 
 from __future__ import annotations
 
 from typing import Any
+
+DEFAULT_DATASET_ID = "silkroute"
 
 MARTS = [
     {
@@ -56,21 +58,46 @@ MARTS = [
     },
 ]
 
-
-def list_marts() -> list[dict[str, Any]]:
-    return [dict(mart) for mart in MARTS]
-
-
-def get_mart_ids() -> list[str]:
-    return [str(mart["id"]) for mart in MARTS]
+_DATASET_MARTS: dict[str, list[dict[str, Any]]] = {
+    DEFAULT_DATASET_ID: MARTS,
+}
 
 
-def get_mart_by_id(mart_id: str) -> dict[str, Any] | None:
-    for mart in MARTS:
-        if mart["id"] == mart_id:
-            return dict(mart)
-    return None
+def supported_dataset_ids() -> list[str]:
+    return sorted(_DATASET_MARTS.keys())
 
 
-def is_valid_mart_id(mart_id: str) -> bool:
-    return get_mart_by_id(mart_id) is not None
+def is_supported_dataset(dataset_id: str) -> bool:
+    return dataset_id in _DATASET_MARTS
+
+
+def get_registry(dataset_id: str) -> list[dict[str, Any]]:
+    if not is_supported_dataset(dataset_id):
+        raise KeyError(f"Unsupported dataset_id '{dataset_id}'")
+    return [dict(mart) for mart in _DATASET_MARTS[dataset_id]]
+
+
+def list_marts(dataset_id: str = DEFAULT_DATASET_ID) -> list[dict[str, Any]]:
+    return get_registry(dataset_id)
+
+
+def get_mart_ids(dataset_id: str = DEFAULT_DATASET_ID) -> list[str]:
+    return [str(mart["id"]) for mart in list_marts(dataset_id)]
+
+
+def get_mart(dataset_id: str, mart_id: str) -> dict[str, Any]:
+    for mart in list_marts(dataset_id):
+        if str(mart["id"]) == mart_id:
+            return mart
+    raise KeyError(f"Mart '{mart_id}' is not registered for dataset '{dataset_id}'")
+
+
+def get_mart_by_id(mart_id: str, dataset_id: str = DEFAULT_DATASET_ID) -> dict[str, Any] | None:
+    try:
+        return get_mart(dataset_id, mart_id)
+    except KeyError:
+        return None
+
+
+def is_valid_mart_id(mart_id: str, dataset_id: str = DEFAULT_DATASET_ID) -> bool:
+    return get_mart_by_id(mart_id, dataset_id=dataset_id) is not None

@@ -23,10 +23,13 @@ import {
 } from "lucide-react";
 
 export default function TableProfilingTab() {
-  const { selectedAggregation, setSelectedAggregation } = useAppStore();
-  const { data: aggregationsData, isLoading: isAggregationsLoading } = useAggregations();
-  const { data: profile, isLoading: isProfileLoading, error } = useTableProfile(selectedAggregation);
-  const aggregationTables = aggregationsData?.aggregations ?? [];
+  const { selectedDatasetId, selectedAggregation, setSelectedAggregation } = useAppStore();
+  const { data: aggregationsData, isLoading: isAggregationsLoading } = useAggregations(selectedDatasetId);
+  const { data: profile, isLoading: isProfileLoading, error } = useTableProfile(
+    selectedDatasetId,
+    selectedAggregation
+  );
+  const availableMarts = aggregationsData?.aggregations ?? [];
   const isLoading = isAggregationsLoading || (!!selectedAggregation && isProfileLoading);
 
   // Derive values from profile using transformers
@@ -54,9 +57,9 @@ export default function TableProfilingTab() {
         <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-4">
           Aggregation Tables
         </h3>
-        {aggregationTables.length > 0 ? (
+        {availableMarts.length > 0 ? (
           <div className="space-y-2">
-            {aggregationTables.map((table) => (
+            {availableMarts.map((table) => (
               <button
                 key={table.table_name}
                 onClick={() => setSelectedAggregation(table.table_name)}

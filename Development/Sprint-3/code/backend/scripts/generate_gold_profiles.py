@@ -11,6 +11,7 @@ BASE_DIR = Path(__file__).resolve().parents[1]
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
+from app.core.mart_registry import DEFAULT_DATASET_ID
 from services.profiling.gold_profile_generator import generate_gold_profiles
 
 
@@ -20,7 +21,7 @@ def main() -> int:
         return 1
 
     try:
-        written = generate_gold_profiles()
+        written = generate_gold_profiles(dataset_id=DEFAULT_DATASET_ID)
     except Exception as exc:
         print(f"[ERROR] Gold profile generation failed: {exc}")
         traceback.print_exc()

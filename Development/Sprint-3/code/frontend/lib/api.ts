@@ -1,12 +1,14 @@
 // API client for backend communication
 
-import type { 
-  DatasetProfileAPI, 
-  ColumnProfileAPI, 
+import type {
+  AggregateRequest,
+  AggregateResponse,
   AggregationsResponse,
   ChartDataRequest,
   ChartDataResponse,
-} from './api-types';
+  ColumnProfileAPI,
+  DatasetProfileAPI,
+} from "./api-types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -27,6 +29,16 @@ export interface ApiError {
   detail: string;
 }
 
+export class ApiRequestError extends Error {
+  status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+    this.name = "ApiRequestError";
+  }
+}
+
 class ApiClient {
   private readonly baseUrl: string;
 
@@ -39,10 +51,7 @@ class ApiClient {
     return localStorage.getItem("access_token");
   }
 
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const token = this.getToken();
     const headers: HeadersInit = {
       "Content-Type": "application/json",
@@ -50,7 +59,7 @@ class ApiClient {
     };
 
     if (token) {
-      (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
+      (headers as Record<string, string>).Authorization = `Bearer ${token}`;
     }
 
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
@@ -59,11 +68,32 @@ class ApiClient {
     });
 
     if (!response.ok) {
-      const error: ApiError = await response.json();
-      throw new Error(error.detail || "An error occurred");
+      let detail = "An error occurred";
+      try {
+        const error = (await response.json()) as ApiError;
+        detail = error.detail || detail;
+      } catch {
+        detail = response.statusText || detail;
+      }
+      throw new ApiRequestError(response.status, detail);
     }
 
     return response.json();
+  }
+
+  private async requestWithFallback<T>(
+    datasetEndpoint: string,
+    legacyEndpoint: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    try {
+      return await this.request<T>(datasetEndpoint, options);
+    } catch (error) {
+      if (!(error instanceof ApiRequestError) || error.status !== 404) {
+        throw error;
+      }
+      return this.request<T>(legacyEndpoint, options);
+    }
   }
 
   async signup(
@@ -104,36 +134,48 @@ class ApiClient {
   // Profiling Endpoints
   // ============================================
 
-  /**
-   * Get list of available aggregation tables from backend registry.
-   */
-  async getAggregations(): Promise<AggregationsResponse> {
-    return this.request<AggregationsResponse>("/profiling/aggregations");
+  async getAggregations(datasetId: string): Promise<AggregationsResponse> {
+    return this.requestWithFallback<AggregationsResponse>(
+      `/datasets/${datasetId}/profiling/aggregations`,
+      "/profiling/aggregations"
+    );
   }
 
-  /**
-   * Get full profile for a specific aggregation table
-   */
-  async getTableProfile(tableName: string): Promise<DatasetProfileAPI> {
-    return this.request<DatasetProfileAPI>(`/profiling/aggregations/${tableName}/profile`);
+  async getTableProfile(datasetId: string, tableName: string): Promise<DatasetProfileAPI> {
+    return this.requestWithFallback<DatasetProfileAPI>(
+      `/datasets/${datasetId}/profiling/aggregations/${tableName}/profile`,
+      `/profiling/aggregations/${tableName}/profile`
+    );
   }
 
-  /**
-   * Get detailed profile for a specific column
-   */
-  async getColumnProfile(tableName: string, columnName: string): Promise<ColumnProfileAPI> {
-    return this.request<ColumnProfileAPI>(`/profiling/aggregations/${tableName}/columns/${columnName}`);
+  async getColumnProfile(
+    datasetId: string,
+    tableName: string,
+    columnName: string
+  ): Promise<ColumnProfileAPI> {
+    return this.requestWithFallback<ColumnProfileAPI>(
+      `/datasets/${datasetId}/profiling/aggregations/${tableName}/columns/${columnName}`,
+      `/profiling/aggregations/${tableName}/columns/${columnName}`
+    );
+  }
+
+  async getChartData(datasetId: string, request: ChartDataRequest): Promise<ChartDataResponse> {
+    return this.requestWithFallback<ChartDataResponse>(
+      `/datasets/${datasetId}/profiling/chart-data`,
+      "/profiling/chart-data",
+      {
+        method: "POST",
+        body: JSON.stringify(request),
+      }
+    );
   }
 
   // ============================================
-  // Chart Data Endpoints
+  // Aggregate Endpoint
   // ============================================
 
-  /**
-   * Get aggregated chart data from the database
-   */
-  async getChartData(request: ChartDataRequest): Promise<ChartDataResponse> {
-    return this.request<ChartDataResponse>("/profiling/chart-data", {
+  async executeAggregate(datasetId: string, request: AggregateRequest): Promise<AggregateResponse> {
+    return this.request<AggregateResponse>(`/datasets/${datasetId}/query/aggregate`, {
       method: "POST",
       body: JSON.stringify(request),
     });

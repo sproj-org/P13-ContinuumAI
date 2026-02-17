@@ -7,7 +7,7 @@ import math
 from pathlib import Path
 from typing import Any
 
-from app.core.mart_registry import list_marts
+from app.core.mart_registry import DEFAULT_DATASET_ID, list_marts
 from services.profiling.compiled_runtime import (
     get_profile_model_class,
     get_run_profiler_module,
@@ -54,7 +54,11 @@ def _clean_non_finite_numeric_samples(profile_dict: dict[str, Any]) -> None:
         column["sample_values"] = cleaned_samples
 
 
-def generate_gold_profiles(output_dir: Path | None = None, sample_n: int = 200) -> list[Path]:
+def generate_gold_profiles(
+    output_dir: Path | None = None,
+    sample_n: int = 200,
+    dataset_id: str = DEFAULT_DATASET_ID,
+) -> list[Path]:
     """
     Build/validate profiles for all registry marts and write out/gold_*_profile.json files.
     Raises on the first failure.
@@ -69,7 +73,7 @@ def generate_gold_profiles(output_dir: Path | None = None, sample_n: int = 200) 
     written_files: list[Path] = []
 
     try:
-        for mart in list_marts():
+        for mart in list_marts(dataset_id):
             mart_id = str(mart["id"])
             schema_name = str(mart["schema"])
             profile_file = str(mart["profile_file"])

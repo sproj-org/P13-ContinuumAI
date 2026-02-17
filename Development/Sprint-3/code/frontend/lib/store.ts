@@ -1,12 +1,15 @@
 import { create } from 'zustand';
 
-export type DatasetId = 'silkroute' | null;
+export type DatasetId = string;
 export type WorkspaceTab = 'table-profiling' | 'column-profiling' | 'chart-builder';
 
 interface AppState {
+  selectedDatasetId: DatasetId;
+  setSelectedDatasetId: (datasetId: DatasetId) => void;
+
   // Dataset selection
-  activeDataset: DatasetId;
-  setActiveDataset: (dataset: DatasetId) => void;
+  activeDataset: DatasetId | null;
+  setActiveDataset: (dataset: DatasetId | null) => void;
 
   // Workspace state
   selectedAggregation: string | null;
@@ -41,9 +44,20 @@ const defaultChartConfig: ChartConfig = {
 };
 
 export const useAppStore = create<AppState>((set) => ({
+  selectedDatasetId: 'silkroute',
+  setSelectedDatasetId: (datasetId) =>
+    set({
+      selectedDatasetId: datasetId,
+      activeDataset: datasetId,
+    }),
+
   // Dataset
-  activeDataset: null,
-  setActiveDataset: (dataset) => set({ activeDataset: dataset }),
+  activeDataset: 'silkroute',
+  setActiveDataset: (dataset) =>
+    set((state) => ({
+      activeDataset: dataset,
+      selectedDatasetId: dataset ?? state.selectedDatasetId,
+    })),
 
   // Workspace
   selectedAggregation: null,

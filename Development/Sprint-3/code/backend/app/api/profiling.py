@@ -1,47 +1,50 @@
 """
 Profiling API endpoints.
-Serves pre-generated profile JSON files from the out/ directory.
-Also provides chart data querying from the database.
+Serves pre-generated profile JSON files from backend/out and chart data from DB.
+Legacy /api/profiling routes are kept as aliases for dataset_id='silkroute'.
 """
 
 from __future__ import annotations
 
 import json
 import re
-from datetime import date, datetime
-from decimal import Decimal
 from pathlib import Path
 from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, field_validator
-from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.core.mart_registry import get_mart_by_id, is_valid_mart_id, list_marts
+from app.api.query import AggregateRequest, AggregateSpec, execute_aggregate_request
+from app.core.mart_registry import (
+    DEFAULT_DATASET_ID,
+    get_mart,
+    is_supported_dataset,
+    list_marts,
+)
 from app.db.database import get_db
 from services.profiling.json_sanitize import sanitize_for_json
 
 router = APIRouter(prefix="/profiling", tags=["profiling"])
 
-OUT_DIR = Path(__file__).parent.parent.parent / "out"
+OUT_DIR = Path(__file__).resolve().parents[2] / "out"
 MARTS_SCHEMA = "marts"  # Fallback only if registry lookup fails.
 ALLOWED_AGGREGATIONS = {"sum", "avg", "count", "min", "max"}
-INVENTORY_NON_FINITE_COLUMNS = {"days_of_inventory", "adj_days_of_inventory"}
 
 
-def get_profile_path(table_name: str) -> Path:
-    mart = get_mart_by_id(table_name)
-    if not mart:
-        raise HTTPException(status_code=404, detail=f"Table '{table_name}' not found")
+def _validate_dataset_id(dataset_id: str) -> None:
+    if not is_supported_dataset(dataset_id):
+        raise HTTPException(status_code=404, detail=f"Unknown dataset_id '{dataset_id}'")
+
+
+def _get_profile_path(dataset_id: str, table_name: str) -> Path:
+    try:
+        mart = get_mart(dataset_id, table_name)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=f"Table '{table_name}' not found") from exc
 
     profile_file = str(mart["profile_file"])
     return OUT_DIR / profile_file
-
-
-# ============================================
-# Chart Data Models
-# ============================================
 
 
 class ChartDataRequest(BaseModel):
@@ -53,19 +56,21 @@ class ChartDataRequest(BaseModel):
     aggregation_fn: Literal["sum", "avg", "count", "min", "max"] = "sum"
     limit: int = 20
 
-    @field_validator("table_name")
+    @field_validator("table_name", "x_axis", "y_axis")
     @classmethod
-    def validate_table_name(cls, v: str) -> str:
-        if not is_valid_mart_id(v):
-            raise ValueError(f"Invalid table name: {v}")
-        return v
+    def validate_identifier(cls, value: str) -> str:
+        if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", value):
+            raise ValueError(f"Invalid identifier: {value}")
+        return value
 
-    @field_validator("x_axis", "y_axis")
+    @field_validator("limit")
     @classmethod
-    def validate_column_name(cls, v: str) -> str:
-        if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", v):
-            raise ValueError(f"Invalid column name: {v}")
-        return v
+    def validate_limit(cls, value: int) -> int:
+        if value < 1:
+            raise ValueError("limit must be >= 1")
+        if value > 5000:
+            raise ValueError("limit must be <= 5000")
+        return value
 
 
 class ChartDataPoint(BaseModel):
@@ -85,9 +90,11 @@ class ChartDataResponse(BaseModel):
     y_axis_label: str
 
 
-def load_profile(table_name: str) -> dict:
+def load_profile(dataset_id: str, table_name: str) -> dict:
     """Load a profile JSON file for the given table."""
-    file_path = get_profile_path(table_name)
+    _validate_dataset_id(dataset_id)
+
+    file_path = _get_profile_path(dataset_id, table_name)
     if not file_path.exists():
         raise HTTPException(
             status_code=404,
@@ -95,8 +102,8 @@ def load_profile(table_name: str) -> dict:
         )
 
     try:
-        with file_path.open("r", encoding="utf-8") as f:
-            profile = json.load(f)
+        with file_path.open("r", encoding="utf-8") as handle:
+            profile = json.load(handle)
             return sanitize_for_json(profile)
     except json.JSONDecodeError as exc:
         raise HTTPException(
@@ -105,15 +112,15 @@ def load_profile(table_name: str) -> dict:
         ) from exc
 
 
-@router.get("/aggregations")
-def list_aggregations():
+def list_aggregations_for_dataset(dataset_id: str) -> dict:
     """List all available aggregation tables with summary info."""
+    _validate_dataset_id(dataset_id)
     aggregations = []
 
-    for mart in list_marts():
+    for mart in list_marts(dataset_id):
         table_name = str(mart["id"])
         try:
-            profile = load_profile(table_name)
+            profile = load_profile(dataset_id, table_name)
         except HTTPException:
             continue
 
@@ -128,21 +135,16 @@ def list_aggregations():
         }
         aggregations.append(item)
 
-    return {"aggregations": aggregations}
+    return sanitize_for_json({"aggregations": aggregations})
 
 
-@router.get("/aggregations/{table_name}/profile")
-def get_table_profile(table_name: str):
-    """Get the full profile for a specific table."""
-    profile = load_profile(table_name)
-    profile = sanitize_for_json(profile)
-    return profile
+def get_table_profile_for_dataset(dataset_id: str, table_name: str) -> dict:
+    profile = load_profile(dataset_id, table_name)
+    return sanitize_for_json(profile)
 
 
-@router.get("/aggregations/{table_name}/columns/{column_name}")
-def get_column_profile(table_name: str, column_name: str):
-    """Get the profile for a specific column in a table."""
-    profile = load_profile(table_name)
+def get_column_profile_for_dataset(dataset_id: str, table_name: str, column_name: str) -> dict:
+    profile = load_profile(dataset_id, table_name)
 
     columns = profile.get("columns", [])
     for col in columns:
@@ -155,26 +157,13 @@ def get_column_profile(table_name: str, column_name: str):
     )
 
 
-# ============================================
-# Chart Data Endpoints
-# ============================================
-
-
-def validate_column_exists(table_name: str, column_name: str) -> bool:
-    """Validate that a column exists in the table profile."""
+def get_column_profile_info(
+    dataset_id: str,
+    table_name: str,
+    column_name: str,
+) -> Optional[dict]:
     try:
-        profile = load_profile(table_name)
-    except HTTPException:
-        return False
-
-    columns = profile.get("columns", [])
-    return any(col.get("name") == column_name for col in columns)
-
-
-def get_column_profile_info(table_name: str, column_name: str) -> Optional[dict]:
-    """Get column profile information including role and type."""
-    try:
-        profile = load_profile(table_name)
+        profile = load_profile(dataset_id, table_name)
     except HTTPException:
         return None
 
@@ -190,9 +179,9 @@ def validate_aggregation_compatibility(column_profile: dict, aggregation_fn: str
     Validate that the aggregation function is compatible with the column type.
     Returns (is_valid, error_message)
     """
-    role = column_profile.get("effective_role", column_profile.get("base_role", "dimension"))
-    physical_type = column_profile.get("physical_type", "string")
-    column_name = column_profile.get("name", "unknown")
+    role = str(column_profile.get("effective_role", column_profile.get("base_role", "dimension"))).lower()
+    physical_type = str(column_profile.get("physical_type", "string")).lower()
+    column_name = str(column_profile.get("name", "unknown"))
 
     if aggregation_fn == "count":
         return True, ""
@@ -203,13 +192,12 @@ def validate_aggregation_compatibility(column_profile: dict, aggregation_fn: str
                 False,
                 (
                     f"Cannot apply {aggregation_fn.upper()} to '{column_name}' - "
-                    f"it's a {role}, not a measure. Try using COUNT instead, "
-                    "or select a numeric column like revenue, quantity, or amount."
+                    f"it's a {role}, not a measure. Try COUNT or choose a numeric measure."
                 ),
             )
 
         numeric_types = ["int", "float", "decimal", "numeric", "double", "real", "bigint", "smallint"]
-        if not any(nt in physical_type.lower() for nt in numeric_types):
+        if not any(nt in physical_type for nt in numeric_types):
             return (
                 False,
                 (
@@ -218,45 +206,45 @@ def validate_aggregation_compatibility(column_profile: dict, aggregation_fn: str
                 ),
             )
 
-        return True, ""
-
-    if aggregation_fn in ["min", "max"]:
-        if role in ["measure", "datetime"]:
-            return True, ""
-        if role in ["dimension", "id", "text", "boolean"]:
-            return True, ""
-        return True, ""
-
     return True, ""
 
 
-def serialize_value(val):
-    """Convert database values to JSON-serializable types."""
-    if val is None:
-        return None
-    if isinstance(val, Decimal):
-        return float(val) if val.is_finite() else None
-    if isinstance(val, (date, datetime)):
-        return val.isoformat()
-    return val
+def _chart_to_aggregate_request(request: ChartDataRequest) -> AggregateRequest:
+    agg_column = "*" if request.aggregation_fn == "count" else request.y_axis
+    return AggregateRequest(
+        table_name=request.table_name,
+        x=request.x_axis,
+        y=request.y_axis,
+        group_by=[request.x_axis],
+        filters=[],
+        agg=AggregateSpec(column=agg_column, fn=request.aggregation_fn),
+        limit=request.limit,
+    )
 
 
-@router.post("/chart-data", response_model=ChartDataResponse)
-def get_chart_data(request: ChartDataRequest, db: Session = Depends(get_db)):
+def get_chart_data_for_dataset(
+    dataset_id: str,
+    request: ChartDataRequest,
+    db: Session,
+) -> ChartDataResponse:
     """
     Query aggregated data from mart tables for chart visualization.
-
-    This endpoint executes a GROUP BY query on the specified table,
-    grouping by x_axis column and aggregating y_axis column.
     """
-    x_column_profile = get_column_profile_info(request.table_name, request.x_axis)
+    _validate_dataset_id(dataset_id)
+
+    try:
+        mart = get_mart(dataset_id, request.table_name)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    x_column_profile = get_column_profile_info(dataset_id, request.table_name, request.x_axis)
     if not x_column_profile:
         raise HTTPException(
             status_code=400,
             detail=f"Column '{request.x_axis}' not found in table '{request.table_name}'",
         )
 
-    y_column_profile = get_column_profile_info(request.table_name, request.y_axis)
+    y_column_profile = get_column_profile_info(dataset_id, request.table_name, request.y_axis)
     if not y_column_profile:
         raise HTTPException(
             status_code=400,
@@ -270,43 +258,9 @@ def get_chart_data(request: ChartDataRequest, db: Session = Depends(get_db)):
     if not is_valid:
         raise HTTPException(status_code=400, detail=error_msg)
 
-    agg_fn = request.aggregation_fn.upper()
-    mart = get_mart_by_id(request.table_name)
-    schema_name = str(mart["schema"]) if mart else MARTS_SCHEMA
-
-    y_column_ref = f'"{request.y_axis}"'
-    y_sql_expr = y_column_ref
-    if (
-        request.table_name == "gold_inventory_health_daily"
-        and request.y_axis in INVENTORY_NON_FINITE_COLUMNS
-    ):
-        y_sql_expr = (
-            f"CASE WHEN {y_column_ref} IS NULL THEN NULL "
-            f"WHEN lower(({y_column_ref})::text) IN ('infinity', '-infinity', 'nan', 'inf', '-inf') "
-            f"THEN NULL ELSE {y_column_ref} END"
-        )
-
-    query = text(
-        f"""
-        SELECT
-            CAST("{request.x_axis}" AS TEXT) as x_value,
-            {agg_fn}({y_sql_expr}) as y_value
-        FROM {schema_name}."{request.table_name}"
-        WHERE "{request.x_axis}" IS NOT NULL
-        GROUP BY "{request.x_axis}"
-        ORDER BY y_value DESC
-        LIMIT :limit
-    """
-    )
-
-    try:
-        result = db.execute(query, {"limit": request.limit})
-        rows = result.fetchall()
-    except Exception as exc:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Database query failed: {exc}",
-        ) from exc
+    agg_request = _chart_to_aggregate_request(request)
+    aggregate_payload = execute_aggregate_request(dataset_id=dataset_id, request=agg_request, db=db)
+    rows = aggregate_payload.get("rows", [])
 
     if not rows:
         raise HTTPException(
@@ -314,8 +268,10 @@ def get_chart_data(request: ChartDataRequest, db: Session = Depends(get_db)):
             detail="No data found for the specified query",
         )
 
-    raw_x_values = [serialize_value(row[0]) for row in rows]
-    raw_y_values = [serialize_value(row[1]) for row in rows]
+    raw_x_values = [row.get(request.x_axis) for row in rows]
+    raw_y_values = [row.get("agg_value") for row in rows]
+    agg_fn = request.aggregation_fn.upper()
+    schema_name = str(mart["schema"]) if mart else MARTS_SCHEMA
     title = f"{agg_fn}({request.y_axis}) by {request.x_axis}"
 
     payload = {
@@ -324,17 +280,38 @@ def get_chart_data(request: ChartDataRequest, db: Session = Depends(get_db)):
         "title": title,
         "x_axis_label": request.x_axis,
         "y_axis_label": f"{agg_fn}({request.y_axis})",
+        "schema_name": schema_name,
     }
     payload = sanitize_for_json(payload)
 
-    # Keep response_model contract stable (x: list[str], y: list[float]).
-    payload["x"] = [str(v) if v is not None else "NULL" for v in payload.get("x", [])]
-    payload["y"] = [float(v) if v is not None else 0.0 for v in payload.get("y", [])]
+    # Keep response_model contract stable.
+    x_values = [str(value) if value is not None else "NULL" for value in payload.get("x", [])]
+    y_values = [float(value) if value is not None else 0.0 for value in payload.get("y", [])]
 
     return ChartDataResponse(
-        x=payload["x"],
-        y=payload["y"],
-        title=payload["title"],
-        x_axis_label=payload["x_axis_label"],
-        y_axis_label=payload["y_axis_label"],
+        x=x_values,
+        y=y_values,
+        title=str(payload["title"]),
+        x_axis_label=str(payload["x_axis_label"]),
+        y_axis_label=str(payload["y_axis_label"]),
     )
+
+
+@router.get("/aggregations")
+def list_aggregations():
+    return list_aggregations_for_dataset(DEFAULT_DATASET_ID)
+
+
+@router.get("/aggregations/{table_name}/profile")
+def get_table_profile(table_name: str):
+    return get_table_profile_for_dataset(DEFAULT_DATASET_ID, table_name)
+
+
+@router.get("/aggregations/{table_name}/columns/{column_name}")
+def get_column_profile(table_name: str, column_name: str):
+    return get_column_profile_for_dataset(DEFAULT_DATASET_ID, table_name, column_name)
+
+
+@router.post("/chart-data", response_model=ChartDataResponse)
+def get_chart_data(request: ChartDataRequest, db: Session = Depends(get_db)):
+    return get_chart_data_for_dataset(DEFAULT_DATASET_ID, request, db)

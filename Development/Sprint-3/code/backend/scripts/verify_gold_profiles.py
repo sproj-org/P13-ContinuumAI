@@ -184,6 +184,8 @@ def _iter_scan_files(root: Path) -> Iterable[Path]:
             continue
         if any(part in EXCLUDED_SCAN_DIRS for part in path.parts):
             continue
+        if path.name == "check_no_hardcoded_marts.py":
+            continue
         if path.suffix.lower() in SKIPPED_SCAN_SUFFIXES:
             continue
         yield path
