@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from app.core.config import get_settings
 from app.db.database import create_tables
 from app.api.auth import router as auth_router
+from app.api.datasets import router as datasets_router
 from app.api.profiling import router as profiling_router
 from app.api.query import router as query_router
 

@@ -1,7 +1,7 @@
 "use client";
 
-import { useAppStore, aggregationTables } from "@/lib/store";
-import { useTableProfile } from "@/lib/hooks";
+import { useAppStore } from "@/lib/store";
+import { useAggregations, useTableProfile } from "@/lib/hooks";
 import {
   getColumnRoleDistribution,
   calculateTableMissingPercentage,
@@ -23,8 +23,14 @@ import {
 } from "lucide-react";
 
 export default function TableProfilingTab() {
-  const { selectedAggregation, setSelectedAggregation } = useAppStore();
-  const { data: profile, isLoading, error } = useTableProfile(selectedAggregation);
+  const { selectedDatasetId, selectedAggregation, setSelectedAggregation } = useAppStore();
+  const { data: aggregationsData, isLoading: isAggregationsLoading } = useAggregations(selectedDatasetId);
+  const { data: profile, isLoading: isProfileLoading, error } = useTableProfile(
+    selectedDatasetId,
+    selectedAggregation
+  );
+  const availableMarts = aggregationsData?.aggregations ?? [];
+  const isLoading = isAggregationsLoading || (!!selectedAggregation && isProfileLoading);
 
   // Derive values from profile using transformers
   const missingPercentage = profile ? calculateTableMissingPercentage(profile) : 0;
@@ -51,27 +57,37 @@ export default function TableProfilingTab() {
         <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-4">
           Aggregation Tables
         </h3>
-        <div className="space-y-2">
-          {aggregationTables.map((table) => (
-            <button
-              key={table.id}
-              onClick={() => setSelectedAggregation(table.id)}
-              className={`w-full text-left p-3 rounded-xl transition-all ${
-                selectedAggregation === table.id
-                  ? "bg-[#5237ff]/20 border border-[#5237ff]/30 text-white"
-                  : "bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10 hover:border-white/20"
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <Table2 className={`w-5 h-5 ${selectedAggregation === table.id ? "text-[#5237ff]" : "text-gray-500"}`} />
-                <div>
-                  <div className="font-medium text-sm">{table.label}</div>
-                  <div className="text-xs text-gray-500">{table.description}</div>
+        {availableMarts.length > 0 ? (
+          <div className="space-y-2">
+            {availableMarts.map((table) => (
+              <button
+                key={table.table_name}
+                onClick={() => setSelectedAggregation(table.table_name)}
+                className={`w-full text-left p-3 rounded-xl transition-all ${
+                  selectedAggregation === table.table_name
+                    ? "bg-[#5237ff]/20 border border-[#5237ff]/30 text-white"
+                    : "bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10 hover:border-white/20"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Table2
+                    className={`w-5 h-5 ${selectedAggregation === table.table_name ? "text-[#5237ff]" : "text-gray-500"}`}
+                  />
+                  <div>
+                    <div className="font-medium text-sm">
+                      {table.label ?? table.table_name}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {table.description ?? `${table.row_count.toLocaleString()} rows`}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </button>
-          ))}
-        </div>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500">No marts available.</p>
+        )}
       </div>
 
       {/* Main Panel - Profile View */}
@@ -112,7 +128,9 @@ export default function TableProfilingTab() {
                 <h2 className="text-2xl font-bold text-white">
                   {(profile.table_name ?? profile.dataset_name).replaceAll(/_/g, " ").replaceAll(/\b\w/g, l => l.toUpperCase())}
                 </h2>
-                <p className="text-gray-400 mt-1">aggregations.{profile.table_name ?? profile.dataset_name}</p>
+                <p className="text-gray-400 mt-1">
+                  {profile.schema_name ?? "aggregations"}.{profile.table_name ?? profile.dataset_name}
+                </p>
               </div>
               <div className="flex items-center gap-2 text-gray-400 text-sm">
                 <Clock className="w-4 h-4" />

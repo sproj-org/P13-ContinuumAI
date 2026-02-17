@@ -141,6 +141,7 @@ function DropZone({
 
 export default function ChartBuilderTab() {
   const {
+    selectedDatasetId,
     selectedAggregation,
     setSelectedAggregation,
     chartConfig,
@@ -150,7 +151,9 @@ export default function ChartBuilderTab() {
 
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
 
-  const { data: profile, isLoading } = useTableProfile(selectedAggregation);
+  const { data: aggregationsData } = useAggregations(selectedDatasetId);
+  const { data: profile, isLoading } = useTableProfile(selectedDatasetId, selectedAggregation);
+  const availableMarts = aggregationsData?.aggregations ?? [];
   
   // Transform columns for frontend use
   const transformedColumns = useMemo(() => {
@@ -303,15 +306,15 @@ export default function ChartBuilderTab() {
             <select
               value={selectedAggregation || ""}
               onChange={(e) => {
-                setSelectedAggregation(e.target.value as AggregationTable);
+                setSelectedAggregation(e.target.value || null);
                 resetChartConfig();
               }}
               className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#5237ff]/50"
             >
               <option value="">Select table</option>
-              {aggregationTables.map((table) => (
-                <option key={table.id} value={table.id}>
-                  {table.label}
+              {availableMarts.map((table) => (
+                <option key={table.table_name} value={table.table_name}>
+                  {table.label ?? table.table_name}
                 </option>
               ))}
             </select>

@@ -30,14 +30,21 @@ function WorkspaceContent() {
   const params = useParams();
   const datasetId = params.datasetId as string;
 
-  const { activeTab, setActiveTab, setActiveDataset, activeDataset } = useAppStore();
+  const {
+    activeTab,
+    setActiveTab,
+    setActiveDataset,
+    selectedDatasetId,
+    setSelectedDatasetId,
+  } = useAppStore();
 
   // Set active dataset on mount
   useEffect(() => {
-    if (datasetId === "silkroute") {
-      setActiveDataset("silkroute");
+    if (datasetId) {
+      setSelectedDatasetId(datasetId);
+      setActiveDataset(datasetId);
     }
-  }, [datasetId, setActiveDataset]);
+  }, [datasetId, setActiveDataset, setSelectedDatasetId]);
 
   const handleBack = () => {
     setActiveDataset(null);
@@ -77,7 +84,7 @@ function WorkspaceContent() {
                   <div className="flex items-center gap-2">
                     <Database className="w-4 h-4 text-[#5237ff]" />
                     <span className="text-[#5237ff] font-medium capitalize">
-                      {activeDataset || datasetId}
+                      {selectedDatasetId || datasetId}
                     </span>
                   </div>
                 </div>

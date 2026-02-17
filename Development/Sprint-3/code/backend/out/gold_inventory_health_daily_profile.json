@@ -1,0 +1,983 @@
+{
+  "dataset_name": "gold_inventory_health_daily",
+  "schema_name": "gold",
+  "table_name": "gold_inventory_health_daily",
+  "row_count": 55650,
+  "column_count": 14,
+  "profiled_at": "2026-02-17T14:43:26.996560Z",
+  "columns": [
+    {
+      "name": "snapshot_date",
+      "physical_type": "datetime",
+      "logical_type": "datetime",
+      "base_role": "datetime",
+      "effective_role": "datetime",
+      "row_count": 55650,
+      "distinct_count": 53,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "2025-01-01T00:00:00"
+      ],
+      "stats": {
+        "kind": "datetime",
+        "null_count": 0,
+        "min": "2025-01-01T00:00:00",
+        "max": "2025-12-31T00:00:00",
+        "distinct_days": 53
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "store_id",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "id",
+      "effective_role": "id",
+      "row_count": 55650,
+      "distinct_count": 7,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "S001",
+        "S002"
+      ],
+      "stats": {
+        "kind": "categorical",
+        "null_count": 0,
+        "distinct_count": 7,
+        "top_k": []
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "sku_id",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "id",
+      "effective_role": "id",
+      "row_count": 55650,
+      "distinct_count": 150,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "SKU00001",
+        "SKU00003",
+        "SKU00004",
+        "SKU00005",
+        "SKU00006"
+      ],
+      "stats": {
+        "kind": "categorical",
+        "null_count": 0,
+        "distinct_count": 150,
+        "top_k": []
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "stock_on_hand",
+      "physical_type": "int",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 55650,
+      "distinct_count": 120,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "48",
+        "38",
+        "23",
+        "49",
+        "31"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 0.0,
+        "max": 119.0,
+        "mean": 29.8488948787062,
+        "stddev": 18.588524941053777,
+        "p05": 10.0,
+        "p50": 25.0,
+        "p95": 66.0,
+        "zero_count": 330
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "stock_on_order",
+      "physical_type": "int",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 55650,
+      "distinct_count": 6,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "0",
+        "28",
+        "10",
+        "18",
+        "14"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 0.0,
+        "max": 28.0,
+        "mean": 2.45822102425876,
+        "stddev": 6.28193952378671,
+        "p05": 0.0,
+        "p50": 0.0,
+        "p95": 18.0,
+        "zero_count": 46498
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "units_28d",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 55650,
+      "distinct_count": 28,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "0.0",
+        "2.0",
+        "1.0"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 0.0,
+        "max": 27.0,
+        "mean": 2.1806828391734,
+        "stddev": 2.27285002977546,
+        "p05": 0.0,
+        "p50": 2.0,
+        "p95": 6.0,
+        "zero_count": 12146
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "avg_daily_units_28d",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 55650,
+      "distinct_count": 28,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "0.0",
+        "0.0714285714285714",
+        "0.0357142857142857"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 0.0,
+        "max": 0.964285714285714,
+        "mean": 0.0778815299704618,
+        "stddev": 0.0811732153491236,
+        "p05": 0.0,
+        "p50": 0.0714285714285714,
+        "p95": 0.214285714285714,
+        "zero_count": 12146
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "momentum_factor",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 55650,
+      "distinct_count": 112,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "1.0",
+        "3.0",
+        "2.0"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 0.0833333333333333,
+        "max": 11.0,
+        "mean": 1.28695078941988,
+        "stddev": 0.942022800577871,
+        "p05": 0.333333333333333,
+        "p50": 1.0,
+        "p95": 3.0,
+        "zero_count": 0
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "adj_avg_daily_units",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 55650,
+      "distinct_count": 93,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "0.0",
+        "0.107142857142857",
+        "0.0535714285714285"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 0.0,
+        "max": 1.39285714285714,
+        "mean": 0.0804788011457433,
+        "stddev": 0.0955760377498403,
+        "p05": 0.0,
+        "p50": 0.0535714285714285,
+        "p95": 0.267857142857143,
+        "zero_count": 12146
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "days_of_inventory",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 55650,
+      "distinct_count": 820,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "532.0",
+        "1260.0",
+        "868.0",
+        "322.0"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 0.0,
+        "max": null,
+        "mean": null,
+        "stddev": null,
+        "p05": 67.2,
+        "p50": 476.0,
+        "p95": null,
+        "zero_count": 330
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "adj_days_of_inventory",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 55650,
+      "distinct_count": 1621,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "354.666666666667",
+        "840.0",
+        "578.666666666667",
+        "214.666666666667"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 0.0,
+        "max": null,
+        "mean": null,
+        "stddev": null,
+        "p05": 62.2222222222222,
+        "p50": 504.0,
+        "p95": null,
+        "zero_count": 330
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "stockout_risk_flag",
+      "physical_type": "int",
+      "logical_type": "numeric",
+      "base_role": "dimension",
+      "effective_role": "dimension",
+      "row_count": 55650,
+      "distinct_count": 2,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "0"
+      ],
+      "stats": {
+        "kind": "categorical",
+        "null_count": 0,
+        "distinct_count": 2,
+        "top_k": [
+          {
+            "value": "0",
+            "count": 55225,
+            "percent": 0.9923629829290207
+          },
+          {
+            "value": "1",
+            "count": 425,
+            "percent": 0.0076370170709793355
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "overstock_flag",
+      "physical_type": "int",
+      "logical_type": "numeric",
+      "base_role": "dimension",
+      "effective_role": "dimension",
+      "row_count": 55650,
+      "distinct_count": 2,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "1"
+      ],
+      "stats": {
+        "kind": "categorical",
+        "null_count": 0,
+        "distinct_count": 2,
+        "top_k": [
+          {
+            "value": "1",
+            "count": 52962,
+            "percent": 0.9516981132075472
+          },
+          {
+            "value": "0",
+            "count": 2688,
+            "percent": 0.04830188679245283
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "reorder_qty_suggestion",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 55650,
+      "distinct_count": 354,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "0.0"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 0.0,
+        "max": 41.7857142857143,
+        "mean": 0.138715244386636,
+        "stddev": 1.33615618810078,
+        "p05": 0.0,
+        "p50": 0.0,
+        "p95": 0.0,
+        "zero_count": 54508
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    }
+  ],
+  "dataset_meta": {
+    "dataset_key": "gold.gold_inventory_health_daily",
+    "generated_at": "2026-02-17T14:43:30.250737+00:00",
+    "profiler_version": "sprint3-profiler-mvp-v1",
+    "columns_map": {
+      "snapshot_date": {
+        "name": "snapshot_date",
+        "physical_type": "datetime",
+        "logical_type": "datetime",
+        "base_role": "datetime",
+        "effective_role": "datetime",
+        "row_count": 55650,
+        "distinct_count": 53,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "low",
+        "sample_values": [
+          "2025-01-01T00:00:00"
+        ],
+        "stats": {
+          "kind": "datetime",
+          "null_count": 0,
+          "min": "2025-01-01T00:00:00",
+          "max": "2025-12-31T00:00:00",
+          "distinct_days": 53
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "store_id": {
+        "name": "store_id",
+        "physical_type": "string",
+        "logical_type": "categorical",
+        "base_role": "id",
+        "effective_role": "id",
+        "row_count": 55650,
+        "distinct_count": 7,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "low",
+        "sample_values": [
+          "S001",
+          "S002"
+        ],
+        "stats": {
+          "kind": "categorical",
+          "null_count": 0,
+          "distinct_count": 7,
+          "top_k": []
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "sku_id": {
+        "name": "sku_id",
+        "physical_type": "string",
+        "logical_type": "categorical",
+        "base_role": "id",
+        "effective_role": "id",
+        "row_count": 55650,
+        "distinct_count": 150,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "low",
+        "sample_values": [
+          "SKU00001",
+          "SKU00003",
+          "SKU00004",
+          "SKU00005",
+          "SKU00006"
+        ],
+        "stats": {
+          "kind": "categorical",
+          "null_count": 0,
+          "distinct_count": 150,
+          "top_k": []
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "stock_on_hand": {
+        "name": "stock_on_hand",
+        "physical_type": "int",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 55650,
+        "distinct_count": 120,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "low",
+        "sample_values": [
+          "48",
+          "38",
+          "23",
+          "49",
+          "31"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 0.0,
+          "max": 119.0,
+          "mean": 29.8488948787062,
+          "stddev": 18.588524941053777,
+          "p05": 10.0,
+          "p50": 25.0,
+          "p95": 66.0,
+          "zero_count": 330
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "stock_on_order": {
+        "name": "stock_on_order",
+        "physical_type": "int",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 55650,
+        "distinct_count": 6,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "low",
+        "sample_values": [
+          "0",
+          "28",
+          "10",
+          "18",
+          "14"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 0.0,
+          "max": 28.0,
+          "mean": 2.45822102425876,
+          "stddev": 6.28193952378671,
+          "p05": 0.0,
+          "p50": 0.0,
+          "p95": 18.0,
+          "zero_count": 46498
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "units_28d": {
+        "name": "units_28d",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 55650,
+        "distinct_count": 28,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "low",
+        "sample_values": [
+          "0.0",
+          "2.0",
+          "1.0"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 0.0,
+          "max": 27.0,
+          "mean": 2.1806828391734,
+          "stddev": 2.27285002977546,
+          "p05": 0.0,
+          "p50": 2.0,
+          "p95": 6.0,
+          "zero_count": 12146
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "avg_daily_units_28d": {
+        "name": "avg_daily_units_28d",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 55650,
+        "distinct_count": 28,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "low",
+        "sample_values": [
+          "0.0",
+          "0.0714285714285714",
+          "0.0357142857142857"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 0.0,
+          "max": 0.964285714285714,
+          "mean": 0.0778815299704618,
+          "stddev": 0.0811732153491236,
+          "p05": 0.0,
+          "p50": 0.0714285714285714,
+          "p95": 0.214285714285714,
+          "zero_count": 12146
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "momentum_factor": {
+        "name": "momentum_factor",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 55650,
+        "distinct_count": 112,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "low",
+        "sample_values": [
+          "1.0",
+          "3.0",
+          "2.0"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 0.0833333333333333,
+          "max": 11.0,
+          "mean": 1.28695078941988,
+          "stddev": 0.942022800577871,
+          "p05": 0.333333333333333,
+          "p50": 1.0,
+          "p95": 3.0,
+          "zero_count": 0
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "adj_avg_daily_units": {
+        "name": "adj_avg_daily_units",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 55650,
+        "distinct_count": 93,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "low",
+        "sample_values": [
+          "0.0",
+          "0.107142857142857",
+          "0.0535714285714285"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 0.0,
+          "max": 1.39285714285714,
+          "mean": 0.0804788011457433,
+          "stddev": 0.0955760377498403,
+          "p05": 0.0,
+          "p50": 0.0535714285714285,
+          "p95": 0.267857142857143,
+          "zero_count": 12146
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "days_of_inventory": {
+        "name": "days_of_inventory",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 55650,
+        "distinct_count": 820,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "low",
+        "sample_values": [
+          null,
+          "532.0",
+          "1260.0",
+          "868.0",
+          "322.0"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 0.0,
+          "max": null,
+          "mean": null,
+          "stddev": null,
+          "p05": 67.2,
+          "p50": 476.0,
+          "p95": null,
+          "zero_count": 330
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "adj_days_of_inventory": {
+        "name": "adj_days_of_inventory",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 55650,
+        "distinct_count": 1621,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "low",
+        "sample_values": [
+          null,
+          "354.666666666667",
+          "840.0",
+          "578.666666666667",
+          "214.666666666667"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 0.0,
+          "max": null,
+          "mean": null,
+          "stddev": null,
+          "p05": 62.2222222222222,
+          "p50": 504.0,
+          "p95": null,
+          "zero_count": 330
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "stockout_risk_flag": {
+        "name": "stockout_risk_flag",
+        "physical_type": "int",
+        "logical_type": "numeric",
+        "base_role": "dimension",
+        "effective_role": "dimension",
+        "row_count": 55650,
+        "distinct_count": 2,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "low",
+        "sample_values": [
+          "0"
+        ],
+        "stats": {
+          "kind": "categorical",
+          "null_count": 0,
+          "distinct_count": 2,
+          "top_k": [
+            {
+              "value": "0",
+              "count": 55225,
+              "percent": 0.9923629829290207
+            },
+            {
+              "value": "1",
+              "count": 425,
+              "percent": 0.0076370170709793355
+            }
+          ]
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "overstock_flag": {
+        "name": "overstock_flag",
+        "physical_type": "int",
+        "logical_type": "numeric",
+        "base_role": "dimension",
+        "effective_role": "dimension",
+        "row_count": 55650,
+        "distinct_count": 2,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "low",
+        "sample_values": [
+          "1"
+        ],
+        "stats": {
+          "kind": "categorical",
+          "null_count": 0,
+          "distinct_count": 2,
+          "top_k": [
+            {
+              "value": "1",
+              "count": 52962,
+              "percent": 0.9516981132075472
+            },
+            {
+              "value": "0",
+              "count": 2688,
+              "percent": 0.04830188679245283
+            }
+          ]
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "reorder_qty_suggestion": {
+        "name": "reorder_qty_suggestion",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 55650,
+        "distinct_count": 354,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "low",
+        "sample_values": [
+          "0.0"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 0.0,
+          "max": 41.7857142857143,
+          "mean": 0.138715244386636,
+          "stddev": 1.33615618810078,
+          "p05": 0.0,
+          "p50": 0.0,
+          "p95": 0.0,
+          "zero_count": 54508
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      }
+    }
+  }
+}
