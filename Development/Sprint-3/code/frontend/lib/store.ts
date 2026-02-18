@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 import type { ChartSpecV1 } from './types/chartspec';
+import type { ChatResponse } from './types/chat';
 
 export type DatasetId = string;
 export type WorkspaceTab = 'table-profiling' | 'column-profiling' | 'chart-builder' | 'chat';
@@ -14,7 +15,7 @@ export interface AvailableMart {
 export interface ChatTurn {
   role: 'user' | 'assistant';
   message: string;
-  response?: unknown;
+  response?: ChatResponse | null;
   createdAt: string;
 }
 

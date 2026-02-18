@@ -51,18 +51,3 @@ export interface ChartsPreviewResponse {
   rows: Array<Record<string, unknown>>;
   meta: Record<string, unknown>;
 }
-
-export interface ChatRequest {
-  message: string;
-  table: string;
-  state?: Record<string, unknown>;
-}
-
-export interface ChatResponse {
-  response_type: "chart" | string;
-  chart_spec: ChartSpecV1;
-  columns: string[];
-  rows: Array<Record<string, unknown>>;
-  narrative: string;
-  meta: Record<string, unknown>;
-}

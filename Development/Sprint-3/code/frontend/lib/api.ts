@@ -12,9 +12,8 @@ import type {
 import type {
   ChartSpecV1,
   ChartsPreviewResponse,
-  ChatRequest,
-  ChatResponse,
 } from "./types/chartspec";
+import type { ChatRequest, ChatResponse } from "./types/chat";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
