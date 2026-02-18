@@ -9,6 +9,7 @@ import type {
   ColumnProfileAPI,
   DatasetProfileAPI,
 } from "./api-types";
+import type { ChartSpecV1, ChartsPreviewResponse } from "./types/chartspec";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -168,6 +169,13 @@ class ApiClient {
         body: JSON.stringify(request),
       }
     );
+  }
+
+  async postChartsPreview(datasetId: string, chartSpec: ChartSpecV1): Promise<ChartsPreviewResponse> {
+    return this.request<ChartsPreviewResponse>(`/datasets/${datasetId}/charts/preview`, {
+      method: "POST",
+      body: JSON.stringify(chartSpec),
+    });
   }
 
   // ============================================

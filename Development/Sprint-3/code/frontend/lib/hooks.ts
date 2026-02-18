@@ -11,6 +11,23 @@ import type {
   ChartDataResponse,
   AggregationFn,
 } from './api-types';
+import type { ChartSpecV1, ChartsPreviewResponse } from "./types/chartspec";
+
+function stableSerialize(value: unknown): string {
+  if (value === null || value === undefined) {
+    return "null";
+  }
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableSerialize(item)).join(",")}]`;
+  }
+  if (typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, item]) => `${JSON.stringify(key)}:${stableSerialize(item)}`);
+    return `{${entries.join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
 
 /**
  * Fetch list of available aggregation tables
@@ -74,5 +91,15 @@ export function useChartData(
     }),
     enabled: !!tableName && !!xAxis && !!yAxis,
     staleTime: 1 * 60 * 1000, // 1 minute (shorter for chart data)
+  });
+}
+
+export function useChartsPreview(datasetId: string, chartSpec: ChartSpecV1 | null) {
+  const fingerprint = chartSpec ? stableSerialize(chartSpec) : "";
+  return useQuery<ChartsPreviewResponse, Error>({
+    queryKey: ["chartsPreview", datasetId, fingerprint],
+    queryFn: () => apiClient.postChartsPreview(datasetId, chartSpec!),
+    enabled: !!datasetId && !!chartSpec,
+    staleTime: 1 * 60 * 1000,
   });
 }
