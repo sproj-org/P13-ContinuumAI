@@ -1,7 +1,7 @@
 "use client";
 
 import { useAppStore } from "@/lib/store";
-import { useAggregations, useTableProfile } from "@/lib/hooks";
+import { useTableProfile } from "@/lib/hooks";
 import { 
   transformColumnProfile, 
   generateSuggestedCharts,
@@ -203,18 +203,17 @@ export default function ColumnProfilingTab() {
     selectedDatasetId,
     selectedAggregation,
     setSelectedAggregation,
+    availableMarts,
     selectedColumn,
     setSelectedColumn,
     setActiveTab,
     setChartConfig,
   } = useAppStore();
-  const { data: aggregationsData, isLoading: isAggregationsLoading } = useAggregations(selectedDatasetId);
   const { data: profile, isLoading: isProfileLoading, error } = useTableProfile(
     selectedDatasetId,
     selectedAggregation
   );
-  const availableMarts = aggregationsData?.aggregations ?? [];
-  const isLoading = isAggregationsLoading || (!!selectedAggregation && isProfileLoading);
+  const isLoading = !!selectedAggregation && isProfileLoading;
   
   // Transform columns for frontend use
   const transformedColumns = profile?.columns.map(transformColumnProfile) ?? [];
@@ -253,8 +252,8 @@ export default function ColumnProfilingTab() {
           >
             <option value="">Select a table</option>
             {availableMarts.map((table) => (
-              <option key={table.table_name} value={table.table_name}>
-                {table.label ?? table.table_name}
+              <option key={table.id} value={table.id}>
+                {table.label ?? table.id}
               </option>
             ))}
           </select>

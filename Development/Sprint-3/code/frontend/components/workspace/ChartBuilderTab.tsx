@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useAppStore, ChartConfig } from "@/lib/store";
-import { useAggregations, useTableProfile, useChartData } from "@/lib/hooks";
+import { useTableProfile, useChartData } from "@/lib/hooks";
 import { 
   transformColumnProfile,
   type ColumnRole,
@@ -142,6 +142,7 @@ export default function ChartBuilderTab() {
     selectedDatasetId,
     selectedAggregation,
     setSelectedAggregation,
+    availableMarts,
     chartConfig,
     setChartConfig,
     resetChartConfig,
@@ -149,9 +150,7 @@ export default function ChartBuilderTab() {
 
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
 
-  const { data: aggregationsData } = useAggregations(selectedDatasetId);
   const { data: profile, isLoading } = useTableProfile(selectedDatasetId, selectedAggregation);
-  const availableMarts = aggregationsData?.aggregations ?? [];
   
   // Transform columns for frontend use
   const transformedColumns = useMemo(() => {
@@ -270,8 +269,8 @@ export default function ChartBuilderTab() {
             >
               <option value="">Select table</option>
               {availableMarts.map((table) => (
-                <option key={table.table_name} value={table.table_name}>
-                  {table.label ?? table.table_name}
+                <option key={table.id} value={table.id}>
+                  {table.label ?? table.id}
                 </option>
               ))}
             </select>

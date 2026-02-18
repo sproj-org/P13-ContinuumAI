@@ -3,6 +3,7 @@
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
 import { useAppStore, WorkspaceTab } from "@/lib/store";
+import { useAggregations } from "@/lib/hooks";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
@@ -36,7 +37,12 @@ function WorkspaceContent() {
     setActiveDataset,
     selectedDatasetId,
     setSelectedDatasetId,
+    selectedAggregation,
+    setSelectedAggregation,
+    availableMarts,
+    setAvailableMarts,
   } = useAppStore();
+  const { data: aggregationsData } = useAggregations(selectedDatasetId);
 
   // Set active dataset on mount
   useEffect(() => {
@@ -45,6 +51,32 @@ function WorkspaceContent() {
       setActiveDataset(datasetId);
     }
   }, [datasetId, setActiveDataset, setSelectedDatasetId]);
+
+  useEffect(() => {
+    const marts = (aggregationsData?.aggregations ?? []).map((item) => ({
+      id: item.table_name,
+      label: item.label,
+      description: item.description,
+    }));
+    setAvailableMarts(marts);
+  }, [aggregationsData, setAvailableMarts]);
+
+  useEffect(() => {
+    if (availableMarts.length === 0) {
+      if (selectedAggregation !== null) {
+        setSelectedAggregation(null);
+      }
+      return;
+    }
+
+    const selectionStillValid = selectedAggregation
+      ? availableMarts.some((item) => item.id === selectedAggregation)
+      : false;
+
+    if (!selectionStillValid) {
+      setSelectedAggregation(availableMarts[0].id);
+    }
+  }, [availableMarts, selectedAggregation, setSelectedAggregation]);
 
   const handleBack = () => {
     setActiveDataset(null);

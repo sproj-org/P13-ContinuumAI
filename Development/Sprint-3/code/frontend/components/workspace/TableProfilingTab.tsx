@@ -1,7 +1,7 @@
 "use client";
 
 import { useAppStore } from "@/lib/store";
-import { useAggregations, useTableProfile } from "@/lib/hooks";
+import { useTableProfile } from "@/lib/hooks";
 import {
   getColumnRoleDistribution,
   calculateTableMissingPercentage,
@@ -23,14 +23,12 @@ import {
 } from "lucide-react";
 
 export default function TableProfilingTab() {
-  const { selectedDatasetId, selectedAggregation, setSelectedAggregation } = useAppStore();
-  const { data: aggregationsData, isLoading: isAggregationsLoading } = useAggregations(selectedDatasetId);
+  const { selectedDatasetId, selectedAggregation, setSelectedAggregation, availableMarts } = useAppStore();
   const { data: profile, isLoading: isProfileLoading, error } = useTableProfile(
     selectedDatasetId,
     selectedAggregation
   );
-  const availableMarts = aggregationsData?.aggregations ?? [];
-  const isLoading = isAggregationsLoading || (!!selectedAggregation && isProfileLoading);
+  const isLoading = !!selectedAggregation && isProfileLoading;
 
   // Derive values from profile using transformers
   const missingPercentage = profile ? calculateTableMissingPercentage(profile) : 0;
@@ -61,24 +59,24 @@ export default function TableProfilingTab() {
           <div className="space-y-2">
             {availableMarts.map((table) => (
               <button
-                key={table.table_name}
-                onClick={() => setSelectedAggregation(table.table_name)}
+                key={table.id}
+                onClick={() => setSelectedAggregation(table.id)}
                 className={`w-full text-left p-3 rounded-xl transition-all ${
-                  selectedAggregation === table.table_name
+                  selectedAggregation === table.id
                     ? "bg-[#5237ff]/20 border border-[#5237ff]/30 text-white"
                     : "bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10 hover:border-white/20"
                 }`}
               >
                 <div className="flex items-center gap-3">
                   <Table2
-                    className={`w-5 h-5 ${selectedAggregation === table.table_name ? "text-[#5237ff]" : "text-gray-500"}`}
+                    className={`w-5 h-5 ${selectedAggregation === table.id ? "text-[#5237ff]" : "text-gray-500"}`}
                   />
                   <div>
                     <div className="font-medium text-sm">
-                      {table.label ?? table.table_name}
+                      {table.label ?? table.id}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {table.description ?? `${table.row_count.toLocaleString()} rows`}
+                      {table.description ?? "Registry mart"}
                     </div>
                   </div>
                 </div>

@@ -3,6 +3,12 @@ import { create } from 'zustand';
 export type DatasetId = string;
 export type WorkspaceTab = 'table-profiling' | 'column-profiling' | 'chart-builder';
 
+export interface AvailableMart {
+  id: string;
+  label?: string;
+  description?: string;
+}
+
 interface AppState {
   selectedDatasetId: DatasetId;
   setSelectedDatasetId: (datasetId: DatasetId) => void;
@@ -14,6 +20,8 @@ interface AppState {
   // Workspace state
   selectedAggregation: string | null;
   setSelectedAggregation: (table: string | null) => void;
+  availableMarts: AvailableMart[];
+  setAvailableMarts: (marts: AvailableMart[]) => void;
 
   selectedColumn: string | null;
   setSelectedColumn: (column: string | null) => void;
@@ -62,6 +70,8 @@ export const useAppStore = create<AppState>((set) => ({
   // Workspace
   selectedAggregation: null,
   setSelectedAggregation: (table) => set({ selectedAggregation: table, selectedColumn: null }),
+  availableMarts: [],
+  setAvailableMarts: (marts) => set({ availableMarts: marts }),
 
   selectedColumn: null,
   setSelectedColumn: (column) => set({ selectedColumn: column }),
