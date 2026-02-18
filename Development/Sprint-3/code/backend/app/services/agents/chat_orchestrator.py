@@ -31,6 +31,11 @@ OUT_DIR = Path(__file__).resolve().parents[3] / "out"
 _CHAT_ADAPTER = TypeAdapter(ChatResponseUnion)
 _OFF_TOPIC_RE = re.compile(r"\b(poem|poetry|song|lyrics|story|novel|oceans?|haiku)\b", re.IGNORECASE)
 _VAGUE_RE = re.compile(r"^\s*(help|analyze|chart|show|what next)\s*$", re.IGNORECASE)
+_CHART_BY_RE = re.compile(
+    r"(?:show|plot|chart|graph|display)?\s*(?P<metric>[a-zA-Z_][a-zA-Z0-9_]*)\s+(?:by|per|across)\s+(?P<x>[a-zA-Z_][a-zA-Z0-9_]*)",
+    re.IGNORECASE,
+)
+_X_DIMENSION_ROLES = {"dimension", "id", "text", "boolean", "datetime", "temporal"}
 
 
 def _load_profile(dataset_id: str, table: str) -> dict[str, Any]:
@@ -128,6 +133,66 @@ def _coerce_chart_spec(dataset_id: str, table: str, candidate: ChartSpecV1) -> C
             "dataset_id": dataset_id,
             "table": table,
         }
+    )
+
+
+def _detect_aggregation(message: str) -> str:
+    lowered = message.lower()
+    if "average" in lowered or "mean" in lowered or "avg" in lowered:
+        return "avg"
+    if "count" in lowered or "number of" in lowered:
+        return "count"
+    if "min" in lowered or "lowest" in lowered:
+        return "min"
+    if "max" in lowered or "highest" in lowered:
+        return "max"
+    return "sum"
+
+
+def _build_rule_based_chart_spec(dataset_id: str, table: str, message: str) -> ChartSpecV1 | None:
+    match = _CHART_BY_RE.search(message.strip())
+    if not match:
+        return None
+
+    metric_field = str(match.group("metric"))
+    x_field = str(match.group("x"))
+    profile = _load_profile(dataset_id, table)
+    columns = profile.get("columns", [])
+    role_by_name: dict[str, str] = {}
+    if isinstance(columns, list):
+        for raw in columns:
+            if not isinstance(raw, dict):
+                continue
+            name = raw.get("name")
+            if not isinstance(name, str):
+                continue
+            role_by_name[name] = str(raw.get("effective_role", raw.get("base_role", ""))).lower()
+
+    metric_role = role_by_name.get(metric_field)
+    x_role = role_by_name.get(x_field)
+    if metric_role != "measure" or x_role not in _X_DIMENSION_ROLES:
+        return None
+
+    aggregation = _detect_aggregation(message)
+    chart_type = "line" if x_role in {"datetime", "temporal"} else "bar"
+    return ChartSpecV1(
+        version="v1",
+        dataset_id=dataset_id,
+        table=table,
+        chart={"type": chart_type},
+        encoding={
+            "x": {"field": x_field},
+            "y": [
+                {
+                    "field": metric_field,
+                    "aggregation": aggregation,
+                    "alias": "metric_value",
+                }
+            ],
+        },
+        filters=[],
+        sort=[{"field": "metric_value", "direction": "desc"}],
+        limit=20,
     )
 
 
@@ -326,6 +391,15 @@ def run_chat_orchestration(
         return grounded.model_dump(mode="json")
 
     if response.response_type in {"clarify", "refuse"}:
+        fallback_spec = _build_rule_based_chart_spec(dataset_id, table, message)
+        if fallback_spec is not None:
+            executed = _execute_chart_spec(
+                dataset_id,
+                _coerce_chart_spec(dataset_id, table, fallback_spec),
+                db,
+                narrative="Generated from the requested metric-by-breakdown pattern.",
+            )
+            return executed.model_dump(mode="json")
         return response.model_dump(mode="json")
 
     fallback = _build_clarify("Please rephrase your analytics request with metric and grouping.")
