@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { apiClient } from "@/lib/api";
 import type { ChatResponse } from "@/lib/types/chat";
@@ -24,6 +25,7 @@ function assistantText(response: ChatResponse): string {
 }
 
 export default function ChatPanel() {
+  const params = useParams<{ datasetId: string }>();
   const {
     selectedDatasetId,
     selectedAggregation,
@@ -36,13 +38,19 @@ export default function ChatPanel() {
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const routeDatasetId = params?.datasetId || selectedDatasetId;
 
   const chatKey = useMemo(
-    () => (selectedAggregation ? `${selectedDatasetId}:${selectedAggregation}` : null),
-    [selectedDatasetId, selectedAggregation]
+    () => (selectedAggregation ? `${routeDatasetId}:${selectedAggregation}` : null),
+    [routeDatasetId, selectedAggregation]
   );
   const turns = chatKey ? chatTurnsByKey[chatKey] ?? [] : [];
   const lastChartSpec = chatKey ? lastChartSpecByKey[chatKey] ?? null : null;
+
+  useEffect(() => {
+    setError(null);
+    setMessage("");
+  }, [chatKey]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -63,7 +71,7 @@ export default function ChatPanel() {
     setError(null);
     setIsLoading(true);
     try {
-      const response = await apiClient.postChat(selectedDatasetId, {
+      const response = await apiClient.postChat(routeDatasetId, {
         message: trimmed,
         table: selectedAggregation,
         state: lastChartSpec ? { last_chart_spec: lastChartSpec } : undefined,
@@ -83,6 +91,7 @@ export default function ChatPanel() {
       setIsLoading(false);
     }
   };
+  const canSend = Boolean(selectedAggregation && chatKey && !isLoading);
 
   return (
     <div className="h-full flex flex-col">
@@ -175,7 +184,7 @@ export default function ChatPanel() {
           />
           <button
             type="submit"
-            disabled={isLoading || !selectedAggregation}
+            disabled={!canSend}
             className="px-3 py-2 rounded-lg bg-[#5237ff]/20 border border-[#5237ff]/30 text-[#a397ff] hover:text-white disabled:opacity-60"
           >
             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
