@@ -1,18 +1,55 @@
-"""Single-mart chat orchestration for ChartSpec generation + execution."""
+"""Single-mart chat orchestration with typed response branches."""
 
 from __future__ import annotations
 
+import hashlib
+import json
+import re
+from pathlib import Path
 from typing import Any
 
 from fastapi import HTTPException
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.core.mart_registry import get_mart
+from app.services.agents.chat_models import (
+    ChatChartResponse,
+    ChatClarifyResponse,
+    ChatExplainResponse,
+    ChatRefuseResponse,
+    ChatResponseUnion,
+)
 from app.services.agents.context_builder import build_chat_prompts
+from app.services.agents.spec_patch import apply_patch
 from app.services.charts.models import ChartSpecV1
 from app.services.charts.spec_resolver import execute_chart_preview
 from app.services.llm.openai_client import OpenAIClient, OpenAIJSONError
+
+OUT_DIR = Path(__file__).resolve().parents[3] / "out"
+_CHAT_ADAPTER = TypeAdapter(ChatResponseUnion)
+_OFF_TOPIC_RE = re.compile(r"\b(poem|poetry|song|lyrics|story|novel|oceans?|haiku)\b", re.IGNORECASE)
+_VAGUE_RE = re.compile(r"^\s*(help|analyze|chart|show|what next)\s*$", re.IGNORECASE)
+
+
+def _load_profile(dataset_id: str, table: str) -> dict[str, Any]:
+    try:
+        mart = get_mart(dataset_id, table)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    profile_path = OUT_DIR / str(mart["profile_file"])
+    if not profile_path.exists():
+        raise HTTPException(status_code=404, detail=f"Profile file not found for table '{table}'")
+    try:
+        return json.loads(profile_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=500, detail=f"Invalid profile JSON for table '{table}': {exc}") from exc
+
+
+def _chart_spec_hash(chart_spec: ChartSpecV1) -> str:
+    canonical = json.dumps(chart_spec.model_dump(mode="json"), sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
 def _format_metric_value(value: Any) -> str:
@@ -21,39 +58,174 @@ def _format_metric_value(value: Any) -> str:
     return str(value)
 
 
-def _build_narrative(preview_payload: dict[str, Any]) -> str:
+def _build_chart_response(
+    *,
+    chart_spec: ChartSpecV1,
+    preview_payload: dict[str, Any],
+    base_narrative: str | None = None,
+) -> ChatChartResponse:
     rows = preview_payload.get("rows", [])
-    if not isinstance(rows, list) or not rows:
-        return "No rows were returned for this chart request."
-
-    chart_spec = preview_payload.get("chart_spec", {})
     meta = preview_payload.get("meta", {})
-    x_field = chart_spec.get("encoding", {}).get("x", {}).get("field", "x")
+    x_field = chart_spec.encoding.x.field
     metric_info = meta.get("metric", {})
     metric_column = metric_info.get("output_column", "agg_value")
     metric_label = f"{metric_info.get('aggregation', 'value')}({metric_info.get('field', metric_column)})"
 
-    top_row = rows[0]
-    top_x = top_row.get(x_field)
-    top_metric = top_row.get(metric_column)
-    row_count = len(rows)
+    if rows:
+        top_row = rows[0]
+        top_x = top_row.get(x_field)
+        top_metric = top_row.get(metric_column)
+        summary = (
+            f"Computed {len(rows)} grouped rows. "
+            f"Top {x_field} is '{top_x}' with {metric_label} = {_format_metric_value(top_metric)}."
+        )
+    else:
+        summary = "No rows were returned for this chart request."
 
-    return (
-        f"Computed {row_count} grouped rows. "
-        f"Top {x_field} is '{top_x}' with {metric_label} = {_format_metric_value(top_metric)}."
+    narrative = summary if not base_narrative else f"{base_narrative} {summary}"
+
+    return ChatChartResponse(
+        response_type="chart",
+        chart_spec=chart_spec,
+        columns=list(preview_payload.get("columns", [])),
+        rows=list(rows),
+        narrative=narrative,
+        meta=dict(meta),
     )
 
 
-def _generate_chart_spec(
+def _build_clarify(message: str, questions: list[str] | None = None) -> ChatClarifyResponse:
+    return ChatClarifyResponse(
+        response_type="clarify",
+        message=message,
+        questions=questions or [],
+        meta={},
+    )
+
+
+def _guardrail_or_none(message: str) -> ChatResponseUnion | None:
+    if _OFF_TOPIC_RE.search(message):
+        return ChatRefuseResponse(
+            response_type="refuse",
+            message="I can help with analytics for the selected mart. Ask about metrics, trends, filters, or breakdowns.",
+            meta={},
+        )
+    if len(message.strip()) < 8 or _VAGUE_RE.match(message):
+        return _build_clarify(
+            "Please specify the metric and breakdown you want.",
+            questions=[
+                "Which measure should I use (for example net_sales, gross_sales, orders)?",
+                "How should it be broken down (for example region, channel_type, sales_date)?",
+            ],
+        )
+    return None
+
+
+def _coerce_chart_spec(dataset_id: str, table: str, candidate: ChartSpecV1) -> ChartSpecV1:
+    return candidate.model_copy(
+        update={
+            "version": "v1",
+            "dataset_id": dataset_id,
+            "table": table,
+        }
+    )
+
+
+def _execute_chart_spec(dataset_id: str, chart_spec: ChartSpecV1, db: Session, *, narrative: str | None = None) -> ChatResponseUnion:
+    try:
+        preview_payload = execute_chart_preview(dataset_id=dataset_id, chart_spec=chart_spec, db=db)
+    except HTTPException as exc:
+        return _build_clarify(
+            f"That chart is not valid for this mart: {exc.detail}",
+            questions=["Pick an X field from dimensions/temporals and a Y field from measures."],
+        )
+    return _build_chart_response(chart_spec=chart_spec, preview_payload=preview_payload, base_narrative=narrative)
+
+
+def _ground_explanation(dataset_id: str, table: str, message: str, db: Session) -> ChatExplainResponse:
+    profile = _load_profile(dataset_id, table)
+    row_count = profile.get("row_count")
+    column_count = profile.get("column_count")
+    topic = " ".join(message.strip().split())
+    base = (
+        f"For your question '{topic}', {table} currently has "
+        f"{row_count} rows and {column_count} columns."
+    )
+
+    columns = profile.get("columns", [])
+    temporal = None
+    measure = None
+    if isinstance(columns, list):
+        for raw in columns:
+            if not isinstance(raw, dict):
+                continue
+            name = raw.get("name")
+            if not isinstance(name, str):
+                continue
+            role = str(raw.get("effective_role", raw.get("base_role", ""))).lower()
+            if temporal is None and role in {"datetime", "temporal"}:
+                temporal = name
+            if measure is None and role == "measure":
+                measure = name
+            if temporal and measure:
+                break
+
+    if not temporal or not measure:
+        return ChatExplainResponse(
+            response_type="explain",
+            message=base,
+            citations=[f"profile:{table}"],
+            meta={},
+        )
+
+    probe_spec = ChartSpecV1(
+        version="v1",
+        dataset_id=dataset_id,
+        table=table,
+        chart={"type": "line"},
+        encoding={
+            "x": {"field": temporal},
+            "y": [{"field": measure, "aggregation": "sum", "alias": "metric_value"}],
+        },
+        filters=[],
+        sort=[{"field": temporal, "direction": "desc"}],
+        limit=2,
+    )
+    try:
+        probe = execute_chart_preview(dataset_id=dataset_id, chart_spec=probe_spec, db=db)
+        rows = probe.get("rows", [])
+    except HTTPException:
+        rows = []
+
+    if isinstance(rows, list) and len(rows) >= 2:
+        latest = rows[0]
+        previous = rows[1]
+        latest_v = latest.get("metric_value")
+        previous_v = previous.get("metric_value")
+        base = (
+            f"{base} Recent executed values for {measure} by {temporal}: "
+            f"{latest.get(temporal)}={_format_metric_value(latest_v)}, "
+            f"{previous.get(temporal)}={_format_metric_value(previous_v)}."
+        )
+
+    return ChatExplainResponse(
+        response_type="explain",
+        message=base,
+        citations=[f"profile:{table}", f"aggregate_probe:{measure}_by_{temporal}"],
+        meta={},
+    )
+
+
+def _generate_llm_response(
     *,
     dataset_id: str,
     table: str,
     message: str,
     state: dict[str, Any] | None,
-) -> ChartSpecV1:
+) -> ChatResponseUnion:
     settings = get_settings()
     if not settings.OPENAI_API_KEY:
-        raise HTTPException(status_code=503, detail="OPENAI_API_KEY is not configured")
+        return _build_clarify("Chat model is unavailable because OPENAI_API_KEY is not configured.")
 
     system_prompt, user_prompt = build_chat_prompts(
         dataset_id=dataset_id,
@@ -68,10 +240,9 @@ def _generate_chart_spec(
             temperature=0.2,
         )
     except OpenAIJSONError as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+        return _build_clarify(str(exc))
 
     corrective_prompt: str | None = None
-    last_error = ""
     for attempt in range(2):
         try:
             payload = client.generate_json(
@@ -79,31 +250,29 @@ def _generate_chart_spec(
                 user_prompt=user_prompt,
                 corrective_prompt=corrective_prompt,
             )
-        except OpenAIJSONError as exc:
-            last_error = str(exc)
+        except OpenAIJSONError:
             if attempt == 0:
                 corrective_prompt = (
-                    "Your prior output was invalid JSON. "
-                    "Return exactly one JSON object that matches ChartSpec v1."
+                    "Your previous response was invalid JSON. "
+                    "Return exactly one valid JSON object with response_type."
                 )
                 continue
-            raise HTTPException(status_code=400, detail="Chat model returned invalid JSON.") from exc
+            return _build_clarify("I could not parse the request. Please rephrase with metric and breakdown.")
+        except Exception:
+            return _build_clarify("Chat model is temporarily unavailable. Please try again.")
 
         try:
-            spec = ChartSpecV1.model_validate(payload)
-        except ValidationError as exc:
-            last_error = str(exc)
+            return _CHAT_ADAPTER.validate_python(payload)
+        except ValidationError:
             if attempt == 0:
                 corrective_prompt = (
-                    "Your prior JSON did not match ChartSpec v1 schema. "
-                    "Return a valid ChartSpec v1 JSON only, using the provided table and columns."
+                    "Your previous response did not match schema. "
+                    "Return one JSON object with response_type in [chart,chart_patch,explain,clarify,refuse]."
                 )
                 continue
-            raise HTTPException(status_code=400, detail="Chat model returned invalid chart specification.") from exc
+            return _build_clarify("I need a clearer analytics request. Please mention metric and grouping.")
 
-        return spec
-
-    raise HTTPException(status_code=400, detail=f"Unable to generate valid chart specification: {last_error}")
+    return _build_clarify("Please rephrase your request.")
 
 
 def run_chat_orchestration(
@@ -117,33 +286,58 @@ def run_chat_orchestration(
     if not table:
         raise HTTPException(status_code=400, detail="Select a mart first")
 
-    generated_spec = _generate_chart_spec(
+    guardrail_response = _guardrail_or_none(message)
+    response = guardrail_response or _generate_llm_response(
         dataset_id=dataset_id,
         table=table,
         message=message,
         state=state,
     )
-    normalized_spec = generated_spec.model_copy(
-        update={
-            "dataset_id": dataset_id,
-            "table": table,
-            "version": "v1",
-        }
-    )
-    preview_payload = execute_chart_preview(dataset_id=dataset_id, chart_spec=normalized_spec, db=db)
-    narrative = _build_narrative(preview_payload)
 
-    response_meta = dict(preview_payload.get("meta", {}))
-    response_meta["chat"] = {
-        "model": get_settings().OPENAI_MODEL,
-        "table": table,
-    }
+    if isinstance(response, ChatChartResponse):
+        normalized_spec = _coerce_chart_spec(dataset_id, table, response.chart_spec)
+        executed = _execute_chart_spec(dataset_id, normalized_spec, db, narrative=response.narrative)
+        return executed.model_dump(mode="json")
 
-    return {
-        "response_type": "chart",
-        "chart_spec": preview_payload.get("chart_spec"),
-        "columns": preview_payload.get("columns"),
-        "rows": preview_payload.get("rows"),
-        "narrative": narrative,
-        "meta": response_meta,
-    }
+    if response.response_type == "chart_patch":
+        state = state or {}
+        last_raw = state.get("last_chart_spec")
+        if not last_raw:
+            clarify = _build_clarify(
+                "I need an existing chart to apply that update.",
+                questions=["Start with a chart request, then ask for a refinement."],
+            )
+            return clarify.model_dump(mode="json")
+
+        try:
+            last_spec = ChartSpecV1.model_validate(last_raw)
+            patched = apply_patch(last_spec, response.patch)
+            patched = _coerce_chart_spec(dataset_id, table, patched)
+        except (ValidationError, HTTPException) as exc:
+            detail = exc.detail if isinstance(exc, HTTPException) else str(exc)
+            clarify = _build_clarify(f"Patch could not be applied safely: {detail}")
+            return clarify.model_dump(mode="json")
+
+        executed = _execute_chart_spec(dataset_id, patched, db, narrative=response.narrative)
+        return executed.model_dump(mode="json")
+
+    if response.response_type == "explain":
+        grounded = _ground_explanation(dataset_id=dataset_id, table=table, message=message, db=db)
+        return grounded.model_dump(mode="json")
+
+    if response.response_type in {"clarify", "refuse"}:
+        return response.model_dump(mode="json")
+
+    fallback = _build_clarify("Please rephrase your analytics request with metric and grouping.")
+    return fallback.model_dump(mode="json")
+
+
+def response_chart_spec_hash(response_payload: dict[str, Any]) -> str | None:
+    raw_spec = response_payload.get("chart_spec")
+    if not isinstance(raw_spec, dict):
+        return None
+    try:
+        spec = ChartSpecV1.model_validate(raw_spec)
+    except ValidationError:
+        return None
+    return _chart_spec_hash(spec)
