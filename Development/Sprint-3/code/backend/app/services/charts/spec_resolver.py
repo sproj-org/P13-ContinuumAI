@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import time
 from dataclasses import dataclass
@@ -12,7 +13,9 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.api.query import AggregateFilter, AggregateRequest, AggregateSpec, execute_aggregate_request
+from app.core.config import get_settings
 from app.core.mart_registry import get_mart, is_supported_dataset
+from app.services.cache.factory import get_cache
 from app.services.charts.models import ChartSpecV1, FilterSpec, SortSpec, YMetricSpec
 from services.profiling.json_sanitize import sanitize_for_json
 
@@ -236,10 +239,49 @@ def resolve_chart_spec(dataset_id: str, chart_spec: ChartSpecV1) -> ResolvedChar
     )
 
 
+def _canonical_json(payload: dict[str, Any]) -> str:
+    return json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+
+
+def _build_cache_key(dataset_id: str, normalized_spec: ChartSpecV1) -> str:
+    normalized_payload = normalized_spec.model_dump(mode="json", exclude_none=True)
+    canonical = _canonical_json(normalized_payload)
+    digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    return f"charts:{dataset_id}:{normalized_spec.table}:{digest}"
+
+
+def _cache_meta(enabled: bool, hit: bool, key: str | None, ttl_seconds: int) -> dict[str, Any]:
+    return {
+        "enabled": enabled,
+        "hit": hit,
+        "key": key,
+        "ttl_seconds": ttl_seconds,
+    }
+
+
 def execute_chart_preview(dataset_id: str, chart_spec: ChartSpecV1, db: Session) -> dict[str, Any]:
     started_at = time.perf_counter()
+    settings = get_settings()
+    cache_enabled = bool(settings.CACHE_ENABLED)
+    ttl_seconds = int(settings.CACHE_TTL_SECONDS)
 
     resolved = resolve_chart_spec(dataset_id=dataset_id, chart_spec=chart_spec)
+    cache_key = _build_cache_key(dataset_id=dataset_id, normalized_spec=resolved.normalized_spec)
+    cache = get_cache()
+
+    if cache_enabled:
+        cached_payload = cache.get(cache_key)
+        if isinstance(cached_payload, dict):
+            cached_meta = dict(cached_payload.get("meta", {}))
+            cached_meta["cache"] = _cache_meta(
+                enabled=True,
+                hit=True,
+                key=cache_key,
+                ttl_seconds=ttl_seconds,
+            )
+            cached_payload["meta"] = cached_meta
+            return sanitize_for_json(cached_payload)
+
     aggregate_payload = execute_aggregate_request(
         dataset_id=dataset_id,
         request=resolved.aggregate_request,
@@ -278,6 +320,28 @@ def execute_chart_preview(dataset_id: str, chart_spec: ChartSpecV1, db: Session)
                 "aggregation": resolved.y_metric.aggregation,
                 "output_column": metric_column_name,
             },
+            "cache": _cache_meta(
+                enabled=cache_enabled,
+                hit=False,
+                key=cache_key if cache_enabled else None,
+                ttl_seconds=ttl_seconds,
+            ),
         },
     }
+    if cache_enabled:
+        cache_payload = {
+            "chart_spec": response["chart_spec"],
+            "columns": response["columns"],
+            "rows": response["rows"],
+            "meta": {
+                **response["meta"],
+                "cache": _cache_meta(
+                    enabled=True,
+                    hit=False,
+                    key=cache_key,
+                    ttl_seconds=ttl_seconds,
+                ),
+            },
+        }
+        cache.set(cache_key, cache_payload, ttl_seconds=ttl_seconds)
     return sanitize_for_json(response)
