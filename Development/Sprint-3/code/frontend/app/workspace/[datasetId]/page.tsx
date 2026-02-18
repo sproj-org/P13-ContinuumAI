@@ -12,17 +12,19 @@ import {
   Table2,
   Columns3,
   BarChart3,
+  MessageSquare,
   ArrowLeft,
   LogOut,
 } from "lucide-react";
 
 // Tab components
-import { TableProfilingTab, ColumnProfilingTab, ChartBuilderTab } from "@/components/workspace";
+import { TableProfilingTab, ColumnProfilingTab, ChartBuilderTab, ChatPanel } from "@/components/workspace";
 
 const tabs: { id: WorkspaceTab; label: string; icon: React.ReactNode }[] = [
   { id: "table-profiling", label: "Table Profiling", icon: <Table2 className="w-4 h-4" /> },
   { id: "column-profiling", label: "Column Profiling", icon: <Columns3 className="w-4 h-4" /> },
   { id: "chart-builder", label: "Chart Builder", icon: <BarChart3 className="w-4 h-4" /> },
+  { id: "chat", label: "Chat", icon: <MessageSquare className="w-4 h-4" /> },
 ];
 
 function WorkspaceContent() {
@@ -91,6 +93,8 @@ function WorkspaceContent() {
         return <ColumnProfilingTab />;
       case "chart-builder":
         return <ChartBuilderTab />;
+      case "chat":
+        return <ChatPanel />;
       default:
         return <TableProfilingTab />;
     }

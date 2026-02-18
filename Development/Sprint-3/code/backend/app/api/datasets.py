@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.api.charts import router as charts_router
+from app.api.chat import router as chat_router
 from app.api.strategy import router as strategy_router
 from app.api.profiling import (
     ChartDataRequest,
@@ -22,6 +23,7 @@ router = APIRouter(prefix="/datasets/{dataset_id}", tags=["datasets"])
 router.include_router(query_router)
 router.include_router(charts_router)
 router.include_router(strategy_router)
+router.include_router(chat_router)
 
 
 @router.get("/profiling/aggregations")

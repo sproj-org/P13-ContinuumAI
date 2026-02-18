@@ -9,7 +9,12 @@ import type {
   ColumnProfileAPI,
   DatasetProfileAPI,
 } from "./api-types";
-import type { ChartSpecV1, ChartsPreviewResponse } from "./types/chartspec";
+import type {
+  ChartSpecV1,
+  ChartsPreviewResponse,
+  ChatRequest,
+  ChatResponse,
+} from "./types/chartspec";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -175,6 +180,13 @@ class ApiClient {
     return this.request<ChartsPreviewResponse>(`/datasets/${datasetId}/charts/preview`, {
       method: "POST",
       body: JSON.stringify(chartSpec),
+    });
+  }
+
+  async postChat(datasetId: string, request: ChatRequest): Promise<ChatResponse> {
+    return this.request<ChatResponse>(`/datasets/${datasetId}/chat`, {
+      method: "POST",
+      body: JSON.stringify(request),
     });
   }
 

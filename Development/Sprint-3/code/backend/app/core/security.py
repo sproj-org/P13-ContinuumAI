@@ -3,7 +3,7 @@ from typing import Optional
 from jose import JWTError, jwt
 import bcrypt
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -13,7 +13,7 @@ from app.db.models import User
 settings = get_settings()
 
 # HTTP Bearer token security
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -64,7 +64,7 @@ def verify_token(token: str) -> Optional[dict]:
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
     db: Session = Depends(get_db)
 ) -> User:
     """Get the current authenticated user from the JWT token."""
@@ -74,6 +74,9 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     
+    if credentials is None:
+        raise credentials_exception
+
     token = credentials.credentials
     payload = verify_token(token)
     

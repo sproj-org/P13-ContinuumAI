@@ -21,3 +21,6 @@ email-validator==2.2.0
 
 # Environment variables
 python-dotenv==1.0.1
+
+# LLM
+openai==1.54.4

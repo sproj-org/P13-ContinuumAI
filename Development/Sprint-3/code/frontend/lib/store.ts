@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 export type DatasetId = string;
-export type WorkspaceTab = 'table-profiling' | 'column-profiling' | 'chart-builder';
+export type WorkspaceTab = 'table-profiling' | 'column-profiling' | 'chart-builder' | 'chat';
 
 export interface AvailableMart {
   id: string;
