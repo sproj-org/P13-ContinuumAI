@@ -9,13 +9,12 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, field_validator
 from sqlalchemy.orm import Session
 
-from app.api.query import AggregateRequest, AggregateSpec, execute_aggregate_request
 from app.core.mart_registry import (
     DEFAULT_DATASET_ID,
     get_mart,
@@ -24,6 +23,8 @@ from app.core.mart_registry import (
 )
 from app.db.database import get_db
 from app.schemas.chart_data import LegacyChartDataResponse
+from app.services.charts.models import ChartSpecV1
+from app.services.charts.spec_resolver import execute_chart_preview
 from services.profiling.json_sanitize import sanitize_for_json
 
 router = APIRouter(prefix="/profiling", tags=["profiling"])
@@ -139,67 +140,23 @@ def get_column_profile_for_dataset(dataset_id: str, table_name: str, column_name
     )
 
 
-def get_column_profile_info(
-    dataset_id: str,
-    table_name: str,
-    column_name: str,
-) -> Optional[dict]:
-    try:
-        profile = load_profile(dataset_id, table_name)
-    except HTTPException:
-        return None
-
-    columns = profile.get("columns", [])
-    for col in columns:
-        if col.get("name") == column_name:
-            return col
-    return None
-
-
-def validate_aggregation_compatibility(column_profile: dict, aggregation_fn: str) -> tuple[bool, str]:
-    """
-    Validate that the aggregation function is compatible with the column type.
-    Returns (is_valid, error_message)
-    """
-    role = str(column_profile.get("effective_role", column_profile.get("base_role", "dimension"))).lower()
-    physical_type = str(column_profile.get("physical_type", "string")).lower()
-    column_name = str(column_profile.get("name", "unknown"))
-
-    if aggregation_fn == "count":
-        return True, ""
-
-    if aggregation_fn in ["sum", "avg"]:
-        if role != "measure":
-            return (
-                False,
-                (
-                    f"Cannot apply {aggregation_fn.upper()} to '{column_name}' - "
-                    f"it's a {role}, not a measure. Try COUNT or choose a numeric measure."
-                ),
-            )
-
-        numeric_types = ["int", "float", "decimal", "numeric", "double", "real", "bigint", "smallint"]
-        if not any(nt in physical_type for nt in numeric_types):
-            return (
-                False,
-                (
-                    f"Cannot apply {aggregation_fn.upper()} to '{column_name}' - "
-                    f"column type '{physical_type}' is not numeric."
-                ),
-            )
-
-    return True, ""
-
-
-def _chart_to_aggregate_request(request: ChartDataRequest) -> AggregateRequest:
-    agg_column = "*" if request.aggregation_fn == "count" else request.y_axis
-    return AggregateRequest(
-        table_name=request.table_name,
-        x=request.x_axis,
-        y=request.y_axis,
-        group_by=[request.x_axis],
+def _legacy_request_to_chart_spec(dataset_id: str, request: ChartDataRequest) -> ChartSpecV1:
+    return ChartSpecV1(
+        version="v1",
+        dataset_id=dataset_id,
+        table=request.table_name,
+        chart={"type": "bar"},
+        encoding={
+            "x": {"field": request.x_axis},
+            "y": [
+                {
+                    "field": request.y_axis,
+                    "aggregation": request.aggregation_fn,
+                }
+            ],
+        },
         filters=[],
-        agg=AggregateSpec(column=agg_column, fn=request.aggregation_fn),
+        sort=[{"field": "agg_value", "direction": "desc"}],
         limit=request.limit,
     )
 
@@ -214,35 +171,9 @@ def get_chart_data_for_dataset(
     """
     _validate_dataset_id(dataset_id)
 
-    try:
-        get_mart(dataset_id, request.table_name)
-    except KeyError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-
-    x_column_profile = get_column_profile_info(dataset_id, request.table_name, request.x_axis)
-    if not x_column_profile:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Column '{request.x_axis}' not found in table '{request.table_name}'",
-        )
-
-    y_column_profile = get_column_profile_info(dataset_id, request.table_name, request.y_axis)
-    if not y_column_profile:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Column '{request.y_axis}' not found in table '{request.table_name}'",
-        )
-
-    is_valid, error_msg = validate_aggregation_compatibility(
-        y_column_profile,
-        request.aggregation_fn,
-    )
-    if not is_valid:
-        raise HTTPException(status_code=400, detail=error_msg)
-
-    agg_request = _chart_to_aggregate_request(request)
-    aggregate_payload = execute_aggregate_request(dataset_id=dataset_id, request=agg_request, db=db)
-    rows = aggregate_payload.get("rows", [])
+    chart_spec = _legacy_request_to_chart_spec(dataset_id=dataset_id, request=request)
+    preview_payload = execute_chart_preview(dataset_id=dataset_id, chart_spec=chart_spec, db=db)
+    rows = preview_payload.get("rows", [])
 
     if not rows:
         raise HTTPException(
@@ -250,8 +181,9 @@ def get_chart_data_for_dataset(
             detail="No data found for the specified query",
         )
 
+    metric_column = chart_spec.encoding.y[0].alias or "agg_value"
     raw_x_values = [row.get(request.x_axis) for row in rows]
-    raw_y_values = [row.get("agg_value") for row in rows]
+    raw_y_values = [row.get(metric_column) for row in rows]
     agg_fn = request.aggregation_fn.upper()
     title = f"{agg_fn}({request.y_axis}) by {request.x_axis}"
 
