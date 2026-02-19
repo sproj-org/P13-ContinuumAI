@@ -13,6 +13,7 @@ import type {
   MissingField,
 } from "@/lib/types/chat";
 import { renderChart } from "@/components/workspace/renderChart";
+import MarkdownMessage from "@/components/common/MarkdownMessage";
 import { Loader2, MessageSquare, Send, AlertTriangle, Trash2 } from "lucide-react";
 
 function assistantText(response: ChatResponse): string {
@@ -446,7 +447,13 @@ export default function ChatPanel() {
                 }`}
               >
                 <p className="text-xs text-gray-400 mb-1">{isAssistant ? "Assistant" : "You"}</p>
-                <p className={`text-sm ${isAssistant ? "text-gray-200" : "text-white"}`}>{turn.message}</p>
+                {isAssistant ? (
+                  turn.message ? (
+                    <MarkdownMessage content={turn.message} />
+                  ) : null
+                ) : (
+                  <p className="text-sm text-white">{turn.message}</p>
+                )}
                 {isAssistant && response?.response_type === "chart" ? (
                   <div className="mt-4 min-h-[320px]">
                     {renderChart(response.chart_spec, response.rows)}
