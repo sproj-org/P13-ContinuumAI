@@ -56,6 +56,105 @@ def _extract_fields(context: dict[str, Any]) -> tuple[list[str], list[str], list
     return metrics, dimensions, temporals
 
 
+def _normalize_text(value: str) -> str:
+    cleaned = value.lower().replace("_", " ")
+    compact = " ".join(cleaned.split())
+    return compact
+
+
+def _contains_any(text: str, needles: list[str]) -> bool:
+    for needle in needles:
+        if needle in text:
+            return True
+    return False
+
+
+def _aggregation_from_message(message: str) -> str:
+    text = _normalize_text(message)
+    if _contains_any(text, ["average", "avg", "mean"]):
+        return "avg"
+    if _contains_any(text, ["count", "how many", "number of"]):
+        return "count"
+    if _contains_any(text, ["minimum", "lowest", "min"]):
+        return "min"
+    if _contains_any(text, ["maximum", "highest", "max"]):
+        return "max"
+    return "sum"
+
+
+def _pick_matching_field(message: str, fields: list[str]) -> str | None:
+    normalized_message = _normalize_text(message)
+    for field in fields:
+        normalized_field = _normalize_text(field)
+        if normalized_field and normalized_field in normalized_message:
+            return field
+    return None
+
+
+def _fallback_plan_from_context(
+    *,
+    message: str,
+    mode: ChatMode,
+    table: str,
+    context: dict[str, Any],
+) -> ChatPlanUnion | None:
+    metrics, dimensions, temporals = _extract_fields(context)
+    normalized = _normalize_text(message)
+
+    if mode == "explain" or _contains_any(normalized, ["explain", "what is", "what does", "why", "meaning"]):
+        return ChatPlanExplain(
+            response_type="explain",
+            message=f"Explanation for {table} based on mart metadata and available fields.",
+        )
+
+    metric = _pick_matching_field(message, metrics) or (metrics[0] if metrics else None)
+    x_field = _pick_matching_field(message, dimensions + temporals)
+    if not x_field:
+        if _contains_any(normalized, ["month", "day", "date", "time", "trend"]) and temporals:
+            x_field = temporals[0]
+        elif dimensions:
+            x_field = dimensions[0]
+        elif temporals:
+            x_field = temporals[0]
+
+    chart_intent = mode == "chart" or _contains_any(
+        normalized,
+        ["by ", "breakdown", "trend", "chart", "plot", "compare", "versus", " vs "],
+    )
+    if chart_intent and metric and x_field:
+        chart_type = "line" if x_field in temporals else "bar"
+        return ChatPlanChart(
+            response_type="chart",
+            chart_spec=ChartSpecV1(
+                version="v1",
+                table=table,
+                chart={"type": chart_type},
+                encoding={
+                    "x": {"field": x_field},
+                    "y": [
+                        {
+                            "field": metric,
+                            "aggregation": _aggregation_from_message(message),
+                            "alias": "metric_value",
+                        }
+                    ],
+                },
+                filters=[],
+                sort=[{"field": "metric_value", "direction": "desc"}],
+                limit=20,
+            ),
+            narrative_style="standard",
+        )
+
+    if _contains_any(normalized, ["poem", "song", "lyrics", "story", "novel", "haiku"]):
+        return ChatPlanRefuse(
+            response_type="refuse",
+            message="I can help with analytics for the selected mart. Ask about metrics, trends, filters, or breakdowns.",
+        )
+
+    return None
+
+
 def _sanitize_options(options: ClarifyOptions, context: dict[str, Any]) -> ClarifyOptions:
     metrics, dimensions, temporals = _extract_fields(context)
     metric_set = set(metrics)
@@ -358,9 +457,15 @@ def run_chat_orchestration(
         state=state,
     )
     if plan is None:
-        return _default_clarify("Please rephrase your request with a metric and breakdown.", context).model_dump(mode="json")
+        plan = _fallback_plan_from_context(message=message, mode=mode, table=table, context=context)
+        if plan is None:
+            return _default_clarify("Please rephrase your request with a metric and breakdown.", context).model_dump(mode="json")
 
     plan = _enforce_mode(plan=plan, mode=mode, context=context)
+    if isinstance(plan, ChatPlanClarify):
+        fallback_from_clarify = _fallback_plan_from_context(message=message, mode=mode, table=table, context=context)
+        if isinstance(fallback_from_clarify, (ChatPlanChart, ChatPlanExplain, ChatPlanRefuse)):
+            plan = fallback_from_clarify
 
     if isinstance(plan, ChatPlanChart):
         chart_response = _execute_chart(
