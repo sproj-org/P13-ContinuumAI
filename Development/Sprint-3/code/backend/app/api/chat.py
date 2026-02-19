@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import time
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.security import get_current_user
@@ -27,40 +27,29 @@ def chat_with_dataset(
 ):
     started_at = time.perf_counter()
 
-    if not request.table:
-        raise HTTPException(status_code=400, detail="Select a mart first")
-
     try:
         payload = run_chat_orchestration(
             dataset_id=dataset_id,
             message=request.message,
             table=request.table,
+            mode=request.mode,
             state=request.state,
             db=db,
+            debug=request.debug,
         )
-    except HTTPException as exc:
+    finally:
         elapsed_ms = round((time.perf_counter() - started_at) * 1000, 2)
-        logger.warning(
-            "chat_request_failed user_id=%s dataset_id=%s table=%s status=%s detail=%s duration_ms=%.2f",
+        response_type = str(payload.get("response_type", "unknown")) if "payload" in locals() else "error"
+        chart_hash = response_chart_spec_hash(payload) if "payload" in locals() else None
+        logger.info(
+            "chat_request user_id=%s dataset_id=%s table=%s mode=%s response_type=%s chart_spec_hash=%s duration_ms=%.2f",
             current_user.id,
             dataset_id,
             request.table,
-            exc.status_code,
-            exc.detail,
+            request.mode,
+            response_type,
+            chart_hash or "-",
             elapsed_ms,
         )
-        raise
 
-    elapsed_ms = round((time.perf_counter() - started_at) * 1000, 2)
-    response_type = str(payload.get("response_type", "unknown"))
-    chart_hash = response_chart_spec_hash(payload) or "-"
-    logger.info(
-        "chat_request user_id=%s dataset_id=%s table=%s response_type=%s chart_spec_hash=%s duration_ms=%.2f",
-        current_user.id,
-        dataset_id,
-        request.table,
-        response_type,
-        chart_hash,
-        elapsed_ms,
-    )
     return payload
