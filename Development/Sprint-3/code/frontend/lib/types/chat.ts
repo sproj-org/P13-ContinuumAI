@@ -47,6 +47,8 @@ export interface ChatClarifyResponse {
   response_type: 'clarify';
   question: string;
   options: ClarifyOptions;
+  message?: string;
+  questions?: string[];
   meta: Record<string, unknown>;
 }
 

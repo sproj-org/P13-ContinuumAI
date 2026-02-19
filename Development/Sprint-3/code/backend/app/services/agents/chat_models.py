@@ -38,6 +38,13 @@ class ClarifyOptions(BaseModel):
     dimensions: list[str] = Field(default_factory=list)
     temporals: list[str] = Field(default_factory=list)
 
+    @field_validator("metrics", "dimensions", "temporals", mode="before")
+    @classmethod
+    def normalize_string_arrays(cls, value: Any) -> list[str]:
+        if not isinstance(value, list):
+            return []
+        return [item for item in value if isinstance(item, str)]
+
 
 class ChatPlanChart(BaseModel):
     response_type: Literal["chart"] = "chart"
