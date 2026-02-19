@@ -12,6 +12,7 @@ from app.services.charts.models import ChartSpecV1
 ChatMode = Literal["auto", "chart", "explain"]
 TimeGrain = Literal["day", "week", "month", "quarter", "year"]
 MetricAggregation = Literal["sum", "avg", "count", "min", "max"]
+MissingField = Literal["metric", "x_axis", "time_grain", "table"]
 
 
 def create_clarify_id() -> str:
@@ -87,6 +88,7 @@ class ClarifyOptions(BaseModel):
     metrics: list[str] = Field(default_factory=list)
     dimensions: list[str] = Field(default_factory=list)
     temporals: list[str] = Field(default_factory=list)
+    time_grains: list[TimeGrain] = Field(default_factory=list)
 
     @field_validator("metrics", "dimensions", "temporals", mode="before")
     @classmethod
@@ -94,6 +96,20 @@ class ClarifyOptions(BaseModel):
         if not isinstance(value, list):
             return []
         return [item for item in value if isinstance(item, str)]
+
+    @field_validator("time_grains", mode="before")
+    @classmethod
+    def normalize_time_grains(cls, value: Any) -> list[TimeGrain]:
+        allowed = {"day", "week", "month", "quarter", "year"}
+        if not isinstance(value, list):
+            return []
+        output: list[TimeGrain] = []
+        for item in value:
+            if isinstance(item, str):
+                normalized = item.strip().lower()
+                if normalized in allowed and normalized not in output:
+                    output.append(normalized)  # type: ignore[arg-type]
+        return output
 
 
 class ChatPlanChart(BaseModel):
@@ -118,15 +134,24 @@ class ChatPlanClarify(BaseModel):
     response_type: Literal["clarify"] = "clarify"
     clarify_id: str = Field(default_factory=create_clarify_id)
     question: str
-    missing: list[str] = Field(default_factory=list)
+    missing: list[MissingField] = Field(default_factory=list)
     options: ClarifyOptions = Field(default_factory=ClarifyOptions)
 
     @field_validator("missing", mode="before")
     @classmethod
-    def normalize_missing(cls, value: Any) -> list[str]:
+    def normalize_missing(cls, value: Any) -> list[MissingField]:
+        legacy_map = {"dimension": "x_axis", "temporal": "x_axis"}
+        allowed = {"metric", "x_axis", "time_grain", "table"}
         if not isinstance(value, list):
             return []
-        return [item.strip() for item in value if isinstance(item, str) and item.strip()]
+        output: list[MissingField] = []
+        for item in value:
+            if not isinstance(item, str):
+                continue
+            normalized = legacy_map.get(item.strip().lower(), item.strip().lower())
+            if normalized in allowed and normalized not in output:
+                output.append(normalized)  # type: ignore[arg-type]
+        return output
 
 
 class ChatPlanRefuse(BaseModel):
@@ -173,16 +198,25 @@ class ChatClarifyResponse(BaseModel):
     response_type: Literal["clarify"] = "clarify"
     clarify_id: str = Field(default_factory=create_clarify_id)
     question: str
-    missing: list[str] = Field(default_factory=list)
+    missing: list[MissingField] = Field(default_factory=list)
     options: ClarifyOptions = Field(default_factory=ClarifyOptions)
     meta: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("missing", mode="before")
     @classmethod
-    def normalize_missing(cls, value: Any) -> list[str]:
+    def normalize_missing(cls, value: Any) -> list[MissingField]:
+        legacy_map = {"dimension": "x_axis", "temporal": "x_axis"}
+        allowed = {"metric", "x_axis", "time_grain", "table"}
         if not isinstance(value, list):
             return []
-        return [item.strip() for item in value if isinstance(item, str) and item.strip()]
+        output: list[MissingField] = []
+        for item in value:
+            if not isinstance(item, str):
+                continue
+            normalized = legacy_map.get(item.strip().lower(), item.strip().lower())
+            if normalized in allowed and normalized not in output:
+                output.append(normalized)  # type: ignore[arg-type]
+        return output
 
 
 class ChatRefuseResponse(BaseModel):
