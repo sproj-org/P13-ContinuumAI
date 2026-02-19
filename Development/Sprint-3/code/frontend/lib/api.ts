@@ -175,10 +175,16 @@ class ApiClient {
     );
   }
 
-  async postChartsPreview(datasetId: string, chartSpec: ChartSpecV1): Promise<ChartsPreviewResponse> {
+  async postChartsPreview(
+    datasetId: string,
+    chartSpec: ChartSpecV1,
+    options?: { debug?: boolean }
+  ): Promise<ChartsPreviewResponse> {
+    const debug = options?.debug ?? false;
+    const body = debug ? { chart_spec: chartSpec, debug: true } : chartSpec;
     return this.request<ChartsPreviewResponse>(`/datasets/${datasetId}/charts/preview`, {
       method: "POST",
-      body: JSON.stringify(chartSpec),
+      body: JSON.stringify(body),
     });
   }
 

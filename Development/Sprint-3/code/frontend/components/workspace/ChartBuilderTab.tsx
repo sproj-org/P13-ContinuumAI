@@ -32,6 +32,7 @@ import {
   Loader2,
   AlertTriangle,
   Plus,
+  Copy,
 } from "lucide-react";
 
 interface UIChartFilter {
@@ -122,6 +123,15 @@ function daysAgoISO(days: number): string {
   const date = new Date();
   date.setDate(date.getDate() - days);
   return date.toISOString().slice(0, 10);
+}
+
+type DebugTab = "chartspec" | "aggregate_request" | "sql";
+
+function toPrettyText(value: unknown): string {
+  if (typeof value === "string") {
+    return value;
+  }
+  return JSON.stringify(value ?? {}, null, 2);
 }
 
 function DraggableField({ column }: { column: { name: string; role: ColumnRole } }) {
@@ -219,6 +229,9 @@ export default function ChartBuilderTab() {
   const [timeField, setTimeField] = useState<string>("");
   const [customStartDate, setCustomStartDate] = useState<string>("");
   const [customEndDate, setCustomEndDate] = useState<string>("");
+  const [showExecutionDetails, setShowExecutionDetails] = useState<boolean>(false);
+  const [debugTab, setDebugTab] = useState<DebugTab>("chartspec");
+  const [copiedTab, setCopiedTab] = useState<DebugTab | null>(null);
 
   const { data: profile, isLoading } = useTableProfile(selectedDatasetId, selectedAggregation);
 
@@ -365,7 +378,47 @@ export default function ChartBuilderTab() {
     data: previewData,
     isLoading: isPreviewLoading,
     error: previewError,
-  } = useChartsPreview(selectedDatasetId, chartSpec);
+  } = useChartsPreview(selectedDatasetId, chartSpec, showExecutionDetails);
+
+  const executionDebug = useMemo(() => {
+    if (!previewData || typeof previewData.meta !== "object" || previewData.meta === null) {
+      return null;
+    }
+    const debug = (previewData.meta as Record<string, unknown>).debug;
+    if (typeof debug !== "object" || debug === null) {
+      return null;
+    }
+    return debug as Record<string, unknown>;
+  }, [previewData]);
+
+  const debugTabPayload = useMemo(() => {
+    if (!executionDebug) {
+      return null;
+    }
+    if (debugTab === "chartspec") {
+      return executionDebug.chartspec_json;
+    }
+    if (debugTab === "aggregate_request") {
+      return executionDebug.resolved_aggregate_request_json;
+    }
+    return {
+      sql: executionDebug.sql,
+      params: executionDebug.params,
+    };
+  }, [executionDebug, debugTab]);
+
+  const copyDebugPayload = async () => {
+    if (!debugTabPayload) {
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(toPrettyText(debugTabPayload));
+      setCopiedTab(debugTab);
+      setTimeout(() => setCopiedTab((active) => (active === debugTab ? null : active)), 1200);
+    } catch {
+      // no-op: clipboard permissions can fail in some environments
+    }
+  };
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveDragId(event.active.id as string);
@@ -585,9 +638,56 @@ export default function ChartBuilderTab() {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="bg-white/5 border border-white/10 rounded-2xl p-6 h-full"
+                  className="bg-white/5 border border-white/10 rounded-2xl p-6 h-full flex flex-col gap-4"
                 >
-                  {renderChart(chartSpec, previewData.rows)}
+                  <div className="min-h-[360px]">{renderChart(chartSpec, previewData.rows)}</div>
+
+                  {showExecutionDetails && executionDebug ? (
+                    <div className="border border-white/10 rounded-xl bg-black/30 overflow-hidden">
+                      <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setDebugTab("chartspec")}
+                            className={`px-2 py-1 text-xs rounded-md ${
+                              debugTab === "chartspec" ? "bg-[#5237ff]/30 text-[#c7beff]" : "text-gray-300 hover:bg-white/10"
+                            }`}
+                          >
+                            ChartSpec
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDebugTab("aggregate_request")}
+                            className={`px-2 py-1 text-xs rounded-md ${
+                              debugTab === "aggregate_request" ? "bg-[#5237ff]/30 text-[#c7beff]" : "text-gray-300 hover:bg-white/10"
+                            }`}
+                          >
+                            AggregateRequest
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDebugTab("sql")}
+                            className={`px-2 py-1 text-xs rounded-md ${
+                              debugTab === "sql" ? "bg-[#5237ff]/30 text-[#c7beff]" : "text-gray-300 hover:bg-white/10"
+                            }`}
+                          >
+                            SQL
+                          </button>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={copyDebugPayload}
+                          className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md border border-white/10 text-gray-300 hover:bg-white/10"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                          {copiedTab === debugTab ? "Copied" : "Copy"}
+                        </button>
+                      </div>
+                      <pre className="p-3 text-xs text-gray-300 overflow-x-auto max-h-[260px] leading-relaxed">
+                        {toPrettyText(debugTabPayload)}
+                      </pre>
+                    </div>
+                  ) : null}
                 </motion.div>
               ) : (
                 <motion.div
@@ -826,6 +926,29 @@ export default function ChartBuilderTab() {
                 className="w-full bg-white/5 border border-white/10 rounded px-2 py-2 text-white text-sm"
               />
             </div>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
+              Debug
+            </h3>
+            <label className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg border border-white/10 bg-white/5">
+              <span className="text-sm text-gray-300">Show execution details</span>
+              <button
+                type="button"
+                onClick={() => setShowExecutionDetails((value) => !value)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  showExecutionDetails ? "bg-[#5237ff]/60" : "bg-white/15"
+                }`}
+                aria-pressed={showExecutionDetails}
+              >
+                <span
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                    showExecutionDetails ? "translate-x-5" : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </label>
           </div>
 
           <button

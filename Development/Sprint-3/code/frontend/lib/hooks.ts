@@ -94,11 +94,11 @@ export function useChartData(
   });
 }
 
-export function useChartsPreview(datasetId: string, chartSpec: ChartSpecV1 | null) {
+export function useChartsPreview(datasetId: string, chartSpec: ChartSpecV1 | null, debug: boolean = false) {
   const fingerprint = chartSpec ? stableSerialize(chartSpec) : "";
   return useQuery<ChartsPreviewResponse, Error>({
-    queryKey: ["chartsPreview", datasetId, fingerprint],
-    queryFn: () => apiClient.postChartsPreview(datasetId, chartSpec!),
+    queryKey: ["chartsPreview", datasetId, fingerprint, debug],
+    queryFn: () => apiClient.postChartsPreview(datasetId, chartSpec!, { debug }),
     enabled: !!datasetId && !!chartSpec,
     staleTime: 1 * 60 * 1000,
   });
