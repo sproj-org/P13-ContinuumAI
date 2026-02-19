@@ -17,6 +17,8 @@ MEASURE_ROLES = {"measure"}
 MAX_DIMENSIONS = 25
 MAX_MEASURES = 25
 MAX_SAMPLE_VALUES = 4
+MAX_HINT_FIELDS = 5
+MAX_HINT_TEMPORALS = 3
 
 
 def _load_profile(dataset_id: str, table: str) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -138,4 +140,57 @@ def build_compact_mart_context(dataset_id: str, table: str) -> dict[str, Any]:
             "y": "measure with agg",
             "filters": "must reference valid fields",
         },
+    }
+
+
+def _field_names(context: dict[str, Any]) -> tuple[list[str], list[str], list[str]]:
+    measures = [item["name"] for item in context.get("measures", []) if isinstance(item, dict) and isinstance(item.get("name"), str)]
+    dimensions = [item["name"] for item in context.get("dimensions", []) if isinstance(item, dict) and isinstance(item.get("name"), str)]
+    temporals = [item["name"] for item in context.get("temporals", []) if isinstance(item, dict) and isinstance(item.get("name"), str)]
+    return measures, dimensions, temporals
+
+
+def _build_example_prompts(table: str, measures: list[str], dimensions: list[str], temporals: list[str]) -> dict[str, list[str]]:
+    metric = measures[0] if measures else "metric"
+    dimension = dimensions[0] if dimensions else "dimension"
+    temporal = temporals[0] if temporals else "date"
+
+    auto_examples = [
+        f"Show {metric} by {dimension}",
+        f"Top 10 {dimension} by {metric}",
+        f"Trend of {metric} over time using {temporal}",
+        f"What changed most in {table} last month?",
+    ]
+    chart_examples = [
+        f"Create a bar chart of {metric} by {dimension}",
+        f"Create a line chart of {metric} by {temporal}",
+        f"Compare {metric} across top 10 {dimension}",
+        f"Break down {metric} by {dimension}",
+    ]
+    explain_examples = [
+        f"Explain what {table} is used for",
+        f"What does {metric} represent in this mart?",
+        f"What does this mart not include?",
+        f"Give me chart ideas for {table}",
+    ]
+    return {
+        "auto": auto_examples[:4],
+        "chart": chart_examples[:4],
+        "explain": explain_examples[:4],
+    }
+
+
+def build_chat_hints(dataset_id: str, table: str) -> dict[str, Any]:
+    context = build_compact_mart_context(dataset_id=dataset_id, table=table)
+    measures, dimensions, temporals = _field_names(context)
+
+    measures = measures[:MAX_HINT_FIELDS]
+    dimensions = dimensions[:MAX_HINT_FIELDS]
+    temporals = temporals[:MAX_HINT_TEMPORALS]
+
+    return {
+        "measures": measures,
+        "dimensions": dimensions,
+        "temporals": temporals,
+        "example_prompts": _build_example_prompts(table, measures, dimensions, temporals),
     }

@@ -16,8 +16,11 @@ from app.api.profiling import (
     list_aggregations_for_dataset,
 )
 from app.api.query import router as query_router
+from app.core.security import get_current_user
 from app.db.database import get_db
+from app.db.models import User
 from app.schemas.chart_data import LegacyChartDataResponse
+from app.services.agents.mart_context import build_chat_hints
 
 router = APIRouter(prefix="/datasets/{dataset_id}", tags=["datasets"])
 router.include_router(query_router)
@@ -48,3 +51,13 @@ def get_dataset_chart_data(
     db: Session = Depends(get_db),
 ):
     return get_chart_data_for_dataset(dataset_id, request, db)
+
+
+@router.get("/marts/{table}/chat-hints")
+def get_dataset_chat_hints(
+    dataset_id: str,
+    table: str,
+    current_user: User = Depends(get_current_user),
+):
+    _ = current_user
+    return build_chat_hints(dataset_id=dataset_id, table=table)
