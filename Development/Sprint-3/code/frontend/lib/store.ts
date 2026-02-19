@@ -20,6 +20,23 @@ export interface ChatTurn {
 }
 
 export type ChatMode = 'auto' | 'chart' | 'explain';
+export type TimeGrain = 'day' | 'week' | 'month' | 'quarter' | 'year';
+export type MetricAggregation = 'sum' | 'avg' | 'count' | 'min' | 'max';
+
+export interface ChatSelectionsState {
+  metric: string | null;
+  dimension: string | null;
+  temporal: string | null;
+  time_grain: TimeGrain | null;
+  aggregation: MetricAggregation | null;
+  limit: number | null;
+}
+
+export interface ChatThreadState {
+  clarify_id: string | null;
+  selections: ChatSelectionsState;
+  original_user_intent: string | null;
+}
 
 interface AppState {
   selectedDatasetId: DatasetId;
@@ -49,10 +66,18 @@ interface AppState {
   // Chat state (persisted by dataset+mart key)
   chatTurnsByKey: Record<string, ChatTurn[]>;
   lastChartSpecByKey: Record<string, ChartSpecV1 | null>;
+  chatStateByKey: Record<string, ChatThreadState>;
   appendChatTurn: (key: string, turn: ChatTurn) => void;
   setChatTurns: (key: string, turns: ChatTurn[]) => void;
   clearChat: (key: string) => void;
   setLastChartSpec: (key: string, spec: ChartSpecV1 | null) => void;
+  setChatState: (key: string, state: ChatThreadState) => void;
+  patchChatState: (
+    key: string,
+    patch: Partial<Omit<ChatThreadState, 'selections'>> & {
+      selections?: Partial<ChatSelectionsState>;
+    }
+  ) => void;
   chatMode: ChatMode;
   setChatMode: (mode: ChatMode) => void;
 }
@@ -83,6 +108,7 @@ type PersistedAppState = {
   selectedAggregation?: string | null;
   chatTurnsByKey?: Record<string, unknown>;
   lastChartSpecByKey?: Record<string, unknown>;
+  chatStateByKey?: Record<string, unknown>;
   chatMode?: ChatMode;
 };
 
@@ -107,6 +133,10 @@ function sanitizeChatResponse(raw: unknown): ChatResponse | null {
   if (responseType === 'clarify') {
     const optionsRaw = record.options;
     const optionsRecord = typeof optionsRaw === 'object' && optionsRaw !== null ? (optionsRaw as Record<string, unknown>) : {};
+    const clarifyId =
+      typeof record.clarify_id === 'string' && record.clarify_id.trim().length > 0
+        ? record.clarify_id
+        : 'legacy';
     const question =
       typeof record.question === 'string'
         ? record.question
@@ -115,7 +145,9 @@ function sanitizeChatResponse(raw: unknown): ChatResponse | null {
         : 'Could you clarify your request?';
     return {
       response_type: 'clarify',
+      clarify_id: clarifyId,
       question,
+      missing: asStringArray(record.missing),
       options: {
         metrics: asStringArray(optionsRecord.metrics),
         dimensions: asStringArray(optionsRecord.dimensions),
@@ -221,6 +253,84 @@ function sanitizePersistedTurns(raw: unknown): Record<string, ChatTurn[]> {
   return sanitized;
 }
 
+function asNullableString(value: unknown): string | null {
+  return typeof value === 'string' && value.trim().length > 0 ? value : null;
+}
+
+function asNullableNumber(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return null;
+  }
+  return Math.max(1, Math.min(5000, Math.round(value)));
+}
+
+function sanitizeChatSelections(raw: unknown): ChatSelectionsState {
+  if (!raw || typeof raw !== 'object') {
+    return {
+      metric: null,
+      dimension: null,
+      temporal: null,
+      time_grain: null,
+      aggregation: null,
+      limit: null,
+    };
+  }
+  const record = raw as Record<string, unknown>;
+  const timeGrain = record.time_grain;
+  const aggregation = record.aggregation;
+  return {
+    metric: asNullableString(record.metric),
+    dimension: asNullableString(record.dimension),
+    temporal: asNullableString(record.temporal),
+    time_grain:
+      timeGrain === 'day' || timeGrain === 'week' || timeGrain === 'month' || timeGrain === 'quarter' || timeGrain === 'year'
+        ? timeGrain
+        : null,
+    aggregation:
+      aggregation === 'sum' ||
+      aggregation === 'avg' ||
+      aggregation === 'count' ||
+      aggregation === 'min' ||
+      aggregation === 'max'
+        ? aggregation
+        : null,
+    limit: asNullableNumber(record.limit),
+  };
+}
+
+function sanitizePersistedChatState(raw: unknown): Record<string, ChatThreadState> {
+  if (!raw || typeof raw !== 'object') {
+    return {};
+  }
+  const byKey = raw as Record<string, unknown>;
+  const sanitized: Record<string, ChatThreadState> = {};
+  for (const [key, item] of Object.entries(byKey)) {
+    if (!item || typeof item !== 'object') {
+      continue;
+    }
+    const record = item as Record<string, unknown>;
+    sanitized[key] = {
+      clarify_id: asNullableString(record.clarify_id),
+      selections: sanitizeChatSelections(record.selections),
+      original_user_intent: asNullableString(record.original_user_intent),
+    };
+  }
+  return sanitized;
+}
+
+const defaultChatThreadState: ChatThreadState = {
+  clarify_id: null,
+  selections: {
+    metric: null,
+    dimension: null,
+    temporal: null,
+    time_grain: null,
+    aggregation: null,
+    limit: null,
+  },
+  original_user_intent: null,
+};
+
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
@@ -262,6 +372,7 @@ export const useAppStore = create<AppState>()(
       // Chat persistence
       chatTurnsByKey: {},
       lastChartSpecByKey: {},
+      chatStateByKey: {},
       appendChatTurn: (key, turn) =>
         set((state) => ({
           chatTurnsByKey: {
@@ -280,11 +391,14 @@ export const useAppStore = create<AppState>()(
         set((state) => {
           const nextTurns = { ...state.chatTurnsByKey };
           const nextSpecs = { ...state.lastChartSpecByKey };
+          const nextChatState = { ...state.chatStateByKey };
           delete nextTurns[key];
           delete nextSpecs[key];
+          delete nextChatState[key];
           return {
             chatTurnsByKey: nextTurns,
             lastChartSpecByKey: nextSpecs,
+            chatStateByKey: nextChatState,
           };
         }),
       setLastChartSpec: (key, spec) =>
@@ -294,19 +408,55 @@ export const useAppStore = create<AppState>()(
             [key]: spec,
           },
         })),
+      setChatState: (key, threadState) =>
+        set((state) => ({
+          chatStateByKey: {
+            ...state.chatStateByKey,
+            [key]: {
+              clarify_id: threadState.clarify_id,
+              selections: {
+                ...defaultChatThreadState.selections,
+                ...threadState.selections,
+              },
+              original_user_intent: threadState.original_user_intent,
+            },
+          },
+        })),
+      patchChatState: (key, patch) =>
+        set((state) => {
+          const current = state.chatStateByKey[key] ?? defaultChatThreadState;
+          return {
+            chatStateByKey: {
+              ...state.chatStateByKey,
+              [key]: {
+                clarify_id:
+                  patch.clarify_id === undefined ? current.clarify_id : patch.clarify_id,
+                original_user_intent:
+                  patch.original_user_intent === undefined
+                    ? current.original_user_intent
+                    : patch.original_user_intent,
+                selections: {
+                  ...current.selections,
+                  ...(patch.selections ?? {}),
+                },
+              },
+            },
+          };
+        }),
       chatMode: 'auto',
       setChatMode: (mode) => set({ chatMode: mode }),
     }),
     {
       name: 'continuumai-app-store',
-      version: 2,
+      version: 3,
       storage: createJSONStorage(() => (typeof window !== 'undefined' ? localStorage : noopStorage)),
       migrate: (persistedState: unknown, version: number) => {
         const state = (persistedState ?? {}) as PersistedAppState;
-        if (version >= 2) {
+        if (version >= 3) {
           return {
             ...state,
             chatTurnsByKey: sanitizePersistedTurns(state.chatTurnsByKey),
+            chatStateByKey: sanitizePersistedChatState(state.chatStateByKey),
           };
         }
         return {
@@ -316,6 +466,7 @@ export const useAppStore = create<AppState>()(
             state.lastChartSpecByKey && typeof state.lastChartSpecByKey === 'object'
               ? (state.lastChartSpecByKey as Record<string, ChartSpecV1 | null>)
               : {},
+          chatStateByKey: sanitizePersistedChatState(state.chatStateByKey),
           chatMode: state.chatMode === 'chart' || state.chatMode === 'explain' ? state.chatMode : 'auto',
         };
       },
@@ -323,6 +474,7 @@ export const useAppStore = create<AppState>()(
         selectedAggregation: state.selectedAggregation,
         chatTurnsByKey: state.chatTurnsByKey,
         lastChartSpecByKey: state.lastChartSpecByKey,
+        chatStateByKey: state.chatStateByKey,
         chatMode: state.chatMode,
       }),
     }

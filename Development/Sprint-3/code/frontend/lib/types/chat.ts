@@ -1,10 +1,30 @@
 import type { ChartSpecV1 } from './chartspec';
 
+export type ChatMode = 'auto' | 'chart' | 'explain';
+export type TimeGrain = 'day' | 'week' | 'month' | 'quarter' | 'year';
+export type MetricAggregation = 'sum' | 'avg' | 'count' | 'min' | 'max';
+
+export interface ChatSelections {
+  metric?: string;
+  dimension?: string;
+  temporal?: string;
+  time_grain?: TimeGrain;
+  aggregation?: MetricAggregation;
+  limit?: number;
+}
+
+export interface ChatStatePayload {
+  last_chart_spec?: ChartSpecV1;
+  clarify_id?: string;
+  selections?: ChatSelections;
+  original_user_intent?: string;
+}
+
 export interface ChatRequest {
   message: string;
   table: string;
-  mode?: 'auto' | 'chart' | 'explain';
-  state?: Record<string, unknown>;
+  mode?: ChatMode;
+  state?: ChatStatePayload;
   debug?: boolean;
 }
 
@@ -45,7 +65,9 @@ export interface ClarifyOptions {
 
 export interface ChatClarifyResponse {
   response_type: 'clarify';
+  clarify_id: string;
   question: string;
+  missing: string[];
   options: ClarifyOptions;
   message?: string;
   questions?: string[];

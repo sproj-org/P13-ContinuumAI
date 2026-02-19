@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { apiClient } from "@/lib/api";
-import type { ChatResponse } from "@/lib/types/chat";
+import type { ChatClarifyResponse, ChatRequest, ChatResponse, ChatStatePayload } from "@/lib/types/chat";
 import { renderChart } from "@/components/workspace/renderChart";
 import { Loader2, MessageSquare, Send, AlertTriangle, Trash2 } from "lucide-react";
 
@@ -30,6 +30,54 @@ const modeOptions: Array<{ id: "auto" | "chart" | "explain"; label: string }> = 
   { id: "explain", label: "Explain" },
 ];
 
+const EMPTY_SELECTIONS = {
+  metric: null,
+  dimension: null,
+  temporal: null,
+  time_grain: null,
+  aggregation: null,
+  limit: null,
+} as const;
+
+function toRequestState(
+  lastChartSpec: ChatStatePayload["last_chart_spec"] | null,
+  baseState: {
+    clarify_id: string | null;
+    original_user_intent: string | null;
+    selections: {
+      metric: string | null;
+      dimension: string | null;
+      temporal: string | null;
+      time_grain: "day" | "week" | "month" | "quarter" | "year" | null;
+      aggregation: "sum" | "avg" | "count" | "min" | "max" | null;
+      limit: number | null;
+    };
+  }
+): ChatStatePayload | undefined {
+  const selections: NonNullable<ChatStatePayload["selections"]> = {};
+  if (baseState.selections.metric) selections.metric = baseState.selections.metric;
+  if (baseState.selections.dimension) selections.dimension = baseState.selections.dimension;
+  if (baseState.selections.temporal) selections.temporal = baseState.selections.temporal;
+  if (baseState.selections.time_grain) selections.time_grain = baseState.selections.time_grain;
+  if (baseState.selections.aggregation) selections.aggregation = baseState.selections.aggregation;
+  if (typeof baseState.selections.limit === "number") selections.limit = baseState.selections.limit;
+
+  const payload: ChatStatePayload = {};
+  if (lastChartSpec) {
+    payload.last_chart_spec = lastChartSpec;
+  }
+  if (baseState.clarify_id) {
+    payload.clarify_id = baseState.clarify_id;
+  }
+  if (Object.keys(selections).length > 0) {
+    payload.selections = selections;
+  }
+  if (baseState.original_user_intent) {
+    payload.original_user_intent = baseState.original_user_intent;
+  }
+  return Object.keys(payload).length > 0 ? payload : undefined;
+}
+
 export default function ChatPanel() {
   const params = useParams<{ datasetId: string }>();
   const {
@@ -41,9 +89,11 @@ export default function ChatPanel() {
     setChatMode,
     chatTurnsByKey,
     lastChartSpecByKey,
+    chatStateByKey,
     appendChatTurn,
     clearChat,
     setLastChartSpec,
+    patchChatState,
   } = useAppStore();
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -56,6 +106,11 @@ export default function ChatPanel() {
   );
   const turns = chatKey ? chatTurnsByKey[chatKey] ?? [] : [];
   const lastChartSpec = chatKey ? lastChartSpecByKey[chatKey] ?? null : null;
+  const chatState = chatKey ? chatStateByKey[chatKey] : undefined;
+  const firstUserIntent = useMemo(
+    () => turns.find((turn) => turn.role === "user")?.message ?? null,
+    [turns]
+  );
 
   useEffect(() => {
     setError(null);
@@ -75,11 +130,44 @@ export default function ChatPanel() {
     return "Ask a business question... (e.g., sales by region)";
   }, [chatMode, selectedAggregation]);
 
-  const submitPrompt = async (prompt: string) => {
-    const trimmed = prompt.trim();
-    if (!trimmed) {
+  const applyResponseState = (
+    key: string,
+    response: ChatResponse,
+    originalIntent: string
+  ) => {
+    if (response.response_type === "chart") {
+      setLastChartSpec(key, response.chart_spec);
+      patchChatState(key, {
+        clarify_id: null,
+        original_user_intent: originalIntent,
+        selections: EMPTY_SELECTIONS,
+      });
       return;
     }
+
+    if (response.response_type === "clarify") {
+      patchChatState(key, {
+        clarify_id: response.clarify_id,
+        original_user_intent: originalIntent,
+      });
+      return;
+    }
+
+    patchChatState(key, {
+      clarify_id: null,
+      original_user_intent: originalIntent,
+    });
+  };
+
+  const sendChatRequest = async ({
+    userVisibleMessage,
+    requestMessage,
+    state,
+  }: {
+    userVisibleMessage: string;
+    requestMessage: string;
+    state: ChatStatePayload | undefined;
+  }) => {
     if (!selectedAggregation || !chatKey) {
       setError("Select a mart first");
       return;
@@ -87,33 +175,56 @@ export default function ChatPanel() {
 
     appendChatTurn(chatKey, {
       role: "user",
-      message: trimmed,
+      message: userVisibleMessage,
       createdAt: new Date().toISOString(),
     });
     setMessage("");
     setError(null);
     setIsLoading(true);
     try {
-      const response = await apiClient.postChat(routeDatasetId, {
-        message: trimmed,
+      const request: ChatRequest = {
+        message: requestMessage,
         table: selectedAggregation,
         mode: chatMode,
-        state: lastChartSpec ? { last_chart_spec: lastChartSpec } : undefined,
-      });
+        state,
+      };
+      const response = await apiClient.postChat(routeDatasetId, request);
       appendChatTurn(chatKey, {
         role: "assistant",
         message: assistantText(response),
         response,
         createdAt: new Date().toISOString(),
       });
-      if (response.response_type === "chart") {
-        setLastChartSpec(chatKey, response.chart_spec);
-      }
+      applyResponseState(chatKey, response, state?.original_user_intent ?? requestMessage);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Chat request failed");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const submitPrompt = async (prompt: string) => {
+    const trimmed = prompt.trim();
+    if (!trimmed || !chatKey) {
+      return;
+    }
+
+    const originalIntent = trimmed;
+    patchChatState(chatKey, {
+      clarify_id: null,
+      selections: EMPTY_SELECTIONS,
+      original_user_intent: originalIntent,
+    });
+    const requestState = toRequestState(lastChartSpec, {
+      clarify_id: null,
+      original_user_intent: originalIntent,
+      selections: EMPTY_SELECTIONS,
+    });
+    await sendChatRequest({
+      userVisibleMessage: trimmed,
+      requestMessage: trimmed,
+      state: requestState,
+    });
   };
 
   const handleSubmit = async (event: FormEvent) => {
@@ -124,8 +235,40 @@ export default function ChatPanel() {
     await submitPrompt(trimmed);
   };
 
-  const handleClarifyChip = async (prefix: "metric" | "dimension" | "temporal", value: string) => {
-    await submitPrompt(`Use ${prefix}: ${value}`);
+  const handleClarifyChip = async (
+    clarifyResponse: ChatClarifyResponse,
+    prefix: "metric" | "dimension" | "temporal",
+    value: string
+  ) => {
+    if (!chatKey || !selectedAggregation) {
+      setError("Select a mart first");
+      return;
+    }
+    const current = chatState ?? {
+      clarify_id: null,
+      selections: EMPTY_SELECTIONS,
+      original_user_intent: null,
+    };
+    const mergedSelections = {
+      ...current.selections,
+      [prefix]: value,
+    };
+    const originalIntent = current.original_user_intent ?? firstUserIntent ?? clarifyResponse.question;
+    patchChatState(chatKey, {
+      clarify_id: clarifyResponse.clarify_id,
+      selections: mergedSelections,
+      original_user_intent: originalIntent,
+    });
+    const requestState = toRequestState(lastChartSpec, {
+      clarify_id: clarifyResponse.clarify_id,
+      original_user_intent: originalIntent,
+      selections: mergedSelections,
+    });
+    await sendChatRequest({
+      userVisibleMessage: `Selected ${prefix}: ${value}`,
+      requestMessage: originalIntent,
+      state: requestState,
+    });
   };
 
   const canSend = Boolean(selectedAggregation && chatKey && !isLoading);
@@ -231,7 +374,7 @@ export default function ChatPanel() {
                         key={`metric-${item}`}
                         type="button"
                         disabled={isLoading || !selectedAggregation}
-                        onClick={() => handleClarifyChip("metric", item)}
+                        onClick={() => handleClarifyChip(response, "metric", item)}
                         className="px-2 py-1 text-xs rounded-full border border-[#5237ff]/40 text-[#c7beff] bg-[#5237ff]/15 hover:bg-[#5237ff]/25 disabled:opacity-50"
                       >
                         {item}
@@ -244,7 +387,7 @@ export default function ChatPanel() {
                         key={`dimension-${item}`}
                         type="button"
                         disabled={isLoading || !selectedAggregation}
-                        onClick={() => handleClarifyChip("dimension", item)}
+                        onClick={() => handleClarifyChip(response, "dimension", item)}
                         className="px-2 py-1 text-xs rounded-full border border-blue-500/40 text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 disabled:opacity-50"
                       >
                         {item}
@@ -257,7 +400,7 @@ export default function ChatPanel() {
                         key={`temporal-${item}`}
                         type="button"
                         disabled={isLoading || !selectedAggregation}
-                        onClick={() => handleClarifyChip("temporal", item)}
+                        onClick={() => handleClarifyChip(response, "temporal", item)}
                         className="px-2 py-1 text-xs rounded-full border border-amber-500/40 text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 disabled:opacity-50"
                       >
                         {item}
