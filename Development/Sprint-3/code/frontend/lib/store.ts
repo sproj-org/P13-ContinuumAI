@@ -38,6 +38,10 @@ export interface ChatThreadState {
   original_user_intent: string | null;
 }
 
+export interface SavedPromptsState {
+  [key: string]: string[];
+}
+
 interface AppState {
   selectedDatasetId: DatasetId;
   setSelectedDatasetId: (datasetId: DatasetId) => void;
@@ -67,6 +71,7 @@ interface AppState {
   chatTurnsByKey: Record<string, ChatTurn[]>;
   lastChartSpecByKey: Record<string, ChartSpecV1 | null>;
   chatStateByKey: Record<string, ChatThreadState>;
+  savedPromptsByKey: SavedPromptsState;
   appendChatTurn: (key: string, turn: ChatTurn) => void;
   setChatTurns: (key: string, turns: ChatTurn[]) => void;
   clearChat: (key: string) => void;
@@ -80,6 +85,9 @@ interface AppState {
   ) => void;
   chatMode: ChatMode;
   setChatMode: (mode: ChatMode) => void;
+  addSavedPrompt: (key: string, prompt: string) => void;
+  removeSavedPrompt: (key: string, prompt: string) => void;
+  clearSavedPrompts: (key: string) => void;
 }
 
 export interface ChartConfig {
@@ -110,6 +118,7 @@ type PersistedAppState = {
   lastChartSpecByKey?: Record<string, unknown>;
   chatStateByKey?: Record<string, unknown>;
   chatMode?: ChatMode;
+  savedPromptsByKey?: Record<string, unknown>;
 };
 
 function asStringArray(value: unknown): string[] {
@@ -353,6 +362,29 @@ function sanitizePersistedChatState(raw: unknown): Record<string, ChatThreadStat
   return sanitized;
 }
 
+function sanitizePersistedSavedPrompts(raw: unknown): SavedPromptsState {
+  if (!raw || typeof raw !== 'object') {
+    return {};
+  }
+  const byKey = raw as Record<string, unknown>;
+  const sanitized: SavedPromptsState = {};
+  for (const [key, value] of Object.entries(byKey)) {
+    if (!Array.isArray(value)) {
+      continue;
+    }
+    const prompts = value
+      .filter((item): item is string => typeof item === 'string')
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0);
+    if (prompts.length) {
+      sanitized[key] = Array.from(new Set(prompts.map((item) => item.toLowerCase()))).map(
+        (lower) => prompts.find((item) => item.toLowerCase() === lower) as string
+      );
+    }
+  }
+  return sanitized;
+}
+
 const defaultChatThreadState: ChatThreadState = {
   clarify_id: null,
   selections: {
@@ -408,6 +440,7 @@ export const useAppStore = create<AppState>()(
       chatTurnsByKey: {},
       lastChartSpecByKey: {},
       chatStateByKey: {},
+      savedPromptsByKey: {},
       appendChatTurn: (key, turn) =>
         set((state) => ({
           chatTurnsByKey: {
@@ -480,18 +513,60 @@ export const useAppStore = create<AppState>()(
         }),
       chatMode: 'auto',
       setChatMode: (mode) => set({ chatMode: mode }),
+      addSavedPrompt: (key, prompt) =>
+        set((state) => {
+          const trimmed = prompt.trim();
+          if (!trimmed) {
+            return state;
+          }
+          const existing = state.savedPromptsByKey[key] ?? [];
+          const normalized = trimmed.toLowerCase();
+          if (existing.some((item) => item.toLowerCase() === normalized)) {
+            return state;
+          }
+          return {
+            savedPromptsByKey: {
+              ...state.savedPromptsByKey,
+              [key]: [trimmed, ...existing].slice(0, 20),
+            },
+          };
+        }),
+      removeSavedPrompt: (key, prompt) =>
+        set((state) => {
+          const existing = state.savedPromptsByKey[key] ?? [];
+          const normalized = prompt.toLowerCase();
+          const next = existing.filter((item) => item.toLowerCase() !== normalized);
+          if (next.length === 0) {
+            const clone = { ...state.savedPromptsByKey };
+            delete clone[key];
+            return { savedPromptsByKey: clone };
+          }
+          return {
+            savedPromptsByKey: {
+              ...state.savedPromptsByKey,
+              [key]: next,
+            },
+          };
+        }),
+      clearSavedPrompts: (key) =>
+        set((state) => {
+          const clone = { ...state.savedPromptsByKey };
+          delete clone[key];
+          return { savedPromptsByKey: clone };
+        }),
     }),
     {
       name: 'continuumai-app-store',
-      version: 4,
+      version: 5,
       storage: createJSONStorage(() => (typeof window !== 'undefined' ? localStorage : noopStorage)),
       migrate: (persistedState: unknown, version: number) => {
         const state = (persistedState ?? {}) as PersistedAppState;
-        if (version >= 4) {
+        if (version >= 5) {
           return {
             ...state,
             chatTurnsByKey: sanitizePersistedTurns(state.chatTurnsByKey),
             chatStateByKey: sanitizePersistedChatState(state.chatStateByKey),
+            savedPromptsByKey: sanitizePersistedSavedPrompts(state.savedPromptsByKey),
           };
         }
         return {
@@ -503,6 +578,7 @@ export const useAppStore = create<AppState>()(
               : {},
           chatStateByKey: sanitizePersistedChatState(state.chatStateByKey),
           chatMode: state.chatMode === 'chart' || state.chatMode === 'explain' ? state.chatMode : 'auto',
+          savedPromptsByKey: sanitizePersistedSavedPrompts(state.savedPromptsByKey),
         };
       },
       partialize: (state) => ({
@@ -511,6 +587,7 @@ export const useAppStore = create<AppState>()(
         lastChartSpecByKey: state.lastChartSpecByKey,
         chatStateByKey: state.chatStateByKey,
         chatMode: state.chatMode,
+        savedPromptsByKey: state.savedPromptsByKey,
       }),
     }
   )

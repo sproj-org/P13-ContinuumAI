@@ -4,6 +4,8 @@ export type ChatMode = 'auto' | 'chart' | 'explain';
 export type TimeGrain = 'day' | 'week' | 'month' | 'quarter' | 'year';
 export type MetricAggregation = 'sum' | 'avg' | 'count' | 'min' | 'max';
 export type MissingField = 'metric' | 'x_axis' | 'time_grain' | 'table';
+export type ChatRole = 'user' | 'assistant';
+export type ChatResponseType = 'chart' | 'chart_patch' | 'explain' | 'clarify' | 'refuse';
 
 export interface ChatSelections {
   metric?: string;
@@ -26,7 +28,14 @@ export interface ChatRequest {
   table: string;
   mode?: ChatMode;
   state?: ChatStatePayload;
+  history?: ChatHistoryTurn[];
   debug?: boolean;
+}
+
+export interface ChatHistoryTurn {
+  role: ChatRole;
+  message: string;
+  response_type?: ChatResponseType | null;
 }
 
 export interface ChartSpecPatch {

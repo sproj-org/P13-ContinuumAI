@@ -1,12 +1,13 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { apiClient } from "@/lib/api";
 import type {
   ChatClarifyResponse,
   ChatHintsResponse,
+  ChatHistoryTurn,
   ChatRequest,
   ChatResponse,
   ChatStatePayload,
@@ -14,7 +15,7 @@ import type {
 } from "@/lib/types/chat";
 import { renderChart } from "@/components/workspace/renderChart";
 import MarkdownMessage from "@/components/common/MarkdownMessage";
-import { Loader2, MessageSquare, Send, AlertTriangle, Trash2 } from "lucide-react";
+import { Loader2, MessageSquare, Send, AlertTriangle, Trash2, BookmarkPlus, X, ChevronDown, Search, Check } from "lucide-react";
 
 function assistantText(response: ChatResponse): string {
   if (response.response_type === "chart") {
@@ -108,16 +109,23 @@ export default function ChatPanel() {
     chatTurnsByKey,
     lastChartSpecByKey,
     chatStateByKey,
+    savedPromptsByKey,
     appendChatTurn,
     clearChat,
     setLastChartSpec,
     patchChatState,
+    addSavedPrompt,
+    removeSavedPrompt,
+    clearSavedPrompts,
   } = useAppStore();
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [chatHints, setChatHints] = useState<ChatHintsResponse | null>(null);
   const [isHintsLoading, setIsHintsLoading] = useState(false);
+  const [isMartOpen, setIsMartOpen] = useState(false);
+  const [martQuery, setMartQuery] = useState("");
+  const martPickerRef = useRef<HTMLDivElement | null>(null);
   const routeDatasetId = params?.datasetId || selectedDatasetId;
 
   const chatKey = useMemo(
@@ -127,6 +135,23 @@ export default function ChatPanel() {
   const turns = chatKey ? chatTurnsByKey[chatKey] ?? [] : [];
   const lastChartSpec = chatKey ? lastChartSpecByKey[chatKey] ?? null : null;
   const chatState = chatKey ? chatStateByKey[chatKey] : undefined;
+  const savedPrompts = chatKey ? savedPromptsByKey[chatKey] ?? [] : [];
+  const selectedMart = useMemo(
+    () => availableMarts.find((mart) => mart.id === selectedAggregation) ?? null,
+    [availableMarts, selectedAggregation]
+  );
+  const filteredMarts = useMemo(() => {
+    const query = martQuery.trim().toLowerCase();
+    if (!query) {
+      return availableMarts;
+    }
+    return availableMarts.filter((mart) => {
+      const label = (mart.label ?? "").toLowerCase();
+      const id = mart.id.toLowerCase();
+      const description = (mart.description ?? "").toLowerCase();
+      return label.includes(query) || id.includes(query) || description.includes(query);
+    });
+  }, [availableMarts, martQuery]);
   const firstUserIntent = useMemo(
     () => turns.find((turn) => turn.role === "user")?.message ?? null,
     [turns]
@@ -136,6 +161,24 @@ export default function ChatPanel() {
     setError(null);
     setMessage("");
   }, [chatKey]);
+
+  useEffect(() => {
+    if (!isMartOpen) {
+      return;
+    }
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!martPickerRef.current) {
+        return;
+      }
+      if (!martPickerRef.current.contains(event.target as Node)) {
+        setIsMartOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isMartOpen]);
 
   useEffect(() => {
     let isActive = true;
@@ -244,6 +287,17 @@ export default function ChatPanel() {
     });
   };
 
+  const buildHistory = (items: typeof turns, nextMessage: string): ChatHistoryTurn[] => {
+    const history = items
+      .slice(-7)
+      .map((turn) => ({
+        role: turn.role,
+        message: turn.message,
+        response_type: turn.response?.response_type ?? null,
+      }));
+    return [...history, { role: "user", message: nextMessage }];
+  };
+
   const sendChatRequest = async ({
     userVisibleMessage,
     requestMessage,
@@ -272,6 +326,7 @@ export default function ChatPanel() {
         table: selectedAggregation,
         mode: chatMode,
         state,
+        history: buildHistory(turns, requestMessage),
       };
       const response = await apiClient.postChat(routeDatasetId, request);
       appendChatTurn(chatKey, {
@@ -320,6 +375,18 @@ export default function ChatPanel() {
     await submitPrompt(trimmed);
   };
 
+  const handleSavePrompt = () => {
+    if (!chatKey) {
+      setError("Select a mart first");
+      return;
+    }
+    const trimmed = message.trim();
+    if (!trimmed) {
+      return;
+    }
+    addSavedPrompt(chatKey, trimmed);
+  };
+
   const handleClarifyChip = async (
     clarifyResponse: ChatClarifyResponse,
     prefix: "metric" | "dimension" | "temporal" | "time_grain",
@@ -357,6 +424,7 @@ export default function ChatPanel() {
   };
 
   const canSend = Boolean(selectedAggregation && chatKey && !isLoading);
+  const canSave = Boolean(selectedAggregation && chatKey && message.trim() && !isLoading);
 
   return (
     <div className="h-full flex flex-col">
@@ -367,19 +435,73 @@ export default function ChatPanel() {
           <p className="text-xs text-gray-400">
             {selectedAggregation ? `Chat scoped to: ${selectedAggregation}` : "Select a mart to chat"}
           </p>
-          <div className="mt-2">
-            <select
-              value={selectedAggregation ?? ""}
-              onChange={(event) => setSelectedAggregation(event.target.value || null)}
-              className="w-full max-w-xs bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#5237ff]/50"
+          <div className="mt-2 relative" ref={martPickerRef}>
+            <button
+              type="button"
+              onClick={() => setIsMartOpen((open) => !open)}
+              className="w-full max-w-xs flex items-center justify-between gap-2 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#5237ff]/50"
             >
-              <option value="">Select mart</option>
-              {availableMarts.map((mart) => (
-                <option key={mart.id} value={mart.id}>
-                  {mart.label ?? mart.id}
-                </option>
-              ))}
-            </select>
+              <span className="truncate">
+                {selectedMart?.label ?? selectedMart?.id ?? "Select mart"}
+              </span>
+              <ChevronDown className={`w-4 h-4 transition-transform ${isMartOpen ? "rotate-180" : ""}`} />
+            </button>
+            {isMartOpen ? (
+              <div className="absolute z-50 mt-2 w-full max-w-xs rounded-xl border border-white/10 bg-[#12061f]/95 backdrop-blur-xl shadow-xl shadow-black/40">
+                <div className="p-2">
+                  <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-2 py-1.5">
+                    <Search className="w-3.5 h-3.5 text-gray-400" />
+                    <input
+                      value={martQuery}
+                      onChange={(event) => setMartQuery(event.target.value)}
+                      placeholder="Search marts..."
+                      className="w-full bg-transparent text-xs text-gray-200 placeholder:text-gray-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+                <div className="max-h-64 overflow-y-auto p-2 pt-0 space-y-1">
+                  {filteredMarts.length === 0 ? (
+                    <div className="px-3 py-2 text-[11px] text-gray-500">No marts available.</div>
+                  ) : (
+                    filteredMarts.map((mart) => {
+                      const isSelected = mart.id === selectedAggregation;
+                      return (
+                        <button
+                          key={mart.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedAggregation(mart.id);
+                            setIsMartOpen(false);
+                            setMartQuery("");
+                          }}
+                          className={`w-full text-left rounded-lg border px-3 py-2 transition-colors ${
+                            isSelected
+                              ? "border-[#5237ff]/40 bg-[#5237ff]/15"
+                              : "border-white/5 bg-white/5 hover:bg-white/10"
+                          }`}
+                        >
+                          <div className="flex items-start gap-2">
+                            <span className={`mt-0.5 h-8 w-1 rounded-full ${isSelected ? "bg-[#5237ff]" : "bg-white/10"}`} />
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <p className="text-xs text-white font-semibold truncate">
+                                  {mart.label ?? mart.id}
+                                </p>
+                                {isSelected ? <Check className="w-3.5 h-3.5 text-[#c7beff]" /> : null}
+                              </div>
+                              <p className="text-[11px] text-gray-400 truncate">{mart.id}</p>
+                              {mart.description ? (
+                                <p className="text-[11px] text-gray-500 truncate">{mart.description}</p>
+                              ) : null}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            ) : null}
           </div>
           <div className="mt-2 inline-flex rounded-lg border border-white/10 bg-white/5 p-1">
             {modeOptions.map((option) => (
@@ -568,6 +690,43 @@ export default function ChatPanel() {
             </div>
           </div>
         ) : null}
+        {selectedAggregation && savedPrompts.length > 0 ? (
+          <div className="rounded-lg border border-white/10 bg-white/5 p-3">
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-gray-300 font-medium">Saved prompts</p>
+              <button
+                type="button"
+                onClick={() => chatKey && clearSavedPrompts(chatKey)}
+                className="text-[11px] text-gray-400 hover:text-gray-200"
+              >
+                Clear all
+              </button>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {savedPrompts.map((prompt) => (
+                <div
+                  key={prompt}
+                  className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/10 px-2 py-1"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setMessage(prompt)}
+                    className="text-xs text-gray-300 hover:text-white"
+                  >
+                    {prompt}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => chatKey && removeSavedPrompt(chatKey, prompt)}
+                    className="text-gray-500 hover:text-gray-200"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
         {error ? (
           <div className="flex items-center gap-2 text-red-300 text-sm bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
             <AlertTriangle className="w-4 h-4" />
@@ -583,6 +742,15 @@ export default function ChatPanel() {
             disabled={!selectedAggregation || isLoading}
             className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#5237ff]/50"
           />
+          <button
+            type="button"
+            onClick={handleSavePrompt}
+            disabled={!canSave}
+            className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-300 hover:text-white disabled:opacity-60"
+            title="Save prompt"
+          >
+            <BookmarkPlus className="w-4 h-4" />
+          </button>
           <button
             type="submit"
             disabled={!canSend}

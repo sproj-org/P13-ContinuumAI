@@ -16,6 +16,7 @@ from app.services.agents.chat_models import (
     ChatChartResponse,
     ChatClarifyResponse,
     ChatExplainResponse,
+    ChatHistoryTurn,
     ChatMode,
     ChatPlanChart,
     ChatPlanClarify,
@@ -751,6 +752,7 @@ def _build_user_prompt(
     mode: ChatMode,
     context: dict[str, Any],
     state: ChatState,
+    history: list[ChatHistoryTurn] | None,
 ) -> str:
     compact_kpis = [
         {
@@ -797,6 +799,15 @@ def _build_user_prompt(
         "and provide 3-5 example prompts split between chart and explain styles."
     )
 
+    compact_history = [
+        {
+            "role": item.role,
+            "message": item.message,
+            "response_type": item.response_type,
+        }
+        for item in (history or [])
+    ][-8:]
+
     return (
         f"User message:\n{message}\n\n"
         f"Mode: {mode}\n"
@@ -809,6 +820,7 @@ def _build_user_prompt(
         f"Compact mart context: {json.dumps(context, ensure_ascii=True)}\n"
         f"KPI hints: {json.dumps(compact_kpis, ensure_ascii=True)}\n"
         f"Conversation state: {json.dumps(state.model_dump(mode='json', exclude_none=True), ensure_ascii=True)}\n\n"
+        f"Recent chat history: {json.dumps(compact_history, ensure_ascii=True)}\n\n"
         f"ChartSpec summary: {json.dumps(chartspec_summary, ensure_ascii=True)}\n"
         f"Allowed response schema: {json.dumps(response_schema, ensure_ascii=True)}\n\n"
         f"Additional explain instructions: {explain_instructions}\n\n"
@@ -824,6 +836,7 @@ def _generate_plan(
     mode: ChatMode,
     context: dict[str, Any],
     state: ChatState,
+    history: list[ChatHistoryTurn] | None,
 ) -> ChatPlanUnion | None:
     settings = get_settings()
     if not settings.OPENAI_API_KEY:
@@ -846,6 +859,7 @@ def _generate_plan(
         mode=mode,
         context=context,
         state=state,
+        history=history,
     )
 
     corrective_prompt: str | None = None
@@ -919,6 +933,26 @@ def _context_explain_message(
     metrics, dimensions, temporals = _extract_fields(context)
     topic = " ".join(user_message.strip().split())
 
+    def _take(items: list[str], limit: int) -> list[str]:
+        return [item for item in items if isinstance(item, str) and item][:limit]
+
+    def _join(items: list[str]) -> str:
+        return ", ".join(items)
+
+    normalized_message = _normalize_text(user_message)
+    asks_missing = _contains_any(
+        normalized_message,
+        [
+            "not include",
+            "not contain",
+            "missing",
+            "not covered",
+            "not available",
+            "doesn't include",
+            "doesnt include",
+        ],
+    )
+
     good_for: list[str] = []
     if metrics and dimensions:
         good_for.append(f"comparing {metrics[0]} by {dimensions[0]}")
@@ -929,26 +963,52 @@ def _context_explain_message(
 
     missing_capabilities: list[str] = []
     if not temporals:
-        missing_capabilities.append("no explicit temporal field for trend charts")
+        missing_capabilities.append("no clear time field for trend analysis")
     if not dimensions:
-        missing_capabilities.append("no strong categorical breakdown fields")
+        missing_capabilities.append("limited categorical breakdowns")
+    if not metrics:
+        missing_capabilities.append("no numeric measures to aggregate")
 
     chart_examples: list[str] = []
-    explain_examples: list[str] = [f"Explain what {table} represents", "What questions is this mart best suited to answer?"]
+    explain_examples: list[str] = [f"Explain what {table} represents"]
     if metrics and dimensions:
         chart_examples.append(f"Show {metrics[0]} by {dimensions[0]}")
     if metrics and temporals:
         chart_examples.append(f"Trend of {metrics[0]} by {temporals[0]}")
     if metrics:
         chart_examples.append(f"Top 10 groups by {metrics[0]}")
-        explain_examples.insert(1, f"What does {metrics[0]} mean?")
+        explain_examples.append(f"What does {metrics[0]} mean?")
+    explain_examples.append("What questions is this mart best suited to answer?")
+
+    metric_hint = _join(_take(metrics, 2))
+    dimension_hint = _join(_take(dimensions, 2))
+    temporal_hint = _join(_take(temporals, 2))
+
+    if asks_missing:
+        missing_summary = _join(_take(missing_capabilities, 2)) or "concepts outside its listed fields"
+        available_summary = "; ".join(
+            item
+            for item in [
+                f"metrics: {metric_hint}" if metric_hint else None,
+                f"dimensions: {dimension_hint}" if dimension_hint else None,
+                f"time: {temporal_hint}" if temporal_hint else None,
+            ]
+            if item
+        )
+        return (
+            f"For '{topic}', here is a quick summary:\n"
+            f"1) Mart: {table} represents {description}.\n"
+            f"2) Missing or weak coverage: {missing_summary}.\n"
+            f"3) Available signals: {available_summary or 'see the field list for details'}."
+        )
 
     return (
-        f"For '{topic}', {table} represents {description}. "
-        f"This mart is good for {', '.join(good_for) if good_for else 'summary analytics using its available metrics and fields'}. "
-        f"What it does not contain: {', '.join(missing_capabilities) if missing_capabilities else 'it may not include concepts outside its listed fields'}. "
-        f"Chart mode examples: {' | '.join(chart_examples[:5]) if chart_examples else 'Show a metric by a breakdown field'}. "
-        f"Explain mode examples: {' | '.join(explain_examples[:5])}."
+        f"For '{topic}', here is a quick summary:\n"
+        f"1) Mart: {table} represents {description}.\n"
+        f"2) Best for: {', '.join(_take(good_for, 2)) if good_for else 'summary analytics using its available fields'}.\n"
+        f"3) Key fields: {metric_hint or 'measures'}; {dimension_hint or 'dimensions'}; {temporal_hint or 'time fields'}.\n"
+        f"4) Chart ideas: {' | '.join(_take(chart_examples, 2)) if chart_examples else 'Show a metric by a breakdown field'}.\n"
+        f"5) Explain ideas: {' | '.join(_take(explain_examples, 2))}."
     )
 
 
@@ -959,6 +1019,7 @@ def run_chat_orchestration(
     table: str | None,
     mode: ChatMode = "auto",
     state: ChatState | dict[str, Any] | None,
+    history: list[ChatHistoryTurn] | None = None,
     db: Session,
     debug: bool = False,
 ) -> dict[str, Any]:
@@ -1020,6 +1081,7 @@ def run_chat_orchestration(
         mode=mode,
         context=context,
         state=parsed_state,
+        history=history,
     )
     if plan is None:
         plan = _fallback_plan_from_context(message=message, mode=mode, table=table, context=context)

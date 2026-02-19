@@ -13,6 +13,8 @@ ChatMode = Literal["auto", "chart", "explain"]
 TimeGrain = Literal["day", "week", "month", "quarter", "year"]
 MetricAggregation = Literal["sum", "avg", "count", "min", "max"]
 MissingField = Literal["metric", "x_axis", "time_grain", "table"]
+ChatRole = Literal["user", "assistant"]
+ChatResponseType = Literal["chart", "chart_patch", "explain", "clarify", "refuse"]
 
 
 def create_clarify_id() -> str:
@@ -62,11 +64,26 @@ class ChatState(BaseModel):
         return trimmed or None
 
 
+class ChatHistoryTurn(BaseModel):
+    role: ChatRole
+    message: str
+    response_type: ChatResponseType | None = None
+
+    @field_validator("message")
+    @classmethod
+    def validate_message(cls, value: str) -> str:
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("message is required")
+        return trimmed
+
+
 class ChatRequest(BaseModel):
     message: str
     table: str | None = None
     mode: ChatMode = "auto"
     state: ChatState | None = None
+    history: list[ChatHistoryTurn] | None = None
     debug: bool = False
 
     @field_validator("message")
