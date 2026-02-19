@@ -24,7 +24,10 @@ from app.services.agents.chat_models import (
     ChatPlanUnion,
     ChatRefuseResponse,
     ChatResponseUnion,
+    ChatSelections,
+    ChatState,
     ClarifyOptions,
+    create_clarify_id,
 )
 from app.services.agents.mart_context import build_compact_mart_context
 from app.services.agents.spec_patch import apply_patch
@@ -58,28 +61,11 @@ def _extract_fields(context: dict[str, Any]) -> tuple[list[str], list[str], list
 
 def _normalize_text(value: str) -> str:
     cleaned = value.lower().replace("_", " ")
-    compact = " ".join(cleaned.split())
-    return compact
+    return " ".join(cleaned.split())
 
 
 def _contains_any(text: str, needles: list[str]) -> bool:
-    for needle in needles:
-        if needle in text:
-            return True
-    return False
-
-
-def _aggregation_from_message(message: str) -> str:
-    text = _normalize_text(message)
-    if _contains_any(text, ["average", "avg", "mean"]):
-        return "avg"
-    if _contains_any(text, ["count", "how many", "number of"]):
-        return "count"
-    if _contains_any(text, ["minimum", "lowest", "min"]):
-        return "min"
-    if _contains_any(text, ["maximum", "highest", "max"]):
-        return "max"
-    return "sum"
+    return any(needle in text for needle in needles)
 
 
 def _pick_matching_field(message: str, fields: list[str]) -> str | None:
@@ -91,68 +77,13 @@ def _pick_matching_field(message: str, fields: list[str]) -> str | None:
     return None
 
 
-def _fallback_plan_from_context(
-    *,
-    message: str,
-    mode: ChatMode,
-    table: str,
-    context: dict[str, Any],
-) -> ChatPlanUnion | None:
+def _options_from_context(context: dict[str, Any]) -> ClarifyOptions:
     metrics, dimensions, temporals = _extract_fields(context)
-    normalized = _normalize_text(message)
-
-    if mode == "explain" or _contains_any(normalized, ["explain", "what is", "what does", "why", "meaning"]):
-        return ChatPlanExplain(
-            response_type="explain",
-            message=f"Explanation for {table} based on mart metadata and available fields.",
-        )
-
-    metric = _pick_matching_field(message, metrics) or (metrics[0] if metrics else None)
-    x_field = _pick_matching_field(message, dimensions + temporals)
-    if not x_field:
-        if _contains_any(normalized, ["month", "day", "date", "time", "trend"]) and temporals:
-            x_field = temporals[0]
-        elif dimensions:
-            x_field = dimensions[0]
-        elif temporals:
-            x_field = temporals[0]
-
-    chart_intent = mode == "chart" or _contains_any(
-        normalized,
-        ["by ", "breakdown", "trend", "chart", "plot", "compare", "versus", " vs "],
+    return ClarifyOptions(
+        metrics=metrics[:6],
+        dimensions=dimensions[:6],
+        temporals=temporals[:6],
     )
-    if chart_intent and metric and x_field:
-        chart_type = "line" if x_field in temporals else "bar"
-        return ChatPlanChart(
-            response_type="chart",
-            chart_spec=ChartSpecV1(
-                version="v1",
-                table=table,
-                chart={"type": chart_type},
-                encoding={
-                    "x": {"field": x_field},
-                    "y": [
-                        {
-                            "field": metric,
-                            "aggregation": _aggregation_from_message(message),
-                            "alias": "metric_value",
-                        }
-                    ],
-                },
-                filters=[],
-                sort=[{"field": "metric_value", "direction": "desc"}],
-                limit=20,
-            ),
-            narrative_style="standard",
-        )
-
-    if _contains_any(normalized, ["poem", "song", "lyrics", "story", "novel", "haiku"]):
-        return ChatPlanRefuse(
-            response_type="refuse",
-            message="I can help with analytics for the selected mart. Ask about metrics, trends, filters, or breakdowns.",
-        )
-
-    return None
 
 
 def _sanitize_options(options: ClarifyOptions, context: dict[str, Any]) -> ClarifyOptions:
@@ -168,17 +99,265 @@ def _sanitize_options(options: ClarifyOptions, context: dict[str, Any]) -> Clari
     )
 
 
-def _default_clarify(question: str, context: dict[str, Any]) -> ChatClarifyResponse:
-    metrics, dimensions, temporals = _extract_fields(context)
+def _missing_from_selections(selections: ChatSelections) -> list[str]:
+    missing: list[str] = []
+    if not selections.metric:
+        missing.append("metric")
+    if not selections.dimension and not selections.temporal:
+        missing.append("dimension")
+    return missing
+
+
+def _question_for_missing(missing: list[str]) -> str:
+    missing_set = set(missing)
+    if missing_set == {"metric", "dimension"}:
+        return "Which metric and breakdown should I use for this chart?"
+    if missing_set == {"metric"}:
+        return "Which metric should I use?"
+    if "dimension" in missing_set:
+        return "Which breakdown (dimension or temporal field) should I use?"
+    return "What should I adjust next?"
+
+
+def _default_clarify(
+    question: str,
+    context: dict[str, Any],
+    *,
+    clarify_id: str | None = None,
+    missing: list[str] | None = None,
+) -> ChatClarifyResponse:
     return ChatClarifyResponse(
         response_type="clarify",
+        clarify_id=clarify_id or create_clarify_id(),
         question=question,
-        options=ClarifyOptions(
-            metrics=metrics[:4],
-            dimensions=dimensions[:4],
-            temporals=temporals[:3],
-        ),
+        missing=missing or [],
+        options=_options_from_context(context),
         meta={},
+    )
+
+
+def _parse_state(raw_state: ChatState | dict[str, Any] | None) -> ChatState:
+    if raw_state is None:
+        return ChatState()
+    if isinstance(raw_state, ChatState):
+        return raw_state
+    try:
+        return ChatState.model_validate(raw_state)
+    except ValidationError:
+        return ChatState()
+
+
+def _sanitize_selections(context: dict[str, Any], selections: ChatSelections) -> ChatSelections:
+    metrics, dimensions, temporals = _extract_fields(context)
+    metric_set = set(metrics)
+    dimension_set = set(dimensions)
+    temporal_set = set(temporals)
+
+    metric = selections.metric if selections.metric in metric_set else None
+    dimension = selections.dimension if selections.dimension in dimension_set else None
+    temporal = selections.temporal if selections.temporal in temporal_set else None
+
+    if not temporal and selections.dimension in temporal_set:
+        temporal = selections.dimension
+    if not dimension and selections.temporal in dimension_set:
+        dimension = selections.temporal
+
+    return ChatSelections(
+        metric=metric,
+        dimension=dimension,
+        temporal=temporal,
+        time_grain=selections.time_grain,
+        aggregation=selections.aggregation,
+        limit=selections.limit,
+    )
+
+
+def _normalize_clarify_plan_payload(payload: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
+    response_type = payload.get("response_type")
+    if response_type != "clarify":
+        return payload
+
+    normalized = dict(payload)
+    clarify_id = normalized.get("clarify_id")
+    if not isinstance(clarify_id, str) or not clarify_id.strip():
+        normalized["clarify_id"] = create_clarify_id()
+
+    missing = normalized.get("missing")
+    if not isinstance(missing, list):
+        normalized["missing"] = []
+
+    options = normalized.get("options")
+    if not isinstance(options, dict):
+        normalized["options"] = _options_from_context(context).model_dump(mode="json")
+    return normalized
+
+
+def _state_driven_plan(
+    *,
+    table: str,
+    mode: ChatMode,
+    context: dict[str, Any],
+    state: ChatState,
+) -> ChatPlanUnion | None:
+    selections = _sanitize_selections(context, state.selections)
+    has_selection = bool(selections.metric or selections.dimension or selections.temporal)
+    if not state.clarify_id and not has_selection:
+        return None
+
+    missing = _missing_from_selections(selections)
+    if missing:
+        return ChatPlanClarify(
+            response_type="clarify",
+            clarify_id=state.clarify_id or create_clarify_id(),
+            question=_question_for_missing(missing),
+            missing=missing,
+            options=_options_from_context(context),
+        )
+
+    x_field = selections.temporal or selections.dimension
+    if not x_field or not selections.metric:
+        return ChatPlanClarify(
+            response_type="clarify",
+            clarify_id=state.clarify_id or create_clarify_id(),
+            question="Which metric and breakdown should I use for this chart?",
+            missing=["metric", "dimension"],
+            options=_options_from_context(context),
+        )
+
+    metrics, _, temporals = _extract_fields(context)
+    if selections.metric not in set(metrics):
+        return ChatPlanClarify(
+            response_type="clarify",
+            clarify_id=state.clarify_id or create_clarify_id(),
+            question="Pick a valid metric from this mart.",
+            missing=["metric"],
+            options=_options_from_context(context),
+        )
+
+    chart_type = "line" if x_field in set(temporals) else "bar"
+    return ChatPlanChart(
+        response_type="chart",
+        chart_spec=ChartSpecV1(
+            version="v1",
+            table=table,
+            chart={"type": chart_type},
+            encoding={
+                "x": {"field": x_field},
+                "y": [
+                    {
+                        "field": selections.metric,
+                        "aggregation": selections.aggregation or "sum",
+                        "alias": "metric_value",
+                    }
+                ],
+            },
+            filters=[],
+            sort=[{"field": "metric_value", "direction": "desc"}],
+            limit=selections.limit or 20,
+        ),
+        narrative_style="standard" if mode != "explain" else "brief",
+    )
+
+
+def _aggregation_from_message(message: str) -> str:
+    text = _normalize_text(message)
+    if _contains_any(text, ["average", "avg", "mean"]):
+        return "avg"
+    if _contains_any(text, ["count", "how many", "number of"]):
+        return "count"
+    if _contains_any(text, ["minimum", "lowest", "min"]):
+        return "min"
+    if _contains_any(text, ["maximum", "highest", "max"]):
+        return "max"
+    return "sum"
+
+
+def _is_obviously_off_topic(message: str) -> bool:
+    text = _normalize_text(message)
+    return _contains_any(text, ["poem", "song", "lyrics", "novel", "haiku", "joke", "recipe"])
+
+
+def _fallback_plan_from_context(
+    *,
+    message: str,
+    mode: ChatMode,
+    table: str,
+    context: dict[str, Any],
+) -> ChatPlanUnion:
+    metrics, dimensions, temporals = _extract_fields(context)
+    metric = _pick_matching_field(message, metrics)
+    x_field = _pick_matching_field(message, [*dimensions, *temporals])
+
+    if mode == "explain":
+        return ChatPlanExplain(
+            response_type="explain",
+            message=f"Explanation for {table} based on mart metadata and available fields.",
+        )
+
+    normalized = _normalize_text(message)
+    if _is_obviously_off_topic(message):
+        return ChatPlanRefuse(
+            response_type="refuse",
+            message="I can help with analytics for the selected mart. Ask about metrics, trends, filters, or breakdowns.",
+        )
+
+    if not metric and mode == "chart" and metrics:
+        metric = metrics[0]
+    if not x_field and mode == "chart":
+        if temporals and _contains_any(normalized, ["trend", "month", "day", "date", "time"]):
+            x_field = temporals[0]
+        elif dimensions:
+            x_field = dimensions[0]
+        elif temporals:
+            x_field = temporals[0]
+
+    if mode == "auto":
+        if _contains_any(normalized, ["explain", "what is", "what does", "why"]):
+            return ChatPlanExplain(
+                response_type="explain",
+                message=f"Explanation for {table} based on mart metadata and available fields.",
+            )
+        if metric and not x_field:
+            if temporals and _contains_any(normalized, ["trend", "month", "day", "date", "time"]):
+                x_field = temporals[0]
+            elif dimensions:
+                x_field = dimensions[0]
+            elif temporals:
+                x_field = temporals[0]
+
+    if metric and x_field:
+        return ChatPlanChart(
+            response_type="chart",
+            chart_spec=ChartSpecV1(
+                version="v1",
+                table=table,
+                chart={"type": "line" if x_field in set(temporals) else "bar"},
+                encoding={
+                    "x": {"field": x_field},
+                    "y": [{"field": metric, "aggregation": _aggregation_from_message(message), "alias": "metric_value"}],
+                },
+                filters=[],
+                sort=[{"field": "metric_value", "direction": "desc"}],
+                limit=20,
+            ),
+            narrative_style="standard",
+        )
+
+    if mode == "chart":
+        return ChatPlanClarify(
+            response_type="clarify",
+            clarify_id=create_clarify_id(),
+            question="Which metric and breakdown should I chart?",
+            missing=["metric", "dimension"],
+            options=_options_from_context(context),
+        )
+
+    return ChatPlanClarify(
+        response_type="clarify",
+        clarify_id=create_clarify_id(),
+        question="I can chart this quickly. Which metric and breakdown should I use?",
+        missing=["metric", "dimension"],
+        options=_options_from_context(context),
     )
 
 
@@ -236,7 +415,9 @@ def _execute_chart(
     except HTTPException as exc:
         return ChatClarifyResponse(
             response_type="clarify",
+            clarify_id=create_clarify_id(),
             question=f"That request is invalid for this mart: {exc.detail}",
+            missing=[],
             options=ClarifyOptions(),
             meta={},
         )
@@ -253,18 +434,19 @@ def _execute_chart(
 
 def _build_system_prompt(mode: ChatMode) -> str:
     mode_clause = {
-        "auto": "In auto mode choose the best response type based on intent.",
-        "chart": "Mode is chart. You must return chart or clarify.",
-        "explain": "Mode is explain. You must return explain.",
+        "auto": "Mode is auto. Choose the best response type.",
+        "chart": "Mode is chart. Return chart or clarify only.",
+        "explain": "Mode is explain. Return explain only.",
     }[mode]
     return (
         "You are ContinuumAI analytics assistant for one selected mart. "
-        "Never output SQL. Never fabricate values. "
-        "Prefer chart/chart_patch when the user asks for numeric comparison or breakdown. "
-        "Clarify only if ambiguity blocks execution, and ask only one question with practical options. "
-        "If user is off-topic, return refuse. "
+        "You can request chart execution through the preview pipeline, so do not claim data is unavailable. "
+        "Never output SQL. Never fabricate numbers. Never return markdown. "
+        "Clarify only when ambiguity blocks execution; ask at most one question. "
+        "For clarify responses, include clarify_id, missing, and options arrays. "
+        "If off-topic, return refuse. "
         f"{mode_clause} "
-        "Return JSON only, exactly one object, no markdown and no backticks."
+        "Return JSON only as one object."
     )
 
 
@@ -275,7 +457,7 @@ def _build_user_prompt(
     message: str,
     mode: ChatMode,
     context: dict[str, Any],
-    state: dict[str, Any],
+    state: ChatState,
 ) -> str:
     compact_kpis = [
         {
@@ -288,6 +470,7 @@ def _build_user_prompt(
         if item.get("table") == table
     ][:8]
 
+    metrics, dimensions, temporals = _extract_fields(context)
     response_schema = {
         "chart": {"response_type": "chart", "chart_spec": "ChartSpecV1", "narrative_style": "brief|standard"},
         "chart_patch": {"response_type": "chart_patch", "patch": {"set": {}, "unset": [], "add": {}}},
@@ -298,7 +481,9 @@ def _build_user_prompt(
         },
         "clarify": {
             "response_type": "clarify",
+            "clarify_id": "string",
             "question": "single question",
+            "missing": ["metric", "dimension"],
             "options": {"metrics": [], "dimensions": [], "temporals": []},
         },
         "refuse": {"response_type": "refuse", "message": "string"},
@@ -314,16 +499,20 @@ def _build_user_prompt(
     }
 
     return (
-        f"User message: {message}\n"
-        f"Mode: {mode}\n\n"
+        f"User message:\n{message}\n\n"
+        f"Mode: {mode}\n"
         f"Dataset: {dataset_id}\n"
-        f"Table: {table}\n"
-        f"Compact mart context: {json.dumps(context, ensure_ascii=True)}\n\n"
-        f"Available KPI hints: {json.dumps(compact_kpis, ensure_ascii=True)}\n"
-        f"Last chart spec state: {json.dumps(state.get('last_chart_spec'), ensure_ascii=True)}\n\n"
+        f"Table: {table}\n\n"
+        "Candidate fields by role:\n"
+        f"- measures: {json.dumps(metrics[:25], ensure_ascii=True)}\n"
+        f"- dimensions: {json.dumps(dimensions[:25], ensure_ascii=True)}\n"
+        f"- temporals: {json.dumps(temporals[:25], ensure_ascii=True)}\n\n"
+        f"Compact mart context: {json.dumps(context, ensure_ascii=True)}\n"
+        f"KPI hints: {json.dumps(compact_kpis, ensure_ascii=True)}\n"
+        f"Conversation state: {json.dumps(state.model_dump(mode='json', exclude_none=True), ensure_ascii=True)}\n\n"
         f"ChartSpec summary: {json.dumps(chartspec_summary, ensure_ascii=True)}\n"
-        f"Allowed response schema: {json.dumps(response_schema, ensure_ascii=True)}\n"
-        "Important: choose best available fields from context; avoid unnecessary clarify."
+        f"Allowed response schema: {json.dumps(response_schema, ensure_ascii=True)}\n\n"
+        "Instruction: choose best available fields from context and do not copy template structures blindly."
     )
 
 
@@ -334,7 +523,7 @@ def _generate_plan(
     message: str,
     mode: ChatMode,
     context: dict[str, Any],
-    state: dict[str, Any],
+    state: ChatState,
 ) -> ChatPlanUnion | None:
     settings = get_settings()
     if not settings.OPENAI_API_KEY:
@@ -375,8 +564,15 @@ def _generate_plan(
         except Exception:
             return None
 
+        if not isinstance(payload, dict):
+            if attempt == 0:
+                corrective_prompt = "Return a single JSON object only."
+                continue
+            return None
+
+        normalized_payload = _normalize_clarify_plan_payload(payload, context)
         try:
-            return _PLAN_ADAPTER.validate_python(payload)
+            return _PLAN_ADAPTER.validate_python(normalized_payload)
         except ValidationError:
             if attempt == 0:
                 corrective_prompt = (
@@ -392,12 +588,10 @@ def _enforce_mode(plan: ChatPlanUnion, mode: ChatMode, context: dict[str, Any]) 
     if mode == "chart" and plan.response_type not in {"chart", "chart_patch", "clarify"}:
         return ChatPlanClarify(
             response_type="clarify",
+            clarify_id=create_clarify_id(),
             question="Which metric and breakdown should I chart?",
-            options=ClarifyOptions(
-                metrics=_extract_fields(context)[0][:4],
-                dimensions=_extract_fields(context)[1][:4],
-                temporals=_extract_fields(context)[2][:3],
-            ),
+            missing=["metric", "dimension"],
+            options=_options_from_context(context),
         )
 
     if mode == "explain" and plan.response_type != "explain":
@@ -434,38 +628,56 @@ def run_chat_orchestration(
     message: str,
     table: str | None,
     mode: ChatMode = "auto",
-    state: dict[str, Any] | None,
+    state: ChatState | dict[str, Any] | None,
     db: Session,
     debug: bool = False,
 ) -> dict[str, Any]:
     if not table:
         return ChatClarifyResponse(
             response_type="clarify",
+            clarify_id=create_clarify_id(),
             question="Select a mart to proceed.",
+            missing=["table"],
             options=ClarifyOptions(),
             meta={},
         ).model_dump(mode="json")
 
-    state = state or {}
+    parsed_state = _parse_state(state)
     context = build_compact_mart_context(dataset_id=dataset_id, table=table)
+
+    state_plan = _state_driven_plan(table=table, mode=mode, context=context, state=parsed_state)
+    if isinstance(state_plan, ChatPlanChart):
+        chart_response = _execute_chart(
+            dataset_id=dataset_id,
+            table=table,
+            chart_spec=state_plan.chart_spec,
+            db=db,
+            style=state_plan.narrative_style,
+            debug=debug,
+        )
+        return chart_response.model_dump(mode="json")
+    if isinstance(state_plan, ChatPlanClarify):
+        return ChatClarifyResponse(
+            response_type="clarify",
+            clarify_id=state_plan.clarify_id,
+            question=state_plan.question,
+            missing=state_plan.missing,
+            options=_sanitize_options(state_plan.options, context),
+            meta={},
+        ).model_dump(mode="json")
+
     plan = _generate_plan(
         dataset_id=dataset_id,
         table=table,
         message=message,
         mode=mode,
         context=context,
-        state=state,
+        state=parsed_state,
     )
     if plan is None:
         plan = _fallback_plan_from_context(message=message, mode=mode, table=table, context=context)
-        if plan is None:
-            return _default_clarify("Please rephrase your request with a metric and breakdown.", context).model_dump(mode="json")
 
     plan = _enforce_mode(plan=plan, mode=mode, context=context)
-    if isinstance(plan, ChatPlanClarify):
-        fallback_from_clarify = _fallback_plan_from_context(message=message, mode=mode, table=table, context=context)
-        if isinstance(fallback_from_clarify, (ChatPlanChart, ChatPlanExplain, ChatPlanRefuse)):
-            plan = fallback_from_clarify
 
     if isinstance(plan, ChatPlanChart):
         chart_response = _execute_chart(
@@ -479,14 +691,22 @@ def run_chat_orchestration(
         return chart_response.model_dump(mode="json")
 
     if isinstance(plan, ChatPlanPatch):
-        last_raw = state.get("last_chart_spec")
+        last_raw = parsed_state.last_chart_spec
         if not last_raw:
-            return _default_clarify("I need an existing chart first. What should we chart?", context).model_dump(mode="json")
+            return _default_clarify(
+                "I need an existing chart first. What should we chart?",
+                context,
+                missing=["metric", "dimension"],
+            ).model_dump(mode="json")
         try:
-            base = ChartSpecV1.model_validate(last_raw)
+            base = last_raw if isinstance(last_raw, ChartSpecV1) else ChartSpecV1.model_validate(last_raw)
             patched = apply_patch(base, plan.patch)
         except (ValidationError, HTTPException):
-            return _default_clarify("I could not apply that update safely. Choose a metric or dimension.", context).model_dump(mode="json")
+            return _default_clarify(
+                "I could not apply that update safely. Choose a metric or dimension.",
+                context,
+                missing=["metric", "dimension"],
+            ).model_dump(mode="json")
 
         chart_response = _execute_chart(
             dataset_id=dataset_id,
@@ -526,9 +746,12 @@ def run_chat_orchestration(
         ).model_dump(mode="json")
 
     if isinstance(plan, ChatPlanClarify):
+        missing = plan.missing if plan.missing else ["metric", "dimension"]
         return ChatClarifyResponse(
             response_type="clarify",
-            question=plan.question.strip() or "What metric and breakdown should I use?",
+            clarify_id=plan.clarify_id,
+            question=plan.question.strip() or _question_for_missing(missing),
+            missing=missing,
             options=_sanitize_options(plan.options, context),
             meta={},
         ).model_dump(mode="json")
@@ -540,7 +763,11 @@ def run_chat_orchestration(
             meta={},
         ).model_dump(mode="json")
 
-    return _default_clarify("Please rephrase your analytics request.", context).model_dump(mode="json")
+    return _default_clarify(
+        "Please rephrase your analytics request with a metric and breakdown.",
+        context,
+        missing=["metric", "dimension"],
+    ).model_dump(mode="json")
 
 
 def response_chart_spec_hash(response_payload: dict[str, Any]) -> str | None:
