@@ -305,6 +305,7 @@ def execute_aggregate_request(
     dataset_id: str,
     request: AggregateRequest,
     db: Session,
+    debug: bool = False,
 ) -> dict[str, Any]:
     if not is_supported_dataset(dataset_id):
         raise HTTPException(status_code=404, detail=f"Unknown dataset_id '{dataset_id}'")
@@ -421,8 +422,19 @@ def execute_aggregate_request(
     """
     params["limit"] = request.limit
 
+    statement = text(sql)
+    sql_debug: str | None = None
+    params_debug: dict[str, Any] | None = None
+    if debug:
+        try:
+            compiled = statement.compile(bind=db.get_bind(), compile_kwargs={"literal_binds": False})
+            sql_debug = str(compiled)
+        except Exception:
+            sql_debug = sql
+        params_debug = {key: _serialize_value(value) for key, value in params.items()}
+
     try:
-        result = db.execute(text(sql), params)
+        result = db.execute(statement, params)
         rows = result.fetchall()
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Aggregate query failed: {exc}") from exc
@@ -448,6 +460,11 @@ def execute_aggregate_request(
             "group_by": grouping_columns,
         },
     }
+    if debug:
+        payload["meta"]["debug"] = {
+            "sql": sql_debug,
+            "params": params_debug or {},
+        }
     return sanitize_for_json(payload)
 
 

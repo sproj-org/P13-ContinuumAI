@@ -259,10 +259,10 @@ def _cache_meta(enabled: bool, hit: bool, key: str | None, ttl_seconds: int) -> 
     }
 
 
-def execute_chart_preview(dataset_id: str, chart_spec: ChartSpecV1, db: Session) -> dict[str, Any]:
+def execute_chart_preview(dataset_id: str, chart_spec: ChartSpecV1, db: Session, debug: bool = False) -> dict[str, Any]:
     started_at = time.perf_counter()
     settings = get_settings()
-    cache_enabled = bool(settings.CACHE_ENABLED)
+    cache_enabled = bool(settings.CACHE_ENABLED) and not debug
     ttl_seconds = int(settings.CACHE_TTL_SECONDS)
 
     resolved = resolve_chart_spec(dataset_id=dataset_id, chart_spec=chart_spec)
@@ -286,6 +286,7 @@ def execute_chart_preview(dataset_id: str, chart_spec: ChartSpecV1, db: Session)
         dataset_id=dataset_id,
         request=resolved.aggregate_request,
         db=db,
+        debug=debug,
     )
 
     columns = list(aggregate_payload.get("columns", []))
@@ -328,6 +329,14 @@ def execute_chart_preview(dataset_id: str, chart_spec: ChartSpecV1, db: Session)
             ),
         },
     }
+    if debug:
+        aggregate_debug = aggregate_meta.get("debug", {}) if isinstance(aggregate_meta, dict) else {}
+        response["meta"]["debug"] = {
+            "chartspec_json": resolved.normalized_spec.model_dump(mode="json"),
+            "resolved_aggregate_request_json": resolved.aggregate_request.model_dump(mode="json"),
+            "sql": aggregate_debug.get("sql"),
+            "params": aggregate_debug.get("params", {}),
+        }
     if cache_enabled:
         cache_payload = {
             "chart_spec": response["chart_spec"],

@@ -118,6 +118,11 @@ class ChartSpecV1(BaseModel):
         return value
 
 
+class ChartPreviewRequest(BaseModel):
+    chart_spec: ChartSpecV1
+    debug: bool = False
+
+
 class ChartPreviewResponse(BaseModel):
     chart_spec: ChartSpecV1
     columns: list[str]
