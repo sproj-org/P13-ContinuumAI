@@ -16,7 +16,7 @@ function assistantText(response: ChatResponse): string {
     return response.narrative ?? "Applied a chart update request.";
   }
   if (response.response_type === "clarify") {
-    return response.question;
+    return response.question || "Could you clarify your request?";
   }
   if (response.response_type === "refuse") {
     return response.message;
@@ -202,6 +202,13 @@ export default function ChatPanel() {
           turns.map((turn, index) => {
             const response = turn.response;
             const isAssistant = turn.role === "assistant";
+            const clarifyOptions =
+              response?.response_type === "clarify" && response.options && typeof response.options === "object"
+                ? response.options
+                : { metrics: [], dimensions: [], temporals: [] };
+            const metrics = Array.isArray(clarifyOptions.metrics) ? clarifyOptions.metrics : [];
+            const dimensions = Array.isArray(clarifyOptions.dimensions) ? clarifyOptions.dimensions : [];
+            const temporals = Array.isArray(clarifyOptions.temporals) ? clarifyOptions.temporals : [];
             return (
               <div
                 key={`${turn.createdAt}-${index}`}
@@ -218,7 +225,8 @@ export default function ChatPanel() {
                 ) : null}
                 {isAssistant && response?.response_type === "clarify" ? (
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {response.options.metrics.map((item) => (
+                    {metrics.length > 0
+                      ? metrics.map((item) => (
                       <button
                         key={`metric-${item}`}
                         type="button"
@@ -228,8 +236,10 @@ export default function ChatPanel() {
                       >
                         {item}
                       </button>
-                    ))}
-                    {response.options.dimensions.map((item) => (
+                        ))
+                      : null}
+                    {dimensions.length > 0
+                      ? dimensions.map((item) => (
                       <button
                         key={`dimension-${item}`}
                         type="button"
@@ -239,8 +249,10 @@ export default function ChatPanel() {
                       >
                         {item}
                       </button>
-                    ))}
-                    {response.options.temporals.map((item) => (
+                        ))
+                      : null}
+                    {temporals.length > 0
+                      ? temporals.map((item) => (
                       <button
                         key={`temporal-${item}`}
                         type="button"
@@ -250,7 +262,8 @@ export default function ChatPanel() {
                       >
                         {item}
                       </button>
-                    ))}
+                        ))
+                      : null}
                   </div>
                 ) : null}
               </div>

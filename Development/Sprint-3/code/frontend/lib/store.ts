@@ -79,6 +79,148 @@ const noopStorage: StateStorage = {
   removeItem: () => undefined,
 };
 
+type PersistedAppState = {
+  selectedAggregation?: string | null;
+  chatTurnsByKey?: Record<string, unknown>;
+  lastChartSpecByKey?: Record<string, unknown>;
+  chatMode?: ChatMode;
+};
+
+function asStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter((item): item is string => typeof item === 'string');
+}
+
+function sanitizeChatResponse(raw: unknown): ChatResponse | null {
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+  const record = raw as Record<string, unknown>;
+  const responseType = record.response_type;
+  if (typeof responseType !== 'string') {
+    return null;
+  }
+  const meta = typeof record.meta === 'object' && record.meta !== null ? (record.meta as Record<string, unknown>) : {};
+
+  if (responseType === 'clarify') {
+    const optionsRaw = record.options;
+    const optionsRecord = typeof optionsRaw === 'object' && optionsRaw !== null ? (optionsRaw as Record<string, unknown>) : {};
+    const question =
+      typeof record.question === 'string'
+        ? record.question
+        : typeof record.message === 'string'
+        ? record.message
+        : 'Could you clarify your request?';
+    return {
+      response_type: 'clarify',
+      question,
+      options: {
+        metrics: asStringArray(optionsRecord.metrics),
+        dimensions: asStringArray(optionsRecord.dimensions),
+        temporals: asStringArray(optionsRecord.temporals),
+      },
+      meta,
+    };
+  }
+
+  if (responseType === 'refuse' && typeof record.message === 'string') {
+    return {
+      response_type: 'refuse',
+      message: record.message,
+      meta,
+    };
+  }
+
+  if (responseType === 'explain' && typeof record.message === 'string') {
+    return {
+      response_type: 'explain',
+      message: record.message,
+      citations: asStringArray(record.citations),
+      meta,
+    };
+  }
+
+  if (responseType === 'chart_patch' && typeof record.patch === 'object' && record.patch !== null) {
+    return {
+      response_type: 'chart_patch',
+      patch: record.patch as Record<string, unknown>,
+      narrative: typeof record.narrative === 'string' ? record.narrative : undefined,
+      meta,
+    };
+  }
+
+  if (
+    responseType === 'chart' &&
+    typeof record.chart_spec === 'object' &&
+    record.chart_spec !== null &&
+    Array.isArray(record.columns) &&
+    Array.isArray(record.rows) &&
+    typeof record.narrative === 'string'
+  ) {
+    return {
+      response_type: 'chart',
+      chart_spec: record.chart_spec as unknown as ChartSpecV1,
+      columns: record.columns.filter((item): item is string => typeof item === 'string'),
+      rows: record.rows.filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null),
+      narrative: record.narrative,
+      meta,
+    };
+  }
+
+  return null;
+}
+
+function sanitizePersistedTurns(raw: unknown): Record<string, ChatTurn[]> {
+  if (!raw || typeof raw !== 'object') {
+    return {};
+  }
+  const byKey = raw as Record<string, unknown>;
+  const sanitized: Record<string, ChatTurn[]> = {};
+
+  for (const [key, turnsRaw] of Object.entries(byKey)) {
+    if (!Array.isArray(turnsRaw)) {
+      continue;
+    }
+    const turns: ChatTurn[] = [];
+    for (const turnRaw of turnsRaw) {
+      if (!turnRaw || typeof turnRaw !== 'object') {
+        continue;
+      }
+      const turn = turnRaw as Record<string, unknown>;
+      const role = turn.role;
+      const message = turn.message;
+      if ((role !== 'user' && role !== 'assistant') || typeof message !== 'string' || !message.trim()) {
+        continue;
+      }
+      const createdAt =
+        typeof turn.createdAt === 'string' && turn.createdAt.trim()
+          ? turn.createdAt
+          : new Date(0).toISOString();
+
+      let response: ChatResponse | null | undefined = undefined;
+      if (role === 'assistant' && turn.response !== undefined && turn.response !== null) {
+        response = sanitizeChatResponse(turn.response);
+        if (!response) {
+          // Drop only this malformed assistant turn.
+          continue;
+        }
+      }
+
+      turns.push({
+        role,
+        message,
+        response,
+        createdAt,
+      });
+    }
+    sanitized[key] = turns;
+  }
+
+  return sanitized;
+}
+
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
@@ -157,7 +299,26 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'continuumai-app-store',
+      version: 2,
       storage: createJSONStorage(() => (typeof window !== 'undefined' ? localStorage : noopStorage)),
+      migrate: (persistedState: unknown, version: number) => {
+        const state = (persistedState ?? {}) as PersistedAppState;
+        if (version >= 2) {
+          return {
+            ...state,
+            chatTurnsByKey: sanitizePersistedTurns(state.chatTurnsByKey),
+          };
+        }
+        return {
+          ...state,
+          chatTurnsByKey: sanitizePersistedTurns(state.chatTurnsByKey),
+          lastChartSpecByKey:
+            state.lastChartSpecByKey && typeof state.lastChartSpecByKey === 'object'
+              ? (state.lastChartSpecByKey as Record<string, ChartSpecV1 | null>)
+              : {},
+          chatMode: state.chatMode === 'chart' || state.chatMode === 'explain' ? state.chatMode : 'auto',
+        };
+      },
       partialize: (state) => ({
         selectedAggregation: state.selectedAggregation,
         chatTurnsByKey: state.chatTurnsByKey,
