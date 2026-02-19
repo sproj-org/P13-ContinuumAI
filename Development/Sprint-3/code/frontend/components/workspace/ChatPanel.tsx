@@ -16,7 +16,7 @@ function assistantText(response: ChatResponse): string {
     return response.narrative ?? "Applied a chart update request.";
   }
   if (response.response_type === "clarify") {
-    return response.message;
+    return response.question;
   }
   if (response.response_type === "refuse") {
     return response.message;
@@ -75,11 +75,11 @@ export default function ChatPanel() {
     return "Ask a business question... (e.g., sales by region)";
   }, [chatMode, selectedAggregation]);
 
-  const handleSubmit = async (event: FormEvent) => {
-    event.preventDefault();
-    const trimmed = message.trim();
-    if (!trimmed) return;
-
+  const submitPrompt = async (prompt: string) => {
+    const trimmed = prompt.trim();
+    if (!trimmed) {
+      return;
+    }
     if (!selectedAggregation || !chatKey) {
       setError("Select a mart first");
       return;
@@ -115,6 +115,19 @@ export default function ChatPanel() {
       setIsLoading(false);
     }
   };
+
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    const trimmed = message.trim();
+    if (!trimmed) return;
+    setMessage("");
+    await submitPrompt(trimmed);
+  };
+
+  const handleClarifyChip = async (prefix: "metric" | "dimension" | "temporal", value: string) => {
+    await submitPrompt(`Use ${prefix}: ${value}`);
+  };
+
   const canSend = Boolean(selectedAggregation && chatKey && !isLoading);
 
   return (
@@ -203,10 +216,40 @@ export default function ChatPanel() {
                     {renderChart(response.chart_spec, response.rows)}
                   </div>
                 ) : null}
-                {isAssistant && response?.response_type === "clarify" && response.questions.length > 0 ? (
-                  <div className="mt-3 text-xs text-gray-400">
-                    {response.questions.map((question, questionIndex) => (
-                      <p key={`${questionIndex}-${question}`}>- {question}</p>
+                {isAssistant && response?.response_type === "clarify" ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {response.options.metrics.map((item) => (
+                      <button
+                        key={`metric-${item}`}
+                        type="button"
+                        disabled={isLoading || !selectedAggregation}
+                        onClick={() => handleClarifyChip("metric", item)}
+                        className="px-2 py-1 text-xs rounded-full border border-[#5237ff]/40 text-[#c7beff] bg-[#5237ff]/15 hover:bg-[#5237ff]/25 disabled:opacity-50"
+                      >
+                        {item}
+                      </button>
+                    ))}
+                    {response.options.dimensions.map((item) => (
+                      <button
+                        key={`dimension-${item}`}
+                        type="button"
+                        disabled={isLoading || !selectedAggregation}
+                        onClick={() => handleClarifyChip("dimension", item)}
+                        className="px-2 py-1 text-xs rounded-full border border-blue-500/40 text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 disabled:opacity-50"
+                      >
+                        {item}
+                      </button>
+                    ))}
+                    {response.options.temporals.map((item) => (
+                      <button
+                        key={`temporal-${item}`}
+                        type="button"
+                        disabled={isLoading || !selectedAggregation}
+                        onClick={() => handleClarifyChip("temporal", item)}
+                        className="px-2 py-1 text-xs rounded-full border border-amber-500/40 text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 disabled:opacity-50"
+                      >
+                        {item}
+                      </button>
                     ))}
                   </div>
                 ) : null}

@@ -37,10 +37,16 @@ export interface ChatExplainResponse {
   meta: Record<string, unknown>;
 }
 
+export interface ClarifyOptions {
+  metrics: string[];
+  dimensions: string[];
+  temporals: string[];
+}
+
 export interface ChatClarifyResponse {
   response_type: 'clarify';
-  message: string;
-  questions: string[];
+  question: string;
+  options: ClarifyOptions;
   meta: Record<string, unknown>;
 }
 
