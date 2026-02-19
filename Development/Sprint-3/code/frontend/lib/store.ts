@@ -19,6 +19,8 @@ export interface ChatTurn {
   createdAt: string;
 }
 
+export type ChatMode = 'auto' | 'chart' | 'explain';
+
 interface AppState {
   selectedDatasetId: DatasetId;
   setSelectedDatasetId: (datasetId: DatasetId) => void;
@@ -51,6 +53,8 @@ interface AppState {
   setChatTurns: (key: string, turns: ChatTurn[]) => void;
   clearChat: (key: string) => void;
   setLastChartSpec: (key: string, spec: ChartSpecV1 | null) => void;
+  chatMode: ChatMode;
+  setChatMode: (mode: ChatMode) => void;
 }
 
 export interface ChartConfig {
@@ -148,6 +152,8 @@ export const useAppStore = create<AppState>()(
             [key]: spec,
           },
         })),
+      chatMode: 'auto',
+      setChatMode: (mode) => set({ chatMode: mode }),
     }),
     {
       name: 'continuumai-app-store',
@@ -156,6 +162,7 @@ export const useAppStore = create<AppState>()(
         selectedAggregation: state.selectedAggregation,
         chatTurnsByKey: state.chatTurnsByKey,
         lastChartSpecByKey: state.lastChartSpecByKey,
+        chatMode: state.chatMode,
       }),
     }
   )

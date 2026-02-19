@@ -24,6 +24,12 @@ function assistantText(response: ChatResponse): string {
   return response.message;
 }
 
+const modeOptions: Array<{ id: "auto" | "chart" | "explain"; label: string }> = [
+  { id: "auto", label: "Auto" },
+  { id: "chart", label: "Chart" },
+  { id: "explain", label: "Explain" },
+];
+
 export default function ChatPanel() {
   const params = useParams<{ datasetId: string }>();
   const {
@@ -31,6 +37,8 @@ export default function ChatPanel() {
     selectedAggregation,
     setSelectedAggregation,
     availableMarts,
+    chatMode,
+    setChatMode,
     chatTurnsByKey,
     lastChartSpecByKey,
     appendChatTurn,
@@ -54,6 +62,19 @@ export default function ChatPanel() {
     setMessage("");
   }, [chatKey]);
 
+  const placeholder = useMemo(() => {
+    if (!selectedAggregation) {
+      return "Select a mart to start chatting...";
+    }
+    if (chatMode === "chart") {
+      return "Request a chart... (e.g., revenue by month)";
+    }
+    if (chatMode === "explain") {
+      return "Ask for an explanation... (e.g., what does this mart represent?)";
+    }
+    return "Ask a business question... (e.g., sales by region)";
+  }, [chatMode, selectedAggregation]);
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     const trimmed = message.trim();
@@ -76,6 +97,7 @@ export default function ChatPanel() {
       const response = await apiClient.postChat(routeDatasetId, {
         message: trimmed,
         table: selectedAggregation,
+        mode: chatMode,
         state: lastChartSpec ? { last_chart_spec: lastChartSpec } : undefined,
       });
       appendChatTurn(chatKey, {
@@ -117,6 +139,22 @@ export default function ChatPanel() {
                 </option>
               ))}
             </select>
+          </div>
+          <div className="mt-2 inline-flex rounded-lg border border-white/10 bg-white/5 p-1">
+            {modeOptions.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => setChatMode(option.id)}
+                className={`px-2.5 py-1 text-xs rounded-md transition-colors ${
+                  chatMode === option.id
+                    ? "bg-[#5237ff]/30 text-[#c7beff]"
+                    : "text-gray-300 hover:bg-white/10"
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
           </div>
         </div>
         <button
@@ -190,11 +228,7 @@ export default function ChatPanel() {
           <input
             value={message}
             onChange={(event) => setMessage(event.target.value)}
-            placeholder={
-              selectedAggregation
-                ? "Show net sales by region for last 30 days"
-                : "Select a mart to start chatting"
-            }
+            placeholder={placeholder}
             disabled={!selectedAggregation || isLoading}
             className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#5237ff]/50"
           />
@@ -206,6 +240,9 @@ export default function ChatPanel() {
             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
         </div>
+        <p className="text-[11px] text-gray-500">
+          Mode: {chatMode.toUpperCase()} | Mart: {selectedAggregation ?? "none"}
+        </p>
       </form>
     </div>
   );

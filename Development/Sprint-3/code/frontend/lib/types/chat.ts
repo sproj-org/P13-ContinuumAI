@@ -3,7 +3,9 @@ import type { ChartSpecV1 } from './chartspec';
 export interface ChatRequest {
   message: string;
   table: string;
+  mode?: 'auto' | 'chart' | 'explain';
   state?: Record<string, unknown>;
+  debug?: boolean;
 }
 
 export interface ChartSpecPatch {
