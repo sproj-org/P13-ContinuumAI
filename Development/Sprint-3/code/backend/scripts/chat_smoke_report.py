@@ -47,6 +47,14 @@ def _extract_fields(context: dict[str, Any]) -> tuple[list[str], list[str], list
     return metrics, dimensions, temporals
 
 
+def _has_time_intent(message: str) -> bool:
+    normalized = _normalize_text(message)
+    return any(
+        token in normalized
+        for token in ["trend", "over time", "month", "monthly", "week", "weekly", "day", "daily", "quarter", "year", "date"]
+    )
+
+
 def _effective_role(raw_column: dict[str, Any]) -> str:
     role = raw_column.get("effective_role") or raw_column.get("base_role") or ""
     return str(role).lower()
@@ -178,13 +186,98 @@ def _run_stub_chat(
     metrics, dimensions, temporals = _extract_fields(context)
     selections = dict((state or {}).get("selections", {}))
     metric = selections.get("metric")
-    x_field = selections.get("temporal") or selections.get("dimension")
+    temporal = selections.get("temporal")
+    dimension = selections.get("dimension")
+    x_field = temporal or dimension
+    time_grain = selections.get("time_grain")
+    time_intent = _has_time_intent(message)
+    prompt_metric = _pick_matching_field(message, metrics)
+    prompt_x = _pick_matching_field(message, [*dimensions, *temporals])
 
     if mode == "explain" or "explain" in _normalize_text(message):
         return {
             "response_type": "explain",
             "message": f"{table} is scoped to mart analytics with measures {', '.join(metrics[:3]) or 'none'} and dimensions {', '.join(dimensions[:3]) or 'none'}.",
             "citations": [f"profile:{table}"],
+            "meta": {"stub": True},
+        }
+
+    if "poem" in _normalize_text(message):
+        return {
+            "response_type": "refuse",
+            "message": "I can only help with analytics questions for the selected mart.",
+            "meta": {"stub": True},
+        }
+
+    if not metric:
+        metric = prompt_metric
+    if not x_field:
+        if prompt_x:
+            x_field = prompt_x
+        elif time_intent and temporals:
+            x_field = temporals[0]
+        elif dimensions:
+            x_field = dimensions[0]
+        elif temporals:
+            x_field = temporals[0]
+
+    if not metric:
+        return {
+            "response_type": "clarify",
+            "clarify_id": "stub-clarify",
+            "question": "Which metric should I use?",
+            "missing": ["metric"],
+            "options": {
+                "metrics": metrics[:5],
+                "dimensions": [],
+                "temporals": [],
+                "time_grains": [],
+            },
+            "meta": {"stub": True},
+        }
+
+    if not x_field:
+        return {
+            "response_type": "clarify",
+            "clarify_id": "stub-clarify",
+            "question": "What should I group or trend by?",
+            "missing": ["x_axis"],
+            "options": {
+                "metrics": [],
+                "dimensions": dimensions[:5],
+                "temporals": temporals[:5],
+                "time_grains": [],
+            },
+            "meta": {"stub": True},
+        }
+
+    if x_field in temporals and time_intent and not time_grain:
+        return {
+            "response_type": "clarify",
+            "clarify_id": "stub-clarify",
+            "question": "Which time grain?",
+            "missing": ["time_grain"],
+            "options": {
+                "metrics": [],
+                "dimensions": [],
+                "temporals": [],
+                "time_grains": ["day", "week", "month", "quarter", "year"],
+            },
+            "meta": {"stub": True},
+        }
+
+    if "customer age distribution" in _normalize_text(message) and not _pick_matching_field(message, [*metrics, *dimensions, *temporals]):
+        return {
+            "response_type": "clarify",
+            "clarify_id": "stub-clarify",
+            "question": "That concept is not represented in this mart. Which available metric should I use instead?",
+            "missing": ["metric"],
+            "options": {
+                "metrics": metrics[:5],
+                "dimensions": [],
+                "temporals": [],
+                "time_grains": [],
+            },
             "meta": {"stub": True},
         }
 
@@ -197,31 +290,16 @@ def _run_stub_chat(
             db=db,
         )
 
-    prompt_metric = _pick_matching_field(message, metrics)
-    prompt_x = _pick_matching_field(message, [*dimensions, *temporals])
-    if prompt_metric and prompt_x:
-        return _stub_chart_response(
-            dataset_id=dataset_id,
-            table=table,
-            metric=prompt_metric,
-            x_field=prompt_x,
-            db=db,
-        )
-
-    missing: list[str] = []
-    if not metric and not prompt_metric:
-        missing.append("metric")
-    if not x_field and not prompt_x:
-        missing.append("dimension")
     return {
         "response_type": "clarify",
         "clarify_id": "stub-clarify",
-        "question": "Which metric and breakdown should I use?",
-        "missing": missing or ["metric", "dimension"],
+        "question": "Which metric should I use?",
+        "missing": ["metric"],
         "options": {
-            "metrics": metrics[:6],
-            "dimensions": dimensions[:6],
-            "temporals": temporals[:6],
+            "metrics": metrics[:5],
+            "dimensions": [],
+            "temporals": [],
+            "time_grains": [],
         },
         "meta": {"stub": True},
     }
@@ -235,27 +313,34 @@ def _validate_response_shape(payload: dict[str, Any]) -> tuple[bool, str]:
     return True, ""
 
 
-def _pick_clarify_selections(response: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
+def _pick_clarify_selections(response: dict[str, Any], state: dict[str, Any], *, message: str) -> dict[str, Any]:
     options = response.get("options", {}) if isinstance(response.get("options"), dict) else {}
     missing = response.get("missing", []) if isinstance(response.get("missing"), list) else []
     next_state = dict(state)
     selections = dict(next_state.get("selections", {}))
+    stage = str(missing[0]).strip().lower() if missing else "metric"
+    if stage in {"dimension", "temporal"}:
+        stage = "x_axis"
 
-    if "metric" in missing and not selections.get("metric"):
+    if stage == "metric" and not selections.get("metric"):
         metrics = options.get("metrics", [])
         if isinstance(metrics, list) and metrics:
             selections["metric"] = metrics[0]
-    if "dimension" in missing and not (selections.get("dimension") or selections.get("temporal")):
+    elif stage == "x_axis" and not (selections.get("dimension") or selections.get("temporal")):
         dimensions = options.get("dimensions", [])
         temporals = options.get("temporals", [])
-        if isinstance(dimensions, list) and dimensions:
+        if _has_time_intent(message) and isinstance(temporals, list) and temporals:
+            selections["temporal"] = temporals[0]
+        elif isinstance(dimensions, list) and dimensions:
             selections["dimension"] = dimensions[0]
         elif isinstance(temporals, list) and temporals:
             selections["temporal"] = temporals[0]
-    if "temporal" in missing and not selections.get("temporal"):
-        temporals = options.get("temporals", [])
-        if isinstance(temporals, list) and temporals:
-            selections["temporal"] = temporals[0]
+    elif stage == "time_grain" and not selections.get("time_grain"):
+        time_grains = options.get("time_grains", [])
+        if isinstance(time_grains, list) and "month" in time_grains:
+            selections["time_grain"] = "month"
+        elif isinstance(time_grains, list) and time_grains:
+            selections["time_grain"] = time_grains[0]
 
     next_state["clarify_id"] = response.get("clarify_id")
     next_state["selections"] = selections
@@ -272,18 +357,19 @@ def _build_prompt_suite(context: dict[str, Any]) -> list[dict[str, str]]:
 
     prompts: list[dict[str, str]] = []
     if dimension:
-        prompts.append({"kind": "chart", "mode": "chart", "prompt": f"Show {metric} by {dimension}"})
-        prompts.append({"kind": "chart", "mode": "chart", "prompt": f"Top 10 {dimension} by {metric}"})
+        prompts.append({"kind": "basic", "mode": "chart", "prompt": f"Show {metric} by {dimension}"})
+        prompts.append({"kind": "topk", "mode": "chart", "prompt": f"Top 10 {dimension} by {metric}"})
     if temporal:
-        prompts.append({"kind": "chart", "mode": "chart", "prompt": f"Trend of {metric} by month using {temporal}"})
+        prompts.append({"kind": "time", "mode": "chart", "prompt": f"Trend of {metric} by month using {temporal}"})
     prompts.append(
         {
             "kind": "explain",
             "mode": "explain",
-            "prompt": "What does this mart represent and what are the key KPIs?",
+            "prompt": "Explain what this mart represents and what KPIs it supports",
         }
     )
     prompts.append({"kind": "ambiguous", "mode": "auto", "prompt": "Show performance"})
+    prompts.append({"kind": "mismatch", "mode": "auto", "prompt": "Show customer age distribution"})
     return prompts
 
 
@@ -321,7 +407,13 @@ def _call_chat(
     )
 
 
-def _write_report(path: Path, rows: list[dict[str, Any]], summary: dict[str, Any], use_stub: bool) -> None:
+def _write_report(
+    path: Path,
+    rows: list[dict[str, Any]],
+    summary: dict[str, Any],
+    clarify_rates: dict[str, float],
+    use_stub: bool,
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     lines = [
@@ -349,9 +441,14 @@ def _write_report(path: Path, rows: list[dict[str, Any]], summary: dict[str, Any
             f"- clarifies: {summary['clarify']}",
             f"- refuses: {summary['refuse']}",
             f"- failures: {summary['failures']}",
-            f"- avg steps: {summary['avg_steps']:.2f}",
+            f"- avg steps (all prompts): {summary['avg_steps']:.2f}",
+            f"- avg steps to converge (in-scope prompts): {summary['avg_in_scope_steps']:.2f}",
+            "",
+            "## Clarify Rate By Mart",
         ]
     )
+    for mart_id, rate in sorted(clarify_rates.items()):
+        lines.append(f"- {mart_id}: {rate:.2f}")
     path.write_text("\n".join(lines), encoding="utf-8")
 
 
@@ -377,10 +474,22 @@ def main() -> int:
         print(f"[ERROR] No marts registered for dataset '{dataset_id}'.")
         return 1
 
-    summary = {"chart": 0, "explain": 0, "clarify": 0, "refuse": 0, "failures": 0, "avg_steps": 0.0}
+    summary = {
+        "chart": 0,
+        "explain": 0,
+        "clarify": 0,
+        "refuse": 0,
+        "failures": 0,
+        "avg_steps": 0.0,
+        "avg_in_scope_steps": 0.0,
+    }
     rows: list[dict[str, Any]] = []
     total_steps = 0
     total_cases = 0
+    in_scope_steps = 0
+    in_scope_cases = 0
+    mart_total: dict[str, int] = {}
+    mart_clarify: dict[str, int] = {}
 
     try:
         for mart in marts:
@@ -413,12 +522,14 @@ def main() -> int:
                 continue
 
             for prompt_case in prompt_suite:
+                kind = prompt_case["kind"]
                 prompt_text = prompt_case["prompt"]
                 mode = prompt_case["mode"]
                 state: dict[str, Any] = {"original_user_intent": prompt_text}
                 steps = 0
                 response: dict[str, Any] | None = None
                 notes = "success"
+                mart_total[table] = mart_total.get(table, 0) + 1
 
                 for _ in range(3):
                     response = _call_chat(
@@ -442,7 +553,7 @@ def main() -> int:
                     if response_type != "clarify":
                         break
 
-                    state = _pick_clarify_selections(response, state)
+                    state = _pick_clarify_selections(response, state, message=prompt_text)
                     if not state.get("selections"):
                         notes = "clarify without usable options"
                         break
@@ -462,14 +573,30 @@ def main() -> int:
 
                 response_type = str(response.get("response_type", "unknown"))
                 if response_type == "clarify":
-                    notes = "clarify loop detected"
-                    summary["failures"] += 1
-                elif notes != "success":
+                    mart_clarify[table] = mart_clarify.get(table, 0) + 1
+
+                if notes != "success":
                     summary["failures"] += 1
 
                 if response_type in summary:
                     summary[response_type] += 1
                 else:
+                    summary["failures"] += 1
+
+                if kind in {"basic", "time", "topk"}:
+                    in_scope_steps += steps
+                    in_scope_cases += 1
+                    if response_type != "chart":
+                        notes = f"expected chart for in-scope prompt, got {response_type}"
+                        summary["failures"] += 1
+                    if steps > 2:
+                        notes = f"took {steps} steps; expected <=2"
+                        summary["failures"] += 1
+                elif kind == "explain" and response_type != "explain":
+                    notes = f"expected explain, got {response_type}"
+                    summary["failures"] += 1
+                elif kind == "mismatch" and response_type not in {"clarify", "refuse"}:
+                    notes = f"mismatch prompt should clarify/refuse, got {response_type}"
                     summary["failures"] += 1
 
                 rows.append(
@@ -491,9 +618,18 @@ def main() -> int:
 
     if total_cases:
         summary["avg_steps"] = total_steps / total_cases
+    if in_scope_cases:
+        summary["avg_in_scope_steps"] = in_scope_steps / in_scope_cases
+
+    clarify_rates: dict[str, float] = {}
+    for mart in marts:
+        mart_id = str(mart["id"])
+        total = mart_total.get(mart_id, 0)
+        clarifies = mart_clarify.get(mart_id, 0)
+        clarify_rates[mart_id] = (clarifies / total) if total else 0.0
 
     report_path = Path(args.report_path)
-    _write_report(report_path, rows, summary, use_stub=use_stub)
+    _write_report(report_path, rows, summary, clarify_rates, use_stub=use_stub)
 
     if use_stub and db_boot_error:
         print(f"[WARN] DB unavailable, using stub mode: {db_boot_error}")
@@ -501,7 +637,8 @@ def main() -> int:
     print(
         "[OK] chat smoke complete "
         f"(charts={summary['chart']}, explains={summary['explain']}, clarifies={summary['clarify']}, "
-        f"refuses={summary['refuse']}, failures={summary['failures']}, avg_steps={summary['avg_steps']:.2f})"
+        f"refuses={summary['refuse']}, failures={summary['failures']}, avg_steps={summary['avg_steps']:.2f}, "
+        f"avg_in_scope_steps={summary['avg_in_scope_steps']:.2f})"
     )
     print(f"[OK] report: {report_path}")
     return 0
