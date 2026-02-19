@@ -11,8 +11,10 @@ function DashboardContent() {
   const { user, logout } = useAuth();
   const router = useRouter();
   const setActiveDataset = useAppStore((state) => state.setActiveDataset);
+  const setSelectedDatasetId = useAppStore((state) => state.setSelectedDatasetId);
 
   const handleDatasetSelect = (datasetId: "silkroute") => {
+    setSelectedDatasetId(datasetId);
     setActiveDataset(datasetId);
     router.push(`/workspace/${datasetId}`);
   };

@@ -107,6 +107,8 @@ export interface AggregationSummary {
   row_count: number;
   column_count: number;
   profiled_at: string;
+  label?: string;
+  description?: string;
 }
 
 // API response for listing aggregations
@@ -134,4 +136,35 @@ export interface ChartDataResponse {
   title: string;
   x_axis_label: string;
   y_axis_label: string;
+}
+
+// ============================================
+// Aggregate Query Types (dataset-scoped)
+// ============================================
+
+export interface AggregateFilter {
+  column: string;
+  op: 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte' | 'in' | 'not_in' | 'like' | 'ilike' | 'contains' | 'is_null' | 'is_not_null';
+  value?: unknown;
+}
+
+export interface AggregateSpec {
+  column?: string | null;
+  fn: AggregationFn;
+}
+
+export interface AggregateRequest {
+  table_name: string;
+  x?: string | null;
+  y?: string | null;
+  group_by?: string[];
+  filters?: AggregateFilter[];
+  agg: AggregateSpec;
+  limit?: number;
+}
+
+export interface AggregateResponse {
+  columns: string[];
+  rows: Array<Record<string, unknown>>;
+  meta: Record<string, unknown>;
 }

@@ -3,6 +3,7 @@
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
 import { useAppStore, WorkspaceTab } from "@/lib/store";
+import { useAggregations } from "@/lib/hooks";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
@@ -11,17 +12,19 @@ import {
   Table2,
   Columns3,
   BarChart3,
+  MessageSquare,
   ArrowLeft,
   LogOut,
 } from "lucide-react";
 
 // Tab components
-import { TableProfilingTab, ColumnProfilingTab, ChartBuilderTab } from "@/components/workspace";
+import { TableProfilingTab, ColumnProfilingTab, ChartBuilderTab, ChatPanel } from "@/components/workspace";
 
 const tabs: { id: WorkspaceTab; label: string; icon: React.ReactNode }[] = [
   { id: "table-profiling", label: "Table Profiling", icon: <Table2 className="w-4 h-4" /> },
   { id: "column-profiling", label: "Column Profiling", icon: <Columns3 className="w-4 h-4" /> },
   { id: "chart-builder", label: "Chart Builder", icon: <BarChart3 className="w-4 h-4" /> },
+  { id: "chat", label: "Chat", icon: <MessageSquare className="w-4 h-4" /> },
 ];
 
 function WorkspaceContent() {
@@ -30,14 +33,52 @@ function WorkspaceContent() {
   const params = useParams();
   const datasetId = params.datasetId as string;
 
-  const { activeTab, setActiveTab, setActiveDataset, activeDataset } = useAppStore();
+  const {
+    activeTab,
+    setActiveTab,
+    setActiveDataset,
+    selectedDatasetId,
+    setSelectedDatasetId,
+    selectedAggregation,
+    setSelectedAggregation,
+    availableMarts,
+    setAvailableMarts,
+  } = useAppStore();
+  const { data: aggregationsData } = useAggregations(selectedDatasetId);
 
   // Set active dataset on mount
   useEffect(() => {
-    if (datasetId === "silkroute") {
-      setActiveDataset("silkroute");
+    if (datasetId) {
+      setSelectedDatasetId(datasetId);
+      setActiveDataset(datasetId);
     }
-  }, [datasetId, setActiveDataset]);
+  }, [datasetId, setActiveDataset, setSelectedDatasetId]);
+
+  useEffect(() => {
+    const marts = (aggregationsData?.aggregations ?? []).map((item) => ({
+      id: item.table_name,
+      label: item.label,
+      description: item.description,
+    }));
+    setAvailableMarts(marts);
+  }, [aggregationsData, setAvailableMarts]);
+
+  useEffect(() => {
+    if (availableMarts.length === 0) {
+      if (selectedAggregation !== null) {
+        setSelectedAggregation(null);
+      }
+      return;
+    }
+
+    const selectionStillValid = selectedAggregation
+      ? availableMarts.some((item) => item.id === selectedAggregation)
+      : false;
+
+    if (!selectionStillValid) {
+      setSelectedAggregation(availableMarts[0].id);
+    }
+  }, [availableMarts, selectedAggregation, setSelectedAggregation]);
 
   const handleBack = () => {
     setActiveDataset(null);
@@ -52,6 +93,8 @@ function WorkspaceContent() {
         return <ColumnProfilingTab />;
       case "chart-builder":
         return <ChartBuilderTab />;
+      case "chat":
+        return <ChatPanel />;
       default:
         return <TableProfilingTab />;
     }
@@ -77,7 +120,7 @@ function WorkspaceContent() {
                   <div className="flex items-center gap-2">
                     <Database className="w-4 h-4 text-[#5237ff]" />
                     <span className="text-[#5237ff] font-medium capitalize">
-                      {activeDataset || datasetId}
+                      {selectedDatasetId || datasetId}
                     </span>
                   </div>
                 </div>

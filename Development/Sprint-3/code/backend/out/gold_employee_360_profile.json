@@ -1,0 +1,1335 @@
+{
+  "dataset_name": "gold_employee_360",
+  "schema_name": "gold",
+  "table_name": "gold_employee_360",
+  "row_count": 26,
+  "column_count": 17,
+  "profiled_at": "2026-02-17T14:43:18.186358Z",
+  "columns": [
+    {
+      "name": "salesperson_id",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "id",
+      "effective_role": "id",
+      "row_count": 26,
+      "distinct_count": 26,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "P0001",
+        "P0002",
+        "P0003",
+        "P0004",
+        "P0005"
+      ],
+      "stats": {
+        "kind": "categorical",
+        "null_count": 0,
+        "distinct_count": 26,
+        "top_k": []
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "name",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "effective_role": "dimension",
+      "row_count": 26,
+      "distinct_count": 26,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "Allison Hill",
+        "Noah Rhodes",
+        "Angie Henderson",
+        "Daniel Wagner",
+        "Cristian Santos"
+      ],
+      "stats": {
+        "kind": "categorical",
+        "null_count": 0,
+        "distinct_count": 26,
+        "top_k": [
+          {
+            "value": "Judy Baker",
+            "count": 1,
+            "percent": 0.038461538461538464
+          },
+          {
+            "value": "Gabrielle Davis",
+            "count": 1,
+            "percent": 0.038461538461538464
+          },
+          {
+            "value": "Gina Moore",
+            "count": 1,
+            "percent": 0.038461538461538464
+          },
+          {
+            "value": "Michele Williams",
+            "count": 1,
+            "percent": 0.038461538461538464
+          },
+          {
+            "value": "Lisa Hensley",
+            "count": 1,
+            "percent": 0.038461538461538464
+          },
+          {
+            "value": "Jamie Arnold",
+            "count": 1,
+            "percent": 0.038461538461538464
+          },
+          {
+            "value": "Tommy Walter",
+            "count": 1,
+            "percent": 0.038461538461538464
+          },
+          {
+            "value": "Abigail Shaffer",
+            "count": 1,
+            "percent": 0.038461538461538464
+          },
+          {
+            "value": "Daniel Wagner",
+            "count": 1,
+            "percent": 0.038461538461538464
+          },
+          {
+            "value": "Holly Wood",
+            "count": 1,
+            "percent": 0.038461538461538464
+          }
+        ]
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "role",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "effective_role": "dimension",
+      "row_count": 26,
+      "distinct_count": 3,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "medium",
+      "sample_values": [
+        "sales_associate",
+        "floor_supervisor",
+        "senior_associate"
+      ],
+      "stats": {
+        "kind": "categorical",
+        "null_count": 0,
+        "distinct_count": 3,
+        "top_k": [
+          {
+            "value": "sales_associate",
+            "count": 9,
+            "percent": 0.34615384615384615
+          },
+          {
+            "value": "floor_supervisor",
+            "count": 9,
+            "percent": 0.34615384615384615
+          },
+          {
+            "value": "senior_associate",
+            "count": 8,
+            "percent": 0.3076923076923077
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "home_store_id",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "id",
+      "effective_role": "id",
+      "row_count": 26,
+      "distinct_count": 6,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "medium",
+      "sample_values": [
+        "S002",
+        "S001",
+        "S006",
+        "S004",
+        "S005"
+      ],
+      "stats": {
+        "kind": "categorical",
+        "null_count": 0,
+        "distinct_count": 6,
+        "top_k": []
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "first_tx_date",
+      "physical_type": "datetime",
+      "logical_type": "datetime",
+      "base_role": "datetime",
+      "effective_role": "datetime",
+      "row_count": 26,
+      "distinct_count": 5,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "medium",
+      "sample_values": [
+        "2025-01-01T00:00:00",
+        "2025-01-05T00:00:00",
+        "2025-01-02T00:00:00",
+        "2025-01-07T00:00:00",
+        "2025-01-04T00:00:00"
+      ],
+      "stats": {
+        "kind": "datetime",
+        "null_count": 0,
+        "min": "2025-01-01T00:00:00",
+        "max": "2025-01-07T00:00:00",
+        "distinct_days": 5
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "last_tx_date",
+      "physical_type": "datetime",
+      "logical_type": "datetime",
+      "base_role": "datetime",
+      "effective_role": "datetime",
+      "row_count": 26,
+      "distinct_count": 4,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "medium",
+      "sample_values": [
+        "2025-12-30T00:00:00",
+        "2025-12-31T00:00:00",
+        "2025-12-29T00:00:00",
+        "2025-12-26T00:00:00"
+      ],
+      "stats": {
+        "kind": "datetime",
+        "null_count": 0,
+        "min": "2025-12-26T00:00:00",
+        "max": "2025-12-31T00:00:00",
+        "distinct_days": 4
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "active_days",
+      "physical_type": "int",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 26,
+      "distinct_count": 25,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "128",
+        "155",
+        "226",
+        "152",
+        "311"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 128.0,
+        "max": 313.0,
+        "mean": 190.84615384615384,
+        "stddev": 50.85641930587902,
+        "p05": 131.75,
+        "p50": 170.5,
+        "p95": 294.75,
+        "zero_count": 0
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "orders",
+      "physical_type": "int",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 26,
+      "distinct_count": 22,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "173",
+        "207",
+        "354",
+        "208",
+        "756"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 173.0,
+        "max": 756.0,
+        "mean": 296.2307692307692,
+        "stddev": 153.433844426139,
+        "p05": 173.0,
+        "p50": 224.5,
+        "p95": 655.5,
+        "zero_count": 0
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "units",
+      "physical_type": "int",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 26,
+      "distinct_count": 25,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "634",
+        "547",
+        "973",
+        "599",
+        "2027"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 448.0,
+        "max": 2027.0,
+        "mean": 827.4615384615385,
+        "stddev": 412.089527240791,
+        "p05": 468.5,
+        "p50": 647.0,
+        "p95": 1826.75,
+        "zero_count": 0
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "gross_sales",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 26,
+      "distinct_count": 26,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "14727111.57",
+        "13399234.98",
+        "23933274.75",
+        "15211630.2",
+        "50762662.22"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 10219065.18,
+        "max": 52864396.73,
+        "mean": 21110827.6626923,
+        "stddev": 10833469.4465091,
+        "p05": 11122689.605,
+        "p50": 17496561.84,
+        "p95": 46880234.8475,
+        "zero_count": 0
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "discount_amount",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 26,
+      "distinct_count": 26,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "69364.490697",
+        "230227.770488",
+        "332592.124985",
+        "269709.786358",
+        "4072529.37254"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 61960.940831,
+        "max": 7738699.160878,
+        "mean": 1077563.34520596,
+        "stddev": 1662618.35681859,
+        "p05": 68942.40630525,
+        "p50": 330649.4875205,
+        "p95": 3610179.05834275,
+        "zero_count": 0
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "net_sales",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 26,
+      "distinct_count": 26,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "14657774.93",
+        "13169031.8",
+        "23600761.32",
+        "14941930.6",
+        "46690183.95"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 10021006.9,
+        "max": 46690183.95,
+        "mean": 20033279.9857692,
+        "stddev": 9422189.64160104,
+        "p05": 10439835.25,
+        "p50": 17191399.815,
+        "p95": 42196730.1925,
+        "zero_count": 0
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "avg_order_value",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 26,
+      "distinct_count": 26,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "84727.022716763",
+        "63618.5111111111",
+        "66668.8172881356",
+        "71836.2048076923",
+        "61759.5025793651"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 57924.8953757226,
+        "max": 93602.9780275229,
+        "mean": 68763.6149839502,
+        "stddev": 9684.25613567376,
+        "p05": 58380.0225295935,
+        "p50": 65610.5587869224,
+        "p95": 84700.2375112565,
+        "zero_count": 0
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "discount_ratio",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 26,
+      "distinct_count": 26,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "0.0047099860938311",
+        "0.0171821578494326",
+        "0.0138966409093264",
+        "0.0177304984943691",
+        "0.080226867434377"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 0.0030272960673194,
+        "max": 0.146387732378801,
+        "mean": 0.0394336472526915,
+        "stddev": 0.0370469249397425,
+        "p05": 0.00437329325943673,
+        "p50": 0.018747755225814,
+        "p95": 0.0881932898906884,
+        "zero_count": 0
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "returns_amount",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 26,
+      "distinct_count": 26,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "463444.78",
+        "572084.04",
+        "1286928.57",
+        "380113.48",
+        "2342091.43"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 100456.28,
+        "max": 2342091.43,
+        "mean": 795151.795384615,
+        "stddev": 595084.816158471,
+        "p05": 137824.78,
+        "p50": 566390.565,
+        "p95": 2079773.565,
+        "zero_count": 0
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "return_rate_amount",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 26,
+      "distinct_count": 26,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "0.0316176760943074",
+        "0.0434416173252767",
+        "0.0545291125379679",
+        "0.0254393819765164",
+        "0.050162394573303"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 0.0075235419492058,
+        "max": 0.105092534523644,
+        "mean": 0.0400429872821039,
+        "stddev": 0.0234110780895354,
+        "p05": 0.0108369769704685,
+        "p50": 0.037082314664616,
+        "p95": 0.0706431782226297,
+        "zero_count": 0
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "net_sales_after_returns",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 26,
+      "distinct_count": 26,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "14194330.15",
+        "12596947.76",
+        "22313832.75",
+        "14561817.12",
+        "44348092.52"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 9338751.6,
+        "max": 44348092.52,
+        "mean": 19238128.1903846,
+        "stddev": 9011231.5547074,
+        "p05": 9867590.3325,
+        "p50": 16308603.88,
+        "p95": 40418447.97,
+        "zero_count": 0
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    }
+  ],
+  "dataset_meta": {
+    "dataset_key": "gold.gold_employee_360",
+    "generated_at": "2026-02-17T14:43:21.620082+00:00",
+    "profiler_version": "sprint3-profiler-mvp-v1",
+    "columns_map": {
+      "salesperson_id": {
+        "name": "salesperson_id",
+        "physical_type": "string",
+        "logical_type": "categorical",
+        "base_role": "id",
+        "effective_role": "id",
+        "row_count": 26,
+        "distinct_count": 26,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "P0001",
+          "P0002",
+          "P0003",
+          "P0004",
+          "P0005"
+        ],
+        "stats": {
+          "kind": "categorical",
+          "null_count": 0,
+          "distinct_count": 26,
+          "top_k": []
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "name": {
+        "name": "name",
+        "physical_type": "string",
+        "logical_type": "categorical",
+        "base_role": "dimension",
+        "effective_role": "dimension",
+        "row_count": 26,
+        "distinct_count": 26,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "Allison Hill",
+          "Noah Rhodes",
+          "Angie Henderson",
+          "Daniel Wagner",
+          "Cristian Santos"
+        ],
+        "stats": {
+          "kind": "categorical",
+          "null_count": 0,
+          "distinct_count": 26,
+          "top_k": [
+            {
+              "value": "Judy Baker",
+              "count": 1,
+              "percent": 0.038461538461538464
+            },
+            {
+              "value": "Gabrielle Davis",
+              "count": 1,
+              "percent": 0.038461538461538464
+            },
+            {
+              "value": "Gina Moore",
+              "count": 1,
+              "percent": 0.038461538461538464
+            },
+            {
+              "value": "Michele Williams",
+              "count": 1,
+              "percent": 0.038461538461538464
+            },
+            {
+              "value": "Lisa Hensley",
+              "count": 1,
+              "percent": 0.038461538461538464
+            },
+            {
+              "value": "Jamie Arnold",
+              "count": 1,
+              "percent": 0.038461538461538464
+            },
+            {
+              "value": "Tommy Walter",
+              "count": 1,
+              "percent": 0.038461538461538464
+            },
+            {
+              "value": "Abigail Shaffer",
+              "count": 1,
+              "percent": 0.038461538461538464
+            },
+            {
+              "value": "Daniel Wagner",
+              "count": 1,
+              "percent": 0.038461538461538464
+            },
+            {
+              "value": "Holly Wood",
+              "count": 1,
+              "percent": 0.038461538461538464
+            }
+          ]
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "role": {
+        "name": "role",
+        "physical_type": "string",
+        "logical_type": "categorical",
+        "base_role": "dimension",
+        "effective_role": "dimension",
+        "row_count": 26,
+        "distinct_count": 3,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "medium",
+        "sample_values": [
+          "sales_associate",
+          "floor_supervisor",
+          "senior_associate"
+        ],
+        "stats": {
+          "kind": "categorical",
+          "null_count": 0,
+          "distinct_count": 3,
+          "top_k": [
+            {
+              "value": "sales_associate",
+              "count": 9,
+              "percent": 0.34615384615384615
+            },
+            {
+              "value": "floor_supervisor",
+              "count": 9,
+              "percent": 0.34615384615384615
+            },
+            {
+              "value": "senior_associate",
+              "count": 8,
+              "percent": 0.3076923076923077
+            }
+          ]
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "home_store_id": {
+        "name": "home_store_id",
+        "physical_type": "string",
+        "logical_type": "categorical",
+        "base_role": "id",
+        "effective_role": "id",
+        "row_count": 26,
+        "distinct_count": 6,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "medium",
+        "sample_values": [
+          "S002",
+          "S001",
+          "S006",
+          "S004",
+          "S005"
+        ],
+        "stats": {
+          "kind": "categorical",
+          "null_count": 0,
+          "distinct_count": 6,
+          "top_k": []
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "first_tx_date": {
+        "name": "first_tx_date",
+        "physical_type": "datetime",
+        "logical_type": "datetime",
+        "base_role": "datetime",
+        "effective_role": "datetime",
+        "row_count": 26,
+        "distinct_count": 5,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "medium",
+        "sample_values": [
+          "2025-01-01T00:00:00",
+          "2025-01-05T00:00:00",
+          "2025-01-02T00:00:00",
+          "2025-01-07T00:00:00",
+          "2025-01-04T00:00:00"
+        ],
+        "stats": {
+          "kind": "datetime",
+          "null_count": 0,
+          "min": "2025-01-01T00:00:00",
+          "max": "2025-01-07T00:00:00",
+          "distinct_days": 5
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "last_tx_date": {
+        "name": "last_tx_date",
+        "physical_type": "datetime",
+        "logical_type": "datetime",
+        "base_role": "datetime",
+        "effective_role": "datetime",
+        "row_count": 26,
+        "distinct_count": 4,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "medium",
+        "sample_values": [
+          "2025-12-30T00:00:00",
+          "2025-12-31T00:00:00",
+          "2025-12-29T00:00:00",
+          "2025-12-26T00:00:00"
+        ],
+        "stats": {
+          "kind": "datetime",
+          "null_count": 0,
+          "min": "2025-12-26T00:00:00",
+          "max": "2025-12-31T00:00:00",
+          "distinct_days": 4
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "active_days": {
+        "name": "active_days",
+        "physical_type": "int",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 26,
+        "distinct_count": 25,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "128",
+          "155",
+          "226",
+          "152",
+          "311"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 128.0,
+          "max": 313.0,
+          "mean": 190.84615384615384,
+          "stddev": 50.85641930587902,
+          "p05": 131.75,
+          "p50": 170.5,
+          "p95": 294.75,
+          "zero_count": 0
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "orders": {
+        "name": "orders",
+        "physical_type": "int",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 26,
+        "distinct_count": 22,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "173",
+          "207",
+          "354",
+          "208",
+          "756"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 173.0,
+          "max": 756.0,
+          "mean": 296.2307692307692,
+          "stddev": 153.433844426139,
+          "p05": 173.0,
+          "p50": 224.5,
+          "p95": 655.5,
+          "zero_count": 0
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "units": {
+        "name": "units",
+        "physical_type": "int",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 26,
+        "distinct_count": 25,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "634",
+          "547",
+          "973",
+          "599",
+          "2027"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 448.0,
+          "max": 2027.0,
+          "mean": 827.4615384615385,
+          "stddev": 412.089527240791,
+          "p05": 468.5,
+          "p50": 647.0,
+          "p95": 1826.75,
+          "zero_count": 0
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "gross_sales": {
+        "name": "gross_sales",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 26,
+        "distinct_count": 26,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "14727111.57",
+          "13399234.98",
+          "23933274.75",
+          "15211630.2",
+          "50762662.22"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 10219065.18,
+          "max": 52864396.73,
+          "mean": 21110827.6626923,
+          "stddev": 10833469.4465091,
+          "p05": 11122689.605,
+          "p50": 17496561.84,
+          "p95": 46880234.8475,
+          "zero_count": 0
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "discount_amount": {
+        "name": "discount_amount",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 26,
+        "distinct_count": 26,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "69364.490697",
+          "230227.770488",
+          "332592.124985",
+          "269709.786358",
+          "4072529.37254"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 61960.940831,
+          "max": 7738699.160878,
+          "mean": 1077563.34520596,
+          "stddev": 1662618.35681859,
+          "p05": 68942.40630525,
+          "p50": 330649.4875205,
+          "p95": 3610179.05834275,
+          "zero_count": 0
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "net_sales": {
+        "name": "net_sales",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 26,
+        "distinct_count": 26,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "14657774.93",
+          "13169031.8",
+          "23600761.32",
+          "14941930.6",
+          "46690183.95"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 10021006.9,
+          "max": 46690183.95,
+          "mean": 20033279.9857692,
+          "stddev": 9422189.64160104,
+          "p05": 10439835.25,
+          "p50": 17191399.815,
+          "p95": 42196730.1925,
+          "zero_count": 0
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "avg_order_value": {
+        "name": "avg_order_value",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 26,
+        "distinct_count": 26,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "84727.022716763",
+          "63618.5111111111",
+          "66668.8172881356",
+          "71836.2048076923",
+          "61759.5025793651"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 57924.8953757226,
+          "max": 93602.9780275229,
+          "mean": 68763.6149839502,
+          "stddev": 9684.25613567376,
+          "p05": 58380.0225295935,
+          "p50": 65610.5587869224,
+          "p95": 84700.2375112565,
+          "zero_count": 0
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "discount_ratio": {
+        "name": "discount_ratio",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 26,
+        "distinct_count": 26,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "0.0047099860938311",
+          "0.0171821578494326",
+          "0.0138966409093264",
+          "0.0177304984943691",
+          "0.080226867434377"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 0.0030272960673194,
+          "max": 0.146387732378801,
+          "mean": 0.0394336472526915,
+          "stddev": 0.0370469249397425,
+          "p05": 0.00437329325943673,
+          "p50": 0.018747755225814,
+          "p95": 0.0881932898906884,
+          "zero_count": 0
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "returns_amount": {
+        "name": "returns_amount",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 26,
+        "distinct_count": 26,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "463444.78",
+          "572084.04",
+          "1286928.57",
+          "380113.48",
+          "2342091.43"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 100456.28,
+          "max": 2342091.43,
+          "mean": 795151.795384615,
+          "stddev": 595084.816158471,
+          "p05": 137824.78,
+          "p50": 566390.565,
+          "p95": 2079773.565,
+          "zero_count": 0
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "return_rate_amount": {
+        "name": "return_rate_amount",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 26,
+        "distinct_count": 26,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "0.0316176760943074",
+          "0.0434416173252767",
+          "0.0545291125379679",
+          "0.0254393819765164",
+          "0.050162394573303"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 0.0075235419492058,
+          "max": 0.105092534523644,
+          "mean": 0.0400429872821039,
+          "stddev": 0.0234110780895354,
+          "p05": 0.0108369769704685,
+          "p50": 0.037082314664616,
+          "p95": 0.0706431782226297,
+          "zero_count": 0
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "net_sales_after_returns": {
+        "name": "net_sales_after_returns",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 26,
+        "distinct_count": 26,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "14194330.15",
+          "12596947.76",
+          "22313832.75",
+          "14561817.12",
+          "44348092.52"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 9338751.6,
+          "max": 44348092.52,
+          "mean": 19238128.1903846,
+          "stddev": 9011231.5547074,
+          "p05": 9867590.3325,
+          "p50": 16308603.88,
+          "p95": 40418447.97,
+          "zero_count": 0
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      }
+    }
+  }
+}

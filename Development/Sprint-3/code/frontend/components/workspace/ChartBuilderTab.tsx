@@ -1,14 +1,15 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useAppStore, AggregationTable, ChartConfig, aggregationTables } from "@/lib/store";
-import { useTableProfile, useChartData } from "@/lib/hooks";
-import { 
+import { useAppStore, ChartConfig } from "@/lib/store";
+import { useTableProfile, useChartsPreview } from "@/lib/hooks";
+import {
   transformColumnProfile,
   type ColumnRole,
 } from "@/lib/transformers";
+import { renderChart } from "@/components/workspace/renderChart";
+import type { ChartSpecV1, FilterOperator, FilterSpec } from "@/lib/types/chartspec";
 import { motion, AnimatePresence } from "framer-motion";
-import dynamic from "next/dynamic";
 import {
   DndContext,
   DragEndEvent,
@@ -30,9 +31,16 @@ import {
   RefreshCw,
   Loader2,
   AlertTriangle,
+  Plus,
+  Copy,
 } from "lucide-react";
 
-const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
+interface UIChartFilter {
+  id: string;
+  field: string;
+  op: FilterOperator;
+  value: string;
+}
 
 const chartTypes: { id: ChartConfig["chartType"]; label: string; icon: React.ReactNode }[] = [
   { id: "bar", label: "Bar", icon: <BarChart3 className="w-4 h-4" /> },
@@ -49,6 +57,17 @@ const aggregationFns: { id: ChartConfig["aggregationFn"]; label: string }[] = [
   { id: "max", label: "Max" },
 ];
 
+const filterOperators: { id: FilterOperator; label: string }[] = [
+  { id: "=", label: "=" },
+  { id: "!=", label: "!=" },
+  { id: ">", label: ">" },
+  { id: ">=", label: ">=" },
+  { id: "<", label: "<" },
+  { id: "<=", label: "<=" },
+  { id: "in", label: "IN" },
+  { id: "between", label: "BETWEEN" },
+];
+
 const roleColors: Record<ColumnRole, { bg: string; text: string; border: string }> = {
   dimension: { bg: "bg-blue-500/20", text: "text-blue-400", border: "border-blue-500/30" },
   measure: { bg: "bg-emerald-500/20", text: "text-emerald-400", border: "border-emerald-500/30" },
@@ -61,7 +80,60 @@ const roleIcons: Record<ColumnRole, React.ReactNode> = {
   temporal: <Calendar className="w-3.5 h-3.5" />,
 };
 
-// Draggable Field Component
+function toPrimitive(raw: string): unknown {
+  const trimmed = raw.trim();
+  if (!trimmed) return trimmed;
+  if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
+    const asNumber = Number(trimmed);
+    if (Number.isFinite(asNumber)) {
+      return asNumber;
+    }
+  }
+  return trimmed;
+}
+
+function mapFilter(filter: UIChartFilter): FilterSpec | null {
+  if (!filter.field) return null;
+
+  if (filter.op === "in") {
+    const values = filter.value
+      .split(",")
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0)
+      .map((item) => toPrimitive(item));
+    if (values.length === 0) return null;
+    return { field: filter.field, op: "in", value: values };
+  }
+
+  if (filter.op === "between") {
+    const parts = filter.value
+      .split(",")
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0)
+      .map((item) => toPrimitive(item));
+    if (parts.length < 2) return null;
+    return { field: filter.field, op: "between", value: [parts[0], parts[1]] };
+  }
+
+  if (!filter.value.trim()) return null;
+  return { field: filter.field, op: filter.op, value: toPrimitive(filter.value) };
+}
+
+function daysAgoISO(days: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  return date.toISOString().slice(0, 10);
+}
+
+type DebugTab = "chartspec" | "aggregate_request" | "sql";
+
+function toPrettyText(value: unknown): string {
+  if (typeof value === "string") {
+    return value;
+  }
+  return JSON.stringify(value ?? {}, null, 2);
+}
+
 function DraggableField({ column }: { column: { name: string; role: ColumnRole } }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: column.name,
@@ -88,7 +160,6 @@ function DraggableField({ column }: { column: { name: string; role: ColumnRole }
   );
 }
 
-// Drop Zone Component
 function DropZone({
   id,
   label,
@@ -139,23 +210,35 @@ function DropZone({
 
 export default function ChartBuilderTab() {
   const {
+    selectedDatasetId,
     selectedAggregation,
     setSelectedAggregation,
+    availableMarts,
     chartConfig,
     setChartConfig,
     resetChartConfig,
   } = useAppStore();
 
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const [validationMessage, setValidationMessage] = useState<string | null>(null);
+  const [filters, setFilters] = useState<UIChartFilter[]>([]);
+  const [sortTarget, setSortTarget] = useState<"x" | "metric">("metric");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [resultLimit, setResultLimit] = useState<number>(20);
+  const [timeWindow, setTimeWindow] = useState<"none" | "last_7" | "last_30" | "last_90" | "custom">("none");
+  const [timeField, setTimeField] = useState<string>("");
+  const [customStartDate, setCustomStartDate] = useState<string>("");
+  const [customEndDate, setCustomEndDate] = useState<string>("");
+  const [showExecutionDetails, setShowExecutionDetails] = useState<boolean>(false);
+  const [debugTab, setDebugTab] = useState<DebugTab>("chartspec");
+  const [copiedTab, setCopiedTab] = useState<DebugTab | null>(null);
 
-  const { data: profile, isLoading } = useTableProfile(selectedAggregation);
-  
-  // Transform columns for frontend use
+  const { data: profile, isLoading } = useTableProfile(selectedDatasetId, selectedAggregation);
+
   const transformedColumns = useMemo(() => {
     return profile?.columns.map(transformColumnProfile) ?? [];
   }, [profile]);
 
-  // Group columns by role and create a map for quick lookup
   const { groupedColumns, columnRoleMap } = useMemo(() => {
     if (transformedColumns.length === 0) {
       return {
@@ -165,60 +248,177 @@ export default function ChartBuilderTab() {
     }
 
     const roleMap = new Map<string, ColumnRole>();
-    transformedColumns.forEach((c) => roleMap.set(c.name, c.role));
+    transformedColumns.forEach((column) => roleMap.set(column.name, column.role));
 
     return {
       groupedColumns: {
-        dimensions: transformedColumns.filter((c) => c.role === "dimension"),
-        measures: transformedColumns.filter((c) => c.role === "measure"),
-        temporal: transformedColumns.filter((c) => c.role === "temporal"),
+        dimensions: transformedColumns.filter((column) => column.role === "dimension"),
+        measures: transformedColumns.filter((column) => column.role === "measure"),
+        temporal: transformedColumns.filter((column) => column.role === "temporal"),
       },
       columnRoleMap: roleMap,
     };
   }, [transformedColumns]);
 
-  // Get valid aggregation functions based on the selected y-axis column role
+  useEffect(() => {
+    if (groupedColumns.temporal.length === 0) {
+      if (timeField) {
+        setTimeField("");
+      }
+      return;
+    }
+
+    const stillExists = groupedColumns.temporal.some((column) => column.name === timeField);
+    if (!stillExists) {
+      setTimeField(groupedColumns.temporal[0].name);
+    }
+  }, [groupedColumns.temporal, timeField]);
+
   const validAggregations = useMemo(() => {
     if (!chartConfig.yAxis) {
-      return aggregationFns; // All aggregations available when no column selected
+      return aggregationFns;
     }
 
     const role = columnRoleMap.get(chartConfig.yAxis);
-
     if (role === "measure") {
-      // Measures support all aggregations
       return aggregationFns;
-    } else if (role === "temporal") {
-      // Temporal columns: COUNT, MIN, MAX (no SUM/AVG on dates)
-      return aggregationFns.filter((agg) => ["count", "min", "max"].includes(agg.id));
-    } else {
-      // Dimensions: only COUNT makes sense
-      return aggregationFns.filter((agg) => agg.id === "count");
     }
+    if (role === "temporal") {
+      return aggregationFns.filter((aggregation) => ["count", "min", "max"].includes(aggregation.id));
+    }
+    return aggregationFns.filter((aggregation) => aggregation.id === "count");
   }, [chartConfig.yAxis, columnRoleMap]);
 
-  // Auto-switch aggregation when y-axis changes to an incompatible column
   useEffect(() => {
     if (chartConfig.yAxis && validAggregations.length > 0) {
-      const currentAggValid = validAggregations.some((agg) => agg.id === chartConfig.aggregationFn);
+      const currentAggValid = validAggregations.some((aggregation) => aggregation.id === chartConfig.aggregationFn);
       if (!currentAggValid) {
-        // Switch to first valid aggregation
         setChartConfig({ aggregationFn: validAggregations[0].id });
       }
     }
   }, [chartConfig.yAxis, chartConfig.aggregationFn, validAggregations, setChartConfig]);
 
-  // Fetch real chart data from the database
-  const { 
-    data: chartData, 
-    isLoading: isChartLoading, 
-    error: chartError 
-  } = useChartData(
+  const chartSpec = useMemo<ChartSpecV1 | null>(() => {
+    if (!selectedAggregation || !chartConfig.xAxis || !chartConfig.yAxis) {
+      return null;
+    }
+
+    const xRole = columnRoleMap.get(chartConfig.xAxis);
+    const yRole = columnRoleMap.get(chartConfig.yAxis);
+    if (!(xRole === "dimension" || xRole === "temporal")) {
+      return null;
+    }
+    if (yRole !== "measure") {
+      return null;
+    }
+
+    const chartFilters: FilterSpec[] = filters
+      .map((item) => mapFilter(item))
+      .filter((item): item is FilterSpec => item !== null);
+
+    if (timeWindow !== "none" && timeField) {
+      if (timeWindow === "custom") {
+        if (customStartDate && customEndDate) {
+          chartFilters.push({
+            field: timeField,
+            op: "between",
+            value: [customStartDate, customEndDate],
+          });
+        }
+      } else {
+        const days = timeWindow === "last_7" ? 7 : timeWindow === "last_30" ? 30 : 90;
+        chartFilters.push({
+          field: timeField,
+          op: ">=",
+          value: daysAgoISO(days),
+        });
+      }
+    }
+
+    return {
+      version: "v1",
+      dataset_id: selectedDatasetId,
+      table: selectedAggregation,
+      chart: { type: chartConfig.chartType === "kpi" ? "bar" : chartConfig.chartType },
+      encoding: {
+        x: { field: chartConfig.xAxis },
+        y: [
+          {
+            field: chartConfig.yAxis,
+            aggregation: chartConfig.aggregationFn,
+            alias: "metric_value",
+          },
+        ],
+      },
+      filters: chartFilters,
+      sort: [
+        {
+          field: sortTarget === "x" ? chartConfig.xAxis : "metric_value",
+          direction: sortDirection,
+        },
+      ],
+      limit: resultLimit,
+    };
+  }, [
     selectedAggregation,
-    chartConfig.xAxis,
-    chartConfig.yAxis,
-    chartConfig.aggregationFn
-  );
+    selectedDatasetId,
+    chartConfig,
+    columnRoleMap,
+    filters,
+    timeWindow,
+    timeField,
+    customStartDate,
+    customEndDate,
+    sortTarget,
+    sortDirection,
+    resultLimit,
+  ]);
+
+  const {
+    data: previewData,
+    isLoading: isPreviewLoading,
+    error: previewError,
+  } = useChartsPreview(selectedDatasetId, chartSpec, showExecutionDetails);
+
+  const executionDebug = useMemo(() => {
+    if (!previewData || typeof previewData.meta !== "object" || previewData.meta === null) {
+      return null;
+    }
+    const debug = (previewData.meta as Record<string, unknown>).debug;
+    if (typeof debug !== "object" || debug === null) {
+      return null;
+    }
+    return debug as Record<string, unknown>;
+  }, [previewData]);
+
+  const debugTabPayload = useMemo(() => {
+    if (!executionDebug) {
+      return null;
+    }
+    if (debugTab === "chartspec") {
+      return executionDebug.chartspec_json;
+    }
+    if (debugTab === "aggregate_request") {
+      return executionDebug.resolved_aggregate_request_json;
+    }
+    return {
+      sql: executionDebug.sql,
+      params: executionDebug.params,
+    };
+  }, [executionDebug, debugTab]);
+
+  const copyDebugPayload = async () => {
+    if (!debugTabPayload) {
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(toPrettyText(debugTabPayload));
+      setCopiedTab(debugTab);
+      setTimeout(() => setCopiedTab((active) => (active === debugTab ? null : active)), 1200);
+    } catch {
+      // no-op: clipboard permissions can fail in some environments
+    }
+  };
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveDragId(event.active.id as string);
@@ -232,89 +432,136 @@ export default function ChartBuilderTab() {
 
     const columnName = active.id as string;
     const dropZone = over.id as string;
+    const role = columnRoleMap.get(columnName);
+
+    if (!role) {
+      return;
+    }
 
     if (dropZone === "x-axis") {
+      if (!(role === "dimension" || role === "temporal")) {
+        setValidationMessage("X-axis only accepts dimension or temporal fields.");
+        return;
+      }
       setChartConfig({ xAxis: columnName });
-    } else if (dropZone === "y-axis") {
+      setValidationMessage(null);
+      return;
+    }
+
+    if (dropZone === "y-axis") {
+      if (role !== "measure") {
+        setValidationMessage("Y-axis only accepts measure fields.");
+        return;
+      }
       setChartConfig({ yAxis: columnName });
-    } else if (dropZone === "color-by") {
+      setValidationMessage(null);
+      return;
+    }
+
+    if (dropZone === "color-by") {
+      if (role !== "dimension") {
+        setValidationMessage("Color/Group only accepts dimension fields.");
+        return;
+      }
       setChartConfig({ colorBy: columnName });
+      setValidationMessage(null);
     }
   };
 
   const activeColumn = activeDragId
-    ? transformedColumns.find((c) => c.name === activeDragId)
+    ? transformedColumns.find((column) => column.name === activeDragId)
     : null;
+
+  const addFilter = () => {
+    setFilters((prev) => [
+      ...prev,
+      { id: `${Date.now()}-${prev.length}`, field: "", op: "=", value: "" },
+    ]);
+  };
+
+  const updateFilter = (id: string, patch: Partial<UIChartFilter>) => {
+    setFilters((prev) => prev.map((item) => (item.id === id ? { ...item, ...patch } : item)));
+  };
+
+  const removeFilter = (id: string) => {
+    setFilters((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const handleReset = () => {
+    resetChartConfig();
+    setFilters([]);
+    setSortTarget("metric");
+    setSortDirection("desc");
+    setResultLimit(20);
+    setTimeWindow("none");
+    setCustomStartDate("");
+    setCustomEndDate("");
+    setValidationMessage(null);
+  };
 
   return (
     <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div className="flex h-full">
-        {/* Left Panel - Fields */}
         <div className="w-64 border-r border-white/10 bg-[#060010]/50 overflow-y-auto p-4">
-          {/* Aggregation Selector */}
           <div className="mb-6">
             <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
               Aggregation
             </h3>
             <select
               value={selectedAggregation || ""}
-              onChange={(e) => {
-                setSelectedAggregation(e.target.value as AggregationTable);
-                resetChartConfig();
+              onChange={(event) => {
+                setSelectedAggregation(event.target.value || null);
+                handleReset();
               }}
               className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#5237ff]/50"
             >
               <option value="">Select table</option>
-              {aggregationTables.map((table) => (
+              {availableMarts.map((table) => (
                 <option key={table.id} value={table.id}>
-                  {table.label}
+                  {table.label ?? table.id}
                 </option>
               ))}
             </select>
           </div>
 
-          {/* Fields */}
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-6 h-6 text-[#5237ff] animate-spin" />
             </div>
           ) : transformedColumns.length > 0 ? (
             <>
-              {/* Dimensions */}
               <div className="mb-6">
                 <h3 className="text-sm font-medium text-blue-400 mb-3 flex items-center gap-2">
                   <Hash className="w-4 h-4" />
                   Dimensions
                 </h3>
                 <div className="space-y-2">
-                  {groupedColumns.dimensions.map((col) => (
-                    <DraggableField key={col.name} column={{ name: col.name, role: col.role }} />
+                  {groupedColumns.dimensions.map((column) => (
+                    <DraggableField key={column.name} column={{ name: column.name, role: column.role }} />
                   ))}
                 </div>
               </div>
 
-              {/* Measures */}
               <div className="mb-6">
                 <h3 className="text-sm font-medium text-emerald-400 mb-3 flex items-center gap-2">
                   <BarChart3 className="w-4 h-4" />
                   Measures
                 </h3>
                 <div className="space-y-2">
-                  {groupedColumns.measures.map((col) => (
-                    <DraggableField key={col.name} column={{ name: col.name, role: col.role }} />
+                  {groupedColumns.measures.map((column) => (
+                    <DraggableField key={column.name} column={{ name: column.name, role: column.role }} />
                   ))}
                 </div>
               </div>
 
-              {/* Temporal */}
               <div className="mb-6">
                 <h3 className="text-sm font-medium text-amber-400 mb-3 flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
                   Temporal
                 </h3>
                 <div className="space-y-2">
-                  {groupedColumns.temporal.map((col) => (
-                    <DraggableField key={col.name} column={{ name: col.name, role: col.role }} />
+                  {groupedColumns.temporal.map((column) => (
+                    <DraggableField key={column.name} column={{ name: column.name, role: column.role }} />
                   ))}
                 </div>
               </div>
@@ -324,7 +571,6 @@ export default function ChartBuilderTab() {
           ) : null}
         </div>
 
-        {/* Center - Chart Canvas */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex-1 p-6 overflow-y-auto">
             <AnimatePresence mode="wait">
@@ -347,7 +593,20 @@ export default function ChartBuilderTab() {
                     </p>
                   </div>
                 </motion.div>
-              ) : isChartLoading ? (
+              ) : validationMessage ? (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="h-full flex items-center justify-center"
+                >
+                  <div className="text-center">
+                    <AlertTriangle className="w-12 h-12 text-amber-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-300 mb-2">Invalid axis mapping</h3>
+                    <p className="text-gray-500 text-sm max-w-sm">{validationMessage}</p>
+                  </div>
+                </motion.div>
+              ) : isPreviewLoading ? (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -357,10 +616,10 @@ export default function ChartBuilderTab() {
                   <div className="text-center">
                     <Loader2 className="w-12 h-12 text-[#5237ff] mx-auto mb-4 animate-spin" />
                     <h3 className="text-lg font-medium text-gray-400">Loading chart data...</h3>
-                    <p className="text-gray-500 text-sm mt-1">Querying database</p>
+                    <p className="text-gray-500 text-sm mt-1">Executing chart preview</p>
                   </div>
                 </motion.div>
-              ) : chartError ? (
+              ) : previewError ? (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -370,107 +629,84 @@ export default function ChartBuilderTab() {
                   <div className="text-center">
                     <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-400 mb-2">Failed to load chart data</h3>
-                    <p className="text-gray-500 text-sm max-w-sm">{chartError.message}</p>
+                    <p className="text-gray-500 text-sm max-w-sm">{previewError.message}</p>
                   </div>
                 </motion.div>
-              ) : chartData ? (
+              ) : previewData && chartSpec ? (
                 <motion.div
                   key={`${chartConfig.xAxis}-${chartConfig.yAxis}-${chartConfig.chartType}`}
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="bg-white/5 border border-white/10 rounded-2xl p-6 h-full"
+                  className="bg-white/5 border border-white/10 rounded-2xl p-6 h-full flex flex-col gap-4"
                 >
-                  <Plot
-                    data={[
-                      chartConfig.chartType === "pie"
-                        ? {
-                            type: "pie" as const,
-                            values: chartData.y,
-                            labels: chartData.x,
-                            textinfo: "percent" as const,
-                            textposition: "inside" as const,
-                            marker: {
-                              colors: [
-                                "#8b5cf6",
-                                "#3b82f6",
-                                "#06b6d4",
-                                "#10b981",
-                                "#f59e0b",
-                                "#ef4444",
-                              ],
-                            },
-                            hole: 0.3,
-                          }
-                        : chartConfig.chartType === "line"
-                        ? {
-                            type: "scatter",
-                            mode: "lines+markers",
-                            x: chartData.x,
-                            y: chartData.y,
-                            line: { color: "#8b5cf6", width: 3 },
-                            marker: { color: "#8b5cf6", size: 8 },
-                            fill: "tozeroy",
-                            fillcolor: "rgba(139, 92, 246, 0.1)",
-                          }
-                        : chartConfig.chartType === "histogram"
-                        ? ({
-                            type: "histogram",
-                            x: chartData.y,
-                            marker: { color: "#10b981", opacity: 0.8 },
-                            nbinsx: 10,
-                          } as unknown as Plotly.Data)
-                        : {
-                            type: "bar",
-                            x: chartData.x,
-                            y: chartData.y,
-                            marker: {
-                              color: chartData.y.map((_, i) =>
-                                [
-                                  "#8b5cf6",
-                                  "#3b82f6",
-                                  "#06b6d4",
-                                  "#10b981",
-                                  "#f59e0b",
-                                  "#ef4444",
-                                ][i % 6]
-                              ),
-                              opacity: 0.9,
-                            },
-                          },
-                    ]}
-                    layout={{
-                      title: {
-                        text: chartData.title,
-                        font: { color: "#fff", size: 16 },
-                      },
-                      paper_bgcolor: "transparent",
-                      plot_bgcolor: "transparent",
-                      font: { color: "#94a3b8" },
-                      xaxis: {
-                        gridcolor: "#334155",
-                        title: { text: chartConfig.xAxis || "" },
-                      },
-                      yaxis: {
-                        gridcolor: "#334155",
-                        title: { text: chartConfig.yAxis || "" },
-                      },
-                      margin: { t: 60, b: 60, l: 80, r: 40 },
-                      showlegend: chartConfig.chartType === "pie",
-                      legend: { orientation: "h", y: -0.2 },
-                    }}
-                    config={{ displayModeBar: false, responsive: true }}
-                    style={{ width: "100%", height: "100%", minHeight: "400px" }}
-                  />
+                  <div className="min-h-[360px]">{renderChart(chartSpec, previewData.rows)}</div>
+
+                  {showExecutionDetails && executionDebug ? (
+                    <div className="border border-white/10 rounded-xl bg-black/30 overflow-hidden">
+                      <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setDebugTab("chartspec")}
+                            className={`px-2 py-1 text-xs rounded-md ${
+                              debugTab === "chartspec" ? "bg-[#5237ff]/30 text-[#c7beff]" : "text-gray-300 hover:bg-white/10"
+                            }`}
+                          >
+                            ChartSpec
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDebugTab("aggregate_request")}
+                            className={`px-2 py-1 text-xs rounded-md ${
+                              debugTab === "aggregate_request" ? "bg-[#5237ff]/30 text-[#c7beff]" : "text-gray-300 hover:bg-white/10"
+                            }`}
+                          >
+                            AggregateRequest
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDebugTab("sql")}
+                            className={`px-2 py-1 text-xs rounded-md ${
+                              debugTab === "sql" ? "bg-[#5237ff]/30 text-[#c7beff]" : "text-gray-300 hover:bg-white/10"
+                            }`}
+                          >
+                            SQL
+                          </button>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={copyDebugPayload}
+                          className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md border border-white/10 text-gray-300 hover:bg-white/10"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                          {copiedTab === debugTab ? "Copied" : "Copy"}
+                        </button>
+                      </div>
+                      <pre className="p-3 text-xs text-gray-300 overflow-x-auto max-h-[260px] leading-relaxed">
+                        {toPrettyText(debugTabPayload)}
+                      </pre>
+                    </div>
+                  ) : null}
                 </motion.div>
-              ) : null}
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="h-full flex items-center justify-center"
+                >
+                  <div className="text-center">
+                    <AlertTriangle className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-400">No chart data</h3>
+                  </div>
+                </motion.div>
+              )}
             </AnimatePresence>
           </div>
         </div>
 
-        {/* Right Panel - Config */}
-        <div className="w-72 border-l border-white/10 bg-[#060010]/50 overflow-y-auto p-4 space-y-6">
-          {/* Chart Type */}
+        <div className="w-80 border-l border-white/10 bg-[#060010]/50 overflow-y-auto p-4 space-y-6">
           <div>
             <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
               Chart Type
@@ -493,7 +729,6 @@ export default function ChartBuilderTab() {
             </div>
           </div>
 
-          {/* Axis Mapping */}
           <div className="space-y-4">
             <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
               Axis Mapping
@@ -524,43 +759,200 @@ export default function ChartBuilderTab() {
             />
           </div>
 
-          {/* Aggregation */}
           <div>
             <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
               Aggregation
             </h3>
             <div className="flex flex-wrap gap-2">
-              {aggregationFns.map((agg) => {
-                const isValid = validAggregations.some((v) => v.id === agg.id);
+              {aggregationFns.map((aggregation) => {
+                const isValid = validAggregations.some((item) => item.id === aggregation.id);
                 return (
                   <button
-                    key={agg.id}
-                    onClick={() => isValid && setChartConfig({ aggregationFn: agg.id })}
+                    key={aggregation.id}
+                    onClick={() => isValid && setChartConfig({ aggregationFn: aggregation.id })}
                     disabled={!isValid}
-                    title={!isValid ? `${agg.label} is not available for this column type` : undefined}
+                    title={!isValid ? `${aggregation.label} is not available for this column type` : undefined}
                     className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
                       !isValid
                         ? "bg-white/5 border border-white/5 text-gray-600 cursor-not-allowed opacity-50"
-                        : chartConfig.aggregationFn === agg.id
+                        : chartConfig.aggregationFn === aggregation.id
                         ? "bg-emerald-500/20 border border-emerald-500/30 text-emerald-300"
                         : "bg-white/5 border border-white/10 text-gray-400 hover:text-white"
                     }`}
                   >
-                    {agg.label}
+                    {aggregation.label}
                   </button>
                 );
               })}
             </div>
-            {chartConfig.yAxis && validAggregations.length < aggregationFns.length && (
-              <p className="text-xs text-gray-500 mt-2">
-                Some aggregations are disabled for {columnRoleMap.get(chartConfig.yAxis)} columns
-              </p>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
+              Filters
+            </h3>
+            <div className="space-y-3">
+              {filters.map((filter) => (
+                <div key={filter.id} className="space-y-2 bg-white/5 border border-white/10 rounded-lg p-2">
+                  <select
+                    value={filter.field}
+                    onChange={(event) => updateFilter(filter.id, { field: event.target.value })}
+                    className="w-full bg-white/5 border border-white/10 rounded px-2 py-1.5 text-white text-xs"
+                  >
+                    <option value="">Field</option>
+                    {transformedColumns.map((column) => (
+                      <option key={column.name} value={column.name}>
+                        {column.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="grid grid-cols-[1fr_2fr_auto] gap-2">
+                    <select
+                      value={filter.op}
+                      onChange={(event) => updateFilter(filter.id, { op: event.target.value as FilterOperator })}
+                      className="bg-white/5 border border-white/10 rounded px-2 py-1.5 text-white text-xs"
+                    >
+                      {filterOperators.map((op) => (
+                        <option key={op.id} value={op.id}>{op.label}</option>
+                      ))}
+                    </select>
+                    <input
+                      value={filter.value}
+                      onChange={(event) => updateFilter(filter.id, { value: event.target.value })}
+                      placeholder={filter.op === "in" ? "a,b,c" : filter.op === "between" ? "min,max" : "value"}
+                      className="bg-white/5 border border-white/10 rounded px-2 py-1.5 text-white text-xs"
+                    />
+                    <button
+                      onClick={() => removeFilter(filter.id)}
+                      className="px-2 py-1.5 rounded bg-red-500/20 border border-red-500/30 text-red-300"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              <button
+                onClick={addFilter}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-300 hover:text-white"
+              >
+                <Plus className="w-4 h-4" />
+                Add Filter
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
+              Time Window
+            </h3>
+            {groupedColumns.temporal.length > 0 ? (
+              <div className="space-y-2">
+                <select
+                  value={timeField}
+                  onChange={(event) => setTimeField(event.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded px-2 py-2 text-white text-sm"
+                >
+                  {groupedColumns.temporal.map((column) => (
+                    <option key={column.name} value={column.name}>{column.name}</option>
+                  ))}
+                </select>
+                <select
+                  value={timeWindow}
+                  onChange={(event) => setTimeWindow(event.target.value as "none" | "last_7" | "last_30" | "last_90" | "custom")}
+                  className="w-full bg-white/5 border border-white/10 rounded px-2 py-2 text-white text-sm"
+                >
+                  <option value="none">None</option>
+                  <option value="last_7">Last 7 days</option>
+                  <option value="last_30">Last 30 days</option>
+                  <option value="last_90">Last 90 days</option>
+                  <option value="custom">Custom range</option>
+                </select>
+                {timeWindow === "custom" ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="date"
+                      value={customStartDate}
+                      onChange={(event) => setCustomStartDate(event.target.value)}
+                      className="bg-white/5 border border-white/10 rounded px-2 py-2 text-white text-sm"
+                    />
+                    <input
+                      type="date"
+                      value={customEndDate}
+                      onChange={(event) => setCustomEndDate(event.target.value)}
+                      className="bg-white/5 border border-white/10 rounded px-2 py-2 text-white text-sm"
+                    />
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-500">No temporal field available for time windows.</p>
             )}
           </div>
 
-          {/* Reset Button */}
+          <div>
+            <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
+              Sort & Limit
+            </h3>
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <select
+                  value={sortTarget}
+                  onChange={(event) => setSortTarget(event.target.value as "x" | "metric")}
+                  className="bg-white/5 border border-white/10 rounded px-2 py-2 text-white text-sm"
+                >
+                  <option value="metric">Sort by metric</option>
+                  <option value="x">Sort by X-axis</option>
+                </select>
+                <select
+                  value={sortDirection}
+                  onChange={(event) => setSortDirection(event.target.value as "asc" | "desc")}
+                  className="bg-white/5 border border-white/10 rounded px-2 py-2 text-white text-sm"
+                >
+                  <option value="desc">Descending</option>
+                  <option value="asc">Ascending</option>
+                </select>
+              </div>
+              <input
+                type="number"
+                min={1}
+                max={5000}
+                value={resultLimit}
+                onChange={(event) => {
+                  const value = Number(event.target.value);
+                  if (!Number.isNaN(value)) {
+                    setResultLimit(Math.max(1, Math.min(5000, value)));
+                  }
+                }}
+                className="w-full bg-white/5 border border-white/10 rounded px-2 py-2 text-white text-sm"
+              />
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
+              Debug
+            </h3>
+            <label className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg border border-white/10 bg-white/5">
+              <span className="text-sm text-gray-300">Show execution details</span>
+              <button
+                type="button"
+                onClick={() => setShowExecutionDetails((value) => !value)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  showExecutionDetails ? "bg-[#5237ff]/60" : "bg-white/15"
+                }`}
+                aria-pressed={showExecutionDetails}
+              >
+                <span
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                    showExecutionDetails ? "translate-x-5" : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </label>
+          </div>
+
           <button
-            onClick={resetChartConfig}
+            onClick={handleReset}
             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition-all"
           >
             <RefreshCw className="w-4 h-4" />
@@ -569,7 +961,6 @@ export default function ChartBuilderTab() {
         </div>
       </div>
 
-      {/* Drag Overlay */}
       <DragOverlay>
         {activeColumn && (
           <div
