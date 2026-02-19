@@ -3,6 +3,7 @@ import type { ChartSpecV1 } from './chartspec';
 export type ChatMode = 'auto' | 'chart' | 'explain';
 export type TimeGrain = 'day' | 'week' | 'month' | 'quarter' | 'year';
 export type MetricAggregation = 'sum' | 'avg' | 'count' | 'min' | 'max';
+export type MissingField = 'metric' | 'x_axis' | 'time_grain' | 'table';
 
 export interface ChatSelections {
   metric?: string;
@@ -61,17 +62,29 @@ export interface ClarifyOptions {
   metrics: string[];
   dimensions: string[];
   temporals: string[];
+  time_grains: TimeGrain[];
 }
 
 export interface ChatClarifyResponse {
   response_type: 'clarify';
   clarify_id: string;
   question: string;
-  missing: string[];
+  missing: MissingField[];
   options: ClarifyOptions;
   message?: string;
   questions?: string[];
   meta: Record<string, unknown>;
+}
+
+export interface ChatHintsResponse {
+  measures: string[];
+  dimensions: string[];
+  temporals: string[];
+  example_prompts: {
+    auto: string[];
+    chart: string[];
+    explain: string[];
+  };
 }
 
 export interface ChatRefuseResponse {

@@ -4,7 +4,14 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { apiClient } from "@/lib/api";
-import type { ChatClarifyResponse, ChatRequest, ChatResponse, ChatStatePayload } from "@/lib/types/chat";
+import type {
+  ChatClarifyResponse,
+  ChatHintsResponse,
+  ChatRequest,
+  ChatResponse,
+  ChatStatePayload,
+  MissingField,
+} from "@/lib/types/chat";
 import { renderChart } from "@/components/workspace/renderChart";
 import { Loader2, MessageSquare, Send, AlertTriangle, Trash2 } from "lucide-react";
 
@@ -38,6 +45,16 @@ const EMPTY_SELECTIONS = {
   aggregation: null,
   limit: null,
 } as const;
+
+function normalizeStage(stage: unknown): MissingField {
+  if (stage === "metric" || stage === "x_axis" || stage === "time_grain" || stage === "table") {
+    return stage;
+  }
+  if (stage === "dimension" || stage === "temporal") {
+    return "x_axis";
+  }
+  return "metric";
+}
 
 function toRequestState(
   lastChartSpec: ChatStatePayload["last_chart_spec"] | null,
@@ -98,6 +115,8 @@ export default function ChatPanel() {
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [chatHints, setChatHints] = useState<ChatHintsResponse | null>(null);
+  const [isHintsLoading, setIsHintsLoading] = useState(false);
   const routeDatasetId = params?.datasetId || selectedDatasetId;
 
   const chatKey = useMemo(
@@ -117,6 +136,40 @@ export default function ChatPanel() {
     setMessage("");
   }, [chatKey]);
 
+  useEffect(() => {
+    let isActive = true;
+    if (!selectedAggregation) {
+      setChatHints(null);
+      setIsHintsLoading(false);
+      return () => {
+        isActive = false;
+      };
+    }
+
+    setIsHintsLoading(true);
+    apiClient
+      .getChatHints(routeDatasetId, selectedAggregation)
+      .then((hints) => {
+        if (isActive) {
+          setChatHints(hints);
+        }
+      })
+      .catch(() => {
+        if (isActive) {
+          setChatHints(null);
+        }
+      })
+      .finally(() => {
+        if (isActive) {
+          setIsHintsLoading(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [routeDatasetId, selectedAggregation]);
+
   const placeholder = useMemo(() => {
     if (!selectedAggregation) {
       return "Select a mart to start chatting...";
@@ -129,6 +182,37 @@ export default function ChatPanel() {
     }
     return "Ask a business question... (e.g., sales by region)";
   }, [chatMode, selectedAggregation]);
+
+  const guidance = useMemo(() => {
+    if (!selectedAggregation) {
+      return {
+        title: "How to prompt in Auto",
+        lines: ["Select a mart first to get tailored suggestions.", "Then ask for a chart or explanation."],
+        examples: [] as string[],
+      };
+    }
+
+    const examples = chatHints?.example_prompts?.[chatMode] ?? [];
+    if (chatMode === "chart") {
+      return {
+        title: "How to prompt in Chart",
+        lines: ["Ask for metric + breakdown directly.", "Include time wording when you want a trend."],
+        examples,
+      };
+    }
+    if (chatMode === "explain") {
+      return {
+        title: "How to prompt in Explain",
+        lines: ["Ask what the mart can answer and what it cannot.", "Ask for KPI meaning in plain language."],
+        examples,
+      };
+    }
+    return {
+      title: "How to prompt in Auto",
+      lines: ["Ask business questions in natural language.", "Auto mode chooses chart or explanation for you."],
+      examples,
+    };
+  }, [chatHints, chatMode, selectedAggregation]);
 
   const applyResponseState = (
     key: string,
@@ -237,7 +321,7 @@ export default function ChatPanel() {
 
   const handleClarifyChip = async (
     clarifyResponse: ChatClarifyResponse,
-    prefix: "metric" | "dimension" | "temporal",
+    prefix: "metric" | "dimension" | "temporal" | "time_grain",
     value: string
   ) => {
     if (!chatKey || !selectedAggregation) {
@@ -348,10 +432,12 @@ export default function ChatPanel() {
             const clarifyOptions =
               response?.response_type === "clarify" && response.options && typeof response.options === "object"
                 ? response.options
-                : { metrics: [], dimensions: [], temporals: [] };
+                : { metrics: [], dimensions: [], temporals: [], time_grains: [] };
+            const stage = response?.response_type === "clarify" ? normalizeStage(response.missing?.[0]) : null;
             const metrics = Array.isArray(clarifyOptions.metrics) ? clarifyOptions.metrics : [];
             const dimensions = Array.isArray(clarifyOptions.dimensions) ? clarifyOptions.dimensions : [];
             const temporals = Array.isArray(clarifyOptions.temporals) ? clarifyOptions.temporals : [];
+            const timeGrains = Array.isArray(clarifyOptions.time_grains) ? clarifyOptions.time_grains : [];
             return (
               <div
                 key={`${turn.createdAt}-${index}`}
@@ -367,46 +453,83 @@ export default function ChatPanel() {
                   </div>
                 ) : null}
                 {isAssistant && response?.response_type === "clarify" ? (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {metrics.length > 0
-                      ? metrics.map((item) => (
-                      <button
-                        key={`metric-${item}`}
-                        type="button"
-                        disabled={isLoading || !selectedAggregation}
-                        onClick={() => handleClarifyChip(response, "metric", item)}
-                        className="px-2 py-1 text-xs rounded-full border border-[#5237ff]/40 text-[#c7beff] bg-[#5237ff]/15 hover:bg-[#5237ff]/25 disabled:opacity-50"
-                      >
-                        {item}
-                      </button>
-                        ))
-                      : null}
-                    {dimensions.length > 0
-                      ? dimensions.map((item) => (
-                      <button
-                        key={`dimension-${item}`}
-                        type="button"
-                        disabled={isLoading || !selectedAggregation}
-                        onClick={() => handleClarifyChip(response, "dimension", item)}
-                        className="px-2 py-1 text-xs rounded-full border border-blue-500/40 text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 disabled:opacity-50"
-                      >
-                        {item}
-                      </button>
-                        ))
-                      : null}
-                    {temporals.length > 0
-                      ? temporals.map((item) => (
-                      <button
-                        key={`temporal-${item}`}
-                        type="button"
-                        disabled={isLoading || !selectedAggregation}
-                        onClick={() => handleClarifyChip(response, "temporal", item)}
-                        className="px-2 py-1 text-xs rounded-full border border-amber-500/40 text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 disabled:opacity-50"
-                      >
-                        {item}
-                      </button>
-                        ))
-                      : null}
+                  <div className="mt-3 space-y-2">
+                    {stage === "metric" ? (
+                      metrics.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {metrics.map((item) => (
+                            <button
+                              key={`metric-${item}`}
+                              type="button"
+                              disabled={isLoading || !selectedAggregation}
+                              onClick={() => handleClarifyChip(response, "metric", item)}
+                              className="px-2 py-1 text-xs rounded-full border border-[#5237ff]/40 text-[#c7beff] bg-[#5237ff]/15 hover:bg-[#5237ff]/25 disabled:opacity-50"
+                            >
+                              {item}
+                            </button>
+                          ))}
+                        </div>
+                      ) : null
+                    ) : null}
+
+                    {stage === "x_axis" ? (
+                      <>
+                        {dimensions.length > 0 ? (
+                          <div>
+                            <p className="text-[11px] uppercase tracking-wide text-blue-300 mb-1">Dimensions</p>
+                            <div className="flex flex-wrap gap-2">
+                              {dimensions.map((item) => (
+                                <button
+                                  key={`dimension-${item}`}
+                                  type="button"
+                                  disabled={isLoading || !selectedAggregation}
+                                  onClick={() => handleClarifyChip(response, "dimension", item)}
+                                  className="px-2 py-1 text-xs rounded-full border border-blue-500/40 text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 disabled:opacity-50"
+                                >
+                                  {item}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+                        {temporals.length > 0 ? (
+                          <div>
+                            <p className="text-[11px] uppercase tracking-wide text-amber-300 mb-1">Time Fields</p>
+                            <div className="flex flex-wrap gap-2">
+                              {temporals.map((item) => (
+                                <button
+                                  key={`temporal-${item}`}
+                                  type="button"
+                                  disabled={isLoading || !selectedAggregation}
+                                  onClick={() => handleClarifyChip(response, "temporal", item)}
+                                  className="px-2 py-1 text-xs rounded-full border border-amber-500/40 text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 disabled:opacity-50"
+                                >
+                                  {item}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+                      </>
+                    ) : null}
+
+                    {stage === "time_grain" ? (
+                      timeGrains.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {timeGrains.map((item) => (
+                            <button
+                              key={`grain-${item}`}
+                              type="button"
+                              disabled={isLoading || !selectedAggregation}
+                              onClick={() => handleClarifyChip(response, "time_grain", item)}
+                              className="px-2 py-1 text-xs rounded-full border border-emerald-500/40 text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 disabled:opacity-50"
+                            >
+                              {item}
+                            </button>
+                          ))}
+                        </div>
+                      ) : null
+                    ) : null}
                   </div>
                 ) : null}
               </div>
@@ -416,6 +539,28 @@ export default function ChatPanel() {
       </div>
 
       <form onSubmit={handleSubmit} className="border-t border-white/10 p-4 space-y-2">
+        {selectedAggregation ? (
+          <div className="rounded-lg border border-white/10 bg-white/5 p-3">
+            <p className="text-xs text-gray-300 font-medium">{guidance.title}</p>
+            <p className="text-[11px] text-gray-400 mt-1">{guidance.lines[0]}</p>
+            <p className="text-[11px] text-gray-500">{guidance.lines[1]}</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {guidance.examples.map((example) => (
+                <button
+                  key={example}
+                  type="button"
+                  onClick={() => setMessage(example)}
+                  className="px-2 py-1 text-xs rounded-full border border-white/15 text-gray-300 hover:bg-white/10"
+                >
+                  {example}
+                </button>
+              ))}
+              {isHintsLoading && guidance.examples.length === 0 ? (
+                <span className="text-[11px] text-gray-500">Loading suggestions...</span>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
         {error ? (
           <div className="flex items-center gap-2 text-red-300 text-sm bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
             <AlertTriangle className="w-4 h-4" />

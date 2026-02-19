@@ -13,7 +13,7 @@ import type {
   ChartSpecV1,
   ChartsPreviewResponse,
 } from "./types/chartspec";
-import type { ChatRequest, ChatResponse } from "./types/chat";
+import type { ChatHintsResponse, ChatRequest, ChatResponse } from "./types/chat";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -193,6 +193,10 @@ class ApiClient {
       method: "POST",
       body: JSON.stringify(request),
     });
+  }
+
+  async getChatHints(datasetId: string, table: string): Promise<ChatHintsResponse> {
+    return this.request<ChatHintsResponse>(`/datasets/${datasetId}/marts/${table}/chat-hints`);
   }
 
   // ============================================

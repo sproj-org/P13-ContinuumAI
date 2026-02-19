@@ -119,6 +119,40 @@ function asStringArray(value: unknown): string[] {
   return value.filter((item): item is string => typeof item === 'string');
 }
 
+function normalizeMissingValues(value: unknown): Array<'metric' | 'x_axis' | 'time_grain' | 'table'> {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const normalized: Array<'metric' | 'x_axis' | 'time_grain' | 'table'> = [];
+  for (const item of value) {
+    if (typeof item !== 'string') {
+      continue;
+    }
+    const lower = item.trim().toLowerCase();
+    const mapped = lower === 'dimension' || lower === 'temporal' ? 'x_axis' : lower;
+    if (
+      (mapped === 'metric' || mapped === 'x_axis' || mapped === 'time_grain' || mapped === 'table') &&
+      !normalized.includes(mapped)
+    ) {
+      normalized.push(mapped);
+    }
+  }
+  return normalized;
+}
+
+function asTimeGrainArray(value: unknown): TimeGrain[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const output: TimeGrain[] = [];
+  for (const item of value) {
+    if (item === 'day' || item === 'week' || item === 'month' || item === 'quarter' || item === 'year') {
+      output.push(item);
+    }
+  }
+  return output;
+}
+
 function sanitizeChatResponse(raw: unknown): ChatResponse | null {
   if (!raw || typeof raw !== 'object') {
     return null;
@@ -147,11 +181,12 @@ function sanitizeChatResponse(raw: unknown): ChatResponse | null {
       response_type: 'clarify',
       clarify_id: clarifyId,
       question,
-      missing: asStringArray(record.missing),
+      missing: normalizeMissingValues(record.missing),
       options: {
         metrics: asStringArray(optionsRecord.metrics),
         dimensions: asStringArray(optionsRecord.dimensions),
         temporals: asStringArray(optionsRecord.temporals),
+        time_grains: asTimeGrainArray(optionsRecord.time_grains),
       },
       meta,
     };
@@ -448,11 +483,11 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'continuumai-app-store',
-      version: 3,
+      version: 4,
       storage: createJSONStorage(() => (typeof window !== 'undefined' ? localStorage : noopStorage)),
       migrate: (persistedState: unknown, version: number) => {
         const state = (persistedState ?? {}) as PersistedAppState;
-        if (version >= 3) {
+        if (version >= 4) {
           return {
             ...state,
             chatTurnsByKey: sanitizePersistedTurns(state.chatTurnsByKey),
