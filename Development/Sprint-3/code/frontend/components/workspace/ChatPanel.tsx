@@ -29,6 +29,8 @@ export default function ChatPanel() {
   const {
     selectedDatasetId,
     selectedAggregation,
+    setSelectedAggregation,
+    availableMarts,
     chatTurnsByKey,
     lastChartSpecByKey,
     appendChatTurn,
@@ -100,8 +102,22 @@ export default function ChatPanel() {
         <div className="flex-1">
           <h2 className="text-white font-semibold">Chat Analyst</h2>
           <p className="text-xs text-gray-400">
-            {selectedAggregation ? `Mart: ${selectedAggregation}` : "Select a mart to chat"}
+            {selectedAggregation ? `Chat scoped to: ${selectedAggregation}` : "Select a mart to chat"}
           </p>
+          <div className="mt-2">
+            <select
+              value={selectedAggregation ?? ""}
+              onChange={(event) => setSelectedAggregation(event.target.value || null)}
+              className="w-full max-w-xs bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#5237ff]/50"
+            >
+              <option value="">Select mart</option>
+              {availableMarts.map((mart) => (
+                <option key={mart.id} value={mart.id}>
+                  {mart.label ?? mart.id}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
         <button
           type="button"

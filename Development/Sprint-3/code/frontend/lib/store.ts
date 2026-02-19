@@ -153,6 +153,7 @@ export const useAppStore = create<AppState>()(
       name: 'continuumai-app-store',
       storage: createJSONStorage(() => (typeof window !== 'undefined' ? localStorage : noopStorage)),
       partialize: (state) => ({
+        selectedAggregation: state.selectedAggregation,
         chatTurnsByKey: state.chatTurnsByKey,
         lastChartSpecByKey: state.lastChartSpecByKey,
       }),
