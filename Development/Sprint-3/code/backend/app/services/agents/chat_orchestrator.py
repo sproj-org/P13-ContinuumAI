@@ -38,6 +38,8 @@ from app.services.charts.models import ChartSpecV1
 from app.services.charts.spec_resolver import execute_chart_preview
 from app.services.llm.openai_client import OpenAIClient, OpenAIJSONError
 from app.services.strategy.kpi_registry import list_kpis
+from app.services.strategy.errors import StrategyNotFoundError, StrategyValidationError
+from app.services.strategy.store import get_strategy_store
 
 _PLAN_ADAPTER = TypeAdapter(ChatPlanUnion)
 
@@ -723,12 +725,65 @@ def _execute_chart(
     )
 
 
-def _build_system_prompt(mode: ChatMode) -> str:
+def _load_strategy_runtime(dataset_id: str) -> tuple[dict[str, Any], str | None, str | None]:
+    store = get_strategy_store()
+    try:
+        digest = store.get_digest(dataset_id)
+        strategy_hash = store.strategy_hash(dataset_id)
+        return digest, strategy_hash, None
+    except StrategyNotFoundError:
+        return {"status": "missing"}, None, "No strategy layer configured for this dataset."
+    except StrategyValidationError:
+        return {"status": "invalid"}, None, "No strategy layer configured for this dataset."
+
+
+def _infer_strategy_pillars_used(message: str, strategy_digest: dict[str, Any]) -> list[str]:
+    normalized_message = _normalize_text(message)
+    pillars = strategy_digest.get("pillars", [])
+    if not isinstance(pillars, list):
+        return []
+
+    used: list[str] = []
+    for item in pillars:
+        if not isinstance(item, dict):
+            continue
+        pillar_id = item.get("id")
+        pillar_name = item.get("name")
+        if not isinstance(pillar_id, str) or not pillar_id.strip():
+            continue
+        if isinstance(pillar_name, str) and _normalize_text(pillar_name) in normalized_message:
+            used.append(pillar_id)
+            continue
+        if _normalize_text(pillar_id) in normalized_message:
+            used.append(pillar_id)
+    return used
+
+
+def _with_strategy_meta(
+    payload: dict[str, Any],
+    *,
+    strategy_hash: str | None,
+    strategy_pillars_used: list[str],
+) -> dict[str, Any]:
+    out = dict(payload)
+    meta = out.get("meta")
+    if not isinstance(meta, dict):
+        meta = {}
+    meta["strategy_hash"] = strategy_hash
+    if strategy_pillars_used:
+        meta["strategy_pillars_used"] = strategy_pillars_used
+    out["meta"] = meta
+    return out
+
+
+def _build_system_prompt(mode: ChatMode, *, strategy_digest: dict[str, Any], strategy_notice: str | None) -> str:
     mode_clause = {
         "auto": "Mode is auto. Choose chart, explain, clarify, or refuse based on user intent.",
         "chart": "Mode is chart. Return chart when possible; use clarify only if execution is blocked.",
         "explain": "Mode is explain. Return explain only.",
     }[mode]
+    strategy_section = json.dumps(strategy_digest, ensure_ascii=True)
+    strategy_notice_line = strategy_notice or "Strategy layer loaded."
     return (
         "You are ContinuumAI analytics assistant for one selected mart. "
         "You can request chart execution through the preview pipeline, so do not claim data is unavailable. "
@@ -737,8 +792,13 @@ def _build_system_prompt(mode: ChatMode) -> str:
         "Clarify only when ambiguity truly blocks execution. "
         "When clarifying, ask one short question and provide only stage-relevant options for metric, x_axis, or time_grain. "
         "If request is not expressible for this mart, return clarify with one-sentence mismatch guidance and 2-3 alternative questions using available fields. "
+        "Align recommendations and explanations with strategy north star and pillars when relevant. "
+        "Prefer KPI names from strategy; map business terms to closest KPI names when possible. "
+        "If a request conflicts with strategy decision rules, do not execute unsafe guidance directly; return explain or clarify with safer alternatives. "
         "Refuse only when the request is truly non-analytics. "
         "Do NOT repeatedly ask for the same missing info after the user has selected it. Converge within 1 clarify round whenever possible. "
+        f"STRATEGY LAYER (authoritative): {strategy_section}. "
+        f"Strategy status: {strategy_notice_line} "
         f"{mode_clause} "
         "Return JSON only as one object."
     )
@@ -835,6 +895,8 @@ def _generate_plan(
     message: str,
     mode: ChatMode,
     context: dict[str, Any],
+    strategy_digest: dict[str, Any],
+    strategy_notice: str | None,
     state: ChatState,
     history: list[ChatHistoryTurn] | None,
 ) -> ChatPlanUnion | None:
@@ -851,7 +913,7 @@ def _generate_plan(
     except OpenAIJSONError:
         return None
 
-    system_prompt = _build_system_prompt(mode)
+    system_prompt = _build_system_prompt(mode, strategy_digest=strategy_digest, strategy_notice=strategy_notice)
     user_prompt = _build_user_prompt(
         dataset_id=dataset_id,
         table=table,
@@ -1023,15 +1085,22 @@ def run_chat_orchestration(
     db: Session,
     debug: bool = False,
 ) -> dict[str, Any]:
+    strategy_digest, strategy_hash, strategy_notice = _load_strategy_runtime(dataset_id)
+    strategy_pillars_used = _infer_strategy_pillars_used(message, strategy_digest)
+
     if not table:
-        return ChatClarifyResponse(
-            response_type="clarify",
-            clarify_id=create_clarify_id(),
-            question="Select a mart to proceed.",
-            missing=["table"],
-            options=ClarifyOptions(),
-            meta={},
-        ).model_dump(mode="json")
+        return _with_strategy_meta(
+            ChatClarifyResponse(
+                response_type="clarify",
+                clarify_id=create_clarify_id(),
+                question="Select a mart to proceed.",
+                missing=["table"],
+                options=ClarifyOptions(),
+                meta={},
+            ).model_dump(mode="json"),
+            strategy_hash=strategy_hash,
+            strategy_pillars_used=strategy_pillars_used,
+        )
 
     parsed_state = _parse_state(state)
     context = build_compact_mart_context(dataset_id=dataset_id, table=table)
@@ -1056,23 +1125,31 @@ def run_chat_orchestration(
                     f"{chart_response.narrative} "
                     "Requested time grain noted; current execution groups by the raw temporal field."
                 )
-        return chart_response.model_dump(mode="json")
+        return _with_strategy_meta(
+            chart_response.model_dump(mode="json"),
+            strategy_hash=strategy_hash,
+            strategy_pillars_used=strategy_pillars_used,
+        )
     if isinstance(state_plan, ChatPlanClarify):
         stage = state_plan.missing[0] if state_plan.missing else "metric"
-        return ChatClarifyResponse(
-            response_type="clarify",
-            clarify_id=state_plan.clarify_id,
-            question=state_plan.question,
-            missing=[stage],
-            options=_sanitize_options(
-                state_plan.options,
-                context,
-                stage=stage,
-                prefer_temporal=_has_time_intent(intent_message),
-                requested_grain=_requested_time_grain(intent_message),
-            ),
-            meta={},
-        ).model_dump(mode="json")
+        return _with_strategy_meta(
+            ChatClarifyResponse(
+                response_type="clarify",
+                clarify_id=state_plan.clarify_id,
+                question=state_plan.question,
+                missing=[stage],
+                options=_sanitize_options(
+                    state_plan.options,
+                    context,
+                    stage=stage,
+                    prefer_temporal=_has_time_intent(intent_message),
+                    requested_grain=_requested_time_grain(intent_message),
+                ),
+                meta={},
+            ).model_dump(mode="json"),
+            strategy_hash=strategy_hash,
+            strategy_pillars_used=strategy_pillars_used,
+        )
 
     plan = _generate_plan(
         dataset_id=dataset_id,
@@ -1080,6 +1157,8 @@ def run_chat_orchestration(
         message=message,
         mode=mode,
         context=context,
+        strategy_digest=strategy_digest,
+        strategy_notice=strategy_notice,
         state=parsed_state,
         history=history,
     )
@@ -1099,27 +1178,39 @@ def run_chat_orchestration(
             style=plan.narrative_style,
             debug=debug,
         )
-        return chart_response.model_dump(mode="json")
+        return _with_strategy_meta(
+            chart_response.model_dump(mode="json"),
+            strategy_hash=strategy_hash,
+            strategy_pillars_used=strategy_pillars_used,
+        )
 
     if isinstance(plan, ChatPlanPatch):
         last_raw = parsed_state.last_chart_spec
         if not last_raw:
-            return _default_clarify(
-                "I need an existing chart first. What metric should we chart?",
-                context,
-                missing=["metric"],
-                intent_message=intent_message,
-            ).model_dump(mode="json")
+            return _with_strategy_meta(
+                _default_clarify(
+                    "I need an existing chart first. What metric should we chart?",
+                    context,
+                    missing=["metric"],
+                    intent_message=intent_message,
+                ).model_dump(mode="json"),
+                strategy_hash=strategy_hash,
+                strategy_pillars_used=strategy_pillars_used,
+            )
         try:
             base = last_raw if isinstance(last_raw, ChartSpecV1) else ChartSpecV1.model_validate(last_raw)
             patched = apply_patch(base, plan.patch)
         except (ValidationError, HTTPException):
-            return _default_clarify(
-                "I could not apply that update safely. Which metric should I use?",
-                context,
-                missing=["metric"],
-                intent_message=intent_message,
-            ).model_dump(mode="json")
+            return _with_strategy_meta(
+                _default_clarify(
+                    "I could not apply that update safely. Which metric should I use?",
+                    context,
+                    missing=["metric"],
+                    intent_message=intent_message,
+                ).model_dump(mode="json"),
+                strategy_hash=strategy_hash,
+                strategy_pillars_used=strategy_pillars_used,
+            )
 
         chart_response = _execute_chart(
             dataset_id=dataset_id,
@@ -1131,7 +1222,11 @@ def run_chat_orchestration(
             style=plan.narrative_style,
             debug=debug,
         )
-        return chart_response.model_dump(mode="json")
+        return _with_strategy_meta(
+            chart_response.model_dump(mode="json"),
+            strategy_hash=strategy_hash,
+            strategy_pillars_used=strategy_pillars_used,
+        )
 
     if isinstance(plan, ChatPlanExplain):
         if plan.optional_chart_spec:
@@ -1147,51 +1242,71 @@ def run_chat_orchestration(
             )
             if isinstance(chart_response, ChatChartResponse):
                 explain_message = f"{plan.message} {chart_response.narrative}"
-                return ChatExplainResponse(
-                    response_type="explain",
-                    message=explain_message.strip(),
-                    citations=["charts_preview"],
-                    meta={"from_chart_preview": True, "chart_spec": chart_response.chart_spec.model_dump(mode="json")},
-                ).model_dump(mode="json")
+                return _with_strategy_meta(
+                    ChatExplainResponse(
+                        response_type="explain",
+                        message=explain_message.strip(),
+                        citations=["charts_preview"],
+                        meta={"from_chart_preview": True, "chart_spec": chart_response.chart_spec.model_dump(mode="json")},
+                    ).model_dump(mode="json"),
+                    strategy_hash=strategy_hash,
+                    strategy_pillars_used=strategy_pillars_used,
+                )
 
         explain_message = plan.message.strip() or _context_explain_message(context=context, table=table, user_message=message)
-        return ChatExplainResponse(
-            response_type="explain",
-            message=explain_message,
-            citations=[f"profile:{table}"],
-            meta={},
-        ).model_dump(mode="json")
+        return _with_strategy_meta(
+            ChatExplainResponse(
+                response_type="explain",
+                message=explain_message,
+                citations=[f"profile:{table}"],
+                meta={},
+            ).model_dump(mode="json"),
+            strategy_hash=strategy_hash,
+            strategy_pillars_used=strategy_pillars_used,
+        )
 
     if isinstance(plan, ChatPlanClarify):
         stage = plan.missing[0] if plan.missing else "metric"
-        return ChatClarifyResponse(
-            response_type="clarify",
-            clarify_id=plan.clarify_id,
-            question=plan.question.strip() or _question_for_stage(stage),
-            missing=[stage],
-            options=_sanitize_options(
-                plan.options,
-                context,
-                stage=stage,
-                prefer_temporal=_has_time_intent(intent_message),
-                requested_grain=_requested_time_grain(intent_message),
-            ),
-            meta={},
-        ).model_dump(mode="json")
+        return _with_strategy_meta(
+            ChatClarifyResponse(
+                response_type="clarify",
+                clarify_id=plan.clarify_id,
+                question=plan.question.strip() or _question_for_stage(stage),
+                missing=[stage],
+                options=_sanitize_options(
+                    plan.options,
+                    context,
+                    stage=stage,
+                    prefer_temporal=_has_time_intent(intent_message),
+                    requested_grain=_requested_time_grain(intent_message),
+                ),
+                meta={},
+            ).model_dump(mode="json"),
+            strategy_hash=strategy_hash,
+            strategy_pillars_used=strategy_pillars_used,
+        )
 
     if isinstance(plan, ChatPlanRefuse):
-        return ChatRefuseResponse(
-            response_type="refuse",
-            message=plan.message.strip() or "I can only help with analytics for the selected mart.",
-            meta={},
-        ).model_dump(mode="json")
+        return _with_strategy_meta(
+            ChatRefuseResponse(
+                response_type="refuse",
+                message=plan.message.strip() or "I can only help with analytics for the selected mart.",
+                meta={},
+            ).model_dump(mode="json"),
+            strategy_hash=strategy_hash,
+            strategy_pillars_used=strategy_pillars_used,
+        )
 
-    return _default_clarify(
-        "Please rephrase your analytics request with a metric and grouping field.",
-        context,
-        missing=["metric"],
-        intent_message=intent_message,
-    ).model_dump(mode="json")
+    return _with_strategy_meta(
+        _default_clarify(
+            "Please rephrase your analytics request with a metric and grouping field.",
+            context,
+            missing=["metric"],
+            intent_message=intent_message,
+        ).model_dump(mode="json"),
+        strategy_hash=strategy_hash,
+        strategy_pillars_used=strategy_pillars_used,
+    )
 
 
 def response_chart_spec_hash(response_payload: dict[str, Any]) -> str | None:
