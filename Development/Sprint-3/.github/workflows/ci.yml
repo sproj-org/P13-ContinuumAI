@@ -12,7 +12,7 @@ name: CI-GHCR
 # ─────────────────────────────────────────────
 on:
   push:
-    branches: [main]        # Only runs when pushing to main branch
+    branches: [main, Sprint3_Final]  # Runs on main OR Sprint3_Final branch
     paths:                  # Only triggers if these folders change
       - code/**             # Backend or frontend code changes
       - .github/workflows/** # Workflow file changes
