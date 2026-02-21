@@ -1,0 +1,83 @@
+# ============================================
+# CI Workflow for ContinuumAI Sprint-3
+# ============================================
+# This workflow automatically builds Docker images 
+# and pushes them to GitHub Container Registry (GHCR)
+# whenever you push to the main or Sprint3_Final branch.
+
+name: CI-GHCR
+
+# ─────────────────────────────────────────────
+# TRIGGER: When does this workflow run?
+# ─────────────────────────────────────────────
+on:
+  push:
+    branches: [main, Sprint3_Final]  # Runs on main OR Sprint3_Final branch
+    paths:                           # Only triggers if these folders change
+      - Development/Sprint-3/code/** # Backend or frontend code changes
+      - .github/workflows/**         # Workflow file changes
+
+# ─────────────────────────────────────────────
+# PERMISSIONS: What can this workflow do?
+# ─────────────────────────────────────────────
+permissions:
+  contents: read     # Can read/checkout the code
+  packages: write    # Can push images to GHCR
+
+# ─────────────────────────────────────────────
+# ENVIRONMENT VARIABLES
+# ─────────────────────────────────────────────
+env:
+  # GHCR image naming: ghcr.io/YOUR_GITHUB_USERNAME/image-name
+  GHCR_IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}
+
+# ─────────────────────────────────────────────
+# JOBS: The actual work to be done
+# ─────────────────────────────────────────────
+jobs:
+  build:
+    runs-on: ubuntu-latest  # Uses a Linux machine provided by GitHub
+
+    steps:
+      # ───────────────────────────────────────
+      # Step 1: Checkout Code
+      # Downloads your repository code to the runner
+      # ───────────────────────────────────────
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # ───────────────────────────────────────
+      # Step 2: Setup Docker Buildx
+      # Enables advanced Docker build features
+      # ───────────────────────────────────────
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ───────────────────────────────────────
+      # Step 3: Login to GitHub Container Registry
+      # Uses the automatic GITHUB_TOKEN (no setup needed!)
+      # ───────────────────────────────────────
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      # ───────────────────────────────────────
+      # Step 4: Build & Push Backend Image
+      # Creates: ghcr.io/YOUR_USERNAME/backend:latest
+      # ───────────────────────────────────────
+      - name: Build & Push Backend
+        run: |
+          docker buildx build \
+            -t $GHCR_IMAGE_PREFIX/backend:${{ github.sha }} \
+            -t $GHCR_IMAGE_PREFIX/backend:latest \
+            --push Development/Sprint-3/code/backend
+
+      # ───────────────────────────────────────
+      # Step 5: Build & Push Frontend Image
+      # Creates: ghcr.io/YOUR_USERNAME/frontend:latest
+      # ───────────────────────────────────────
+      - name: Build & Push Frontend
+        run: |
+          docker buildx build \
+            -t $GHCR_IMAGE_PREFIX/frontend:${{ github.sha }} \
+            -t $GHCR_IMAGE_PREFIX/frontend:latest \
+            --push Development/Sprint-3/code/frontend
