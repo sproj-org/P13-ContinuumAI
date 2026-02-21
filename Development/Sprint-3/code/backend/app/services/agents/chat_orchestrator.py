@@ -776,6 +776,31 @@ def _with_strategy_meta(
     return out
 
 
+def _ensure_strategy_alignment_text(message: str, strategy_digest: dict[str, Any]) -> str:
+    north_star = strategy_digest.get("north_star", {})
+    north_star_name = north_star.get("name") if isinstance(north_star, dict) else None
+    if not isinstance(north_star_name, str) or not north_star_name.strip():
+        return message
+
+    normalized_message = _normalize_text(message)
+    if _normalize_text(north_star_name) in normalized_message:
+        return message
+
+    pillar_names: list[str] = []
+    pillars = strategy_digest.get("pillars", [])
+    if isinstance(pillars, list):
+        for item in pillars:
+            if isinstance(item, dict) and isinstance(item.get("name"), str) and item["name"].strip():
+                pillar_names.append(item["name"])
+            if len(pillar_names) >= 3:
+                break
+
+    suffix = f" Strategy north star: {north_star_name}."
+    if pillar_names:
+        suffix += f" Supporting pillars: {', '.join(pillar_names)}."
+    return f"{message.rstrip()} {suffix}".strip()
+
+
 def _build_system_prompt(mode: ChatMode, *, strategy_digest: dict[str, Any], strategy_notice: str | None) -> str:
     mode_clause = {
         "auto": "Mode is auto. Choose chart, explain, clarify, or refuse based on user intent.",
@@ -1241,7 +1266,10 @@ def run_chat_orchestration(
                 debug=debug,
             )
             if isinstance(chart_response, ChatChartResponse):
-                explain_message = f"{plan.message} {chart_response.narrative}"
+                explain_message = _ensure_strategy_alignment_text(
+                    f"{plan.message} {chart_response.narrative}",
+                    strategy_digest,
+                )
                 return _with_strategy_meta(
                     ChatExplainResponse(
                         response_type="explain",
@@ -1254,6 +1282,7 @@ def run_chat_orchestration(
                 )
 
         explain_message = plan.message.strip() or _context_explain_message(context=context, table=table, user_message=message)
+        explain_message = _ensure_strategy_alignment_text(explain_message, strategy_digest)
         return _with_strategy_meta(
             ChatExplainResponse(
                 response_type="explain",
