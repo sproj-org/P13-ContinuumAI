@@ -2,7 +2,9 @@ go to Sprint-3/code and run these in 2 diff terminals to build the image for eac
 
 docker build -t backend-test ./backend
 
-docker build --build-arg NEXT_PUBLIC_API_URL=http://localhost:8000 -t frontend-test ./frontend
+(this will cause routing mismatch, use the one below) docker build --build-arg NEXT_PUBLIC_API_URL=http://localhost:8000 -t frontend-test ./frontend
+
+(use this) docker build --build-arg NEXT_PUBLIC_API_URL=http://localhost:8000/api -t frontend-test ./frontend
 
 Now to run each in diff terminals do this :
 In this folder Sprint-3/code you must have .env available so u can supply it to backend when u run the backend image like this:

@@ -1,0 +1,46 @@
+name: CI-GHCR
+
+on:     # Specifies events that trigger the workflow.
+  push:
+    branches: [ main ]
+    paths:    # Only triggers if changes occur in specific paths
+      - apps/**
+      - .github/workflows/**
+
+permissions:
+  contents: read       # allows workflow to checkout code
+  packages: write      # allows pushing images to GHCR
+
+env:    # Sets environment variables that can be used in the workflow steps. In GitHub Actions, there’s a built-in context called github
+  GHCR_IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }} 
+
+jobs:   # Defines the jobs that run in this workflow.
+  build:
+    runs-on: ubuntu-latest
+
+    steps:   # Steps define actions to perform in the job, executed sequentially.
+      # 1️⃣ Checkout repository
+      - uses: actions/checkout@v4 # Checks out the repository code to the runner.
+
+      # 2️⃣ Sets up Docker Buildx, which allows building multi-platform Docker images.
+      - uses: docker/setup-buildx-action@v3
+
+      # 3️⃣ Login to GHCR. No need to manually create a secret; GitHub provides GITHUB_TOKEN automatically for workflows.
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      # 4️⃣ Build & Push Backend
+      - name: Build & Push Backend
+        run: |
+          docker buildx build \
+            -t $GHCR_IMAGE_PREFIX/backend:${{ github.sha }} \
+            -t $GHCR_IMAGE_PREFIX/backend:latest \
+            --push apps/backend     # pushes image directly to GHCR. apps/backend is the path to the docker file
+
+      # 5️⃣ Build & Push Frontend
+      - name: Build & Push Frontend
+        run: |
+          docker buildx build \
+            -t $GHCR_IMAGE_PREFIX/frontend:${{ github.sha }} \
+            -t $GHCR_IMAGE_PREFIX/frontend:latest \
+            --push apps/frontend
