@@ -42,9 +42,12 @@ jobs:
     steps:
       # ───────────────────────────────────────
       # Step 1: Checkout Repository
+      # Checkout the branch that triggered the CI workflow
       # ───────────────────────────────────────
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_branch }}
 
       # ───────────────────────────────────────
       # Step 2: Install OCI CLI
