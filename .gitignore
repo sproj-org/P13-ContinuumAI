@@ -22,6 +22,7 @@ wheels/
 *.egg
 MANIFEST
 
+
 # PyInstaller
 #  Usually these files are written by a script go in a specific directory.
 #  Still, sometimes they are created in the root directory.
