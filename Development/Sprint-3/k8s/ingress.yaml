@@ -3,12 +3,10 @@ kind: Ingress  # This YAML defines an Ingress, which manages external HTTP/HTTPS
 metadata:
   name: continuum-ingress
   namespace: continuum-app   # Only services in the same namespace can be targeted by this Ingress.
-  annotations:
-    kubernetes.io/ingress.class: nginx   #Tells Kubernetes to use the NGINX Ingress Controller to handle this Ingress.
 spec:      # Defines the desired behavior of the Ingress.
+  ingressClassName: nginx   # Tells Kubernetes to use the NGINX Ingress Controller
   rules:   # This section defines routing rules for incoming requests. Each rule can match a host and paths inside that host.
-    - host: 
-      http:
+    - http:
         paths:
           - path: /api
             pathType: Prefix

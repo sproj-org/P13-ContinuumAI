@@ -161,6 +161,9 @@ jobs:
             --for=condition=ready pod \
             --selector=app.kubernetes.io/component=controller \
             --timeout=180s
+          # Wait for LoadBalancer IP to be assigned
+          echo "Waiting for Ingress Controller LoadBalancer IP..."
+          sleep 30
 
       # ───────────────────────────────────────
       # Step 12: Apply Ingress Rules
@@ -179,5 +182,13 @@ jobs:
           kubectl get pods -n continuum-app
           echo "=== Services ==="
           kubectl get svc -n continuum-app
+          echo ""
+          echo "============================================"
+          echo "=== INGRESS CONTROLLER EXTERNAL IP ==="
+          echo "============================================"
+          kubectl get svc ingress-nginx-controller -n ingress-nginx
+          echo ""
+          echo "Use the EXTERNAL-IP from ingress-nginx-controller above to access your app!"
+          echo "Example: http://EXTERNAL-IP"
           echo "=== Ingress ==="
           kubectl get ingress -n continuum-app
