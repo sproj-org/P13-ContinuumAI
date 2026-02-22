@@ -74,10 +74,12 @@ jobs:
       # ───────────────────────────────────────
       # Step 5: Build & Push Frontend Image
       # Creates: ghcr.io/YOUR_USERNAME/frontend:latest
+      # Pass API URL as build arg for Next.js
       # ───────────────────────────────────────
       - name: Build & Push Frontend
         run: |
           docker buildx build \
+            --build-arg NEXT_PUBLIC_API_URL=/api \
             -t $GHCR_IMAGE_PREFIX/frontend:${{ github.sha }} \
             -t $GHCR_IMAGE_PREFIX/frontend:latest \
             --push Development/Sprint-3/code/frontend
