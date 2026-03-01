@@ -31,9 +31,9 @@ const roleIcons: Record<ColumnRole, React.ReactNode> = {
 };
 
 const roleColors: Record<ColumnRole, { bg: string; text: string; border: string }> = {
-  dimension: { bg: "bg-blue-500/20", text: "text-blue-400", border: "border-blue-500/30" },
-  measure: { bg: "bg-emerald-500/20", text: "text-emerald-400", border: "border-emerald-500/30" },
-  temporal: { bg: "bg-amber-500/20", text: "text-amber-400", border: "border-amber-500/30" },
+  dimension: { bg: "bg-blue-100", text: "text-blue-700", border: "border-blue-300" },
+  measure: { bg: "bg-emerald-100", text: "text-emerald-700", border: "border-emerald-300" },
+  temporal: { bg: "bg-amber-100", text: "text-amber-700", border: "border-amber-300" },
 };
 
 function getNullColor(percentage: number) {
@@ -44,9 +44,9 @@ function getNullColor(percentage: number) {
 
 function DimensionDetails({ column }: { column: TransformedColumnProfile }) {
   const cardinalityColors = {
-    low: "bg-emerald-500/20 text-emerald-400",
-    medium: "bg-amber-500/20 text-amber-400",
-    high: "bg-red-500/20 text-red-400",
+    low: "bg-emerald-100 text-emerald-700",
+    medium: "bg-amber-100 text-amber-700",
+    high: "bg-red-100 text-red-700",
   };
 
   return (
@@ -54,7 +54,7 @@ function DimensionDetails({ column }: { column: TransformedColumnProfile }) {
       {/* Cardinality */}
       {column.cardinality && (
         <div className="flex items-center gap-4">
-          <span className="text-gray-400 text-sm">Cardinality:</span>
+          <span className="text-slate-600 text-sm">Cardinality:</span>
           <span className={`px-3 py-1 rounded-full text-sm font-medium capitalize ${cardinalityColors[column.cardinality]}`}>
             {column.cardinality}
           </span>
@@ -64,7 +64,7 @@ function DimensionDetails({ column }: { column: TransformedColumnProfile }) {
       {/* Top Values */}
       {column.topValues && column.topValues.length > 0 && (
         <div>
-          <h4 className="text-sm font-medium text-gray-400 mb-3">Top Values</h4>
+          <h4 className="text-sm font-medium text-slate-700 mb-3">Top Values</h4>
           <div className="space-y-2">
             {column.topValues.map((item, index) => {
               const maxPercent = column.topValues[0].percent;
@@ -72,15 +72,15 @@ function DimensionDetails({ column }: { column: TransformedColumnProfile }) {
               return (
                 <div key={index} className="relative">
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-300">{item.value}</span>
-                    <span className="text-gray-400">{item.count.toLocaleString()}</span>
+                    <span className="text-slate-900">{item.value}</span>
+                    <span className="text-slate-600">{item.count.toLocaleString()}</span>
                   </div>
-                  <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${percentage}%` }}
                       transition={{ duration: 0.5, delay: index * 0.1 }}
-                      className="h-full bg-blue-500 rounded-full"
+                      className="h-full bg-blue-600 rounded-full"
                     />
                   </div>
                 </div>
@@ -136,9 +136,9 @@ function MeasureDetails({ column }: { column: TransformedColumnProfile }) {
           { label: "Mean", value: column.mean },
           { label: "Median", value: column.median },
         ].map((stat) => (
-          <div key={stat.label} className="bg-white/5 rounded-xl p-4 text-center">
-            <div className="text-gray-400 text-xs mb-1">{stat.label}</div>
-            <div className="text-white font-semibold">
+          <div key={stat.label} className="bg-white border border-slate-200 rounded-xl p-4 text-center shadow-sm">
+            <div className="text-slate-600 text-xs mb-1">{stat.label}</div>
+            <div className="text-slate-900 font-semibold">
               {stat.value !== null && stat.value !== undefined ? stat.value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : "N/A"}
             </div>
           </div>
@@ -168,28 +168,28 @@ function TemporalDetails({ column }: { column: TransformedColumnProfile }) {
     <div className="space-y-6">
       {/* Time Range */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white/5 rounded-xl p-4">
-          <div className="text-gray-400 text-xs mb-1">Start Date</div>
-          <div className="text-white font-medium">{column.minDate || "N/A"}</div>
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+          <div className="text-slate-600 text-xs mb-1">Start Date</div>
+          <div className="text-slate-900 font-medium">{column.minDate || "N/A"}</div>
         </div>
-        <div className="bg-white/5 rounded-xl p-4">
-          <div className="text-gray-400 text-xs mb-1">End Date</div>
-          <div className="text-white font-medium">{column.maxDate || "N/A"}</div>
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+          <div className="text-slate-600 text-xs mb-1">End Date</div>
+          <div className="text-slate-900 font-medium">{column.maxDate || "N/A"}</div>
         </div>
-        <div className="bg-white/5 rounded-xl p-4">
-          <div className="text-gray-400 text-xs mb-1">Distinct Days</div>
-          <div className="text-amber-400 font-medium">{column.distinctDays?.toLocaleString() || "N/A"}</div>
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+          <div className="text-slate-600 text-xs mb-1">Distinct Days</div>
+          <div className="text-amber-600 font-medium">{column.distinctDays?.toLocaleString() || "N/A"}</div>
         </div>
       </div>
 
       {/* Suggested Charts */}
       <div>
-        <h4 className="text-sm font-medium text-gray-400 mb-3">Suggested Visualizations</h4>
+        <h4 className="text-sm font-medium text-slate-700 mb-3">Suggested Visualizations</h4>
         <div className="flex gap-2">
-          <span className="px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-400 text-sm font-medium">
+          <span className="px-3 py-1.5 bg-amber-100 border border-amber-300 rounded-lg text-amber-700 text-sm font-medium">
             Line Chart (Trend)
           </span>
-          <span className="px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-400 text-sm font-medium">
+          <span className="px-3 py-1.5 bg-amber-100 border border-amber-300 rounded-lg text-amber-700 text-sm font-medium">
             Area Chart (Volume)
           </span>
         </div>
@@ -237,18 +237,18 @@ export default function ColumnProfilingTab() {
   };
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full bg-gradient-to-br from-slate-50 to-indigo-50/30">
       {/* Left Panel - Table & Column Selector */}
-      <div className="w-72 border-r border-white/10 bg-[#060010]/50 overflow-y-auto">
+      <div className="w-72 border-r border-indigo-200/50 bg-white/80 backdrop-blur-sm overflow-y-auto">
         {/* Table Selector */}
-        <div className="p-4 border-b border-white/10">
-          <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
+        <div className="p-4 border-b border-indigo-200/50">
+          <h3 className="text-sm font-medium text-indigo-900 uppercase tracking-wider mb-3">
             Table
           </h3>
           <select
             value={selectedAggregation || ""}
             onChange={(e) => setSelectedAggregation(e.target.value || null)}
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#5237ff]/50"
+            className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/50 shadow-sm"
           >
             <option value="">Select a table</option>
             {availableMarts.map((table) => (
@@ -261,15 +261,15 @@ export default function ColumnProfilingTab() {
 
         {/* Column List */}
         <div className="p-4">
-          <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
+          <h3 className="text-sm font-medium text-indigo-900 uppercase tracking-wider mb-3">
             Columns
           </h3>
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 text-[#5237ff] animate-spin" />
+              <Loader2 className="w-6 h-6 text-[#4F46E5] animate-spin" />
             </div>
           ) : error ? (
-            <div className="text-red-400 text-sm">Failed to load columns</div>
+            <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg border border-red-200">Failed to load columns</div>
           ) : transformedColumns.length > 0 ? (
             <div className="space-y-1">
               {transformedColumns.map((col) => {
@@ -280,30 +280,30 @@ export default function ColumnProfilingTab() {
                     onClick={() => setSelectedColumn(col.name)}
                     className={`w-full text-left p-2.5 rounded-lg transition-all flex items-center gap-2 ${
                       selectedColumn === col.name
-                        ? "bg-[#5237ff]/20 border border-[#5237ff]/30"
-                        : "hover:bg-white/5"
+                        ? "bg-indigo-100 border border-indigo-300 shadow-sm"
+                        : "hover:bg-slate-100 border border-transparent"
                     }`}
                   >
                     <div className={`p-1 rounded ${roleStyle.bg} ${roleStyle.text}`}>
                       {roleIcons[col.role]}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className={`text-sm font-medium truncate ${selectedColumn === col.name ? "text-white" : "text-gray-300"}`}>
+                      <div className={`text-sm font-medium truncate ${selectedColumn === col.name ? "text-indigo-900" : "text-slate-700"}`}>
                         {col.name}
                       </div>
-                      <div className="text-xs text-gray-500">{col.dataType}</div>
+                      <div className="text-xs text-slate-500">{col.dataType}</div>
                     </div>
                     {col.nullPercentage > 0 && (
-                      <span className="text-xs text-gray-500">{col.nullPercentage.toFixed(1)}%</span>
+                      <span className="text-xs text-slate-500">{col.nullPercentage.toFixed(1)}%</span>
                     )}
                   </button>
                 );
               })}
             </div>
           ) : selectedAggregation ? (
-            <p className="text-gray-500 text-sm">No columns found</p>
+            <p className="text-slate-500 text-sm">No columns found</p>
           ) : (
-            <p className="text-gray-500 text-sm">Select a table first</p>
+            <p className="text-slate-500 text-sm">Select a table first</p>
           )}
         </div>
       </div>
@@ -313,9 +313,9 @@ export default function ColumnProfilingTab() {
         {!selectedColumn || !columnProfile ? (
           <div className="h-full flex items-center justify-center">
             <div className="text-center">
-              <Columns3 className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-              <h3 className="text-xl font-medium text-gray-400 mb-2">Select a Column</h3>
-              <p className="text-gray-500">Choose a column from the left panel to view its profile</p>
+              <Columns3 className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+              <h3 className="text-xl font-medium text-slate-600 mb-2">Select a Column</h3>
+              <p className="text-slate-500">Choose a column from the left panel to view its profile</p>
             </div>
           </div>
         ) : (
@@ -333,12 +333,12 @@ export default function ColumnProfilingTab() {
                   {roleIcons[columnProfile.role]}
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-white">{columnProfile.name}</h2>
+                  <h2 className="text-2xl font-bold text-slate-900">{columnProfile.name}</h2>
                   <div className="flex items-center gap-3 mt-1">
                     <span className={`px-2 py-0.5 rounded text-xs font-medium capitalize ${roleColors[columnProfile.role].bg} ${roleColors[columnProfile.role].text}`}>
                       {columnProfile.role}
                     </span>
-                    <span className="text-gray-400 text-sm flex items-center gap-1">
+                    <span className="text-slate-600 text-sm flex items-center gap-1">
                       <Type className="w-3 h-3" />
                       {columnProfile.dataType}
                     </span>
@@ -349,11 +349,11 @@ export default function ColumnProfilingTab() {
 
             {/* Stats Cards */}
             <div className="grid grid-cols-3 gap-4">
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                <div className="text-gray-400 text-sm mb-1">Null %</div>
+              <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                <div className="text-slate-600 text-sm mb-1">Null %</div>
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl font-bold text-white">{columnProfile.nullPercentage.toFixed(1)}%</span>
-                  <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+                  <span className="text-2xl font-bold text-slate-900">{columnProfile.nullPercentage.toFixed(1)}%</span>
+                  <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full ${getNullColor(columnProfile.nullPercentage)}`}
                       style={{ width: `${Math.min(columnProfile.nullPercentage, 100)}%` }}
@@ -362,16 +362,16 @@ export default function ColumnProfilingTab() {
                 </div>
               </div>
 
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                <div className="text-gray-400 text-sm mb-1">Unique Values</div>
-                <div className="text-2xl font-bold text-white">
+              <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                <div className="text-slate-600 text-sm mb-1">Unique Values</div>
+                <div className="text-2xl font-bold text-slate-900">
                   {columnProfile.uniqueCount.toLocaleString()}
                 </div>
               </div>
 
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                <div className="text-gray-400 text-sm mb-1">Total Count</div>
-                <div className="text-2xl font-bold text-white">
+              <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                <div className="text-slate-600 text-sm mb-1">Total Count</div>
+                <div className="text-2xl font-bold text-slate-900">
                   {columnProfile.totalCount.toLocaleString()}
                 </div>
               </div>

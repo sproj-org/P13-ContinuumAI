@@ -10,7 +10,7 @@ export default function Home() {
   const { isAuthenticated, isLoading } = useAuth();
 
   return (
-    <div className="h-screen w-screen overflow-hidden flex flex-col items-center justify-center bg-[#060010]">
+    <div className="h-screen w-screen overflow-hidden flex flex-col items-center justify-center bg-white">
       {/* Custom Cursor */}
       <TargetCursor
         spinDuration={2}
@@ -26,13 +26,13 @@ export default function Home() {
           patternScaleX={1}
           patternScaleY={1}
           patternRefreshInterval={2}
-          patternAlpha={15}
+          patternAlpha={8}
         />
       </div>
 
       <main className="relative z-10 text-center flex flex-col items-center justify-center gap-6">
         {/* App Name */}
-        <h1 className="text-5xl md:text-6xl lg:text-7xl font-normal text-white tracking-wide font-[family-name:var(--font-special-gothic)]">
+        <h1 className="text-5xl md:text-6xl lg:text-7xl font-normal text-slate-900 tracking-wide font-[family-name:var(--font-special-gothic)]">
           ContinuumAi
         </h1>
 
@@ -47,18 +47,18 @@ export default function Home() {
             cursorCharacter="_"
             cursorBlinkDuration={0.5}
             loop={true}
-            className="text-xl md:text-2xl text-gray-400 font-light"
-            cursorClassName="text-[#5237ff]"
+            className="text-xl md:text-2xl text-slate-600 font-light"
+            cursorClassName="text-[#4F46E5]"
           />
         </div>
 
         {/* Buttons */}
         {isLoading ? (
-          <div className="text-gray-500 mt-8">Loading...</div>
+          <div className="text-slate-500 mt-8">Loading...</div>
         ) : isAuthenticated ? (
           <Link
             href="/dashboard"
-            className="cursor-target mt-8 px-8 py-3 bg-[#5237ff] text-white font-medium rounded-lg hover:bg-[#6347ff] transition-colors"
+            className="cursor-target mt-8 px-8 py-3 bg-[#4F46E5] text-white font-medium rounded-lg hover:bg-[#6366F1] transition-colors shadow-lg"
           >
             Go to Dashboard
           </Link>
@@ -66,13 +66,13 @@ export default function Home() {
           <div className="flex gap-6 mt-8">
             <Link
               href="/login"
-              className="cursor-target px-8 py-3 bg-[#5237ff] text-white font-medium rounded-lg hover:bg-[#6347ff] transition-colors"
+              className="cursor-target px-8 py-3 bg-[#4F46E5] text-white font-medium rounded-lg hover:bg-[#6366F1] transition-colors shadow-lg"
             >
               Login
             </Link>
             <Link
               href="/signup"
-              className="cursor-target px-8 py-3 border border-[#5237ff] text-[#5237ff] font-medium rounded-lg hover:bg-[#5237ff]/10 transition-colors"
+              className="cursor-target px-8 py-3 border-2 border-[#4F46E5] text-[#4F46E5] font-medium rounded-lg hover:bg-[#4F46E5]/10 transition-colors"
             >
               Sign Up
             </Link>
