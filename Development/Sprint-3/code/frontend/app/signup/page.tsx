@@ -95,7 +95,7 @@ export default function SignupPage() {
 
       <div className="relative z-10 w-full max-w-md px-4">
         <ElectricBorder
-          color="#4F46E5"
+          color="#06B6D4"
           speed={1}
           chaos={0.08}
           borderRadius={16}
@@ -109,7 +109,7 @@ export default function SignupPage() {
                 Already have an account?{" "}
                 <Link
                   href="/login"
-                  className="cursor-target font-medium text-[#4F46E5] hover:text-[#6366F1] transition-colors"
+                  className="cursor-target font-medium text-cyan-600 hover:text-cyan-700 transition-colors"
                 >
                   Login
                 </Link>
@@ -139,7 +139,7 @@ export default function SignupPage() {
                     required
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="mt-1 block w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent transition-all"
+                    className="mt-1 block w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                     placeholder="johndoe"
                   />
                 </div>
@@ -159,7 +159,7 @@ export default function SignupPage() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="mt-1 block w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent transition-all"
+                    className="mt-1 block w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                     placeholder="you@example.com"
                   />
                 </div>
@@ -179,7 +179,7 @@ export default function SignupPage() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="mt-1 block w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent transition-all"
+                    className="mt-1 block w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                     placeholder="••••••••"
                   />
                   <p className="mt-1 text-xs text-slate-500">
@@ -202,7 +202,7 @@ export default function SignupPage() {
                     required
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="mt-1 block w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent transition-all"
+                    className="mt-1 block w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                     placeholder="••••••••"
                   />
                 </div>
@@ -211,7 +211,7 @@ export default function SignupPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="cursor-target w-full py-3 px-4 rounded-lg text-sm font-medium text-white bg-[#4F46E5] hover:bg-[#6366F1] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-[#4F46E5] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg"
+                className="cursor-target w-full py-3 px-4 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg"
               >
                 {isSubmitting ? "Creating account..." : "Create Account"}
               </button>

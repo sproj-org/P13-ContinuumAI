@@ -61,12 +61,12 @@ export default function DashboardTab() {
   };
 
   return (
-    <div className="h-full bg-gradient-to-br from-white via-indigo-50/20 to-violet-50/30 overflow-y-auto">
+    <div className="h-full bg-gradient-to-br from-slate-50 via-cyan-50/20 to-emerald-50/20 overflow-y-auto">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b border-indigo-200/50 px-6 py-4 shadow-sm">
+      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b border-cyan-200/50 px-6 py-4 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center shadow-lg">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-emerald-500 flex items-center justify-center shadow-lg">
               <LayoutGrid className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -92,16 +92,16 @@ export default function DashboardTab() {
       <div className="p-6">
         {savedCharts.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)]">
-            <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center mb-6">
-              <LayoutGrid className="w-12 h-12 text-indigo-600" />
+            <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-cyan-100 to-emerald-100 flex items-center justify-center mb-6">
+              <LayoutGrid className="w-12 h-12 text-cyan-600" />
             </div>
             <h2 className="text-2xl font-bold text-slate-900 mb-2">No Charts Saved Yet</h2>
             <p className="text-slate-600 text-center max-w-md mb-6">
               Start chatting with Numi or experiment with the Chart Builder to create charts, then save them here for easy access and analysis.
             </p>
-            <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 max-w-md">
-              <p className="text-sm text-indigo-900 font-medium mb-2">💡 Quick Tip</p>
-              <p className="text-sm text-indigo-700">
+            <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-4 max-w-md">
+              <p className="text-sm text-cyan-900 font-medium mb-2">💡 Quick Tip</p>
+              <p className="text-sm text-cyan-700">
                 Click the "Ask Numi" button and request a chart like "Show revenue by month" or
                 "Sales by store". Once Numi generates it, you can save it to this dashboard!
               </p>
@@ -112,10 +112,10 @@ export default function DashboardTab() {
             {savedCharts.map((chart) => (
               <div
                 key={chart.id}
-                className="group bg-white rounded-2xl border border-slate-200/80 shadow-md hover:shadow-xl hover:border-indigo-200 transition-all duration-300 overflow-hidden"
+                className="group bg-white rounded-2xl border border-slate-200/80 shadow-md hover:shadow-xl hover:border-cyan-200 transition-all duration-300 overflow-hidden"
               >
                 {/* Chart Header */}
-                <div className="p-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-indigo-50/30">
+                <div className="p-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-cyan-50/30">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       {editingChartId === chart.id ? (
@@ -132,7 +132,7 @@ export default function DashboardTab() {
                             }
                           }}
                           autoFocus
-                          className="w-full font-semibold text-slate-900 mb-1 px-2 py-1 border border-indigo-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          className="w-full font-semibold text-slate-900 mb-1 px-2 py-1 border border-cyan-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
                         />
                       ) : (
                         <div className="flex items-center gap-2 mb-1">
@@ -141,7 +141,7 @@ export default function DashboardTab() {
                           </h3>
                           <button
                             onClick={() => handleStartEdit(chart.id, chart.title)}
-                            className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="p-1 text-slate-400 hover:text-cyan-600 hover:bg-cyan-50 rounded opacity-0 group-hover:opacity-100 transition-opacity"
                             title="Edit title"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
@@ -177,13 +177,13 @@ export default function DashboardTab() {
                 </div>
 
                 {/* Chart Footer */}
-                <div className="px-4 py-3 bg-gradient-to-r from-slate-50 to-indigo-50/30 border-t border-slate-200">
+                <div className="px-4 py-3 bg-gradient-to-r from-slate-50 to-cyan-50/30 border-t border-slate-200">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-3 text-xs">
                       <span className="text-slate-600">
                         {chart.rows.length} data {chart.rows.length === 1 ? "point" : "points"}
                       </span>
-                      <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded-full font-medium">
+                      <span className="px-2 py-1 bg-cyan-100 text-cyan-700 rounded-full font-medium">
                         {chart.chartSpec.chart.type}
                       </span>
                     </div>
@@ -198,7 +198,7 @@ export default function DashboardTab() {
                       </button>
                       <button
                         onClick={() => handleOpenInChartBuilder(chart)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg border border-indigo-200 transition-colors"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-cyan-600 hover:text-cyan-700 hover:bg-cyan-50 rounded-lg border border-cyan-200 transition-colors"
                         title="Open in Chart Builder"
                       >
                         <Wrench className="w-3.5 h-3.5" />
@@ -282,7 +282,7 @@ export default function DashboardTab() {
                       setPreviewChart(null);
                       handleOpenInChartBuilder(previewChart);
                     }}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg border border-indigo-200 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-cyan-600 hover:text-cyan-700 hover:bg-cyan-50 rounded-lg border border-cyan-200 transition-colors"
                   >
                     <Wrench className="w-4 h-4" />
                     Edit in Chart Builder
