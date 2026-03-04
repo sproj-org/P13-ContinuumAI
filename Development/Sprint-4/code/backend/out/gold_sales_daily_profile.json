@@ -1,0 +1,1157 @@
+{
+  "dataset_name": "gold_sales_daily",
+  "schema_name": "gold",
+  "table_name": "gold_sales_daily",
+  "row_count": 2461,
+  "column_count": 15,
+  "profiled_at": "2026-02-17T14:42:34.528826Z",
+  "columns": [
+    {
+      "name": "sales_date",
+      "physical_type": "datetime",
+      "logical_type": "datetime",
+      "base_role": "datetime",
+      "effective_role": "datetime",
+      "row_count": 2461,
+      "distinct_count": 365,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "medium",
+      "sample_values": [
+        "2025-01-01T00:00:00",
+        "2025-01-02T00:00:00",
+        "2025-01-03T00:00:00",
+        "2025-01-04T00:00:00",
+        "2025-01-05T00:00:00"
+      ],
+      "stats": {
+        "kind": "datetime",
+        "null_count": 0,
+        "min": "2025-01-01T00:00:00",
+        "max": "2025-12-31T00:00:00",
+        "distinct_days": 365
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "channel_type",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "effective_role": "dimension",
+      "row_count": 2461,
+      "distinct_count": 2,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "online",
+        "store"
+      ],
+      "stats": {
+        "kind": "categorical",
+        "null_count": 0,
+        "distinct_count": 2,
+        "top_k": [
+          {
+            "value": "store",
+            "count": 2096,
+            "percent": 0.8516863063795205
+          },
+          {
+            "value": "online",
+            "count": 365,
+            "percent": 0.14831369362047947
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "store_id",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "id",
+      "effective_role": "id",
+      "row_count": 2461,
+      "distinct_count": 7,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "ONLINE",
+        "S001",
+        "S002",
+        "S003",
+        "S004"
+      ],
+      "stats": {
+        "kind": "categorical",
+        "null_count": 0,
+        "distinct_count": 7,
+        "top_k": []
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "city",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "effective_role": "dimension",
+      "row_count": 2461,
+      "distinct_count": 3,
+      "null_count": 365,
+      "null_fraction": 0.14831369362047947,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "Karachi",
+        "Lahore",
+        "Islamabad"
+      ],
+      "stats": {
+        "kind": "categorical",
+        "null_count": 365,
+        "distinct_count": 3,
+        "top_k": [
+          {
+            "value": "Karachi",
+            "count": 719,
+            "percent": 0.34303435114503816
+          },
+          {
+            "value": "Islamabad",
+            "count": 691,
+            "percent": 0.32967557251908397
+          },
+          {
+            "value": "Lahore",
+            "count": 686,
+            "percent": 0.32729007633587787
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "region",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "effective_role": "dimension",
+      "row_count": 2461,
+      "distinct_count": 3,
+      "null_count": 365,
+      "null_fraction": 0.14831369362047947,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "Sindh",
+        "Punjab",
+        "ICT"
+      ],
+      "stats": {
+        "kind": "categorical",
+        "null_count": 365,
+        "distinct_count": 3,
+        "top_k": [
+          {
+            "value": "Sindh",
+            "count": 719,
+            "percent": 0.34303435114503816
+          },
+          {
+            "value": "ICT",
+            "count": 691,
+            "percent": 0.32967557251908397
+          },
+          {
+            "value": "Punjab",
+            "count": 686,
+            "percent": 0.32729007633587787
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "store_type",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "effective_role": "dimension",
+      "row_count": 2461,
+      "distinct_count": 3,
+      "null_count": 365,
+      "null_fraction": 0.14831369362047947,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "flagship",
+        "mall",
+        "high_street"
+      ],
+      "stats": {
+        "kind": "categorical",
+        "null_count": 365,
+        "distinct_count": 3,
+        "top_k": [
+          {
+            "value": "mall",
+            "count": 1021,
+            "percent": 0.48711832061068705
+          },
+          {
+            "value": "flagship",
+            "count": 719,
+            "percent": 0.34303435114503816
+          },
+          {
+            "value": "high_street",
+            "count": 356,
+            "percent": 0.16984732824427481
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "orders",
+      "physical_type": "int",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 2461,
+      "distinct_count": 22,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "3",
+        "4",
+        "2",
+        "6",
+        "7"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 1.0,
+        "max": 23.0,
+        "mean": 4.6330759853718,
+        "stddev": 3.346984300598304,
+        "p05": 1.0,
+        "p50": 4.0,
+        "p95": 12.0,
+        "zero_count": 0
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "units",
+      "physical_type": "int",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 2461,
+      "distinct_count": 61,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "12",
+        "16",
+        "5",
+        "10",
+        "17"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 1.0,
+        "max": 69.0,
+        "mean": 12.76757415684681,
+        "stddev": 9.585071650425318,
+        "p05": 2.0,
+        "p50": 10.0,
+        "p95": 31.0,
+        "zero_count": 0
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "gross_sales",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 2461,
+      "distinct_count": 2461,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "83629.05",
+        "348665.77",
+        "75393.16",
+        "650193.46",
+        "346738.47"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 1481.49,
+        "max": 2436003.82,
+        "mean": 328400.238772857,
+        "stddev": 327799.069368079,
+        "p05": 15635.41,
+        "p50": 251384.63,
+        "p95": 978789.59,
+        "zero_count": 0
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "discount_amount",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 2461,
+      "distinct_count": 2384,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "3240.990246",
+        "4306.934368",
+        "4.31607",
+        "2921.195574",
+        "24502.911784"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 0.0,
+        "max": 175923.344191,
+        "mean": 14856.8649980232,
+        "stddev": 20669.3985545373,
+        "p05": 33.751811,
+        "p50": 6205.636056,
+        "p95": 56916.932261,
+        "zero_count": 78
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "net_sales",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 2461,
+      "distinct_count": 2461,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "80388.24",
+        "344356.53",
+        "75389.11",
+        "647271.55",
+        "322247.63"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 1481.49,
+        "max": 2316994.04,
+        "mean": 313543.537691995,
+        "stddev": 314759.79907834,
+        "p05": 14887.99,
+        "p50": 240107.77,
+        "p95": 938718.25,
+        "zero_count": 0
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "avg_order_value",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 2461,
+      "distinct_count": 2461,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "26796.08",
+        "86089.1325",
+        "37694.555",
+        "323635.775",
+        "80561.9075"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 1481.49,
+        "max": 470986.04,
+        "mean": 67614.1851053734,
+        "stddev": 59284.0135860655,
+        "p05": 8638.325,
+        "p50": 53821.565,
+        "p95": 181208.05,
+        "zero_count": 0
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "discount_ratio",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 2461,
+      "distinct_count": 2384,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "0.0387543592328263",
+        "0.0123526159966893",
+        "5.72475009669312e-05",
+        "0.0044928098384748",
+        "0.0706668394308828"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 0.0,
+        "max": 0.337269172113312,
+        "mean": 0.0452772848778805,
+        "stddev": 0.0421298392212164,
+        "p05": 0.0005145498632005,
+        "p50": 0.0336867581569733,
+        "p95": 0.128955488270317,
+        "zero_count": 78
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "returns_amount",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 2461,
+      "distinct_count": 866,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "medium",
+      "sample_values": [
+        "0.0",
+        "24668.48",
+        "232648.43",
+        "3524.64",
+        "27572.54"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 0.0,
+        "max": 557982.21,
+        "mean": 12246.3625152377,
+        "stddev": 43135.2708183595,
+        "p05": 0.0,
+        "p50": 0.0,
+        "p95": 49604.68,
+        "zero_count": 1596
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "net_sales_after_returns",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 2461,
+      "distinct_count": 2461,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "80388.24",
+        "319688.05",
+        "75389.11",
+        "647271.55",
+        "322247.63"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 176.83,
+        "max": 2308587.6,
+        "mean": 301297.175176757,
+        "stddev": 307102.109699974,
+        "p05": 13684.14,
+        "p50": 227863.47,
+        "p95": 921801.6,
+        "zero_count": 0
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    }
+  ],
+  "dataset_meta": {
+    "dataset_key": "gold.gold_sales_daily",
+    "generated_at": "2026-02-17T14:42:37.994532+00:00",
+    "profiler_version": "sprint3-profiler-mvp-v1",
+    "columns_map": {
+      "sales_date": {
+        "name": "sales_date",
+        "physical_type": "datetime",
+        "logical_type": "datetime",
+        "base_role": "datetime",
+        "effective_role": "datetime",
+        "row_count": 2461,
+        "distinct_count": 365,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "medium",
+        "sample_values": [
+          "2025-01-01T00:00:00",
+          "2025-01-02T00:00:00",
+          "2025-01-03T00:00:00",
+          "2025-01-04T00:00:00",
+          "2025-01-05T00:00:00"
+        ],
+        "stats": {
+          "kind": "datetime",
+          "null_count": 0,
+          "min": "2025-01-01T00:00:00",
+          "max": "2025-12-31T00:00:00",
+          "distinct_days": 365
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "channel_type": {
+        "name": "channel_type",
+        "physical_type": "string",
+        "logical_type": "categorical",
+        "base_role": "dimension",
+        "effective_role": "dimension",
+        "row_count": 2461,
+        "distinct_count": 2,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "low",
+        "sample_values": [
+          "online",
+          "store"
+        ],
+        "stats": {
+          "kind": "categorical",
+          "null_count": 0,
+          "distinct_count": 2,
+          "top_k": [
+            {
+              "value": "store",
+              "count": 2096,
+              "percent": 0.8516863063795205
+            },
+            {
+              "value": "online",
+              "count": 365,
+              "percent": 0.14831369362047947
+            }
+          ]
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "store_id": {
+        "name": "store_id",
+        "physical_type": "string",
+        "logical_type": "categorical",
+        "base_role": "id",
+        "effective_role": "id",
+        "row_count": 2461,
+        "distinct_count": 7,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "low",
+        "sample_values": [
+          "ONLINE",
+          "S001",
+          "S002",
+          "S003",
+          "S004"
+        ],
+        "stats": {
+          "kind": "categorical",
+          "null_count": 0,
+          "distinct_count": 7,
+          "top_k": []
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "city": {
+        "name": "city",
+        "physical_type": "string",
+        "logical_type": "categorical",
+        "base_role": "dimension",
+        "effective_role": "dimension",
+        "row_count": 2461,
+        "distinct_count": 3,
+        "null_count": 365,
+        "null_fraction": 0.14831369362047947,
+        "cardinality_bucket": "low",
+        "sample_values": [
+          "Karachi",
+          "Lahore",
+          "Islamabad"
+        ],
+        "stats": {
+          "kind": "categorical",
+          "null_count": 365,
+          "distinct_count": 3,
+          "top_k": [
+            {
+              "value": "Karachi",
+              "count": 719,
+              "percent": 0.34303435114503816
+            },
+            {
+              "value": "Islamabad",
+              "count": 691,
+              "percent": 0.32967557251908397
+            },
+            {
+              "value": "Lahore",
+              "count": 686,
+              "percent": 0.32729007633587787
+            }
+          ]
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "region": {
+        "name": "region",
+        "physical_type": "string",
+        "logical_type": "categorical",
+        "base_role": "dimension",
+        "effective_role": "dimension",
+        "row_count": 2461,
+        "distinct_count": 3,
+        "null_count": 365,
+        "null_fraction": 0.14831369362047947,
+        "cardinality_bucket": "low",
+        "sample_values": [
+          "Sindh",
+          "Punjab",
+          "ICT"
+        ],
+        "stats": {
+          "kind": "categorical",
+          "null_count": 365,
+          "distinct_count": 3,
+          "top_k": [
+            {
+              "value": "Sindh",
+              "count": 719,
+              "percent": 0.34303435114503816
+            },
+            {
+              "value": "ICT",
+              "count": 691,
+              "percent": 0.32967557251908397
+            },
+            {
+              "value": "Punjab",
+              "count": 686,
+              "percent": 0.32729007633587787
+            }
+          ]
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "store_type": {
+        "name": "store_type",
+        "physical_type": "string",
+        "logical_type": "categorical",
+        "base_role": "dimension",
+        "effective_role": "dimension",
+        "row_count": 2461,
+        "distinct_count": 3,
+        "null_count": 365,
+        "null_fraction": 0.14831369362047947,
+        "cardinality_bucket": "low",
+        "sample_values": [
+          "flagship",
+          "mall",
+          "high_street"
+        ],
+        "stats": {
+          "kind": "categorical",
+          "null_count": 365,
+          "distinct_count": 3,
+          "top_k": [
+            {
+              "value": "mall",
+              "count": 1021,
+              "percent": 0.48711832061068705
+            },
+            {
+              "value": "flagship",
+              "count": 719,
+              "percent": 0.34303435114503816
+            },
+            {
+              "value": "high_street",
+              "count": 356,
+              "percent": 0.16984732824427481
+            }
+          ]
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "orders": {
+        "name": "orders",
+        "physical_type": "int",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 2461,
+        "distinct_count": 22,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "low",
+        "sample_values": [
+          "3",
+          "4",
+          "2",
+          "6",
+          "7"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 1.0,
+          "max": 23.0,
+          "mean": 4.6330759853718,
+          "stddev": 3.346984300598304,
+          "p05": 1.0,
+          "p50": 4.0,
+          "p95": 12.0,
+          "zero_count": 0
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "units": {
+        "name": "units",
+        "physical_type": "int",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 2461,
+        "distinct_count": 61,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "low",
+        "sample_values": [
+          "12",
+          "16",
+          "5",
+          "10",
+          "17"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 1.0,
+          "max": 69.0,
+          "mean": 12.76757415684681,
+          "stddev": 9.585071650425318,
+          "p05": 2.0,
+          "p50": 10.0,
+          "p95": 31.0,
+          "zero_count": 0
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "gross_sales": {
+        "name": "gross_sales",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 2461,
+        "distinct_count": 2461,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "83629.05",
+          "348665.77",
+          "75393.16",
+          "650193.46",
+          "346738.47"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 1481.49,
+          "max": 2436003.82,
+          "mean": 328400.238772857,
+          "stddev": 327799.069368079,
+          "p05": 15635.41,
+          "p50": 251384.63,
+          "p95": 978789.59,
+          "zero_count": 0
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "discount_amount": {
+        "name": "discount_amount",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 2461,
+        "distinct_count": 2384,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "3240.990246",
+          "4306.934368",
+          "4.31607",
+          "2921.195574",
+          "24502.911784"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 0.0,
+          "max": 175923.344191,
+          "mean": 14856.8649980232,
+          "stddev": 20669.3985545373,
+          "p05": 33.751811,
+          "p50": 6205.636056,
+          "p95": 56916.932261,
+          "zero_count": 78
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "net_sales": {
+        "name": "net_sales",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 2461,
+        "distinct_count": 2461,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "80388.24",
+          "344356.53",
+          "75389.11",
+          "647271.55",
+          "322247.63"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 1481.49,
+          "max": 2316994.04,
+          "mean": 313543.537691995,
+          "stddev": 314759.79907834,
+          "p05": 14887.99,
+          "p50": 240107.77,
+          "p95": 938718.25,
+          "zero_count": 0
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "avg_order_value": {
+        "name": "avg_order_value",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 2461,
+        "distinct_count": 2461,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "26796.08",
+          "86089.1325",
+          "37694.555",
+          "323635.775",
+          "80561.9075"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 1481.49,
+          "max": 470986.04,
+          "mean": 67614.1851053734,
+          "stddev": 59284.0135860655,
+          "p05": 8638.325,
+          "p50": 53821.565,
+          "p95": 181208.05,
+          "zero_count": 0
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "discount_ratio": {
+        "name": "discount_ratio",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 2461,
+        "distinct_count": 2384,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "0.0387543592328263",
+          "0.0123526159966893",
+          "5.72475009669312e-05",
+          "0.0044928098384748",
+          "0.0706668394308828"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 0.0,
+          "max": 0.337269172113312,
+          "mean": 0.0452772848778805,
+          "stddev": 0.0421298392212164,
+          "p05": 0.0005145498632005,
+          "p50": 0.0336867581569733,
+          "p95": 0.128955488270317,
+          "zero_count": 78
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "returns_amount": {
+        "name": "returns_amount",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 2461,
+        "distinct_count": 866,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "medium",
+        "sample_values": [
+          "0.0",
+          "24668.48",
+          "232648.43",
+          "3524.64",
+          "27572.54"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 0.0,
+          "max": 557982.21,
+          "mean": 12246.3625152377,
+          "stddev": 43135.2708183595,
+          "p05": 0.0,
+          "p50": 0.0,
+          "p95": 49604.68,
+          "zero_count": 1596
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "net_sales_after_returns": {
+        "name": "net_sales_after_returns",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 2461,
+        "distinct_count": 2461,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "80388.24",
+          "319688.05",
+          "75389.11",
+          "647271.55",
+          "322247.63"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 176.83,
+          "max": 2308587.6,
+          "mean": 301297.175176757,
+          "stddev": 307102.109699974,
+          "p05": 13684.14,
+          "p50": 227863.47,
+          "p95": 921801.6,
+          "zero_count": 0
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      }
+    }
+  }
+}
