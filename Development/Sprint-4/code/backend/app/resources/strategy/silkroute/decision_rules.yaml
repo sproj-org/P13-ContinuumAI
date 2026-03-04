@@ -1,0 +1,30 @@
+decision_rules:
+
+  revenue_quality_control:
+
+    - id: R1
+      description: Penalize revenue growth driven by heavy discounting
+      condition: discount_ratio > 0.25
+      action: reduce_recommendation_score
+      penalty_weight: 0.3
+
+    - id: R2
+      description: Block promotion if margin drops below threshold
+      condition: gross_margin_percentage < 0.20
+      action: block_recommendation
+
+  return_risk_control:
+
+    - id: R3
+      description: Avoid promoting high-return SKUs
+      condition: return_rate > 0.12
+      action: reduce_recommendation_score
+      penalty_weight: 0.4
+
+  inventory_control:
+
+    - id: R5
+      description: Prioritize replenishment for hero SKUs at stockout risk
+      condition: hero_product_flag == true AND days_of_inventory < 5
+      action: boost_recommendation_score
+      boost_weight: 0.4

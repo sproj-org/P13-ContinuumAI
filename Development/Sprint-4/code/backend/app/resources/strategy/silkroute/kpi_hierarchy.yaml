@@ -1,0 +1,55 @@
+kpis:
+
+  north_star:
+    id: NS1
+    name: Profitable_Revenue_Growth
+    formula: revenue * gross_margin_percentage
+
+  revenue_metrics:
+    - name: Revenue
+      formula: sum(transaction.total_amount)
+
+    - name: Gross_Margin
+      formula: revenue - cost_of_goods_sold
+
+    - name: Discount_Ratio
+      formula: total_discount / gross_sales
+
+  customer_metrics:
+    - name: Customer_Lifetime_Value
+      formula: total_customer_revenue - total_customer_returns
+
+    - name: Repeat_Purchase_Rate
+      formula: repeat_customers / total_customers
+
+    - name: Average_Order_Value
+      formula: revenue / total_transactions
+
+  product_metrics:
+    - name: SKU_Revenue
+      formula: sum(line_total by sku_id)
+
+    - name: Return_Rate
+      formula: returned_units / sold_units
+
+  store_metrics:
+    - name: Store_Revenue
+      formula: sum(transaction.total_amount by store_id)
+
+    - name: Store_Conversion_Index
+      logic: store_revenue / network_average
+
+  salesperson_metrics:
+    - name: Salesperson_Revenue
+      formula: sum(transaction.total_amount by salesperson_id)
+
+    - name: Attach_Rate
+      formula: accessory_units / total_units
+
+  inventory_metrics:
+    - name: Days_of_Inventory
+      formula: stock_on_hand / average_daily_sales
+
+  promotion_metrics:
+    - name: Promotion_Uplift
+      formula: uplift_percentage

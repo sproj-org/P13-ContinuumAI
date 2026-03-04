@@ -1,0 +1,18 @@
+go to Sprint-3/code and run these in 2 diff terminals to build the image for each back and front:
+
+docker build -t backend-test ./backend
+
+(this will cause routing mismatch, use the one below) docker build --build-arg NEXT_PUBLIC_API_URL=http://localhost:8000 -t frontend-test ./frontend
+
+(use this) docker build --build-arg NEXT_PUBLIC_API_URL=http://localhost:8000/api -t frontend-test ./frontend
+
+Now to run each in diff terminals do this :
+In this folder Sprint-3/code you must have .env available so u can supply it to backend when u run the backend image like this:
+
+docker run --env-file ./backend/.env -p 8000:8000 backend-test
+
+To get the env u can copy paste .env.example of backend and only add the DB url to it.
+
+# 3. Run the frontend container locally. The next public api url was supplied in the build command above.
+docker run -p 3000:3000 frontend-test
+

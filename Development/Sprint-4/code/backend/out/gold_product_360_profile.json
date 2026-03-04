@@ -1,0 +1,1395 @@
+{
+  "dataset_name": "gold_product_360",
+  "schema_name": "gold",
+  "table_name": "gold_product_360",
+  "row_count": 150,
+  "column_count": 18,
+  "profiled_at": "2026-02-17T14:42:58.990272Z",
+  "columns": [
+    {
+      "name": "sku_id",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "id",
+      "effective_role": "id",
+      "row_count": 150,
+      "distinct_count": 150,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "SKU00001",
+        "SKU00003",
+        "SKU00004",
+        "SKU00005",
+        "SKU00006"
+      ],
+      "stats": {
+        "kind": "categorical",
+        "null_count": 0,
+        "distinct_count": 150,
+        "top_k": []
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "product_id",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "id",
+      "effective_role": "id",
+      "row_count": 150,
+      "distinct_count": 86,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "medium",
+      "sample_values": [
+        "PR0001",
+        "PR0002",
+        "PR0003",
+        "PR0004",
+        "PR0005"
+      ],
+      "stats": {
+        "kind": "categorical",
+        "null_count": 0,
+        "distinct_count": 86,
+        "top_k": []
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "category",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "effective_role": "dimension",
+      "row_count": 150,
+      "distinct_count": 3,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "Fashion",
+        "Electronics",
+        "Attach & Addons"
+      ],
+      "stats": {
+        "kind": "categorical",
+        "null_count": 0,
+        "distinct_count": 3,
+        "top_k": [
+          {
+            "value": "Fashion",
+            "count": 73,
+            "percent": 0.4866666666666667
+          },
+          {
+            "value": "Electronics",
+            "count": 49,
+            "percent": 0.32666666666666666
+          },
+          {
+            "value": "Attach & Addons",
+            "count": 28,
+            "percent": 0.18666666666666668
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "brand",
+      "physical_type": "string",
+      "logical_type": "categorical",
+      "base_role": "dimension",
+      "effective_role": "dimension",
+      "row_count": 150,
+      "distinct_count": 19,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "medium",
+      "sample_values": [
+        "Adidas",
+        "Outfitters",
+        "Lenovo",
+        "Levis",
+        "Spigen"
+      ],
+      "stats": {
+        "kind": "categorical",
+        "null_count": 0,
+        "distinct_count": 19,
+        "top_k": [
+          {
+            "value": "Outfitters",
+            "count": 17,
+            "percent": 0.11333333333333333
+          },
+          {
+            "value": "Adidas",
+            "count": 16,
+            "percent": 0.10666666666666667
+          },
+          {
+            "value": "Khaadi",
+            "count": 11,
+            "percent": 0.07333333333333333
+          },
+          {
+            "value": "Anker",
+            "count": 11,
+            "percent": 0.07333333333333333
+          },
+          {
+            "value": "Sapphire",
+            "count": 10,
+            "percent": 0.06666666666666667
+          },
+          {
+            "value": "JBL",
+            "count": 10,
+            "percent": 0.06666666666666667
+          },
+          {
+            "value": "Levis",
+            "count": 10,
+            "percent": 0.06666666666666667
+          },
+          {
+            "value": "Dell",
+            "count": 9,
+            "percent": 0.06
+          },
+          {
+            "value": "Nike",
+            "count": 9,
+            "percent": 0.06
+          },
+          {
+            "value": "Baseus",
+            "count": 9,
+            "percent": 0.06
+          }
+        ]
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "first_tx_date",
+      "physical_type": "datetime",
+      "logical_type": "datetime",
+      "base_role": "datetime",
+      "effective_role": "datetime",
+      "row_count": 150,
+      "distinct_count": 10,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "medium",
+      "sample_values": [
+        "2025-01-01T00:00:00",
+        "2025-01-04T00:00:00",
+        "2025-01-07T00:00:00",
+        "2025-01-06T00:00:00",
+        "2025-01-02T00:00:00"
+      ],
+      "stats": {
+        "kind": "datetime",
+        "null_count": 0,
+        "min": "2025-01-01T00:00:00",
+        "max": "2025-01-17T00:00:00",
+        "distinct_days": 10
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "last_tx_date",
+      "physical_type": "datetime",
+      "logical_type": "datetime",
+      "base_role": "datetime",
+      "effective_role": "datetime",
+      "row_count": 150,
+      "distinct_count": 9,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "medium",
+      "sample_values": [
+        "2025-12-30T00:00:00",
+        "2025-12-31T00:00:00",
+        "2025-12-29T00:00:00",
+        "2025-12-28T00:00:00",
+        "2025-12-23T00:00:00"
+      ],
+      "stats": {
+        "kind": "datetime",
+        "null_count": 0,
+        "min": "2025-12-22T00:00:00",
+        "max": "2025-12-31T00:00:00",
+        "distinct_days": 9
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "active_months",
+      "physical_type": "int",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 150,
+      "distinct_count": 1,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "12"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 12.0,
+        "max": 12.0,
+        "mean": 12.0,
+        "stddev": 0.0,
+        "p05": 12.0,
+        "p50": 12.0,
+        "p95": 12.0,
+        "zero_count": 0
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "orders",
+      "physical_type": "int",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 150,
+      "distinct_count": 84,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "medium",
+      "sample_values": [
+        "178",
+        "221",
+        "217",
+        "212",
+        "132"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 107.0,
+        "max": 451.0,
+        "mean": 197.96666666666667,
+        "stddev": 71.19727925073356,
+        "p05": 115.45,
+        "p50": 203.5,
+        "p95": 390.5,
+        "zero_count": 0
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "units_sold",
+      "physical_type": "int",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 150,
+      "distinct_count": 94,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "medium",
+      "sample_values": [
+        "179",
+        "222",
+        "219",
+        "214",
+        "132"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 108.0,
+        "max": 546.0,
+        "mean": 209.47333333333333,
+        "stddev": 85.22285800022826,
+        "p05": 115.45,
+        "p50": 205.0,
+        "p95": 393.05,
+        "zero_count": 0
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "gross_sales",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 150,
+      "distinct_count": 150,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "1361632.45",
+        "482252.89",
+        "1614043.0",
+        "1839499.85",
+        "1338846.62"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 242457.74,
+        "max": 83233115.75,
+        "mean": 5387953.2508,
+        "stddev": 10721742.4816088,
+        "p05": 341698.8535,
+        "p50": 1562340.475,
+        "p95": 26651721.6755,
+        "zero_count": 0
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "discount_amount",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 150,
+      "distinct_count": 150,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "67731.807856",
+        "21248.923227",
+        "76785.842107",
+        "95465.731962",
+        "63772.966918"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 11400.488392,
+        "max": 2600528.808776,
+        "mean": 243751.631734233,
+        "stddev": 450007.063119496,
+        "p05": 15953.99531335,
+        "p50": 68474.589193,
+        "p95": 1279642.68548125,
+        "zero_count": 0
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "net_sales",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 150,
+      "distinct_count": 150,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "1293899.92",
+        "461003.42",
+        "1537262.24",
+        "1744036.11",
+        "1275075.9"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 230065.14,
+        "max": 80632593.92,
+        "mean": 5144204.3084,
+        "stddev": 10282815.1842173,
+        "p05": 325879.665,
+        "p50": 1493865.495,
+        "p95": 25383461.3425,
+        "zero_count": 0
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "avg_selling_price",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 150,
+      "distinct_count": 150,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "7228.49117318436",
+        "2076.59198198198",
+        "7019.46228310502",
+        "8149.70144859813",
+        "9659.66590909091"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 1009.15085470085,
+        "max": 358956.892844037,
+        "mean": 34447.5836835939,
+        "stddev": 70405.3061289478,
+        "p05": 1675.94417331236,
+        "p50": 6698.58989331084,
+        "p95": 207215.201201212,
+        "zero_count": 0
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "discount_ratio",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 150,
+      "distinct_count": 150,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "0.0497430917249364",
+        "0.044061785149696",
+        "0.0475736037435186",
+        "0.0518976568342748",
+        "0.0476327653708383"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 0.0285486180421683,
+        "max": 0.0660661802490353,
+        "mean": 0.0467255475646241,
+        "stddev": 0.00585966300851484,
+        "p05": 0.0348559335787591,
+        "p50": 0.0470055586878196,
+        "p95": 0.0549700197081846,
+        "zero_count": 0
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "returns_amount",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 150,
+      "distinct_count": 150,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "53385.32",
+        "9423.78",
+        "67250.78",
+        "87013.19",
+        "26164.94"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 9423.78,
+        "max": 3783284.16,
+        "mean": 200921.987666667,
+        "stddev": 446916.401989544,
+        "p05": 12932.365,
+        "p50": 55385.845,
+        "p95": 953288.1485,
+        "zero_count": 0
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "return_rate_amount",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 150,
+      "distinct_count": 150,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "0.0412592343308901",
+        "0.020441887394241",
+        "0.0437471097969595",
+        "0.0498918511498021",
+        "0.0205203000072387"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 0.012988097425382,
+        "max": 0.0865243564625709,
+        "mean": 0.0409728866461994,
+        "stddev": 0.0159430593961097,
+        "p05": 0.0172749667790293,
+        "p50": 0.0403513241444074,
+        "p95": 0.0746792296243002,
+        "zero_count": 0
+      },
+      "is_unique": true,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "store_coverage",
+      "physical_type": "int",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 150,
+      "distinct_count": 1,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "low",
+      "sample_values": [
+        "6"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 6.0,
+        "max": 6.0,
+        "mean": 6.0,
+        "stddev": 0.0,
+        "p05": 6.0,
+        "p50": 6.0,
+        "p95": 6.0,
+        "zero_count": 0
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    },
+    {
+      "name": "channel_mix_online_pct",
+      "physical_type": "float",
+      "logical_type": "numeric",
+      "base_role": "measure",
+      "effective_role": "measure",
+      "row_count": 150,
+      "distinct_count": 140,
+      "null_count": 0,
+      "null_fraction": 0.0,
+      "cardinality_bucket": "high",
+      "sample_values": [
+        "0.374301675977654",
+        "0.310810810810811",
+        "0.360730593607306",
+        "0.308411214953271",
+        "0.356060606060606"
+      ],
+      "stats": {
+        "kind": "numeric",
+        "null_count": 0,
+        "min": 0.233576642335766,
+        "max": 0.442748091603053,
+        "mean": 0.316181382070989,
+        "stddev": 0.0367106647927552,
+        "p05": 0.25492972972973,
+        "p50": 0.315485111096631,
+        "p95": 0.379924012158055,
+        "zero_count": 0
+      },
+      "is_unique": false,
+      "base_needs_review": false,
+      "base_issues": [],
+      "agent_meta": {},
+      "llm_meta": {},
+      "effective_meta": {}
+    }
+  ],
+  "dataset_meta": {
+    "dataset_key": "gold.gold_product_360",
+    "generated_at": "2026-02-17T14:43:02.923210+00:00",
+    "profiler_version": "sprint3-profiler-mvp-v1",
+    "columns_map": {
+      "sku_id": {
+        "name": "sku_id",
+        "physical_type": "string",
+        "logical_type": "categorical",
+        "base_role": "id",
+        "effective_role": "id",
+        "row_count": 150,
+        "distinct_count": 150,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "SKU00001",
+          "SKU00003",
+          "SKU00004",
+          "SKU00005",
+          "SKU00006"
+        ],
+        "stats": {
+          "kind": "categorical",
+          "null_count": 0,
+          "distinct_count": 150,
+          "top_k": []
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "product_id": {
+        "name": "product_id",
+        "physical_type": "string",
+        "logical_type": "categorical",
+        "base_role": "id",
+        "effective_role": "id",
+        "row_count": 150,
+        "distinct_count": 86,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "medium",
+        "sample_values": [
+          "PR0001",
+          "PR0002",
+          "PR0003",
+          "PR0004",
+          "PR0005"
+        ],
+        "stats": {
+          "kind": "categorical",
+          "null_count": 0,
+          "distinct_count": 86,
+          "top_k": []
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "category": {
+        "name": "category",
+        "physical_type": "string",
+        "logical_type": "categorical",
+        "base_role": "dimension",
+        "effective_role": "dimension",
+        "row_count": 150,
+        "distinct_count": 3,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "low",
+        "sample_values": [
+          "Fashion",
+          "Electronics",
+          "Attach & Addons"
+        ],
+        "stats": {
+          "kind": "categorical",
+          "null_count": 0,
+          "distinct_count": 3,
+          "top_k": [
+            {
+              "value": "Fashion",
+              "count": 73,
+              "percent": 0.4866666666666667
+            },
+            {
+              "value": "Electronics",
+              "count": 49,
+              "percent": 0.32666666666666666
+            },
+            {
+              "value": "Attach & Addons",
+              "count": 28,
+              "percent": 0.18666666666666668
+            }
+          ]
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "brand": {
+        "name": "brand",
+        "physical_type": "string",
+        "logical_type": "categorical",
+        "base_role": "dimension",
+        "effective_role": "dimension",
+        "row_count": 150,
+        "distinct_count": 19,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "medium",
+        "sample_values": [
+          "Adidas",
+          "Outfitters",
+          "Lenovo",
+          "Levis",
+          "Spigen"
+        ],
+        "stats": {
+          "kind": "categorical",
+          "null_count": 0,
+          "distinct_count": 19,
+          "top_k": [
+            {
+              "value": "Outfitters",
+              "count": 17,
+              "percent": 0.11333333333333333
+            },
+            {
+              "value": "Adidas",
+              "count": 16,
+              "percent": 0.10666666666666667
+            },
+            {
+              "value": "Khaadi",
+              "count": 11,
+              "percent": 0.07333333333333333
+            },
+            {
+              "value": "Anker",
+              "count": 11,
+              "percent": 0.07333333333333333
+            },
+            {
+              "value": "Sapphire",
+              "count": 10,
+              "percent": 0.06666666666666667
+            },
+            {
+              "value": "JBL",
+              "count": 10,
+              "percent": 0.06666666666666667
+            },
+            {
+              "value": "Levis",
+              "count": 10,
+              "percent": 0.06666666666666667
+            },
+            {
+              "value": "Dell",
+              "count": 9,
+              "percent": 0.06
+            },
+            {
+              "value": "Nike",
+              "count": 9,
+              "percent": 0.06
+            },
+            {
+              "value": "Baseus",
+              "count": 9,
+              "percent": 0.06
+            }
+          ]
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "first_tx_date": {
+        "name": "first_tx_date",
+        "physical_type": "datetime",
+        "logical_type": "datetime",
+        "base_role": "datetime",
+        "effective_role": "datetime",
+        "row_count": 150,
+        "distinct_count": 10,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "medium",
+        "sample_values": [
+          "2025-01-01T00:00:00",
+          "2025-01-04T00:00:00",
+          "2025-01-07T00:00:00",
+          "2025-01-06T00:00:00",
+          "2025-01-02T00:00:00"
+        ],
+        "stats": {
+          "kind": "datetime",
+          "null_count": 0,
+          "min": "2025-01-01T00:00:00",
+          "max": "2025-01-17T00:00:00",
+          "distinct_days": 10
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "last_tx_date": {
+        "name": "last_tx_date",
+        "physical_type": "datetime",
+        "logical_type": "datetime",
+        "base_role": "datetime",
+        "effective_role": "datetime",
+        "row_count": 150,
+        "distinct_count": 9,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "medium",
+        "sample_values": [
+          "2025-12-30T00:00:00",
+          "2025-12-31T00:00:00",
+          "2025-12-29T00:00:00",
+          "2025-12-28T00:00:00",
+          "2025-12-23T00:00:00"
+        ],
+        "stats": {
+          "kind": "datetime",
+          "null_count": 0,
+          "min": "2025-12-22T00:00:00",
+          "max": "2025-12-31T00:00:00",
+          "distinct_days": 9
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "active_months": {
+        "name": "active_months",
+        "physical_type": "int",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 150,
+        "distinct_count": 1,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "low",
+        "sample_values": [
+          "12"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 12.0,
+          "max": 12.0,
+          "mean": 12.0,
+          "stddev": 0.0,
+          "p05": 12.0,
+          "p50": 12.0,
+          "p95": 12.0,
+          "zero_count": 0
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "orders": {
+        "name": "orders",
+        "physical_type": "int",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 150,
+        "distinct_count": 84,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "medium",
+        "sample_values": [
+          "178",
+          "221",
+          "217",
+          "212",
+          "132"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 107.0,
+          "max": 451.0,
+          "mean": 197.96666666666667,
+          "stddev": 71.19727925073356,
+          "p05": 115.45,
+          "p50": 203.5,
+          "p95": 390.5,
+          "zero_count": 0
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "units_sold": {
+        "name": "units_sold",
+        "physical_type": "int",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 150,
+        "distinct_count": 94,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "medium",
+        "sample_values": [
+          "179",
+          "222",
+          "219",
+          "214",
+          "132"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 108.0,
+          "max": 546.0,
+          "mean": 209.47333333333333,
+          "stddev": 85.22285800022826,
+          "p05": 115.45,
+          "p50": 205.0,
+          "p95": 393.05,
+          "zero_count": 0
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "gross_sales": {
+        "name": "gross_sales",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 150,
+        "distinct_count": 150,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "1361632.45",
+          "482252.89",
+          "1614043.0",
+          "1839499.85",
+          "1338846.62"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 242457.74,
+          "max": 83233115.75,
+          "mean": 5387953.2508,
+          "stddev": 10721742.4816088,
+          "p05": 341698.8535,
+          "p50": 1562340.475,
+          "p95": 26651721.6755,
+          "zero_count": 0
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "discount_amount": {
+        "name": "discount_amount",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 150,
+        "distinct_count": 150,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "67731.807856",
+          "21248.923227",
+          "76785.842107",
+          "95465.731962",
+          "63772.966918"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 11400.488392,
+          "max": 2600528.808776,
+          "mean": 243751.631734233,
+          "stddev": 450007.063119496,
+          "p05": 15953.99531335,
+          "p50": 68474.589193,
+          "p95": 1279642.68548125,
+          "zero_count": 0
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "net_sales": {
+        "name": "net_sales",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 150,
+        "distinct_count": 150,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "1293899.92",
+          "461003.42",
+          "1537262.24",
+          "1744036.11",
+          "1275075.9"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 230065.14,
+          "max": 80632593.92,
+          "mean": 5144204.3084,
+          "stddev": 10282815.1842173,
+          "p05": 325879.665,
+          "p50": 1493865.495,
+          "p95": 25383461.3425,
+          "zero_count": 0
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "avg_selling_price": {
+        "name": "avg_selling_price",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 150,
+        "distinct_count": 150,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "7228.49117318436",
+          "2076.59198198198",
+          "7019.46228310502",
+          "8149.70144859813",
+          "9659.66590909091"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 1009.15085470085,
+          "max": 358956.892844037,
+          "mean": 34447.5836835939,
+          "stddev": 70405.3061289478,
+          "p05": 1675.94417331236,
+          "p50": 6698.58989331084,
+          "p95": 207215.201201212,
+          "zero_count": 0
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "discount_ratio": {
+        "name": "discount_ratio",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 150,
+        "distinct_count": 150,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "0.0497430917249364",
+          "0.044061785149696",
+          "0.0475736037435186",
+          "0.0518976568342748",
+          "0.0476327653708383"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 0.0285486180421683,
+          "max": 0.0660661802490353,
+          "mean": 0.0467255475646241,
+          "stddev": 0.00585966300851484,
+          "p05": 0.0348559335787591,
+          "p50": 0.0470055586878196,
+          "p95": 0.0549700197081846,
+          "zero_count": 0
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "returns_amount": {
+        "name": "returns_amount",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 150,
+        "distinct_count": 150,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "53385.32",
+          "9423.78",
+          "67250.78",
+          "87013.19",
+          "26164.94"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 9423.78,
+          "max": 3783284.16,
+          "mean": 200921.987666667,
+          "stddev": 446916.401989544,
+          "p05": 12932.365,
+          "p50": 55385.845,
+          "p95": 953288.1485,
+          "zero_count": 0
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "return_rate_amount": {
+        "name": "return_rate_amount",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 150,
+        "distinct_count": 150,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "0.0412592343308901",
+          "0.020441887394241",
+          "0.0437471097969595",
+          "0.0498918511498021",
+          "0.0205203000072387"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 0.012988097425382,
+          "max": 0.0865243564625709,
+          "mean": 0.0409728866461994,
+          "stddev": 0.0159430593961097,
+          "p05": 0.0172749667790293,
+          "p50": 0.0403513241444074,
+          "p95": 0.0746792296243002,
+          "zero_count": 0
+        },
+        "is_unique": true,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "store_coverage": {
+        "name": "store_coverage",
+        "physical_type": "int",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 150,
+        "distinct_count": 1,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "low",
+        "sample_values": [
+          "6"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 6.0,
+          "max": 6.0,
+          "mean": 6.0,
+          "stddev": 0.0,
+          "p05": 6.0,
+          "p50": 6.0,
+          "p95": 6.0,
+          "zero_count": 0
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      },
+      "channel_mix_online_pct": {
+        "name": "channel_mix_online_pct",
+        "physical_type": "float",
+        "logical_type": "numeric",
+        "base_role": "measure",
+        "effective_role": "measure",
+        "row_count": 150,
+        "distinct_count": 140,
+        "null_count": 0,
+        "null_fraction": 0.0,
+        "cardinality_bucket": "high",
+        "sample_values": [
+          "0.374301675977654",
+          "0.310810810810811",
+          "0.360730593607306",
+          "0.308411214953271",
+          "0.356060606060606"
+        ],
+        "stats": {
+          "kind": "numeric",
+          "null_count": 0,
+          "min": 0.233576642335766,
+          "max": 0.442748091603053,
+          "mean": 0.316181382070989,
+          "stddev": 0.0367106647927552,
+          "p05": 0.25492972972973,
+          "p50": 0.315485111096631,
+          "p95": 0.379924012158055,
+          "zero_count": 0
+        },
+        "is_unique": false,
+        "base_needs_review": false,
+        "base_issues": [],
+        "agent_meta": {},
+        "llm_meta": {},
+        "effective_meta": {}
+      }
+    }
+  }
+}
