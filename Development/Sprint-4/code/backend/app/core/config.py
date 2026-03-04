@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     CACHE_TTL_SECONDS: int = 600
 
     # LLM
-    OPENAI_API_KEY: str | None = "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"
+    OPENAI_API_KEY: str | None = None
     OPENAI_MODEL: str = "gpt-4o-mini"
     
     class Config:

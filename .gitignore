@@ -50,6 +50,13 @@ coverage.xml
 
 # Environments
 .env
+.env.*
+!.env.example
+!**/.env.example
+backend/.env
+frontend/.env
+**/.env
+**/.env.*
 .venv
 env/
 venv/
