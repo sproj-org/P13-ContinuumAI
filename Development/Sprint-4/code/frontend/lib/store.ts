@@ -195,10 +195,16 @@ function sanitizeChatResponse(raw: unknown): ChatResponse | null {
     record.fallback_reason === 'missing_key' || record.fallback_reason === 'openai_error'
       ? record.fallback_reason
       : undefined;
+  const openaiErrorType = typeof record.openai_error_type === 'string' ? record.openai_error_type : undefined;
+  const openaiStatusCode = typeof record.openai_status_code === 'number' ? record.openai_status_code : null;
+  const openaiErrorHint = typeof record.openai_error_hint === 'string' ? record.openai_error_hint : null;
   const debugMetadata = {
     used_fallback: usedFallback,
     openai_configured: openaiConfigured,
     fallback_reason: fallbackReason,
+    openai_error_type: openaiErrorType,
+    openai_status_code: openaiStatusCode,
+    openai_error_hint: openaiErrorHint,
   };
 
   if (responseType === 'clarify') {

@@ -41,3 +41,17 @@ npm run dev
 
 - Backend: `OPENAI_API_KEY`, `DATABASE_URL`
 - Frontend: `NEXT_PUBLIC_API_URL`
+
+## Troubleshooting OpenAI Fallback
+
+If the chat banner says OpenAI failed, check backend logs for `correlation_id` and OpenAI diagnostics.
+
+- `401` or `403` (`authentication_error`): check `OPENAI_API_KEY` value and key permissions.
+- `429` (`rate_limit`): wait, reduce request rate, or use a higher quota tier.
+- `404` (`not_found`): verify the configured model name.
+- `network` / `timeout`: check proxy, firewall, VPN, and outbound connectivity.
+
+When `ENABLE_DEBUG=1`, you can also check:
+
+- `GET /api/debug/openai`
+- Response: `{ "openai_configured": bool, "vizagent_model": string|null }`

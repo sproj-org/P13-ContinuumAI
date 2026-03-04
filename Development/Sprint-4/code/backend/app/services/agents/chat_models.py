@@ -199,6 +199,9 @@ class ChatChartResponse(BaseModel):
     used_fallback: bool | None = None
     openai_configured: bool | None = None
     fallback_reason: ChatFallbackReason | None = None
+    openai_error_type: str | None = None
+    openai_status_code: int | None = None
+    openai_error_hint: str | None = None
 
 
 class ChatPatchResponse(BaseModel):
@@ -209,6 +212,9 @@ class ChatPatchResponse(BaseModel):
     used_fallback: bool | None = None
     openai_configured: bool | None = None
     fallback_reason: ChatFallbackReason | None = None
+    openai_error_type: str | None = None
+    openai_status_code: int | None = None
+    openai_error_hint: str | None = None
 
 
 class ChatExplainResponse(BaseModel):
@@ -219,6 +225,9 @@ class ChatExplainResponse(BaseModel):
     used_fallback: bool | None = None
     openai_configured: bool | None = None
     fallback_reason: ChatFallbackReason | None = None
+    openai_error_type: str | None = None
+    openai_status_code: int | None = None
+    openai_error_hint: str | None = None
 
 
 class ChatClarifyResponse(BaseModel):
@@ -231,6 +240,9 @@ class ChatClarifyResponse(BaseModel):
     used_fallback: bool | None = None
     openai_configured: bool | None = None
     fallback_reason: ChatFallbackReason | None = None
+    openai_error_type: str | None = None
+    openai_status_code: int | None = None
+    openai_error_hint: str | None = None
 
     @field_validator("missing", mode="before")
     @classmethod
@@ -256,6 +268,9 @@ class ChatRefuseResponse(BaseModel):
     used_fallback: bool | None = None
     openai_configured: bool | None = None
     fallback_reason: ChatFallbackReason | None = None
+    openai_error_type: str | None = None
+    openai_status_code: int | None = None
+    openai_error_hint: str | None = None
 
 
 ChatResponseUnion = Annotated[

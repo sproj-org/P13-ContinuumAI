@@ -207,17 +207,46 @@ export function NumiChatbot({ isOpen, onClose }: NumiChatbotProps) {
       latestAssistantResponse.openai_configured === false ||
       latestAssistantResponse.fallback_reason === "missing_key"
     ) {
-      return "⚠️ VizAgent is running in fallback mode (OPENAI_API_KEY not detected). Check backend/.env and server logs.";
+      return "VizAgent is running in fallback mode (OPENAI_API_KEY not detected). Check backend/.env and server logs.";
     }
     if (
       latestAssistantResponse.used_fallback === true ||
       latestAssistantResponse.fallback_reason === "openai_error"
     ) {
-      return "⚠️ VizAgent is running in fallback mode (OpenAI call failed). Check backend logs / rate limits.";
+      const statusCode =
+        typeof latestAssistantResponse.openai_status_code === "number"
+          ? latestAssistantResponse.openai_status_code
+          : null;
+      const openaiHint =
+        typeof latestAssistantResponse.openai_error_hint === "string" &&
+        latestAssistantResponse.openai_error_hint.trim()
+          ? latestAssistantResponse.openai_error_hint.trim()
+          : null;
+      if (openaiHint) {
+        return `VizAgent is running in fallback mode. OpenAI call failed: ${openaiHint}${
+          statusCode !== null ? ` (${statusCode})` : ""
+        }`;
+      }
+      return "VizAgent is running in fallback mode (OpenAI call failed). Check backend logs / rate limits.";
     }
     return null;
   }, [latestAssistantResponse]);
-
+  const fallbackWarningDetails = useMemo(() => {
+    if (!latestAssistantResponse || latestAssistantResponse.fallback_reason !== "openai_error") {
+      return null;
+    }
+    const typeValue =
+      typeof latestAssistantResponse.openai_error_type === "string" &&
+      latestAssistantResponse.openai_error_type.trim()
+        ? latestAssistantResponse.openai_error_type.trim()
+        : null;
+    const hasStatusCode = typeof latestAssistantResponse.openai_status_code === "number";
+    if (!typeValue && !hasStatusCode) {
+      return null;
+    }
+    const statusValue = hasStatusCode ? String(latestAssistantResponse.openai_status_code) : "n/a";
+    return `Type: ${typeValue ?? "unknown"} | Status: ${statusValue}`;
+  }, [latestAssistantResponse]);
   useEffect(() => {
     setError(null);
     setMessage("");
@@ -918,11 +947,13 @@ export function NumiChatbot({ isOpen, onClose }: NumiChatbotProps) {
 
         {/* Fallback Warning */}
         {fallbackWarningText ? (
-          <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
-            {fallbackWarningText}
+          <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5 space-y-0.5">
+            <div>Warning: {fallbackWarningText}</div>
+            {fallbackWarningDetails ? (
+              <div className="text-[10px] text-amber-700">{fallbackWarningDetails}</div>
+            ) : null}
           </div>
         ) : null}
-
         {/* Error Display */}
         {error ? (
           <div className="flex items-center gap-2 text-red-700 text-xs bg-red-100 border border-red-300 rounded-lg px-2 py-1.5">

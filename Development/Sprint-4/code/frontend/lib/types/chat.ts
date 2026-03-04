@@ -12,6 +12,9 @@ export interface ChatDebugMetadata {
   used_fallback?: boolean;
   openai_configured?: boolean;
   fallback_reason?: ChatFallbackReason;
+  openai_error_type?: string | null;
+  openai_status_code?: number | null;
+  openai_error_hint?: string | null;
 }
 
 export interface ChatSelections {

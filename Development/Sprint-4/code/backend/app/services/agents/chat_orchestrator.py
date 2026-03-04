@@ -39,6 +39,11 @@ from app.services.agents.spec_patch import apply_patch
 from app.services.charts.models import ChartSpecV1
 from app.services.charts.spec_resolver import execute_chart_preview
 from app.services.llm.openai_client import OpenAIClient, OpenAIJSONError
+from app.services.llm.openai_diagnostics import (
+    OpenAIDiagnostics,
+    classify_openai_exception,
+    log_openai_failure,
+)
 from app.services.strategy.kpi_registry import list_kpis
 from app.services.strategy.errors import StrategyNotFoundError, StrategyValidationError
 from app.services.strategy.store import get_strategy_store
@@ -785,12 +790,19 @@ def _with_chat_debug_meta(
     used_fallback: bool,
     openai_configured: bool,
     fallback_reason: Literal["missing_key", "openai_error"] | None = None,
+    openai_error_type: str | None = None,
+    openai_status_code: int | None = None,
+    openai_error_hint: str | None = None,
 ) -> dict[str, Any]:
     out = dict(payload)
     out["used_fallback"] = used_fallback
     out["openai_configured"] = openai_configured
     if used_fallback and fallback_reason:
         out["fallback_reason"] = fallback_reason
+    if used_fallback and fallback_reason == "openai_error":
+        out["openai_error_type"] = openai_error_type or "unknown"
+        out["openai_status_code"] = openai_status_code
+        out["openai_error_hint"] = openai_error_hint
     return out
 
 
@@ -964,11 +976,16 @@ def _generate_plan(
     strategy_notice: str | None,
     state: ChatState,
     history: list[ChatHistoryTurn] | None,
-) -> tuple[ChatPlanUnion | None, Literal["missing_key", "openai_error"] | None, str | None]:
+) -> tuple[
+    ChatPlanUnion | None,
+    Literal["missing_key", "openai_error"] | None,
+    OpenAIDiagnostics | None,
+    str | None,
+]:
     settings = get_settings()
     openai_key = (settings.OPENAI_API_KEY or "").strip()
     if not openai_key:
-        return None, "missing_key", None
+        return None, "missing_key", None, None
 
     try:
         client = OpenAIClient(
@@ -977,7 +994,7 @@ def _generate_plan(
             temperature=0.2,
         )
     except OpenAIJSONError as exc:
-        return None, "openai_error", type(exc).__name__
+        return None, "openai_error", classify_openai_exception(exc), type(exc).__name__
 
     system_prompt = _build_system_prompt(mode, strategy_digest=strategy_digest, strategy_notice=strategy_notice)
     user_prompt = _build_user_prompt(
@@ -1002,15 +1019,24 @@ def _generate_plan(
             if attempt == 0:
                 corrective_prompt = "Your previous output was invalid JSON. Return one valid JSON object only."
                 continue
-            return None, "openai_error", type(exc).__name__
+            return None, "openai_error", classify_openai_exception(exc), type(exc).__name__
         except Exception as exc:
-            return None, "openai_error", type(exc).__name__
+            return None, "openai_error", classify_openai_exception(exc), type(exc).__name__
 
         if not isinstance(payload, dict):
             if attempt == 0:
                 corrective_prompt = "Return a single JSON object only."
                 continue
-            return None, "openai_error", None
+            return (
+                None,
+                "openai_error",
+                {
+                    "openai_error_type": "unknown",
+                    "openai_status_code": None,
+                    "openai_error_hint": "OpenAI returned an invalid response format",
+                },
+                None,
+            )
 
         normalized_payload = _normalize_clarify_plan_payload(payload, context, message=message)
         try:
@@ -1022,8 +1048,26 @@ def _generate_plan(
                     "Return one JSON object with response_type in [chart,chart_patch,explain,clarify,refuse]."
                 )
                 continue
-            return None, "openai_error", "ValidationError"
-    return None, "openai_error", None
+            return (
+                None,
+                "openai_error",
+                {
+                    "openai_error_type": "unknown",
+                    "openai_status_code": None,
+                    "openai_error_hint": "OpenAI response schema mismatch",
+                },
+                "ValidationError",
+            )
+    return (
+        None,
+        "openai_error",
+        {
+            "openai_error_type": "unknown",
+            "openai_status_code": None,
+            "openai_error_hint": "OpenAI request failed (unknown)",
+        },
+        None,
+    )
 
 
 def _enforce_mode(
@@ -1155,6 +1199,9 @@ def run_chat_orchestration(
     openai_configured = bool((settings.OPENAI_API_KEY or "").strip())
     used_fallback = False
     fallback_reason: Literal["missing_key", "openai_error"] | None = None
+    openai_error_type: str | None = None
+    openai_status_code: int | None = None
+    openai_error_hint: str | None = None
 
     strategy_digest, strategy_hash, strategy_notice = _load_strategy_runtime(dataset_id)
     strategy_pillars_used = _infer_strategy_pillars_used(message, strategy_digest)
@@ -1170,6 +1217,9 @@ def run_chat_orchestration(
             used_fallback=used_fallback,
             openai_configured=openai_configured,
             fallback_reason=fallback_reason,
+            openai_error_type=openai_error_type,
+            openai_status_code=openai_status_code,
+            openai_error_hint=openai_error_hint,
         )
 
     if not table:
@@ -1227,7 +1277,7 @@ def run_chat_orchestration(
             ).model_dump(mode="json")
         )
 
-    plan, generation_fallback_reason, generation_exception_class = _generate_plan(
+    plan, generation_fallback_reason, generation_openai_diag, generation_exception_class = _generate_plan(
         dataset_id=dataset_id,
         table=table,
         message=message,
@@ -1241,11 +1291,29 @@ def run_chat_orchestration(
     if plan is None:
         used_fallback = True
         fallback_reason = generation_fallback_reason or ("missing_key" if not openai_configured else "openai_error")
-        _log_chat_fallback(
-            fallback_reason=fallback_reason,
-            exception_class_name=generation_exception_class,
-            enable_debug=settings.ENABLE_DEBUG,
-        )
+        if fallback_reason == "openai_error":
+            diagnostics: OpenAIDiagnostics = generation_openai_diag or {
+                "openai_error_type": "unknown",
+                "openai_status_code": None,
+                "openai_error_hint": "OpenAI request failed (see backend diagnostics)",
+            }
+            openai_error_type = diagnostics.get("openai_error_type")
+            openai_status_code = diagnostics.get("openai_status_code")
+            openai_error_hint = diagnostics.get("openai_error_hint")
+            correlation_id = uuid4().hex[:12]
+            log_openai_failure(
+                logger,
+                correlation_id,
+                diagnostics,
+                enable_debug=settings.ENABLE_DEBUG,
+                exception_class_name=generation_exception_class,
+            )
+        else:
+            _log_chat_fallback(
+                fallback_reason=fallback_reason,
+                exception_class_name=generation_exception_class,
+                enable_debug=settings.ENABLE_DEBUG,
+            )
         plan = _fallback_plan_from_context(message=message, mode=mode, table=table, context=context)
 
     plan = _enforce_mode(plan=plan, mode=mode, context=context, table=table, message=message)
