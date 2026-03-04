@@ -15,6 +15,7 @@ MetricAggregation = Literal["sum", "avg", "count", "min", "max"]
 MissingField = Literal["metric", "x_axis", "time_grain", "table"]
 ChatRole = Literal["user", "assistant"]
 ChatResponseType = Literal["chart", "chart_patch", "explain", "clarify", "refuse"]
+ChatFallbackReason = Literal["missing_key", "openai_error"]
 
 
 def create_clarify_id() -> str:
@@ -195,6 +196,9 @@ class ChatChartResponse(BaseModel):
     rows: list[dict[str, Any]]
     narrative: str
     meta: dict[str, Any] = Field(default_factory=dict)
+    used_fallback: bool | None = None
+    openai_configured: bool | None = None
+    fallback_reason: ChatFallbackReason | None = None
 
 
 class ChatPatchResponse(BaseModel):
@@ -202,6 +206,9 @@ class ChatPatchResponse(BaseModel):
     patch: ChartSpecPatch
     narrative: str | None = None
     meta: dict[str, Any] = Field(default_factory=dict)
+    used_fallback: bool | None = None
+    openai_configured: bool | None = None
+    fallback_reason: ChatFallbackReason | None = None
 
 
 class ChatExplainResponse(BaseModel):
@@ -209,6 +216,9 @@ class ChatExplainResponse(BaseModel):
     message: str
     citations: list[str] = Field(default_factory=list)
     meta: dict[str, Any] = Field(default_factory=dict)
+    used_fallback: bool | None = None
+    openai_configured: bool | None = None
+    fallback_reason: ChatFallbackReason | None = None
 
 
 class ChatClarifyResponse(BaseModel):
@@ -218,6 +228,9 @@ class ChatClarifyResponse(BaseModel):
     missing: list[MissingField] = Field(default_factory=list)
     options: ClarifyOptions = Field(default_factory=ClarifyOptions)
     meta: dict[str, Any] = Field(default_factory=dict)
+    used_fallback: bool | None = None
+    openai_configured: bool | None = None
+    fallback_reason: ChatFallbackReason | None = None
 
     @field_validator("missing", mode="before")
     @classmethod
@@ -240,6 +253,9 @@ class ChatRefuseResponse(BaseModel):
     response_type: Literal["refuse"] = "refuse"
     message: str
     meta: dict[str, Any] = Field(default_factory=dict)
+    used_fallback: bool | None = None
+    openai_configured: bool | None = None
+    fallback_reason: ChatFallbackReason | None = None
 
 
 ChatResponseUnion = Annotated[

@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     
     # CORS
     FRONTEND_URL: str = "http://localhost:3000"
+    ENABLE_DEBUG: bool = False
 
     # Cache (standby mode)
     CACHE_ENABLED: bool = False
@@ -38,6 +39,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = str(ENV_FILE_PATH)
         case_sensitive = True
+        extra = "ignore"
 
 
 @lru_cache()

@@ -190,6 +190,33 @@ export function NumiChatbot({ isOpen, onClose }: NumiChatbotProps) {
     () => turns.find((turn) => turn.role === "user")?.message ?? null,
     [turns]
   );
+  const latestAssistantResponse = useMemo(() => {
+    for (let index = turns.length - 1; index >= 0; index -= 1) {
+      const turn = turns[index];
+      if (turn.role === "assistant" && turn.response) {
+        return turn.response;
+      }
+    }
+    return null;
+  }, [turns]);
+  const fallbackWarningText = useMemo(() => {
+    if (!latestAssistantResponse) {
+      return null;
+    }
+    if (
+      latestAssistantResponse.openai_configured === false ||
+      latestAssistantResponse.fallback_reason === "missing_key"
+    ) {
+      return "⚠️ VizAgent is running in fallback mode (OPENAI_API_KEY not detected). Check backend/.env and server logs.";
+    }
+    if (
+      latestAssistantResponse.used_fallback === true ||
+      latestAssistantResponse.fallback_reason === "openai_error"
+    ) {
+      return "⚠️ VizAgent is running in fallback mode (OpenAI call failed). Check backend logs / rate limits.";
+    }
+    return null;
+  }, [latestAssistantResponse]);
 
   useEffect(() => {
     setError(null);
@@ -886,6 +913,13 @@ export function NumiChatbot({ isOpen, onClose }: NumiChatbotProps) {
                 ))}
               </div>
             ) : null}
+          </div>
+        ) : null}
+
+        {/* Fallback Warning */}
+        {fallbackWarningText ? (
+          <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
+            {fallbackWarningText}
           </div>
         ) : null}
 

@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import logging
 import hashlib
 import json
 import re
-from typing import Any
+from typing import Any, Literal
+from uuid import uuid4
 
 from fastapi import HTTPException
 from pydantic import TypeAdapter, ValidationError
@@ -42,6 +44,7 @@ from app.services.strategy.errors import StrategyNotFoundError, StrategyValidati
 from app.services.strategy.store import get_strategy_store
 
 _PLAN_ADAPTER = TypeAdapter(ChatPlanUnion)
+logger = logging.getLogger(__name__)
 
 _TIME_INTENT_TOKENS = [
     "trend",
@@ -776,6 +779,43 @@ def _with_strategy_meta(
     return out
 
 
+def _with_chat_debug_meta(
+    payload: dict[str, Any],
+    *,
+    used_fallback: bool,
+    openai_configured: bool,
+    fallback_reason: Literal["missing_key", "openai_error"] | None = None,
+) -> dict[str, Any]:
+    out = dict(payload)
+    out["used_fallback"] = used_fallback
+    out["openai_configured"] = openai_configured
+    if used_fallback and fallback_reason:
+        out["fallback_reason"] = fallback_reason
+    return out
+
+
+def _log_chat_fallback(
+    *,
+    fallback_reason: Literal["missing_key", "openai_error"],
+    exception_class_name: str | None,
+    enable_debug: bool,
+) -> None:
+    correlation_id = uuid4().hex[:12]
+    if enable_debug:
+        logger.warning(
+            "chat_fallback correlation_id=%s fallback_reason=%s exception_class=%s",
+            correlation_id,
+            fallback_reason,
+            exception_class_name or "-",
+        )
+        return
+    logger.warning(
+        "chat_fallback correlation_id=%s fallback_reason=%s",
+        correlation_id,
+        fallback_reason,
+    )
+
+
 def _ensure_strategy_alignment_text(message: str, strategy_digest: dict[str, Any]) -> str:
     north_star = strategy_digest.get("north_star", {})
     north_star_name = north_star.get("name") if isinstance(north_star, dict) else None
@@ -924,19 +964,20 @@ def _generate_plan(
     strategy_notice: str | None,
     state: ChatState,
     history: list[ChatHistoryTurn] | None,
-) -> ChatPlanUnion | None:
+) -> tuple[ChatPlanUnion | None, Literal["missing_key", "openai_error"] | None, str | None]:
     settings = get_settings()
-    if not settings.OPENAI_API_KEY:
-        return None
+    openai_key = (settings.OPENAI_API_KEY or "").strip()
+    if not openai_key:
+        return None, "missing_key", None
 
     try:
         client = OpenAIClient(
-            api_key=settings.OPENAI_API_KEY,
+            api_key=openai_key,
             model=settings.OPENAI_MODEL,
             temperature=0.2,
         )
-    except OpenAIJSONError:
-        return None
+    except OpenAIJSONError as exc:
+        return None, "openai_error", type(exc).__name__
 
     system_prompt = _build_system_prompt(mode, strategy_digest=strategy_digest, strategy_notice=strategy_notice)
     user_prompt = _build_user_prompt(
@@ -957,23 +998,23 @@ def _generate_plan(
                 user_prompt=user_prompt,
                 corrective_prompt=corrective_prompt,
             )
-        except OpenAIJSONError:
+        except OpenAIJSONError as exc:
             if attempt == 0:
                 corrective_prompt = "Your previous output was invalid JSON. Return one valid JSON object only."
                 continue
-            return None
-        except Exception:
-            return None
+            return None, "openai_error", type(exc).__name__
+        except Exception as exc:
+            return None, "openai_error", type(exc).__name__
 
         if not isinstance(payload, dict):
             if attempt == 0:
                 corrective_prompt = "Return a single JSON object only."
                 continue
-            return None
+            return None, "openai_error", None
 
         normalized_payload = _normalize_clarify_plan_payload(payload, context, message=message)
         try:
-            return _PLAN_ADAPTER.validate_python(normalized_payload)
+            return _PLAN_ADAPTER.validate_python(normalized_payload), None, None
         except ValidationError:
             if attempt == 0:
                 corrective_prompt = (
@@ -981,8 +1022,8 @@ def _generate_plan(
                     "Return one JSON object with response_type in [chart,chart_patch,explain,clarify,refuse]."
                 )
                 continue
-            return None
-    return None
+            return None, "openai_error", "ValidationError"
+    return None, "openai_error", None
 
 
 def _enforce_mode(
@@ -1110,11 +1151,29 @@ def run_chat_orchestration(
     db: Session,
     debug: bool = False,
 ) -> dict[str, Any]:
+    settings = get_settings()
+    openai_configured = bool((settings.OPENAI_API_KEY or "").strip())
+    used_fallback = False
+    fallback_reason: Literal["missing_key", "openai_error"] | None = None
+
     strategy_digest, strategy_hash, strategy_notice = _load_strategy_runtime(dataset_id)
     strategy_pillars_used = _infer_strategy_pillars_used(message, strategy_digest)
 
+    def finalize(payload: dict[str, Any]) -> dict[str, Any]:
+        payload_with_strategy = _with_strategy_meta(
+            payload,
+            strategy_hash=strategy_hash,
+            strategy_pillars_used=strategy_pillars_used,
+        )
+        return _with_chat_debug_meta(
+            payload_with_strategy,
+            used_fallback=used_fallback,
+            openai_configured=openai_configured,
+            fallback_reason=fallback_reason,
+        )
+
     if not table:
-        return _with_strategy_meta(
+        return finalize(
             ChatClarifyResponse(
                 response_type="clarify",
                 clarify_id=create_clarify_id(),
@@ -1122,9 +1181,7 @@ def run_chat_orchestration(
                 missing=["table"],
                 options=ClarifyOptions(),
                 meta={},
-            ).model_dump(mode="json"),
-            strategy_hash=strategy_hash,
-            strategy_pillars_used=strategy_pillars_used,
+            ).model_dump(mode="json")
         )
 
     parsed_state = _parse_state(state)
@@ -1150,14 +1207,10 @@ def run_chat_orchestration(
                     f"{chart_response.narrative} "
                     "Requested time grain noted; current execution groups by the raw temporal field."
                 )
-        return _with_strategy_meta(
-            chart_response.model_dump(mode="json"),
-            strategy_hash=strategy_hash,
-            strategy_pillars_used=strategy_pillars_used,
-        )
+        return finalize(chart_response.model_dump(mode="json"))
     if isinstance(state_plan, ChatPlanClarify):
         stage = state_plan.missing[0] if state_plan.missing else "metric"
-        return _with_strategy_meta(
+        return finalize(
             ChatClarifyResponse(
                 response_type="clarify",
                 clarify_id=state_plan.clarify_id,
@@ -1171,12 +1224,10 @@ def run_chat_orchestration(
                     requested_grain=_requested_time_grain(intent_message),
                 ),
                 meta={},
-            ).model_dump(mode="json"),
-            strategy_hash=strategy_hash,
-            strategy_pillars_used=strategy_pillars_used,
+            ).model_dump(mode="json")
         )
 
-    plan = _generate_plan(
+    plan, generation_fallback_reason, generation_exception_class = _generate_plan(
         dataset_id=dataset_id,
         table=table,
         message=message,
@@ -1188,6 +1239,13 @@ def run_chat_orchestration(
         history=history,
     )
     if plan is None:
+        used_fallback = True
+        fallback_reason = generation_fallback_reason or ("missing_key" if not openai_configured else "openai_error")
+        _log_chat_fallback(
+            fallback_reason=fallback_reason,
+            exception_class_name=generation_exception_class,
+            enable_debug=settings.ENABLE_DEBUG,
+        )
         plan = _fallback_plan_from_context(message=message, mode=mode, table=table, context=context)
 
     plan = _enforce_mode(plan=plan, mode=mode, context=context, table=table, message=message)
@@ -1203,38 +1261,30 @@ def run_chat_orchestration(
             style=plan.narrative_style,
             debug=debug,
         )
-        return _with_strategy_meta(
-            chart_response.model_dump(mode="json"),
-            strategy_hash=strategy_hash,
-            strategy_pillars_used=strategy_pillars_used,
-        )
+        return finalize(chart_response.model_dump(mode="json"))
 
     if isinstance(plan, ChatPlanPatch):
         last_raw = parsed_state.last_chart_spec
         if not last_raw:
-            return _with_strategy_meta(
+            return finalize(
                 _default_clarify(
                     "I need an existing chart first. What metric should we chart?",
                     context,
                     missing=["metric"],
                     intent_message=intent_message,
-                ).model_dump(mode="json"),
-                strategy_hash=strategy_hash,
-                strategy_pillars_used=strategy_pillars_used,
+                ).model_dump(mode="json")
             )
         try:
             base = last_raw if isinstance(last_raw, ChartSpecV1) else ChartSpecV1.model_validate(last_raw)
             patched = apply_patch(base, plan.patch)
         except (ValidationError, HTTPException):
-            return _with_strategy_meta(
+            return finalize(
                 _default_clarify(
                     "I could not apply that update safely. Which metric should I use?",
                     context,
                     missing=["metric"],
                     intent_message=intent_message,
-                ).model_dump(mode="json"),
-                strategy_hash=strategy_hash,
-                strategy_pillars_used=strategy_pillars_used,
+                ).model_dump(mode="json")
             )
 
         chart_response = _execute_chart(
@@ -1247,11 +1297,7 @@ def run_chat_orchestration(
             style=plan.narrative_style,
             debug=debug,
         )
-        return _with_strategy_meta(
-            chart_response.model_dump(mode="json"),
-            strategy_hash=strategy_hash,
-            strategy_pillars_used=strategy_pillars_used,
-        )
+        return finalize(chart_response.model_dump(mode="json"))
 
     if isinstance(plan, ChatPlanExplain):
         if plan.optional_chart_spec:
@@ -1270,33 +1316,29 @@ def run_chat_orchestration(
                     f"{plan.message} {chart_response.narrative}",
                     strategy_digest,
                 )
-                return _with_strategy_meta(
+                return finalize(
                     ChatExplainResponse(
                         response_type="explain",
                         message=explain_message.strip(),
                         citations=["charts_preview"],
                         meta={"from_chart_preview": True, "chart_spec": chart_response.chart_spec.model_dump(mode="json")},
-                    ).model_dump(mode="json"),
-                    strategy_hash=strategy_hash,
-                    strategy_pillars_used=strategy_pillars_used,
+                    ).model_dump(mode="json")
                 )
 
         explain_message = plan.message.strip() or _context_explain_message(context=context, table=table, user_message=message)
         explain_message = _ensure_strategy_alignment_text(explain_message, strategy_digest)
-        return _with_strategy_meta(
+        return finalize(
             ChatExplainResponse(
                 response_type="explain",
                 message=explain_message,
                 citations=[f"profile:{table}"],
                 meta={},
-            ).model_dump(mode="json"),
-            strategy_hash=strategy_hash,
-            strategy_pillars_used=strategy_pillars_used,
+            ).model_dump(mode="json")
         )
 
     if isinstance(plan, ChatPlanClarify):
         stage = plan.missing[0] if plan.missing else "metric"
-        return _with_strategy_meta(
+        return finalize(
             ChatClarifyResponse(
                 response_type="clarify",
                 clarify_id=plan.clarify_id,
@@ -1310,31 +1352,25 @@ def run_chat_orchestration(
                     requested_grain=_requested_time_grain(intent_message),
                 ),
                 meta={},
-            ).model_dump(mode="json"),
-            strategy_hash=strategy_hash,
-            strategy_pillars_used=strategy_pillars_used,
+            ).model_dump(mode="json")
         )
 
     if isinstance(plan, ChatPlanRefuse):
-        return _with_strategy_meta(
+        return finalize(
             ChatRefuseResponse(
                 response_type="refuse",
                 message=plan.message.strip() or "I can only help with analytics for the selected mart.",
                 meta={},
-            ).model_dump(mode="json"),
-            strategy_hash=strategy_hash,
-            strategy_pillars_used=strategy_pillars_used,
+            ).model_dump(mode="json")
         )
 
-    return _with_strategy_meta(
+    return finalize(
         _default_clarify(
             "Please rephrase your analytics request with a metric and grouping field.",
             context,
             missing=["metric"],
             intent_message=intent_message,
-        ).model_dump(mode="json"),
-        strategy_hash=strategy_hash,
-        strategy_pillars_used=strategy_pillars_used,
+        ).model_dump(mode="json")
     )
 
 
