@@ -581,7 +581,7 @@ export function NumiChatbot({ isOpen, onClose }: NumiChatbotProps) {
             <div className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
           </div>
           <div>
-            <h3 className="font-semibold text-slate-900">Numi</h3>
+            <h3 className="font-semibold text-slate-900">VizAgent</h3>
             <p className="text-[10px] text-slate-600">AI Data Assistant</p>
           </div>
         </div>
@@ -721,7 +721,7 @@ export function NumiChatbot({ isOpen, onClose }: NumiChatbotProps) {
                   isAssistant ? "bg-white border-slate-200 shadow-sm" : "bg-cyan-100 border-cyan-200 shadow-sm"
                 }`}
               >
-                <p className="text-[10px] text-slate-600 mb-1">{isAssistant ? "Numi" : "You"}</p>
+                <p className="text-[10px] text-slate-600 mb-1">{isAssistant ? "VizAgent" : "You"}</p>
                 {isAssistant ? (
                   turn.message ? (
                     <div className="text-sm">

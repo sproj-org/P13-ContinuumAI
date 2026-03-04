@@ -12,6 +12,8 @@ class OpenAIJSONError(RuntimeError):
 
 class OpenAIClient:
     def __init__(self, api_key: str, model: str = "gpt-4o-mini", temperature: float = 0.2) -> None:
+        if not api_key or not api_key.strip():
+            raise OpenAIJSONError("OPENAI_API_KEY is missing. Set it in backend/.env or your shell environment.")
         try:
             from openai import OpenAI
         except ImportError as exc:

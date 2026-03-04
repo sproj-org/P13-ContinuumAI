@@ -1,6 +1,8 @@
+from contextlib import asynccontextmanager
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
 
 from app.core.config import get_settings
 from app.db.database import create_tables
@@ -9,6 +11,7 @@ from app.api.datasets import router as datasets_router
 from app.api.profiling import router as profiling_router
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -16,6 +19,7 @@ async def lifespan(app: FastAPI):
     """Application lifespan - runs on startup and shutdown."""
     # Startup: Create database tables
     create_tables()
+    logger.info("Loaded settings: OPENAI_API_KEY set: %s", bool(settings.OPENAI_API_KEY))
     yield
     # Shutdown: cleanup if needed
 

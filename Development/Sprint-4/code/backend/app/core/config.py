@@ -1,5 +1,13 @@
-from pydantic_settings import BaseSettings
 from functools import lru_cache
+from pathlib import Path
+
+from dotenv import load_dotenv
+from pydantic import AliasChoices, Field
+from pydantic_settings import BaseSettings
+
+BACKEND_DIR = Path(__file__).resolve().parents[2]
+ENV_FILE_PATH = BACKEND_DIR / ".env"
+load_dotenv(dotenv_path=ENV_FILE_PATH, override=False)
 
 
 class Settings(BaseSettings):
@@ -22,10 +30,13 @@ class Settings(BaseSettings):
 
     # LLM
     OPENAI_API_KEY: str | None = None
-    OPENAI_MODEL: str = "gpt-4o-mini"
+    OPENAI_MODEL: str = Field(
+        default="gpt-4o-mini",
+        validation_alias=AliasChoices("OPENAI_MODEL", "VIZAGENT_MODEL"),
+    )
     
     class Config:
-        env_file = ".env"
+        env_file = str(ENV_FILE_PATH)
         case_sensitive = True
 
 

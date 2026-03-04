@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 
 // Tab components
-import { MartsTab, ChartBuilderTab, DashboardTab, NumiChatbot } from "@/components/workspace";
+import { MartsTab, ChartBuilderTab, DashboardTab, VizAgentChatbot } from "@/components/workspace";
 
 const tabs: { id: WorkspaceTab; label: string; icon: React.ReactNode }[] = [
   { id: "marts", label: "Profiling", icon: <Database className="w-4 h-4" /> },
@@ -29,7 +29,7 @@ function WorkspaceContent() {
   const router = useRouter();
   const params = useParams();
   const datasetId = params.datasetId as string;
-  const [isNumiOpen, setIsNumiOpen] = useState(false);
+  const [isVizAgentOpen, setIsVizAgentOpen] = useState(false);
 
   const {
     activeTab,
@@ -83,10 +83,10 @@ function WorkspaceContent() {
     router.push("/dashboard");
   };
 
-  // Trigger window resize when Numi opens/closes to make charts resize properly
+  // Trigger window resize when VizAgent opens/closes to make charts resize properly
   useEffect(() => {
     window.dispatchEvent(new Event('resize'));
-  }, [isNumiOpen]);
+  }, [isVizAgentOpen]);
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -148,11 +148,11 @@ function WorkspaceContent() {
 
             <div className="flex items-center gap-4">
               <button
-                onClick={() => setIsNumiOpen(!isNumiOpen)}
+                onClick={() => setIsVizAgentOpen(!isVizAgentOpen)}
                 className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-lg hover:from-cyan-600 hover:to-emerald-600 transition-all shadow-md hover:shadow-lg"
               >
                 <Sparkles className="w-4 h-4" />
-                <span>Ask Numi</span>
+                <span>Ask VizAgent</span>
               </button>
             </div>
           </div>
@@ -166,14 +166,14 @@ function WorkspaceContent() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
         className={`h-[calc(100vh-3.5rem)] transition-all duration-100 ${
-          isNumiOpen ? "mr-96" : "mr-0"
+          isVizAgentOpen ? "mr-96" : "mr-0"
         }`}
       >
         {renderTabContent()}
       </motion.main>
 
-      {/* Numi Chatbot Sidebar */}
-      <NumiChatbot isOpen={isNumiOpen} onClose={() => setIsNumiOpen(false)} />
+      {/* VizAgent Chatbot Sidebar */}
+      <VizAgentChatbot isOpen={isVizAgentOpen} onClose={() => setIsVizAgentOpen(false)} />
     </div>
   );
 }
