@@ -498,7 +498,7 @@ export function NumiChatbot({ isOpen, onClose }: NumiChatbotProps) {
           {/* Chart Preview Header */}
           <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-indigo-50/30">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-emerald-500 flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#4f46e5] to-indigo-600 flex items-center justify-center shadow-lg">
                 <BarChart3 className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -515,9 +515,9 @@ export function NumiChatbot({ isOpen, onClose }: NumiChatbotProps) {
           </div>
 
           {/* Chart Content */}
-          <div className="flex-1 overflow-y-auto p-8 flex items-center justify-center bg-gradient-to-br from-slate-50/50 via-cyan-50/30 to-emerald-50/20">
+          <div className="flex-1 overflow-y-auto p-8 flex items-center justify-center bg-gradient-to-br from-slate-50/50 via-indigo-50/30 to-violet-50/20">
             <div className="w-full max-w-5xl">
-              <div className="bg-white rounded-3xl shadow-2xl border border-cyan-100/50 overflow-hidden">
+              <div className="bg-white rounded-3xl shadow-2xl border border-indigo-100/50 overflow-hidden">
                 {/* Chart Title Section */}
                 <div className="px-8 pt-8 pb-4 bg-gradient-to-r from-white to-indigo-50/30">
                   <h4 className="text-xl font-bold text-slate-900 text-center line-clamp-2">
@@ -540,14 +540,14 @@ export function NumiChatbot({ isOpen, onClose }: NumiChatbotProps) {
             <div className="grid grid-cols-3 gap-3">
               <button
                 onClick={handleEditInChartBuilder}
-                className="flex flex-col items-center gap-2 px-4 py-4 bg-white border-2 border-cyan-200 text-cyan-700 rounded-xl hover:border-cyan-300 hover:bg-cyan-50 transition-all shadow-sm hover:shadow-md font-medium group"
+                className="flex flex-col items-center gap-2 px-4 py-4 bg-white border-2 border-indigo-200 text-indigo-700 rounded-xl hover:border-indigo-300 hover:bg-indigo-50 transition-all shadow-sm hover:shadow-md font-medium group"
               >
                 <Edit3 className="w-5 h-5 group-hover:scale-110 transition-transform" />
                 <span className="text-xs">Edit in Builder</span>
               </button>
               <button
                 onClick={handleSaveChartToDashboard}
-                className="flex flex-col items-center gap-2 px-4 py-4 bg-gradient-to-br from-cyan-500 to-emerald-500 text-white rounded-xl hover:from-cyan-600 hover:to-emerald-600 transition-all shadow-md hover:shadow-lg font-medium group"
+                className="flex flex-col items-center gap-2 px-4 py-4 bg-gradient-to-br from-[#4f46e5] to-indigo-600 text-white rounded-xl hover:from-indigo-600 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg font-medium group"
               >
                 <Save className="w-5 h-5 group-hover:scale-110 transition-transform" />
                 <span className="text-xs">Save</span>
@@ -569,16 +569,16 @@ export function NumiChatbot({ isOpen, onClose }: NumiChatbotProps) {
 
       {/* Chat Sidebar - Right Side */}
       <div
-        className={`fixed right-0 top-0 h-full w-96 bg-gradient-to-br from-white via-cyan-50/30 to-emerald-50/40 border-l border-cyan-200/50 shadow-2xl transform transition-transform duration-300 ease-in-out z-50 flex flex-col ${
+        className={`fixed right-0 top-0 h-full w-96 bg-gradient-to-br from-white via-indigo-50/30 to-violet-50/40 border-l border-indigo-200/50 shadow-2xl transform transition-transform duration-300 ease-in-out z-50 flex flex-col ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
       {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b border-cyan-200/50 bg-white/80 backdrop-blur-sm">
+      <div className="flex items-center justify-between p-3 border-b border-indigo-200/50 bg-white/80 backdrop-blur-sm">
         <div className="flex items-center gap-2">
           <div className="relative">
-            <Sparkles className="w-5 h-5 text-cyan-600" />
-            <div className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+            <Sparkles className="w-5 h-5 text-[#4f46e5]" />
+            <div className="absolute -top-1 -right-1 w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
           </div>
           <div>
             <h3 className="font-semibold text-slate-900">Numi</h3>
@@ -605,12 +605,12 @@ export function NumiChatbot({ isOpen, onClose }: NumiChatbotProps) {
       </div>
 
       {/* Mart Selector */}
-      <div className="p-3 border-b border-cyan-200/50 bg-white/60 backdrop-blur-sm space-y-2">
+      <div className="p-3 border-b border-indigo-200/50 bg-white/60 backdrop-blur-sm space-y-2">
         <div className="relative" ref={martPickerRef}>
           <button
             type="button"
             onClick={() => setIsMartOpen((open) => !open)}
-            className="w-full flex items-center justify-between gap-2 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 shadow-sm"
+            className="w-full flex items-center justify-between gap-2 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/50 shadow-sm"
           >
             <span className="truncate">
               {selectedMart?.label ?? selectedMart?.id ?? "Select mart"}
@@ -618,7 +618,7 @@ export function NumiChatbot({ isOpen, onClose }: NumiChatbotProps) {
             <ChevronDown className={`w-4 h-4 transition-transform ${isMartOpen ? "rotate-180" : ""}`} />
           </button>
           {isMartOpen ? (
-            <div className="absolute z-50 mt-2 w-full rounded-xl border border-cyan-200 bg-white/95 backdrop-blur-xl shadow-xl">
+            <div className="absolute z-50 mt-2 w-full rounded-xl border border-indigo-200 bg-white/95 backdrop-blur-xl shadow-xl">
               <div className="p-2">
                 <div className="flex items-center gap-2 rounded-lg border border-slate-300 bg-slate-50 px-2 py-1.5">
                   <Search className="w-3.5 h-3.5 text-slate-400" />
@@ -647,7 +647,7 @@ export function NumiChatbot({ isOpen, onClose }: NumiChatbotProps) {
                         }}
                         className={`w-full text-left rounded-lg border px-2 py-1.5 transition-colors ${
                           isSelected
-                            ? "border-cyan-300 bg-cyan-100 shadow-sm"
+                            ? "border-indigo-300 bg-indigo-100 shadow-sm"
                             : "border-slate-200 bg-white hover:bg-slate-50"
                         }`}
                       >
@@ -655,7 +655,7 @@ export function NumiChatbot({ isOpen, onClose }: NumiChatbotProps) {
                           <p className="text-xs text-slate-900 font-semibold truncate flex-1">
                             {mart.label ?? mart.id}
                           </p>
-                          {isSelected ? <Check className="w-3.5 h-3.5 text-cyan-600" /> : null}
+                          {isSelected ? <Check className="w-3.5 h-3.5 text-[#4f46e5]" /> : null}
                         </div>
                       </button>
                     );
@@ -675,7 +675,7 @@ export function NumiChatbot({ isOpen, onClose }: NumiChatbotProps) {
               onClick={() => setChatMode(option.id)}
               className={`flex-1 px-2 py-1 text-xs rounded-md transition-colors ${
                 chatMode === option.id
-                  ? "bg-gradient-to-r from-cyan-500 to-emerald-500 text-white shadow-sm"
+                  ? "bg-gradient-to-r from-[#4f46e5] to-indigo-600 text-white shadow-sm"
                   : "text-slate-700 hover:bg-slate-100"
               }`}
             >
@@ -690,14 +690,14 @@ export function NumiChatbot({ isOpen, onClose }: NumiChatbotProps) {
         {!selectedAggregation ? (
           <div className="h-full flex items-center justify-center text-center">
             <div>
-              <Sparkles className="w-10 h-10 text-cyan-400 mx-auto mb-2" />
+              <Sparkles className="w-10 h-10 text-[#4f46e5] mx-auto mb-2" />
               <p className="text-sm text-slate-600">Select a mart to start chatting</p>
             </div>
           </div>
         ) : turns.length === 0 ? (
           <div className="h-full flex items-center justify-center text-center">
             <div>
-              <Sparkles className="w-10 h-10 text-cyan-400 mx-auto mb-2" />
+              <Sparkles className="w-10 h-10 text-[#4f46e5] mx-auto mb-2" />
               <p className="text-sm text-slate-600">Ask me anything about your data!</p>
             </div>
           </div>
@@ -718,7 +718,7 @@ export function NumiChatbot({ isOpen, onClose }: NumiChatbotProps) {
               <div
                 key={`${turn.createdAt}-${index}`}
                 className={`rounded-xl p-2.5 border ${
-                  isAssistant ? "bg-white border-slate-200 shadow-sm" : "bg-cyan-100 border-cyan-200 shadow-sm"
+                  isAssistant ? "bg-white border-slate-200 shadow-sm" : "bg-indigo-100 border-indigo-200 shadow-sm"
                 }`}
               >
                 <p className="text-[10px] text-slate-600 mb-1">{isAssistant ? "Numi" : "You"}</p>
@@ -732,8 +732,8 @@ export function NumiChatbot({ isOpen, onClose }: NumiChatbotProps) {
                   <p className="text-sm text-slate-900">{turn.message}</p>
                 )}
                 {isAssistant && response?.response_type === "chart" ? (
-                  <div className="mt-2 px-3 py-2 bg-cyan-50 border border-cyan-200 rounded-lg">
-                    <p className="text-xs text-cyan-700 font-medium">✨ Preview is being shown on the left panel</p>
+                  <div className="mt-2 px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-lg">
+                    <p className="text-xs text-indigo-700 font-medium">✨ Preview is being shown on the left panel</p>
                   </div>
                 ) : null}
                 {isAssistant && response?.response_type === "clarify" ? (
@@ -747,7 +747,7 @@ export function NumiChatbot({ isOpen, onClose }: NumiChatbotProps) {
                               type="button"
                               disabled={isLoading || !selectedAggregation}
                               onClick={() => handleClarifyChip(response, "metric", item)}
-                              className="px-2 py-0.5 text-xs rounded-full border border-cyan-300 text-cyan-700 bg-cyan-100 hover:bg-cyan-200 disabled:opacity-50"
+                              className="px-2 py-0.5 text-xs rounded-full border border-indigo-300 text-indigo-700 bg-indigo-100 hover:bg-indigo-200 disabled:opacity-50"
                             >
                               {item}
                             </button>
@@ -806,7 +806,7 @@ export function NumiChatbot({ isOpen, onClose }: NumiChatbotProps) {
                               type="button"
                               disabled={isLoading || !selectedAggregation}
                               onClick={() => handleClarifyChip(response, "time_grain", item)}
-                              className="px-2 py-0.5 text-xs rounded-full border border-emerald-300 text-emerald-700 bg-emerald-100 hover:bg-emerald-200 disabled:opacity-50"
+                              className="px-2 py-0.5 text-xs rounded-full border border-violet-300 text-violet-700 bg-violet-100 hover:bg-violet-200 disabled:opacity-50"
                             >
                               {item}
                             </button>
@@ -823,11 +823,11 @@ export function NumiChatbot({ isOpen, onClose }: NumiChatbotProps) {
       </div>
 
       {/* Input Form */}
-      <div className="border-t border-cyan-200/50 p-3 space-y-2 bg-white/80 backdrop-blur-sm">
+      <div className="border-t border-indigo-200/50 p-3 space-y-2 bg-white/80 backdrop-blur-sm">
         {/* Hints/Guidance */}
         {selectedAggregation && guidance.examples.length > 0 ? (
-          <div className="rounded-lg border border-cyan-200 bg-cyan-50/50 p-2">
-            <p className="text-[10px] text-cyan-900 font-medium mb-1">{guidance.title}</p>
+          <div className="rounded-lg border border-indigo-200 bg-indigo-50/50 p-2">
+            <p className="text-[10px] text-indigo-900 font-medium mb-1">{guidance.title}</p>
             <div className="flex flex-wrap gap-1.5">
               {guidance.examples.slice(0, 2).map((example) => (
                 <button
@@ -918,7 +918,7 @@ export function NumiChatbot({ isOpen, onClose }: NumiChatbotProps) {
           <button
             type="submit"
             disabled={!canSend}
-            className="px-3 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-emerald-500 text-white hover:from-cyan-600 hover:to-emerald-600 disabled:opacity-60 shadow-sm transition-colors"
+            className="px-3 py-2 rounded-lg bg-gradient-to-r from-[#4f46e5] to-indigo-600 text-white hover:from-indigo-600 hover:to-indigo-700 disabled:opacity-60 shadow-sm transition-colors"
           >
             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>

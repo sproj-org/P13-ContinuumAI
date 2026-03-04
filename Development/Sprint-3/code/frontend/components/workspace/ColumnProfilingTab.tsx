@@ -32,19 +32,19 @@ const roleIcons: Record<ColumnRole, React.ReactNode> = {
 
 const roleColors: Record<ColumnRole, { bg: string; text: string; border: string }> = {
   dimension: { bg: "bg-blue-100", text: "text-blue-700", border: "border-blue-300" },
-  measure: { bg: "bg-emerald-100", text: "text-emerald-700", border: "border-emerald-300" },
+  measure: { bg: "bg-indigo-100", text: "text-indigo-700", border: "border-indigo-300" },
   temporal: { bg: "bg-amber-100", text: "text-amber-700", border: "border-amber-300" },
 };
 
 function getNullColor(percentage: number) {
-  if (percentage < 5) return "bg-emerald-500";
+  if (percentage < 5) return "bg-indigo-500";
   if (percentage < 20) return "bg-amber-500";
   return "bg-red-500";
 }
 
 function DimensionDetails({ column }: { column: TransformedColumnProfile }) {
   const cardinalityColors = {
-    low: "bg-emerald-100 text-emerald-700",
+    low: "bg-indigo-100 text-indigo-700",
     medium: "bg-amber-100 text-amber-700",
     high: "bg-red-100 text-red-700",
   };
@@ -102,7 +102,7 @@ function DimensionDetails({ column }: { column: TransformedColumnProfile }) {
                 textinfo: "percent",
                 textposition: "inside",
                 marker: {
-                  colors: ["#3b82f6", "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b", "#ef4444"],
+                  colors: ["#3b82f6", "#8b5cf6", "#4f46e5", "#6366f1", "#f59e0b", "#ef4444"],
                 },
                 hole: 0.4,
               },
@@ -152,7 +152,7 @@ function MeasureDetails({ column }: { column: TransformedColumnProfile }) {
           {["SUM", "AVG", "COUNT", "MIN", "MAX"].map((agg) => (
             <span
               key={agg}
-              className="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-emerald-400 text-sm font-medium"
+              className="px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/30 rounded-lg text-indigo-400 text-sm font-medium"
             >
               {agg}({column.name})
             </span>

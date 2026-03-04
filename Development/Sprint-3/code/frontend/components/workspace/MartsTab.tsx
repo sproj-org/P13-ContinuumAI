@@ -40,18 +40,18 @@ const roleIcons: Record<ColumnRole, React.ReactNode> = {
 
 const roleColors: Record<ColumnRole, { bg: string; text: string; border: string; label: string }> = {
   dimension: { bg: "bg-blue-100", text: "text-blue-700", border: "border-blue-300", label: "DIMENSION" },
-  measure: { bg: "bg-emerald-100", text: "text-emerald-700", border: "border-emerald-300", label: "MEASURE" },
+  measure: { bg: "bg-indigo-100", text: "text-indigo-700", border: "border-indigo-300", label: "MEASURE" },
   temporal: { bg: "bg-amber-100", text: "text-amber-700", border: "border-amber-300", label: "TEMPORAL" },
 };
 
 function getNullColor(percentage: number) {
-  if (percentage < 5) return "text-emerald-600";
+  if (percentage < 5) return "text-indigo-600";
   if (percentage < 20) return "text-amber-600";
   return "text-red-600";
 }
 
 function getQualityColor(percentage: number) {
-  if (percentage < 5) return "bg-emerald-500";
+  if (percentage < 5) return "bg-indigo-500";
   if (percentage < 20) return "bg-amber-500";
   return "bg-red-500";
 }
@@ -99,7 +99,7 @@ function DimensionDetails({ column }: { column: TransformedColumnProfile }) {
           <div className="flex items-center gap-4">
             <span className="text-slate-600 text-sm font-medium">Cardinality:</span>
             <span className={`px-3 py-1 rounded-full text-sm font-medium capitalize ${
-              column.cardinality === 'low' ? 'bg-emerald-100 text-emerald-700' :
+              column.cardinality === 'low' ? 'bg-indigo-100 text-indigo-700' :
               column.cardinality === 'medium' ? 'bg-amber-100 text-amber-700' :
               'bg-red-100 text-red-700'
             }`}>
@@ -149,7 +149,7 @@ function DimensionDetails({ column }: { column: TransformedColumnProfile }) {
                   textinfo: "percent",
                   textposition: "inside",
                   marker: {
-                    colors: ["#4F46E5", "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b", "#ef4444", "#ec4899", "#6366f1"],
+                    colors: ["#4F46E5", "#8b5cf6", "#a78bfa", "#6366f1", "#f59e0b", "#ef4444", "#ec4899", "#818cf8"],
                   },
                   hole: 0.4,
                 },
@@ -175,15 +175,15 @@ function DimensionDetails({ column }: { column: TransformedColumnProfile }) {
 
 function MeasureDetails({ column }: { column: TransformedColumnProfile }) {
   return (
-    <div className="p-6 bg-gradient-to-br from-slate-50 to-emerald-50/20 border-t border-slate-200">
+    <div className="p-6 bg-gradient-to-br from-slate-50 to-indigo-50/20 border-t border-slate-200">
       <div className="space-y-6">
         {/* Stats Grid */}
         <div className="grid grid-cols-4 gap-4">
           {[
             { label: "Min", value: column.min, color: "text-blue-600" },
-            { label: "Max", value: column.max, color: "text-cyan-600" },
-            { label: "Mean", value: column.mean, color: "text-emerald-600" },
-            { label: "Median", value: column.median, color: "text-violet-600" },
+            { label: "Max", value: column.max, color: "text-indigo-600" },
+            { label: "Mean", value: column.mean, color: "text-violet-600" },
+            { label: "Median", value: column.median, color: "text-purple-600" },
           ].map((stat) => (
             <div key={stat.label} className="bg-white border border-slate-200 rounded-xl p-4 text-center shadow-sm">
               <div className="text-slate-600 text-xs mb-1.5 font-medium uppercase">{stat.label}</div>
@@ -201,7 +201,7 @@ function MeasureDetails({ column }: { column: TransformedColumnProfile }) {
             {["SUM", "AVG", "COUNT", "MIN", "MAX"].map((agg) => (
               <span
                 key={agg}
-                className="px-3 py-1.5 bg-emerald-100 border border-emerald-300 rounded-lg text-emerald-700 text-sm font-medium"
+                className="px-3 py-1.5 bg-indigo-100 border border-indigo-300 rounded-lg text-indigo-700 text-sm font-medium"
               >
                 {agg}({column.name})
               </span>
@@ -269,17 +269,17 @@ export default function MartsTab() {
   };
 
   const getHealthStatus = (score: number) => {
-    if (score >= 90) return { label: "High", color: "text-emerald-600", bg: "bg-emerald-100" };
+    if (score >= 90) return { label: "High", color: "text-indigo-600", bg: "bg-indigo-100" };
     if (score >= 70) return { label: "Medium", color: "text-amber-600", bg: "bg-amber-100" };
     return { label: "Low", color: "text-red-600", bg: "bg-red-100" };
   };
 
   return (
-    <div className="flex h-full bg-gradient-to-br from-slate-50 via-cyan-50/20 to-emerald-50/20">
+    <div className="flex h-full bg-gradient-to-br from-slate-50 via-indigo-50/20 to-violet-50/20">
       {/* Left Panel - Mart Selector */}
-      <div className="w-80 border-r border-cyan-100 bg-white/90 backdrop-blur-sm overflow-y-auto">
-        <div className="p-5 border-b border-cyan-100 bg-gradient-to-r from-white to-cyan-50/30">
-          <h3 className="text-sm font-bold text-cyan-800 uppercase tracking-wider mb-1">
+      <div className="w-80 border-r border-indigo-100 bg-white/90 backdrop-blur-sm overflow-y-auto">
+        <div className="p-5 border-b border-indigo-100 bg-gradient-to-r from-white to-indigo-50/30">
+          <h3 className="text-sm font-bold text-indigo-800 uppercase tracking-wider mb-1">
             Data Profiling
           </h3>
           <p className="text-xs text-slate-600">Select a mart to view its profile</p>
@@ -295,18 +295,18 @@ export default function MartsTab() {
                 }}
                 className={`w-full text-left p-3.5 rounded-xl transition-all ${
                   selectedAggregation === table.id
-                    ? "bg-gradient-to-r from-cyan-100 to-emerald-100 border border-cyan-300 shadow-md"
-                    : "bg-white border border-slate-200 hover:bg-cyan-50/50 hover:border-cyan-200 shadow-sm"
+                    ? "bg-gradient-to-r from-indigo-100 to-violet-100 border border-indigo-300 shadow-md"
+                    : "bg-white border border-slate-200 hover:bg-indigo-50/50 hover:border-indigo-200 shadow-sm"
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${selectedAggregation === table.id ? "bg-gradient-to-br from-cyan-500 to-emerald-500" : "bg-slate-100"}`}>
+                  <div className={`p-2 rounded-lg ${selectedAggregation === table.id ? "bg-gradient-to-br from-[#4f46e5] to-indigo-600" : "bg-slate-100"}`}>
                     <Database
                       className={`w-5 h-5 ${selectedAggregation === table.id ? "text-white" : "text-slate-500"}`}
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className={`font-semibold text-sm truncate ${selectedAggregation === table.id ? "text-cyan-800" : "text-slate-700"}`}>
+                    <div className={`font-semibold text-sm truncate ${selectedAggregation === table.id ? "text-indigo-800" : "text-slate-700"}`}>
                       {table.label ?? table.id}
                     </div>
                     <div className="text-xs text-slate-500 truncate">
@@ -337,7 +337,7 @@ export default function MartsTab() {
         ) : isLoading ? (
           <div className="h-full flex items-center justify-center">
             <div className="text-center">
-              <Loader2 className="w-12 h-12 text-cyan-600 mx-auto mb-4 animate-spin" />
+              <Loader2 className="w-12 h-12 text-indigo-600 mx-auto mb-4 animate-spin" />
               <h3 className="text-lg font-medium text-slate-600">Loading mart profile...</h3>
             </div>
           </div>
@@ -357,7 +357,7 @@ export default function MartsTab() {
             className="pb-8"
           >
             {/* Header Section */}
-            <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-cyan-100 shadow-sm">
+            <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-indigo-100 shadow-sm">
               <div className="px-8 py-6">
                 <div className="flex items-start justify-between mb-4">
                   <div>
@@ -376,15 +376,15 @@ export default function MartsTab() {
 
                 {/* Summary Cards */}
                 <div className="grid grid-cols-4 gap-4">
-                  <div className="bg-gradient-to-br from-cyan-50 to-emerald-50 border border-cyan-200 rounded-xl p-4 shadow-sm">
-                    <div className="flex items-center gap-2 text-cyan-700 text-sm mb-2 font-medium">
+                  <div className="bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-200 rounded-xl p-4 shadow-sm">
+                    <div className="flex items-center gap-2 text-indigo-700 text-sm mb-2 font-medium">
                       <Activity className="w-4 h-4" />
                       Data Health Score
                     </div>
-                    <div className="text-3xl font-bold text-cyan-600">
+                    <div className="text-3xl font-bold text-indigo-600">
                       {getHealthScore(missingPercentage)}%
                     </div>
-                    <div className="text-xs text-cyan-600 mt-1">
+                    <div className="text-xs text-indigo-600 mt-1">
                       {getHealthStatus(parseFloat(getHealthScore(missingPercentage))).label}
                     </div>
                   </div>
@@ -437,13 +437,13 @@ export default function MartsTab() {
               <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                    <BarChart3 className="w-5 h-5 text-cyan-600" />
+                    <BarChart3 className="w-5 h-5 text-indigo-600" />
                     Column Distribution
                   </h3>
                   <div className="flex items-center gap-4 text-sm">
                     <div className="flex items-center gap-2">
                       <span className="text-slate-600">Measures ({columnRoleDistribution.measures})</span>
-                      <div className="w-3 h-3 rounded-full bg-emerald-600"></div>
+                      <div className="w-3 h-3 rounded-full bg-indigo-600"></div>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-slate-600">Dimensions ({columnRoleDistribution.dimensions})</span>
@@ -460,7 +460,7 @@ export default function MartsTab() {
                     initial={{ width: 0 }}
                     animate={{ width: `${(columnRoleDistribution.measures / profile.column_count) * 100}%` }}
                     transition={{ duration: 0.8 }}
-                    className="bg-emerald-600 h-full flex items-center justify-center text-white text-sm font-medium"
+                    className="bg-indigo-600 h-full flex items-center justify-center text-white text-sm font-medium"
                   >
                     {((columnRoleDistribution.measures / profile.column_count) * 100).toFixed(0)}%
                   </motion.div>
@@ -487,7 +487,7 @@ export default function MartsTab() {
             {/* Schema Inventory */}
             <div className="px-8">
               <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-                <div className="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-cyan-50/30">
+                <div className="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-indigo-50/30">
                   <h3 className="text-lg font-bold text-slate-900">
                     Schema Inventory
                   </h3>
@@ -514,11 +514,11 @@ export default function MartsTab() {
                       <div key={col.name}>
                         <button
                           onClick={() => setExpandedColumn(isExpanded ? null : col.name)}
-                          className="w-full grid grid-cols-12 gap-4 px-6 py-4 hover:bg-cyan-50/50 transition-colors border-b border-slate-100 text-left"
+                          className="w-full grid grid-cols-12 gap-4 px-6 py-4 hover:bg-indigo-50/50 transition-colors border-b border-slate-100 text-left"
                         >
                           <div className="col-span-1 flex items-center">
                             {col.nullPercentage < 5 ? (
-                              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                              <CheckCircle2 className="w-5 h-5 text-indigo-600" />
                             ) : col.nullPercentage < 20 ? (
                               <AlertCircle className="w-5 h-5 text-amber-600" />
                             ) : (
@@ -597,14 +597,14 @@ export default function MartsTab() {
               <div className="px-8 py-6">
                 <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
                   <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                    <HelpCircle className="w-5 h-5 text-cyan-600" />
+                    <HelpCircle className="w-5 h-5 text-indigo-600" />
                     Suggested Questions
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {suggestedQuestions.map((question, index) => (
                       <button
                         key={index}
-                        className="px-4 py-2.5 bg-gradient-to-r from-slate-50 to-cyan-50/50 hover:from-cyan-50 hover:to-emerald-50 border border-slate-200 hover:border-cyan-300 rounded-xl text-sm text-slate-700 hover:text-cyan-700 transition-all shadow-sm hover:shadow-md font-medium"
+                        className="px-4 py-2.5 bg-gradient-to-r from-slate-50 to-indigo-50/50 hover:from-indigo-50 hover:to-violet-50 border border-slate-200 hover:border-indigo-300 rounded-xl text-sm text-slate-700 hover:text-indigo-700 transition-all shadow-sm hover:shadow-md font-medium"
                       >
                         {question}
                       </button>

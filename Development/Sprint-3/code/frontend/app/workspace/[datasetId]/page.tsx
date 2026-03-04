@@ -102,15 +102,15 @@ function WorkspaceContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-cyan-50/20 to-emerald-50/30 relative">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/20 to-violet-50/30 relative">
       {/* Nav */}
-      <nav className="border-b border-cyan-100 bg-gradient-to-r from-white via-cyan-50/30 to-emerald-50/20 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
+      <nav className="border-b border-indigo-100 bg-gradient-to-r from-white via-indigo-50/30 to-violet-50/20 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
         <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-14">
             <div className="flex items-center gap-4">
               <button
                 onClick={handleBack}
-                className="flex items-center gap-1 text-slate-600 hover:text-cyan-600 transition-colors"
+                className="flex items-center gap-1 text-slate-600 hover:text-[#4f46e5] transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
@@ -119,8 +119,8 @@ function WorkspaceContent() {
                   <span className="text-slate-900 font-medium font-[family-name:var(--font-special-gothic)]">ContinuumAi</span>
                   <span className="text-slate-300">/</span>
                   <div className="flex items-center gap-2">
-                    <Database className="w-4 h-4 text-cyan-600" />
-                    <span className="text-cyan-600 font-medium capitalize">
+                    <Database className="w-4 h-4 text-[#4f46e5]" />
+                    <span className="text-[#4f46e5] font-medium capitalize">
                       {selectedDatasetId || datasetId}
                     </span>
                   </div>
@@ -136,8 +136,8 @@ function WorkspaceContent() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
                     activeTab === tab.id
-                      ? "bg-gradient-to-r from-cyan-100 to-emerald-100 text-cyan-700 border border-cyan-200 shadow-sm"
-                      : "text-slate-600 hover:text-cyan-600 hover:bg-cyan-50/50"
+                      ? "bg-gradient-to-r from-indigo-100 to-violet-100 text-[#4f46e5] border border-indigo-200 shadow-sm"
+                      : "text-slate-600 hover:text-[#4f46e5] hover:bg-indigo-50/50"
                   }`}
                 >
                   {tab.icon}
@@ -149,7 +149,7 @@ function WorkspaceContent() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setIsNumiOpen(!isNumiOpen)}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-lg hover:from-cyan-600 hover:to-emerald-600 transition-all shadow-md hover:shadow-lg"
+                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-gradient-to-r from-[#4f46e5] to-indigo-600 rounded-lg hover:from-indigo-600 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg"
               >
                 <Sparkles className="w-4 h-4" />
                 <span>Ask Numi</span>
