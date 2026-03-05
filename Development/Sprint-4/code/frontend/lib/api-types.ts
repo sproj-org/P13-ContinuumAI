@@ -222,3 +222,38 @@ export interface StrategyBundleUpdateRequest {
   author: string;
   reason: string;
 }
+
+export interface StrategyKpi {
+  id: string;
+  description: string;
+  formula: string;
+  marts: string[];
+  required_columns: string[];
+  dimensions?: string[];
+  default_grain?: string | null;
+  pillar_id?: string | null;
+  owner?: string | null;
+  display_name?: string | null;
+}
+
+export interface StrategyKpiLibraryResponse {
+  revision: string;
+  kpis: StrategyKpi[];
+  available_marts: string[];
+  mart_columns: Record<string, string[]>;
+}
+
+export interface StrategyKpiUpsertRequest {
+  expected_revision: string;
+  dataset_id: string;
+  kpi: StrategyKpi;
+  author: string;
+  reason: string;
+}
+
+export interface StrategyKpiDeleteRequest {
+  expected_revision: string;
+  dataset_id: string;
+  author: string;
+  reason: string;
+}

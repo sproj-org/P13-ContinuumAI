@@ -10,6 +10,9 @@ import type {
   DatasetProfileAPI,
   DecisionStateResponse,
   StrategyBundleEditorResponse,
+  StrategyKpiDeleteRequest,
+  StrategyKpiLibraryResponse,
+  StrategyKpiUpsertRequest,
   StrategyBundleUpdateRequest,
 } from "./api-types";
 import type {
@@ -252,6 +255,31 @@ class ApiClient {
   async putKpiRegistryBundle(payload: StrategyBundleUpdateRequest): Promise<StrategyBundleEditorResponse> {
     return this.request<StrategyBundleEditorResponse>("/kpi-registry/bundle", {
       method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async getStrategyKpis(datasetId: string): Promise<StrategyKpiLibraryResponse> {
+    return this.request<StrategyKpiLibraryResponse>(`/strategy/kpis?dataset_id=${encodeURIComponent(datasetId)}`);
+  }
+
+  async createStrategyKpi(payload: StrategyKpiUpsertRequest): Promise<StrategyKpiLibraryResponse> {
+    return this.request<StrategyKpiLibraryResponse>("/strategy/kpis", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async updateStrategyKpi(kpiId: string, payload: StrategyKpiUpsertRequest): Promise<StrategyKpiLibraryResponse> {
+    return this.request<StrategyKpiLibraryResponse>(`/strategy/kpis/${encodeURIComponent(kpiId)}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async deleteStrategyKpi(kpiId: string, payload: StrategyKpiDeleteRequest): Promise<StrategyKpiLibraryResponse> {
+    return this.request<StrategyKpiLibraryResponse>(`/strategy/kpis/${encodeURIComponent(kpiId)}`, {
+      method: "DELETE",
       body: JSON.stringify(payload),
     });
   }
