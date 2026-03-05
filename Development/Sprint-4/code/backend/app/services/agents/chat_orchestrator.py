@@ -6,8 +6,13 @@ import logging
 import hashlib
 import json
 import re
+<<<<<<< HEAD
 from uuid import uuid4
 from typing import Any, Literal
+=======
+from typing import Any, Literal
+from uuid import uuid4
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
 
 from fastapi import HTTPException
 from pydantic import TypeAdapter, ValidationError
@@ -810,6 +815,7 @@ def _log_chat_fallback(
     *,
     fallback_reason: Literal["missing_key", "openai_error"],
     exception_class_name: str | None,
+<<<<<<< HEAD
 ) -> None:
     correlation_id = uuid4().hex[:12]
     logger.warning(
@@ -817,6 +823,23 @@ def _log_chat_fallback(
         correlation_id,
         fallback_reason,
         exception_class_name or "-",
+=======
+    enable_debug: bool,
+) -> None:
+    correlation_id = uuid4().hex[:12]
+    if enable_debug:
+        logger.warning(
+            "chat_fallback correlation_id=%s fallback_reason=%s exception_class=%s",
+            correlation_id,
+            fallback_reason,
+            exception_class_name or "-",
+        )
+        return
+    logger.warning(
+        "chat_fallback correlation_id=%s fallback_reason=%s",
+        correlation_id,
+        fallback_reason,
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
     )
 
 
@@ -1032,7 +1055,11 @@ def _generate_plan(
 
         normalized_payload = _normalize_clarify_plan_payload(payload, context, message=message)
         try:
+<<<<<<< HEAD
             return _PLAN_ADAPTER.validate_python(normalized_payload), None, None, None
+=======
+            return _PLAN_ADAPTER.validate_python(normalized_payload), None, None
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
         except ValidationError:
             if attempt == 0:
                 corrective_prompt = (
@@ -1056,7 +1083,11 @@ def _generate_plan(
         {
             "openai_error_type": "unknown",
             "openai_status_code": None,
+<<<<<<< HEAD
             "openai_error_hint": "OpenAI request failed",
+=======
+            "openai_error_hint": "OpenAI request failed (unknown)",
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
         },
         None,
     )
@@ -1287,7 +1318,11 @@ def run_chat_orchestration(
             diagnostics: OpenAIDiagnostics = generation_openai_diag or {
                 "openai_error_type": "unknown",
                 "openai_status_code": None,
+<<<<<<< HEAD
                 "openai_error_hint": "OpenAI request failed",
+=======
+                "openai_error_hint": "OpenAI request failed (see backend diagnostics)",
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
             }
             openai_error_type = diagnostics.get("openai_error_type")
             openai_status_code = diagnostics.get("openai_status_code")
@@ -1297,12 +1332,20 @@ def run_chat_orchestration(
                 logger,
                 correlation_id,
                 diagnostics,
+<<<<<<< HEAD
+=======
+                enable_debug=settings.ENABLE_DEBUG,
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
                 exception_class_name=generation_exception_class,
             )
         else:
             _log_chat_fallback(
                 fallback_reason=fallback_reason,
                 exception_class_name=generation_exception_class,
+<<<<<<< HEAD
+=======
+                enable_debug=settings.ENABLE_DEBUG,
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
             )
         plan = _fallback_plan_from_context(message=message, mode=mode, table=table, context=context)
 

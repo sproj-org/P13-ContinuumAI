@@ -37,13 +37,21 @@ export default function TableProfilingTab() {
   const suggestedQuestions = profile ? generateSuggestedQuestions(profile) : [];
 
   const getMissingDataColor = (percentage: number) => {
+<<<<<<< HEAD
     if (percentage < 5) return "text-indigo-400";
+=======
+    if (percentage < 5) return "text-emerald-400";
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
     if (percentage < 20) return "text-amber-400";
     return "text-red-400";
   };
 
   const getMissingDataBg = (percentage: number) => {
+<<<<<<< HEAD
     if (percentage < 5) return "bg-indigo-500/20";
+=======
+    if (percentage < 5) return "bg-emerald-500/20";
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
     if (percentage < 20) return "bg-amber-500/20";
     return "bg-red-500/20";
   };
@@ -205,14 +213,22 @@ export default function TableProfilingTab() {
 
                   <div className="flex items-center justify-between py-2 border-t border-slate-200">
                     <span className="text-slate-600">Total Rows</span>
+<<<<<<< HEAD
                     <span className="text-[#4f46e5] font-medium">
+=======
+                    <span className="text-emerald-600 font-medium">
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
                       {profile.row_count.toLocaleString()}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between py-2 border-t border-slate-200">
                     <span className="text-slate-600">Column Count</span>
+<<<<<<< HEAD
                     <span className="text-[#4f46e5] font-medium">
+=======
+                    <span className="text-emerald-600 font-medium">
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
                       {profile.column_count}
                     </span>
                   </div>
@@ -235,7 +251,11 @@ export default function TableProfilingTab() {
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
+<<<<<<< HEAD
                       <div className="w-3 h-3 rounded-full bg-indigo-600" />
+=======
+                      <div className="w-3 h-3 rounded-full bg-emerald-600" />
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
                       <span className="text-slate-700">Measures</span>
                     </div>
                     <span className="text-slate-900 font-medium">{columnRoleDistribution.measures}</span>
@@ -258,7 +278,11 @@ export default function TableProfilingTab() {
                     }}
                   />
                   <div
+<<<<<<< HEAD
                     className="bg-indigo-600 h-full"
+=======
+                    className="bg-emerald-600 h-full"
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
                     style={{
                       width: `${(columnRoleDistribution.measures / profile.column_count) * 100}%`,
                     }}
@@ -297,7 +321,11 @@ export default function TableProfilingTab() {
             {/* Suggested Questions */}
             <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
               <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+<<<<<<< HEAD
                 <HelpCircle className="w-5 h-5 text-[#4f46e5]" />
+=======
+                <HelpCircle className="w-5 h-5 text-cyan-600" />
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
                 Suggested Questions
               </h3>
               <div className="flex flex-wrap gap-2">

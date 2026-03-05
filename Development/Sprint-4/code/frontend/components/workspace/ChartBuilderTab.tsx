@@ -72,7 +72,11 @@ const filterOperators: { id: FilterOperator; label: string }[] = [
 
 const roleColors: Record<ColumnRole, { bg: string; text: string; border: string }> = {
   dimension: { bg: "bg-blue-100", text: "text-blue-700", border: "border-blue-300" },
+<<<<<<< HEAD
   measure: { bg: "bg-indigo-100", text: "text-indigo-700", border: "border-indigo-300" },
+=======
+  measure: { bg: "bg-emerald-100", text: "text-emerald-700", border: "border-emerald-300" },
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
   temporal: { bg: "bg-amber-100", text: "text-amber-700", border: "border-amber-300" },
 };
 
@@ -151,7 +155,11 @@ function DraggableField({ column }: { column: { name: string; role: ColumnRole }
       {...attributes}
       className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-grab active:cursor-grabbing transition-all ${
         isDragging
+<<<<<<< HEAD
           ? "opacity-50 bg-indigo-200 border border-indigo-300"
+=======
+          ? "opacity-50 bg-cyan-200 border border-cyan-300"
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
           : `${roleStyle.bg} border ${roleStyle.border} hover:brightness-95`
       }`}
     >
@@ -184,7 +192,11 @@ function DropZone({
         ref={setNodeRef}
         className={`min-h-[48px] rounded-xl border-2 border-dashed transition-all flex items-center px-4 ${
           isOver
+<<<<<<< HEAD
             ? "border-indigo-400 bg-indigo-100"
+=======
+            ? "border-cyan-400 bg-cyan-100"
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
             : value
             ? "border-slate-300 bg-white"
             : "border-slate-300 bg-slate-50"
@@ -526,10 +538,17 @@ export default function ChartBuilderTab() {
 
   return (
     <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+<<<<<<< HEAD
       <div className="flex h-full bg-gradient-to-br from-white to-indigo-50/40">
         <div className="w-64 border-r border-indigo-200/50 bg-white/80 backdrop-blur-sm overflow-y-auto p-4 shadow-sm">
           <div className="mb-6">
             <h3 className="text-sm font-medium text-indigo-900 uppercase tracking-wider mb-3">
+=======
+      <div className="flex h-full bg-gradient-to-br from-white to-cyan-50/40">
+        <div className="w-64 border-r border-cyan-200/50 bg-white/80 backdrop-blur-sm overflow-y-auto p-4 shadow-sm">
+          <div className="mb-6">
+            <h3 className="text-sm font-medium text-cyan-900 uppercase tracking-wider mb-3">
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
               Aggregation
             </h3>
             <select
@@ -568,7 +587,11 @@ export default function ChartBuilderTab() {
               </div>
 
               <div className="mb-6">
+<<<<<<< HEAD
                 <h3 className="text-sm font-medium text-indigo-600 mb-3 flex items-center gap-2">
+=======
+                <h3 className="text-sm font-medium text-emerald-600 mb-3 flex items-center gap-2">
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
                   <BarChart3 className="w-4 h-4" />
                   Measures
                 </h3>
@@ -675,7 +698,11 @@ export default function ChartBuilderTab() {
                             type="button"
                             onClick={() => setDebugTab("chartspec")}
                             className={`px-2 py-1 text-xs rounded-md ${
+<<<<<<< HEAD
                               debugTab === "chartspec" ? "bg-[#4f46e5] text-white shadow-sm" : "text-slate-700 hover:bg-slate-100"
+=======
+                              debugTab === "chartspec" ? "bg-cyan-600 text-white shadow-sm" : "text-slate-700 hover:bg-slate-100"
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
                             }`}
                           >
                             ChartSpec
@@ -684,7 +711,11 @@ export default function ChartBuilderTab() {
                             type="button"
                             onClick={() => setDebugTab("aggregate_request")}
                             className={`px-2 py-1 text-xs rounded-md ${
+<<<<<<< HEAD
                               debugTab === "aggregate_request" ? "bg-[#4f46e5] text-white shadow-sm" : "text-slate-700 hover:bg-slate-100"
+=======
+                              debugTab === "aggregate_request" ? "bg-cyan-600 text-white shadow-sm" : "text-slate-700 hover:bg-slate-100"
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
                             }`}
                           >
                             AggregateRequest
@@ -693,7 +724,11 @@ export default function ChartBuilderTab() {
                             type="button"
                             onClick={() => setDebugTab("sql")}
                             className={`px-2 py-1 text-xs rounded-md ${
+<<<<<<< HEAD
                               debugTab === "sql" ? "bg-[#4f46e5] text-white shadow-sm" : "text-slate-700 hover:bg-slate-100"
+=======
+                              debugTab === "sql" ? "bg-cyan-600 text-white shadow-sm" : "text-slate-700 hover:bg-slate-100"
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
                             }`}
                           >
                             SQL
@@ -731,9 +766,15 @@ export default function ChartBuilderTab() {
           </div>
         </div>
 
+<<<<<<< HEAD
         <div className="w-80 border-l border-indigo-200/50 bg-white/80 backdrop-blur-sm overflow-y-auto p-4 space-y-6 shadow-sm">
           <div>
             <h3 className="text-sm font-medium text-indigo-900 uppercase tracking-wider mb-3">
+=======
+        <div className="w-80 border-l border-cyan-200/50 bg-white/80 backdrop-blur-sm overflow-y-auto p-4 space-y-6 shadow-sm">
+          <div>
+            <h3 className="text-sm font-medium text-cyan-900 uppercase tracking-wider mb-3">
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
               Chart Type
             </h3>
             <div className="grid grid-cols-2 gap-2">
@@ -743,7 +784,11 @@ export default function ChartBuilderTab() {
                   onClick={() => setChartConfig({ chartType: type.id })}
                   className={`flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all ${
                     chartConfig.chartType === type.id
+<<<<<<< HEAD
                       ? "bg-indigo-100 border border-indigo-300 text-indigo-700"
+=======
+                      ? "bg-cyan-100 border border-cyan-300 text-cyan-700"
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
                       : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                   }`}
                 >
@@ -755,7 +800,11 @@ export default function ChartBuilderTab() {
           </div>
 
           <div className="space-y-4">
+<<<<<<< HEAD
             <h3 className="text-sm font-medium text-indigo-900 uppercase tracking-wider">
+=======
+            <h3 className="text-sm font-medium text-cyan-900 uppercase tracking-wider">
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
               Axis Mapping
             </h3>
 
@@ -785,7 +834,11 @@ export default function ChartBuilderTab() {
           </div>
 
           <div>
+<<<<<<< HEAD
             <h3 className="text-sm font-medium text-indigo-900 uppercase tracking-wider mb-3">
+=======
+            <h3 className="text-sm font-medium text-cyan-900 uppercase tracking-wider mb-3">
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
               Aggregation
             </h3>
             <div className="flex flex-wrap gap-2">
@@ -801,7 +854,11 @@ export default function ChartBuilderTab() {
                       !isValid
                         ? "bg-slate-100 border border-slate-200 text-slate-400 cursor-not-allowed opacity-50"
                         : chartConfig.aggregationFn === aggregation.id
+<<<<<<< HEAD
                         ? "bg-indigo-100 border border-indigo-300 text-indigo-700"
+=======
+                        ? "bg-emerald-100 border border-emerald-300 text-emerald-700"
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
                         : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                     }`}
                   >
@@ -813,7 +870,11 @@ export default function ChartBuilderTab() {
           </div>
 
           <div>
+<<<<<<< HEAD
             <h3 className="text-sm font-medium text-indigo-900 uppercase tracking-wider mb-3">
+=======
+            <h3 className="text-sm font-medium text-cyan-900 uppercase tracking-wider mb-3">
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
               Filters
             </h3>
             <div className="space-y-3">
@@ -822,7 +883,11 @@ export default function ChartBuilderTab() {
                   <select
                     value={filter.field}
                     onChange={(event) => updateFilter(filter.id, { field: event.target.value })}
+<<<<<<< HEAD
                     className="w-full bg-white border border-slate-200 rounded px-2 py-1.5 text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+=======
+                    className="w-full bg-white border border-slate-200 rounded px-2 py-1.5 text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
                   >
                     <option value="">Field</option>
                     {transformedColumns.map((column) => (
@@ -835,7 +900,11 @@ export default function ChartBuilderTab() {
                     <select
                       value={filter.op}
                       onChange={(event) => updateFilter(filter.id, { op: event.target.value as FilterOperator })}
+<<<<<<< HEAD
                       className="bg-white border border-slate-200 rounded px-2 py-1.5 text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+=======
+                      className="bg-white border border-slate-200 rounded px-2 py-1.5 text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
                     >
                       {filterOperators.map((op) => (
                         <option key={op.id} value={op.id}>{op.label}</option>
@@ -845,7 +914,11 @@ export default function ChartBuilderTab() {
                       value={filter.value}
                       onChange={(event) => updateFilter(filter.id, { value: event.target.value })}
                       placeholder={filter.op === "in" ? "a,b,c" : filter.op === "between" ? "min,max" : "value"}
+<<<<<<< HEAD
                       className="bg-white border border-slate-200 rounded px-2 py-1.5 text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+=======
+                      className="bg-white border border-slate-200 rounded px-2 py-1.5 text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
                     />
                     <button
                       onClick={() => removeFilter(filter.id)}
@@ -867,7 +940,11 @@ export default function ChartBuilderTab() {
           </div>
 
           <div>
+<<<<<<< HEAD
             <h3 className="text-sm font-medium text-indigo-900 uppercase tracking-wider mb-3">
+=======
+            <h3 className="text-sm font-medium text-cyan-900 uppercase tracking-wider mb-3">
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
               Time Window
             </h3>
             {groupedColumns.temporal.length > 0 ? (
@@ -875,7 +952,11 @@ export default function ChartBuilderTab() {
                 <select
                   value={timeField}
                   onChange={(event) => setTimeField(event.target.value)}
+<<<<<<< HEAD
                   className="w-full bg-white border border-slate-200 rounded px-2 py-2 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+=======
+                  className="w-full bg-white border border-slate-200 rounded px-2 py-2 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
                 >
                   {groupedColumns.temporal.map((column) => (
                     <option key={column.name} value={column.name}>{column.name}</option>
@@ -884,7 +965,11 @@ export default function ChartBuilderTab() {
                 <select
                   value={timeWindow}
                   onChange={(event) => setTimeWindow(event.target.value as "none" | "last_7" | "last_30" | "last_90" | "custom")}
+<<<<<<< HEAD
                   className="w-full bg-white border border-slate-200 rounded px-2 py-2 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+=======
+                  className="w-full bg-white border border-slate-200 rounded px-2 py-2 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
                 >
                   <option value="none">None</option>
                   <option value="last_7">Last 7 days</option>
@@ -898,13 +983,21 @@ export default function ChartBuilderTab() {
                       type="date"
                       value={customStartDate}
                       onChange={(event) => setCustomStartDate(event.target.value)}
+<<<<<<< HEAD
                       className="bg-white border border-slate-200 rounded px-2 py-2 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+=======
+                      className="bg-white border border-slate-200 rounded px-2 py-2 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
                     />
                     <input
                       type="date"
                       value={customEndDate}
                       onChange={(event) => setCustomEndDate(event.target.value)}
+<<<<<<< HEAD
                       className="bg-white border border-slate-200 rounded px-2 py-2 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+=======
+                      className="bg-white border border-slate-200 rounded px-2 py-2 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
                     />
                   </div>
                 ) : null}
@@ -915,7 +1008,11 @@ export default function ChartBuilderTab() {
           </div>
 
           <div>
+<<<<<<< HEAD
             <h3 className="text-sm font-medium text-indigo-900 uppercase tracking-wider mb-3">
+=======
+            <h3 className="text-sm font-medium text-cyan-900 uppercase tracking-wider mb-3">
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
               Sort & Limit
             </h3>
             <div className="space-y-2">
@@ -923,7 +1020,11 @@ export default function ChartBuilderTab() {
                 <select
                   value={sortTarget}
                   onChange={(event) => setSortTarget(event.target.value as "x" | "metric")}
+<<<<<<< HEAD
                   className="bg-white border border-slate-200 rounded px-2 py-2 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+=======
+                  className="bg-white border border-slate-200 rounded px-2 py-2 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
                 >
                   <option value="metric">Sort by metric</option>
                   <option value="x">Sort by X-axis</option>
@@ -931,7 +1032,11 @@ export default function ChartBuilderTab() {
                 <select
                   value={sortDirection}
                   onChange={(event) => setSortDirection(event.target.value as "asc" | "desc")}
+<<<<<<< HEAD
                   className="bg-white border border-slate-200 rounded px-2 py-2 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+=======
+                  className="bg-white border border-slate-200 rounded px-2 py-2 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
                 >
                   <option value="desc">Descending</option>
                   <option value="asc">Ascending</option>
@@ -948,13 +1053,21 @@ export default function ChartBuilderTab() {
                     setResultLimit(Math.max(1, Math.min(5000, value)));
                   }
                 }}
+<<<<<<< HEAD
                 className="w-full bg-white border border-slate-200 rounded px-2 py-2 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+=======
+                className="w-full bg-white border border-slate-200 rounded px-2 py-2 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
               />
             </div>
           </div>
 
           <div>
+<<<<<<< HEAD
             <h3 className="text-sm font-medium text-indigo-900 uppercase tracking-wider mb-3">
+=======
+            <h3 className="text-sm font-medium text-cyan-900 uppercase tracking-wider mb-3">
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
               Debug
             </h3>
             <label className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg border border-slate-200 bg-slate-50">
@@ -963,7 +1076,11 @@ export default function ChartBuilderTab() {
                 type="button"
                 onClick={() => setShowExecutionDetails((value) => !value)}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+<<<<<<< HEAD
                   showExecutionDetails ? "bg-indigo-600" : "bg-slate-300"
+=======
+                  showExecutionDetails ? "bg-cyan-600" : "bg-slate-300"
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
                 }`}
                 aria-pressed={showExecutionDetails}
               >
@@ -979,7 +1096,11 @@ export default function ChartBuilderTab() {
           <button
             onClick={handleSaveToDashboard}
             disabled={!previewData || !chartSpec}
+<<<<<<< HEAD
             className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-[#4f46e5] to-indigo-600 text-white hover:from-indigo-600 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md"
+=======
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 text-white hover:from-cyan-600 hover:to-emerald-600 transition-all shadow-md hover:shadow-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md"
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
           >
             <Save className="w-4 h-4" />
             Save to Dashboard

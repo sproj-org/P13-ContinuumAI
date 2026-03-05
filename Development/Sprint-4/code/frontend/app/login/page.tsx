@@ -5,6 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import Noise from "@/components/Noise";
+<<<<<<< HEAD
+=======
+import TargetCursor from "@/components/TargetCursor";
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
 import ElectricBorder from "@/components/ElectricBorder";
 
 export default function LoginPage() {
@@ -60,6 +64,17 @@ export default function LoginPage() {
 
   return (
     <div className="h-screen w-screen overflow-hidden flex items-center justify-center bg-white">
+<<<<<<< HEAD
+=======
+      {/* Custom Cursor */}
+      <TargetCursor
+        spinDuration={2}
+        hideDefaultCursor
+        parallaxOn
+        hoverDuration={0.2}
+      />
+
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
       {/* Noise Background */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         <Noise
@@ -73,7 +88,11 @@ export default function LoginPage() {
 
       <div className="relative z-10 w-full max-w-md px-4">
         <ElectricBorder
+<<<<<<< HEAD
           color="#4f46e5"
+=======
+          color="#06B6D4"
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
           speed={1}
           chaos={0.08}
           borderRadius={16}
@@ -86,10 +105,17 @@ export default function LoginPage() {
               <p className="mt-2 text-center text-sm text-slate-600">
                 Don't have an account?{" "}
                 <Link
+<<<<<<< HEAD
                   href="/get-access"
                   className="cursor-target font-medium text-[#4f46e5] hover:text-indigo-700 transition-colors"
                 >
                   Get Access
+=======
+                  href="/signup"
+                  className="cursor-target font-medium text-cyan-600 hover:text-cyan-700 transition-colors"
+                >
+                  Sign Up
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
                 </Link>
               </p>
             </div>
@@ -117,7 +143,11 @@ export default function LoginPage() {
                     required
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
+<<<<<<< HEAD
                     className="mt-1 block w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#4f46e5] focus:border-transparent transition-all"
+=======
+                    className="mt-1 block w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
                     placeholder="johndoe"
                   />
                 </div>
@@ -137,7 +167,11 @@ export default function LoginPage() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+<<<<<<< HEAD
                     className="mt-1 block w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#4f46e5] focus:border-transparent transition-all"
+=======
+                    className="mt-1 block w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
                     placeholder="••••••••"
                   />
                 </div>
@@ -146,7 +180,11 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
+<<<<<<< HEAD
                 className="cursor-target w-full py-3 px-4 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-[#4f46e5] to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-[#4f46e5] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg"
+=======
+                className="cursor-target w-full py-3 px-4 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg"
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
               >
                 {isSubmitting ? "Signing in..." : "Login"}
               </button>

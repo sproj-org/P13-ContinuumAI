@@ -33,8 +33,11 @@ yarn-error.log*
 # env files
 .env
 .env.*
+<<<<<<< HEAD
 **/.env
 **/.env.*
+=======
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
 !.env.example
 
 # vercel

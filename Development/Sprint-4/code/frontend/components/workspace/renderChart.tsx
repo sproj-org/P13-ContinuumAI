@@ -36,7 +36,11 @@ export function renderChart(chartSpec: ChartSpecV1, rows: ChartRows) {
               textinfo: "percent" as const,
               textposition: "inside" as const,
               marker: {
+<<<<<<< HEAD
                 colors: ["#8b5cf6", "#3b82f6", "#4f46e5", "#6366f1", "#f59e0b", "#ef4444"],
+=======
+                colors: ["#8b5cf6", "#3b82f6", "#06b6d4", "#10b981", "#f59e0b", "#ef4444"],
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
               },
               hole: 0.3,
             }
@@ -55,7 +59,11 @@ export function renderChart(chartSpec: ChartSpecV1, rows: ChartRows) {
           ? ({
               type: "histogram",
               x: y,
+<<<<<<< HEAD
               marker: { color: "#4f46e5", opacity: 0.8 },
+=======
+              marker: { color: "#10b981", opacity: 0.8 },
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
               nbinsx: 10,
             } as unknown as Plotly.Data)
           : {
@@ -63,7 +71,11 @@ export function renderChart(chartSpec: ChartSpecV1, rows: ChartRows) {
               x,
               y,
               marker: {
+<<<<<<< HEAD
                 color: y.map((_, index) => ["#8b5cf6", "#3b82f6", "#4f46e5", "#6366f1", "#f59e0b", "#ef4444"][index % 6]),
+=======
+                color: y.map((_, index) => ["#8b5cf6", "#3b82f6", "#06b6d4", "#10b981", "#f59e0b", "#ef4444"][index % 6]),
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
                 opacity: 0.9,
               },
             },
