@@ -25,13 +25,6 @@ def _extract_status_code(exc: Exception) -> int | None:
     if direct is not None:
         return direct
 
-<<<<<<< HEAD
-=======
-    http_status = _coerce_int(getattr(exc, "http_status", None))
-    if http_status is not None:
-        return http_status
-
->>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
     response = getattr(exc, "response", None)
     if response is not None:
         response_status = _coerce_int(getattr(response, "status_code", None))
@@ -41,11 +34,7 @@ def _extract_status_code(exc: Exception) -> int | None:
         if response_status is not None:
             return response_status
 
-<<<<<<< HEAD
     return _coerce_int(getattr(exc, "http_status", None))
-=======
-    return None
->>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
 
 
 def _text_fingerprint(exc: Exception) -> str:
@@ -69,51 +58,31 @@ def classify_openai_exception(exc: Exception) -> OpenAIDiagnostics:
         return {
             "openai_error_type": "authentication_error",
             "openai_status_code": status_code,
-<<<<<<< HEAD
             "openai_error_hint": "Authentication failed",
-=======
-            "openai_error_hint": "Authentication failed (check OPENAI_API_KEY permissions)",
->>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
         }
     if status_code == 429 or "ratelimit" in class_name or "rate limit" in fingerprint:
         return {
             "openai_error_type": "rate_limit",
             "openai_status_code": status_code,
-<<<<<<< HEAD
             "openai_error_hint": "Rate limited",
-=======
-            "openai_error_hint": "Rate limited (wait or reduce requests)",
->>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
         }
     if status_code == 404 or "notfound" in class_name:
         return {
             "openai_error_type": "not_found",
             "openai_status_code": status_code,
-<<<<<<< HEAD
             "openai_error_hint": "Model not found",
-=======
-            "openai_error_hint": "Model not found or endpoint not available (check model name)",
->>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
         }
     if status_code == 400 or "badrequest" in class_name:
         return {
             "openai_error_type": "bad_request",
             "openai_status_code": status_code,
-<<<<<<< HEAD
             "openai_error_hint": "Bad request",
-=======
-            "openai_error_hint": "Bad request (check model/tool schema/payload)",
->>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
         }
     if status_code is not None and status_code >= 500:
         return {
             "openai_error_type": "server_error",
             "openai_status_code": status_code,
-<<<<<<< HEAD
             "openai_error_hint": "OpenAI server error",
-=======
-            "openai_error_hint": "OpenAI server error (retry)",
->>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
         }
 
     timeout_tokens = ("timeout", "timed out", "read timeout", "connect timeout")
@@ -121,45 +90,21 @@ def classify_openai_exception(exc: Exception) -> OpenAIDiagnostics:
         return {
             "openai_error_type": "timeout",
             "openai_status_code": status_code,
-<<<<<<< HEAD
             "openai_error_hint": "Request timeout",
         }
 
     network_tokens = ("connection", "network", "dns", "socket", "ssl", "proxy", "apiconnection")
-=======
-            "openai_error_hint": "Request timed out (retry or increase timeout)",
-        }
-
-    network_tokens = (
-        "connection",
-        "network",
-        "dns",
-        "socket",
-        "unreachable",
-        "ssl",
-        "proxy",
-        "apiconnection",
-    )
->>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
     if any(token in fingerprint for token in network_tokens):
         return {
             "openai_error_type": "network",
             "openai_status_code": status_code,
-<<<<<<< HEAD
             "openai_error_hint": "Network/connectivity issue",
-=======
-            "openai_error_hint": "Network/connectivity issue reaching OpenAI",
->>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
         }
 
     return {
         "openai_error_type": "unknown",
         "openai_status_code": status_code,
-<<<<<<< HEAD
         "openai_error_hint": "OpenAI request failed",
-=======
-        "openai_error_hint": "OpenAI request failed (see backend diagnostics)",
->>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
     }
 
 
@@ -168,35 +113,13 @@ def log_openai_failure(
     correlation_id: str,
     diagnostics: OpenAIDiagnostics,
     *,
-<<<<<<< HEAD
     exception_class_name: str | None,
 ) -> None:
     logger.warning(
         "openai_failure correlation_id=%s openai_error_type=%s openai_status_code=%s openai_error_hint=%s exception_class=%s",
-=======
-    enable_debug: bool = False,
-    exception_class_name: str | None = None,
-) -> None:
-    if enable_debug:
-        logger.warning(
-            "openai_failure correlation_id=%s openai_error_type=%s openai_status_code=%s openai_error_hint=%s exception_class=%s",
-            correlation_id,
-            diagnostics.get("openai_error_type"),
-            diagnostics.get("openai_status_code"),
-            diagnostics.get("openai_error_hint"),
-            exception_class_name or "-",
-        )
-        return
-
-    logger.warning(
-        "openai_failure correlation_id=%s openai_error_type=%s openai_status_code=%s openai_error_hint=%s",
->>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
         correlation_id,
         diagnostics.get("openai_error_type"),
         diagnostics.get("openai_status_code"),
         diagnostics.get("openai_error_hint"),
-<<<<<<< HEAD
         exception_class_name or "-",
-=======
->>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
     )

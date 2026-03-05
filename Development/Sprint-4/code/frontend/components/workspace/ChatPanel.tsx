@@ -651,11 +651,7 @@ export default function ChatPanel() {
                               type="button"
                               disabled={isLoading || !selectedAggregation}
                               onClick={() => handleClarifyChip(response, "time_grain", item)}
-<<<<<<< HEAD
                               className="px-2 py-1 text-xs rounded-full border border-violet-300 text-violet-700 bg-violet-100 hover:bg-violet-200 disabled:opacity-50"
-=======
-                              className="px-2 py-1 text-xs rounded-full border border-emerald-300 text-emerald-700 bg-emerald-100 hover:bg-emerald-200 disabled:opacity-50"
->>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
                             >
                               {item}
                             </button>

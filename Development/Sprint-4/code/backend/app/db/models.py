@@ -1,14 +1,9 @@
-<<<<<<< HEAD
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, Text
 from sqlalchemy.orm import relationship
-=======
-from sqlalchemy import Column, Integer, String, DateTime
->>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
 from sqlalchemy.sql import func
 from app.db.database import Base
 
 
-<<<<<<< HEAD
 class Organization(Base):
     """Organization model - companies onboarded to the platform."""
     
@@ -49,8 +44,6 @@ class OrganizationDataset(Base):
         return f"<OrganizationDataset(org_id={self.organization_id}, dataset={self.dataset_id})>"
 
 
-=======
->>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
 class User(Base):
     """User model for authentication."""
     
@@ -60,7 +53,6 @@ class User(Base):
     username = Column(String(50), unique=True, index=True, nullable=False)
     email = Column(String(255), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
-<<<<<<< HEAD
     
     # Organization link
     organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True)
@@ -75,10 +67,5 @@ class User(Base):
     # Relationships
     organization = relationship("Organization", back_populates="users")
     
-=======
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
->>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
     def __repr__(self):
         return f"<User(id={self.id}, username={self.username}, email={self.email})>"

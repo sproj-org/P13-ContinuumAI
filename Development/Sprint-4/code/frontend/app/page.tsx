@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-<<<<<<< HEAD
 import Aurora from "@/components/ui/Aurora";
 import CountUp from "@/components/ui/CountUp";
 import LogoLoop, { LogoItem } from "@/components/ui/LogoLoop";
@@ -31,16 +30,10 @@ import {
   HiOutlineShieldCheck,
   HiOutlineSparkles
 } from "react-icons/hi2";
-=======
-import TextType from "@/components/TextType";
-import TargetCursor from "@/components/TargetCursor";
-import Noise from "@/components/Noise";
->>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
 
 export default function Home() {
   const { isAuthenticated, isLoading } = useAuth();
 
-<<<<<<< HEAD
   const techLogos: LogoItem[] = [
     { node: <SiPython className="text-yellow-400" />, title: "Python" },
     { node: <SiPostgresql className="text-blue-400" />, title: "PostgreSQL" },
@@ -469,78 +462,6 @@ export default function Home() {
           <span className="text-slate-400 text-sm">© 2026 All rights reserved.</span>
         </div>
       </footer>
-=======
-  return (
-    <div className="h-screen w-screen overflow-hidden flex flex-col items-center justify-center bg-white">
-      {/* Custom Cursor */}
-      <TargetCursor
-        spinDuration={2}
-        hideDefaultCursor
-        parallaxOn
-        hoverDuration={0.2}
-      />
-
-      {/* Noise Background */}
-      <div className="absolute inset-0 z-0 overflow-hidden">
-        <Noise
-          patternSize={250}
-          patternScaleX={1}
-          patternScaleY={1}
-          patternRefreshInterval={2}
-          patternAlpha={8}
-        />
-      </div>
-
-      <main className="relative z-10 text-center flex flex-col items-center justify-center gap-6">
-        {/* App Name */}
-        <h1 className="text-5xl md:text-6xl lg:text-7xl font-normal text-slate-900 tracking-wide font-[family-name:var(--font-special-gothic)]">
-          ContinuumAi
-        </h1>
-
-        {/* Tagline with typing animation */}
-        <div className="h-8 flex items-center justify-center">
-          <TextType
-            text={["The Future of Business Intelligence."]}
-            typingSpeed={75}
-            pauseDuration={7000}
-            deletingSpeed={50}
-            showCursor
-            cursorCharacter="_"
-            cursorBlinkDuration={0.5}
-            loop={true}
-            className="text-xl md:text-2xl text-slate-600 font-light"
-            cursorClassName="text-[#4F46E5]"
-          />
-        </div>
-
-        {/* Buttons */}
-        {isLoading ? (
-          <div className="text-slate-500 mt-8">Loading...</div>
-        ) : isAuthenticated ? (
-          <Link
-            href="/dashboard"
-            className="cursor-target mt-8 px-8 py-3 bg-[#4F46E5] text-white font-medium rounded-lg hover:bg-[#6366F1] transition-colors shadow-lg"
-          >
-            Go to Dashboard
-          </Link>
-        ) : (
-          <div className="flex gap-6 mt-8">
-            <Link
-              href="/login"
-              className="cursor-target px-8 py-3 bg-[#4F46E5] text-white font-medium rounded-lg hover:bg-[#6366F1] transition-colors shadow-lg"
-            >
-              Login
-            </Link>
-            <Link
-              href="/signup"
-              className="cursor-target px-8 py-3 border-2 border-[#4F46E5] text-[#4F46E5] font-medium rounded-lg hover:bg-[#4F46E5]/10 transition-colors"
-            >
-              Sign Up
-            </Link>
-          </div>
-        )}
-      </main>
->>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
     </div>
   );
 }
