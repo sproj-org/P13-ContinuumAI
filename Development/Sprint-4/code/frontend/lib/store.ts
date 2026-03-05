@@ -4,7 +4,7 @@ import type { ChartSpecV1 } from './types/chartspec';
 import type { ChatResponse } from './types/chat';
 
 export type DatasetId = string;
-export type WorkspaceTab = 'marts' | 'chart-builder' | 'dashboard';
+export type WorkspaceTab = 'marts' | 'chart-builder' | 'dashboard' | 'strategy';
 
 export interface SavedChart {
   id: string;

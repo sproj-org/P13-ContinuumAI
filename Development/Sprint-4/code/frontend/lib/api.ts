@@ -8,6 +8,9 @@ import type {
   ChartDataResponse,
   ColumnProfileAPI,
   DatasetProfileAPI,
+  DecisionStateResponse,
+  StrategyBundleEditorResponse,
+  StrategyBundleUpdateRequest,
 } from "./api-types";
 import type {
   ChartSpecV1,
@@ -32,15 +35,19 @@ export interface AuthResponse {
 }
 
 export interface ApiError {
-  detail: string;
+  detail: string | { code?: string; message?: string; hint?: string };
 }
 
 export class ApiRequestError extends Error {
   status: number;
+  code?: string;
+  hint?: string;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, options?: { code?: string; hint?: string }) {
     super(message);
     this.status = status;
+    this.code = options?.code;
+    this.hint = options?.hint;
     this.name = "ApiRequestError";
   }
 }
@@ -75,13 +82,21 @@ class ApiClient {
 
     if (!response.ok) {
       let detail = "An error occurred";
+      let errorCode: string | undefined = undefined;
+      let errorHint: string | undefined = undefined;
       try {
         const error = (await response.json()) as ApiError;
-        detail = error.detail || detail;
+        if (typeof error.detail === "string") {
+          detail = error.detail || detail;
+        } else if (error.detail && typeof error.detail === "object") {
+          detail = error.detail.message || detail;
+          errorCode = error.detail.code;
+          errorHint = error.detail.hint;
+        }
       } catch {
         detail = response.statusText || detail;
       }
-      throw new ApiRequestError(response.status, detail);
+      throw new ApiRequestError(response.status, detail, { code: errorCode, hint: errorHint });
     }
 
     return response.json();
@@ -208,6 +223,36 @@ class ApiClient {
     return this.request<AggregateResponse>(`/datasets/${datasetId}/query/aggregate`, {
       method: "POST",
       body: JSON.stringify(request),
+    });
+  }
+
+  // ============================================
+  // Task-2 Strategy/Decision Endpoints
+  // ============================================
+
+  async getDecisionState(datasetId: string): Promise<DecisionStateResponse> {
+    return this.request<DecisionStateResponse>(`/decision/state?dataset_id=${encodeURIComponent(datasetId)}`);
+  }
+
+  async getStrategyBundle(): Promise<StrategyBundleEditorResponse> {
+    return this.request<StrategyBundleEditorResponse>("/strategy/bundle");
+  }
+
+  async putStrategyBundle(payload: StrategyBundleUpdateRequest): Promise<StrategyBundleEditorResponse> {
+    return this.request<StrategyBundleEditorResponse>("/strategy/bundle", {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async getKpiRegistryBundle(): Promise<StrategyBundleEditorResponse> {
+    return this.request<StrategyBundleEditorResponse>("/kpi-registry/bundle");
+  }
+
+  async putKpiRegistryBundle(payload: StrategyBundleUpdateRequest): Promise<StrategyBundleEditorResponse> {
+    return this.request<StrategyBundleEditorResponse>("/kpi-registry/bundle", {
+      method: "PUT",
+      body: JSON.stringify(payload),
     });
   }
 }

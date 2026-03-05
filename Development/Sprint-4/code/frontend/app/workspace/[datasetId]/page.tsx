@@ -13,15 +13,17 @@ import {
   LayoutGrid,
   ArrowLeft,
   Sparkles,
+  ClipboardList,
 } from "lucide-react";
 
 // Tab components
-import { MartsTab, ChartBuilderTab, DashboardTab, VizAgentChatbot } from "@/components/workspace";
+import { MartsTab, ChartBuilderTab, DashboardTab, StrategyTab, VizAgentChatbot } from "@/components/workspace";
 
 const tabs: { id: WorkspaceTab; label: string; icon: React.ReactNode }[] = [
   { id: "marts", label: "Profiling", icon: <Database className="w-4 h-4" /> },
   { id: "chart-builder", label: "Chart Builder", icon: <BarChart3 className="w-4 h-4" /> },
   { id: "dashboard", label: "Dashboard", icon: <LayoutGrid className="w-4 h-4" /> },
+  { id: "strategy", label: "Strategy", icon: <ClipboardList className="w-4 h-4" /> },
 ];
 
 function WorkspaceContent() {
@@ -96,6 +98,8 @@ function WorkspaceContent() {
         return <ChartBuilderTab />;
       case "dashboard":
         return <DashboardTab />;
+      case "strategy":
+        return <StrategyTab />;
       default:
         return <MartsTab />;
     }

@@ -168,3 +168,51 @@ export interface AggregateResponse {
   rows: Array<Record<string, unknown>>;
   meta: Record<string, unknown>;
 }
+
+// ============================================
+// Task-2 Strategy/Decision Types
+// ============================================
+
+export interface DecisionReadiness {
+  overall_score: number;
+  kpi_coverage: number;
+  rule_readiness: number;
+  hierarchy_readiness: number;
+  data_readiness: number;
+  explanation?: string | null;
+}
+
+export interface CoverageGap {
+  kpi_id: string;
+  reason: string;
+  details?: {
+    missing_marts?: string[];
+    missing_columns_by_mart?: Record<string, string[]>;
+  } | null;
+}
+
+export interface DecisionStateResponse {
+  revision: string;
+  generated_at: string;
+  strategy_bundle: Record<string, unknown>;
+  kpi_registry: Record<string, unknown>;
+  readiness: DecisionReadiness;
+  coverage_gaps: CoverageGap[];
+  summaries?: Record<string, unknown> | null;
+}
+
+export interface StrategyBundleEditorResponse {
+  revision: string;
+  mode: "merged";
+  bundle: Record<string, unknown>;
+  base_yaml: string;
+  override_yaml: string;
+}
+
+export interface StrategyBundleUpdateRequest {
+  expected_revision: string;
+  mode: "base" | "override";
+  yaml: string;
+  author: string;
+  reason: string;
+}
