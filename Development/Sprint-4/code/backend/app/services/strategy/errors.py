@@ -10,3 +10,11 @@ class StrategyNotFoundError(FileNotFoundError):
 class StrategyValidationError(ValueError):
     """Raised when strategy YAML content fails validation."""
 
+
+class StrategyRevisionConflictError(ValueError):
+    """Raised when expected revision does not match current revision."""
+
+
+class StrategyYamlParseError(ValueError):
+    """Raised when incoming YAML cannot be parsed into an object."""
+
