@@ -182,6 +182,11 @@ export interface DecisionReadiness {
   explanation?: string | null;
 }
 
+export interface ReadinessFlags {
+  kpis_defined: boolean;
+  placeholders: string[];
+}
+
 export interface CoverageGap {
   kpi_id: string;
   reason: string;
@@ -197,6 +202,7 @@ export interface DecisionStateResponse {
   strategy_bundle: Record<string, unknown>;
   kpi_registry: Record<string, unknown>;
   readiness: DecisionReadiness;
+  readiness_flags?: ReadinessFlags | null;
   coverage_gaps: CoverageGap[];
   summaries?: Record<string, unknown> | null;
 }

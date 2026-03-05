@@ -35,7 +35,7 @@ def get_decision_state(
     except ValueError as exc:
         raise HTTPException(status_code=500, detail=f"Decision state load failed: {exc}") from exc
 
-    readiness, coverage_gaps, summaries = compute_readiness_and_coverage(
+    readiness, coverage_gaps, summaries, readiness_flags = compute_readiness_and_coverage(
         strategy_bundle=strategy_bundle,
         kpi_registry=kpi_registry,
         schema_snapshot=schema_snapshot,
@@ -46,6 +46,7 @@ def get_decision_state(
         strategy_bundle=strategy_bundle.model_dump(mode="python"),
         kpi_registry=kpi_registry.model_dump(mode="python"),
         readiness=readiness,
+        readiness_flags=readiness_flags,
         coverage_gaps=coverage_gaps,
         summaries=summaries,
     )

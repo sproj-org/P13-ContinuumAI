@@ -103,7 +103,7 @@ def test_coverage_reports_missing_dependencies() -> None:
         mart_columns={"gold_sales_daily": {"net_sales", "region"}},
     )
 
-    readiness, gaps, summaries = compute_readiness_and_coverage(
+    readiness, gaps, summaries, readiness_flags = compute_readiness_and_coverage(
         strategy_bundle=strategy_bundle,
         kpi_registry=kpi_registry,
         schema_snapshot=snapshot,
@@ -113,3 +113,4 @@ def test_coverage_reports_missing_dependencies() -> None:
     assert gaps[0].kpi_id == "sales_growth"
     assert readiness.kpi_coverage < 1.0
     assert summaries["missing_columns_total"] == 1
+    assert readiness_flags.kpis_defined is True

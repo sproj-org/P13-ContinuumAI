@@ -19,6 +19,13 @@ class DecisionReadiness(BaseModel):
     explanation: str | None = None
 
 
+class ReadinessFlags(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kpis_defined: bool
+    placeholders: list[str] = Field(default_factory=list)
+
+
 class CoverageGapItem(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -35,5 +42,6 @@ class DecisionStatePayload(BaseModel):
     strategy_bundle: dict[str, Any]
     kpi_registry: dict[str, Any]
     readiness: DecisionReadiness
+    readiness_flags: ReadinessFlags | None = None
     coverage_gaps: list[CoverageGapItem] = Field(default_factory=list)
     summaries: dict[str, Any] | None = None

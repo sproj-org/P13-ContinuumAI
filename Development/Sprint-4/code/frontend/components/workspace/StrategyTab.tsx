@@ -93,6 +93,8 @@ export default function StrategyTab() {
   }, [kpiBaseYaml, kpiMode, kpiOverrideYaml]);
 
   const readiness = decisionState?.readiness;
+  const readinessFlags = decisionState?.readiness_flags ?? null;
+  const kpisDefined = readinessFlags?.kpis_defined ?? true;
   const revision = decisionState?.revision;
 
   const saveStrategy = async () => {
@@ -193,6 +195,12 @@ export default function StrategyTab() {
         </div>
       ) : null}
 
+      {!kpisDefined ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          No KPIs defined yet. Add KPIs to enable coverage and readiness.
+        </div>
+      ) : null}
+
       {readiness ? (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
           <div className="rounded-xl border border-indigo-200 bg-white p-3">
@@ -205,7 +213,9 @@ export default function StrategyTab() {
           </div>
           <div className="rounded-xl border border-indigo-200 bg-white p-3">
             <p className="text-xs text-slate-500">Data Readiness</p>
-            <p className="text-lg font-semibold text-indigo-700">{scoreText(readiness.data_readiness)}</p>
+            <p className="text-lg font-semibold text-indigo-700">
+              {kpisDefined ? scoreText(readiness.data_readiness) : "—"}
+            </p>
           </div>
           <div className="rounded-xl border border-indigo-200 bg-white p-3">
             <p className="text-xs text-slate-500">Rule Readiness</p>

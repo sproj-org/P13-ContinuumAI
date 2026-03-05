@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from app.models.decision_state import CoverageGapItem, DecisionReadiness
+from app.models.decision_state import CoverageGapItem, DecisionReadiness, ReadinessFlags
 from app.models.kpi_registry import KPIRegistry
 from app.models.strategy_bundle import StrategyBundle
 from app.services.strategy.schema_provider import DatasetSchemaSnapshot
@@ -77,7 +77,7 @@ def compute_readiness_and_coverage(
     strategy_bundle: StrategyBundle,
     kpi_registry: KPIRegistry,
     schema_snapshot: DatasetSchemaSnapshot,
-) -> tuple[DecisionReadiness, list[CoverageGapItem], dict[str, Any]]:
+) -> tuple[DecisionReadiness, list[CoverageGapItem], dict[str, Any], ReadinessFlags]:
     total_kpis = len(kpi_registry.kpis)
     kpis_with_full_dependencies = 0
     coverage_gaps: list[CoverageGapItem] = []
@@ -114,8 +114,11 @@ def compute_readiness_and_coverage(
             )
         )
 
-    kpi_coverage = _clamp_01(kpis_with_full_dependencies / (total_kpis or 1))
-    if required_columns_total > 0:
+    kpis_defined = total_kpis > 0
+    kpi_coverage = _clamp_01(kpis_with_full_dependencies / total_kpis) if kpis_defined else 0.0
+    if not kpis_defined:
+        data_readiness = 0.0
+    elif required_columns_total > 0:
         data_readiness = _clamp_01(1.0 - (missing_columns_total / required_columns_total))
     else:
         data_readiness = 1.0
@@ -126,25 +129,34 @@ def compute_readiness_and_coverage(
         strategy_bundle=strategy_bundle,
     )
     hierarchy_readiness = 1.0
+    placeholders = ["hierarchy_readiness_placeholder"]
 
     weights = _weights(strategy_bundle)
     total_weight = sum(weights.values()) or 1.0
-    overall_score = _clamp_01(
-        (
-            (kpi_coverage * weights["kpi_coverage"])
-            + (rule_readiness * weights["rule_readiness"])
-            + (hierarchy_readiness * weights["hierarchy_readiness"])
-            + (data_readiness * weights["data_readiness"])
+    if not kpis_defined:
+        overall_score = 0.0
+        placeholders.append("no_kpis_defined")
+        explanation = (
+            "No KPIs defined yet; readiness is preliminary. "
+            "Add KPIs to enable coverage and data readiness calculations. "
+            "Hierarchy readiness is placeholder in Sprint-4; will be implemented in Strategy Expansion Track."
         )
-        / total_weight
-    )
-
-    explanation = (
-        f"KPIs with full dependencies: {kpis_with_full_dependencies}/{total_kpis}. "
-        f"Missing columns: {missing_columns_total}/{required_columns_total or 0}. "
-        f"Rule conditions validated: {ready_rules}/{len(strategy_bundle.decision_rules)}. "
-        "Hierarchy readiness is a Task-2 placeholder metric (fixed at 1.0)."
-    )
+    else:
+        overall_score = _clamp_01(
+            (
+                (kpi_coverage * weights["kpi_coverage"])
+                + (rule_readiness * weights["rule_readiness"])
+                + (hierarchy_readiness * weights["hierarchy_readiness"])
+                + (data_readiness * weights["data_readiness"])
+            )
+            / total_weight
+        )
+        explanation = (
+            f"KPIs with full dependencies: {kpis_with_full_dependencies}/{total_kpis}. "
+            f"Missing columns: {missing_columns_total}/{required_columns_total or 0}. "
+            f"Rule conditions validated: {ready_rules}/{len(strategy_bundle.decision_rules)}. "
+            "Hierarchy readiness is placeholder in Sprint-4; will be implemented in Strategy Expansion Track."
+        )
 
     readiness = DecisionReadiness(
         overall_score=overall_score,
@@ -154,6 +166,7 @@ def compute_readiness_and_coverage(
         data_readiness=data_readiness,
         explanation=explanation,
     )
+    readiness_flags = ReadinessFlags(kpis_defined=kpis_defined, placeholders=placeholders)
 
     summaries = {
         "dataset_id": schema_snapshot.dataset_id,
@@ -169,4 +182,4 @@ def compute_readiness_and_coverage(
         "notes": schema_snapshot.notes,
         "hierarchy_readiness_note": "not implemented in Task 2",
     }
-    return readiness, coverage_gaps, summaries
+    return readiness, coverage_gaps, summaries, readiness_flags
