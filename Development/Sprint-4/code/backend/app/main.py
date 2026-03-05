@@ -14,6 +14,9 @@ from app.api.admin import router as admin_router
 from app.api.datasets import router as datasets_router
 from app.api.debug import router as debug_router
 from app.api.profiling import router as profiling_router
+from app.api.decision import router as decision_router
+from app.api.strategy import bundle_router as strategy_bundle_router
+from app.api.kpi_registry import router as kpi_registry_router
 
 # Load backend/.env without overriding terminal environment variables.
 load_dotenv(Path(__file__).resolve().parents[1] / ".env", override=False)
@@ -61,6 +64,9 @@ app.include_router(admin_router, prefix="/api")
 app.include_router(profiling_router, prefix="/api")
 app.include_router(datasets_router, prefix="/api")
 app.include_router(debug_router, prefix="/api")
+app.include_router(decision_router, prefix="/api")
+app.include_router(strategy_bundle_router, prefix="/api")
+app.include_router(kpi_registry_router, prefix="/api")
 
 
 @app.get("/")
