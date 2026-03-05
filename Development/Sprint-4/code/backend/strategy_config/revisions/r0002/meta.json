@@ -1,0 +1,12 @@
+{
+  "revision": "r0002",
+  "created_at": "2026-03-05T23:06:47Z",
+  "author": "harry",
+  "reason": "Updated KPI registry from Strategy tab",
+  "hashes": {
+    "strategy_bundle.yaml": "343718097aa76ea875a13a6cf4ad669b2abcd8279711ab8017c323d3119f3eb8",
+    "kpi_registry.yaml": "f38929d6d71a37ff511804f991f17b00b71e6c580799ea43c17a2b2f6157e307",
+    "strategy_bundle.override.yaml": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+    "kpi_registry.override.yaml": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+  }
+}

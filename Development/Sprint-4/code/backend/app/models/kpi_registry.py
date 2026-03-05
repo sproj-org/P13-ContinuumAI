@@ -27,6 +27,9 @@ class KPIRegistryEntry(BaseModel):
     required_columns: list[str] = Field(default_factory=list)
     dimensions: list[str] = Field(default_factory=list)
     default_grain: str | None = None
+    pillar_id: str | None = None
+    owner: str | None = None
+    display_name: str | None = None
 
     @field_validator("id")
     @classmethod
@@ -55,6 +58,14 @@ class KPIRegistryEntry(BaseModel):
             if trimmed:
                 output.append(trimmed)
         return output
+
+    @field_validator("pillar_id", "owner", "display_name")
+    @classmethod
+    def normalize_optional_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        trimmed = value.strip()
+        return trimmed or None
 
 
 class KPIRegistry(BaseModel):
