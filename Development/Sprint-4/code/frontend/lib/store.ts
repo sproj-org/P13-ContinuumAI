@@ -189,6 +189,23 @@ function sanitizeChatResponse(raw: unknown): ChatResponse | null {
     return null;
   }
   const meta = typeof record.meta === 'object' && record.meta !== null ? (record.meta as Record<string, unknown>) : {};
+  const usedFallback = typeof record.used_fallback === 'boolean' ? record.used_fallback : undefined;
+  const openaiConfigured = typeof record.openai_configured === 'boolean' ? record.openai_configured : undefined;
+  const fallbackReason: 'missing_key' | 'openai_error' | undefined =
+    record.fallback_reason === 'missing_key' || record.fallback_reason === 'openai_error'
+      ? record.fallback_reason
+      : undefined;
+  const openaiErrorType = typeof record.openai_error_type === 'string' ? record.openai_error_type : undefined;
+  const openaiStatusCode = typeof record.openai_status_code === 'number' ? record.openai_status_code : null;
+  const openaiErrorHint = typeof record.openai_error_hint === 'string' ? record.openai_error_hint : null;
+  const debugMetadata = {
+    used_fallback: usedFallback,
+    openai_configured: openaiConfigured,
+    fallback_reason: fallbackReason,
+    openai_error_type: openaiErrorType,
+    openai_status_code: openaiStatusCode,
+    openai_error_hint: openaiErrorHint,
+  };
 
   if (responseType === 'clarify') {
     const optionsRaw = record.options;
@@ -215,6 +232,7 @@ function sanitizeChatResponse(raw: unknown): ChatResponse | null {
         time_grains: asTimeGrainArray(optionsRecord.time_grains),
       },
       meta,
+      ...debugMetadata,
     };
   }
 
@@ -223,6 +241,7 @@ function sanitizeChatResponse(raw: unknown): ChatResponse | null {
       response_type: 'refuse',
       message: record.message,
       meta,
+      ...debugMetadata,
     };
   }
 
@@ -232,6 +251,7 @@ function sanitizeChatResponse(raw: unknown): ChatResponse | null {
       message: record.message,
       citations: asStringArray(record.citations),
       meta,
+      ...debugMetadata,
     };
   }
 
@@ -241,6 +261,7 @@ function sanitizeChatResponse(raw: unknown): ChatResponse | null {
       patch: record.patch as Record<string, unknown>,
       narrative: typeof record.narrative === 'string' ? record.narrative : undefined,
       meta,
+      ...debugMetadata,
     };
   }
 
@@ -259,6 +280,7 @@ function sanitizeChatResponse(raw: unknown): ChatResponse | null {
       rows: record.rows.filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null),
       narrative: record.narrative,
       meta,
+      ...debugMetadata,
     };
   }
 

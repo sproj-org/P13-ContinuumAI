@@ -11,6 +11,7 @@ from app.db.database import create_tables
 from app.api.auth import router as auth_router
 from app.api.admin import router as admin_router
 from app.api.datasets import router as datasets_router
+from app.api.debug import router as debug_router
 from app.api.profiling import router as profiling_router
 
 # Load backend/.env without overriding terminal environment variables.
@@ -51,6 +52,7 @@ app.include_router(auth_router, prefix="/api")
 app.include_router(admin_router, prefix="/api")
 app.include_router(profiling_router, prefix="/api")
 app.include_router(datasets_router, prefix="/api")
+app.include_router(debug_router, prefix="/api")
 
 
 @app.get("/")

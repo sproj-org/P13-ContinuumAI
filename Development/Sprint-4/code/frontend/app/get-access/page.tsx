@@ -139,7 +139,7 @@ export default function GetAccessPage() {
                     <span className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 mt-0.5">
                       <span className="w-2 h-2 rounded-full bg-[#4f46e5]"></span>
                     </span>
-                    <span className="text-slate-700">AI-powered analytics with Numi assistant</span>
+                    <span className="text-slate-700">AI-powered analytics with VizAgent assistant</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <span className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 mt-0.5">

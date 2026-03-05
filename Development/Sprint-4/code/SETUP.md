@@ -31,3 +31,17 @@ cd Development/Sprint-4/code/frontend
 npm install
 npm run dev
 ```
+
+## Troubleshooting OpenAI Fallback
+
+If the chat banner shows OpenAI fallback, check backend logs for `correlation_id` and diagnostic fields.
+
+- `401`/`403`: Authentication failed. Verify `OPENAI_API_KEY`.
+- `429`: Rate limited. Retry later or reduce request rate.
+- `404`: Model not found. Verify `VIZAGENT_MODEL`/`OPENAI_MODEL`.
+- `timeout` or `network`: Check proxy/firewall/VPN/outbound access.
+
+When `ENABLE_DEBUG=1`, you can query:
+
+- `GET /api/debug/openai`
+- Response: `{ "openai_configured": bool, "vizagent_model": string|null }`

@@ -97,13 +97,13 @@ export default function DashboardTab() {
             </div>
             <h2 className="text-2xl font-bold text-slate-900 mb-2">No Charts Saved Yet</h2>
             <p className="text-slate-600 text-center max-w-md mb-6">
-              Start chatting with Numi or experiment with the Chart Builder to create charts, then save them here for easy access and analysis.
+              Start chatting with VizAgent or experiment with the Chart Builder to create charts, then save them here for easy access and analysis.
             </p>
             <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 max-w-md">
               <p className="text-sm text-indigo-900 font-medium mb-2">💡 Quick Tip</p>
               <p className="text-sm text-indigo-700">
-                Click the "Ask Numi" button and request a chart like "Show revenue by month" or
-                "Sales by store". Once Numi generates it, you can save it to this dashboard!
+                Click the "Ask VizAgent" button and request a chart like "Show revenue by month" or
+                "Sales by store". Once VizAgent generates it, you can save it to this dashboard!
               </p>
             </div>
           </div>

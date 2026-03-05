@@ -32,7 +32,7 @@ import type {
 import { renderChart } from "@/components/workspace/renderChart";
 import MarkdownMessage from "@/components/common/MarkdownMessage";
 
-interface NumiChatbotProps {
+interface VizAgentChatbotProps {
   isOpen: boolean;
   onClose: () => void;
 }
@@ -119,7 +119,7 @@ const EMPTY_SELECTIONS = {
   limit: null,
 } as const;
 
-export function NumiChatbot({ isOpen, onClose }: NumiChatbotProps) {
+export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
   const params = useParams<{ datasetId: string }>();
   const {
     selectedDatasetId,
@@ -190,6 +190,72 @@ export function NumiChatbot({ isOpen, onClose }: NumiChatbotProps) {
     () => turns.find((turn) => turn.role === "user")?.message ?? null,
     [turns]
   );
+  const latestAssistantResponse = useMemo(() => {
+    for (let index = turns.length - 1; index >= 0; index -= 1) {
+      const turn = turns[index];
+      if (turn.role === "assistant" && turn.response) {
+        return turn.response;
+      }
+    }
+    return null;
+  }, [turns]);
+  const debugFlagsPresent = useMemo(() => {
+    if (!latestAssistantResponse) {
+      return false;
+    }
+    return (
+      typeof latestAssistantResponse.used_fallback === "boolean" ||
+      typeof latestAssistantResponse.openai_configured === "boolean" ||
+      latestAssistantResponse.fallback_reason === "missing_key" ||
+      latestAssistantResponse.fallback_reason === "openai_error"
+    );
+  }, [latestAssistantResponse]);
+  const fallbackWarningText = useMemo(() => {
+    if (!latestAssistantResponse) {
+      return null;
+    }
+
+    if (
+      latestAssistantResponse.openai_configured === false ||
+      latestAssistantResponse.fallback_reason === "missing_key"
+    ) {
+      return "⚠️ VizAgent fallback: OPENAI_API_KEY not detected. Check backend/.env";
+    }
+
+    if (
+      latestAssistantResponse.used_fallback === true &&
+      latestAssistantResponse.fallback_reason === "openai_error"
+    ) {
+      const hint =
+        typeof latestAssistantResponse.openai_error_hint === "string" && latestAssistantResponse.openai_error_hint.trim()
+          ? latestAssistantResponse.openai_error_hint.trim()
+          : "OpenAI call failed";
+      const statusCode =
+        typeof latestAssistantResponse.openai_status_code === "number"
+          ? latestAssistantResponse.openai_status_code
+          : null;
+      return `⚠️ VizAgent fallback: OpenAI call failed. ${hint}${statusCode !== null ? ` (${statusCode})` : ""}`;
+    }
+
+    return null;
+  }, [latestAssistantResponse]);
+  const fallbackWarningDetails = useMemo(() => {
+    if (!latestAssistantResponse || latestAssistantResponse.fallback_reason !== "openai_error") {
+      return null;
+    }
+    const type =
+      typeof latestAssistantResponse.openai_error_type === "string" && latestAssistantResponse.openai_error_type.trim()
+        ? latestAssistantResponse.openai_error_type.trim()
+        : "unknown";
+    const status =
+      typeof latestAssistantResponse.openai_status_code === "number"
+        ? String(latestAssistantResponse.openai_status_code)
+        : "n/a";
+    return `Type: ${type} • Status: ${status}`;
+  }, [latestAssistantResponse]);
+  const showMissingDebugFlags = useMemo(() => {
+    return Boolean(latestAssistantResponse && !debugFlagsPresent);
+  }, [latestAssistantResponse, debugFlagsPresent]);
 
   useEffect(() => {
     setError(null);
@@ -581,7 +647,7 @@ export function NumiChatbot({ isOpen, onClose }: NumiChatbotProps) {
             <div className="absolute -top-1 -right-1 w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
           </div>
           <div>
-            <h3 className="font-semibold text-slate-900">Numi</h3>
+            <h3 className="font-semibold text-slate-900">VizAgent</h3>
             <p className="text-[10px] text-slate-600">AI Data Assistant</p>
           </div>
         </div>
@@ -721,7 +787,7 @@ export function NumiChatbot({ isOpen, onClose }: NumiChatbotProps) {
                   isAssistant ? "bg-white border-slate-200 shadow-sm" : "bg-indigo-100 border-indigo-200 shadow-sm"
                 }`}
               >
-                <p className="text-[10px] text-slate-600 mb-1">{isAssistant ? "Numi" : "You"}</p>
+                <p className="text-[10px] text-slate-600 mb-1">{isAssistant ? "VizAgent" : "You"}</p>
                 {isAssistant ? (
                   turn.message ? (
                     <div className="text-sm">
@@ -886,6 +952,21 @@ export function NumiChatbot({ isOpen, onClose }: NumiChatbotProps) {
                 ))}
               </div>
             ) : null}
+          </div>
+        ) : null}
+
+        {fallbackWarningText ? (
+          <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5 space-y-0.5">
+            <div>{fallbackWarningText}</div>
+            {fallbackWarningDetails ? (
+              <div className="text-[10px] text-amber-700">{fallbackWarningDetails}</div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {showMissingDebugFlags ? (
+          <div className="text-[10px] text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1">
+            ⚠️ Debug flags missing (check NEXT_PUBLIC_API_URL / backend version)
           </div>
         ) : null}
 
