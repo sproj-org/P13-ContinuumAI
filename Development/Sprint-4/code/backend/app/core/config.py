@@ -1,5 +1,8 @@
-from pydantic_settings import BaseSettings
+from pathlib import Path
 from functools import lru_cache
+
+from pydantic import AliasChoices, Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -21,12 +24,19 @@ class Settings(BaseSettings):
     CACHE_TTL_SECONDS: int = 600
 
     # LLM
-    OPENAI_API_KEY: str | None = "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"
-    OPENAI_MODEL: str = "gpt-4o-mini"
-    
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    OPENAI_API_KEY: str | None = None
+    OPENAI_MODEL: str = Field(
+        default="gpt-4o-mini",
+        validation_alias=AliasChoices("VIZAGENT_MODEL", "OPENAI_MODEL"),
+    )
+
+    # Debug/runtime flags
+    ENABLE_DEBUG: bool = False
+
+    model_config = SettingsConfigDict(
+        env_file=Path(__file__).resolve().parents[2] / ".env",
+        case_sensitive=True,
+    )
 
 
 @lru_cache()

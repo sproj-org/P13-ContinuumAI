@@ -1,6 +1,10 @@
+from contextlib import asynccontextmanager
+import logging
+from pathlib import Path
+
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
 
 from app.core.config import get_settings
 from app.db.database import create_tables
@@ -9,7 +13,11 @@ from app.api.admin import router as admin_router
 from app.api.datasets import router as datasets_router
 from app.api.profiling import router as profiling_router
 
+# Load backend/.env without overriding terminal environment variables.
+load_dotenv(Path(__file__).resolve().parents[1] / ".env", override=False)
+
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -17,6 +25,7 @@ async def lifespan(app: FastAPI):
     """Application lifespan - runs on startup and shutdown."""
     # Startup: Create database tables
     create_tables()
+    logger.info("Loaded settings: OPENAI_API_KEY set: %s", bool((settings.OPENAI_API_KEY or "").strip()))
     yield
     # Shutdown: cleanup if needed
 
