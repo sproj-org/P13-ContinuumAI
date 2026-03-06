@@ -166,6 +166,11 @@ def evaluate_rule(
         return False, f"invalid_expression:{type(exc).__name__}"
 
 
+def _extract_rule_kpi_ids(condition: str) -> list[str]:
+    refs = {item.strip() for item in _KPI_REF_RE.findall(condition) if item.strip()}
+    return sorted(refs)
+
+
 def evaluate_strategy(
     *,
     dataset_id: str,
@@ -191,6 +196,10 @@ def evaluate_strategy(
             schema_snapshot=schema_snapshot,
         )
         value = computed.get("value")
+        provenance = computed.get("provenance") or {}
+        provenance_errors = provenance.get("errors") if isinstance(provenance, dict) else None
+        has_errors = isinstance(provenance_errors, list) and len(provenance_errors) > 0
+
         target = _target_entry(kpi.id, strategy_bundle)
         status, variance = _compute_target_status(value=value, target=target)
         kpi_values[kpi.id] = value
@@ -198,11 +207,22 @@ def evaluate_strategy(
         kpi_results.append(
             {
                 "id": kpi.id,
+                "display_name": kpi.display_name,
+                "description": kpi.description,
+                "formula": kpi.formula,
+                "marts": list(kpi.marts),
+                "required_columns": list(kpi.required_columns),
+                "dimensions": list(kpi.dimensions),
+                "default_grain": kpi.default_grain,
+                "pillar_id": kpi.pillar_id,
+                "owner": kpi.owner,
                 "value": value,
                 "target": target.target if target else None,
                 "variance": variance,
                 "status": status,
-                "provenance": computed.get("provenance"),
+                "computable": value is not None and not has_errors,
+                "dependency_status": "missing_dependencies" if has_errors else "ready",
+                "provenance": provenance,
             }
         )
 
@@ -222,6 +242,7 @@ def evaluate_strategy(
                 "action": rule.action,
                 "severity": rule.severity,
                 "rationale": rule.rationale,
+                "affected_kpis": _extract_rule_kpi_ids(rule.condition),
                 "evaluation_error": evaluation_error,
             }
         )

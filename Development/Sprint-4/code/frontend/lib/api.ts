@@ -20,6 +20,7 @@ import type {
   StrategyRuleDeleteRequest,
   StrategyRuleUpsertRequest,
   StrategyRulesResponse,
+  StrategyDecisionSignalsResponse,
   StrategyEvaluationRequest,
   StrategyEvaluationResponse,
   StrategyTargetUpsertRequest,
@@ -328,6 +329,10 @@ class ApiClient {
       method: "POST",
       body: JSON.stringify(payload),
     });
+  }
+
+  async getStrategyDecisionSignals(datasetId: string): Promise<StrategyDecisionSignalsResponse> {
+    return this.request<StrategyDecisionSignalsResponse>(`/strategy/decision-signals?dataset_id=${encodeURIComponent(datasetId)}`);
   }
 
   async getKpiRegistryBundle(): Promise<StrategyBundleEditorResponse> {

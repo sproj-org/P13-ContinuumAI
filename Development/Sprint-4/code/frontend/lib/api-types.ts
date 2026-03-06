@@ -207,6 +207,7 @@ export interface DecisionStateResponse {
   kpi_registry: Record<string, unknown>;
   readiness: DecisionReadiness;
   readiness_flags?: ReadinessFlags | null;
+  readiness_notes?: string[] | null;
   coverage_gaps: CoverageGap[];
   summaries?: Record<string, unknown> | null;
 }
@@ -369,10 +370,21 @@ export interface StrategyEvaluationRequest {
 
 export interface StrategyEvaluationKpiResult {
   id: string;
+  display_name?: string | null;
+  description?: string | null;
+  formula?: string | null;
+  marts?: string[];
+  required_columns?: string[];
+  dimensions?: string[];
+  default_grain?: string | null;
+  pillar_id?: string | null;
+  owner?: string | null;
   value: number | null;
   target: number | null;
   variance: number | null;
   status: string;
+  computable?: boolean;
+  dependency_status?: string;
   provenance?: Record<string, unknown> | null;
 }
 
@@ -382,6 +394,7 @@ export interface StrategyEvaluationRuleResult {
   action: string;
   severity: "info" | "warn" | "block";
   rationale?: string | null;
+  affected_kpis?: string[];
 }
 
 export interface StrategyEvaluationResponse {
@@ -390,6 +403,33 @@ export interface StrategyEvaluationResponse {
   kpis: StrategyEvaluationKpiResult[];
   triggered_rules: StrategyEvaluationRuleResult[];
   evaluation_time: string;
+}
+
+export interface StrategyDecisionSignal {
+  id: string;
+  title: string;
+  severity: "critical" | "warn" | "info";
+  explanation: string;
+  suggested_action: string;
+  kpi_id?: string | null;
+  kpi_ids?: string[];
+  source?: string | null;
+}
+
+export interface StrategyDecisionSignalsResponse {
+  dataset_id: string;
+  revision: string;
+  generated_at: string;
+  executive_summary: {
+    overall_readiness_score: number;
+    kpis_on_track: number;
+    kpis_warning: number;
+    kpis_critical: number;
+    triggered_rules: number;
+    narrative: string;
+  };
+  decision_signals: StrategyDecisionSignal[];
+  recommendations: string[];
 }
 
 export interface StrategyAgentExtractRequest {

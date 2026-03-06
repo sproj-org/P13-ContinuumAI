@@ -29,6 +29,7 @@ from app.services.strategy.errors import (
     StrategyValidationError,
     StrategyYamlParseError,
 )
+from app.services.strategy.decision_signals import build_decision_surface
 from app.services.strategy.evaluation import evaluate_strategy
 from app.services.strategy import storage as strategy_storage
 from app.services.strategy.storage import (
@@ -1053,6 +1054,26 @@ def evaluate_strategy_bundle(
             status_code=422,
             code="VALIDATION_ERROR",
             message="Strategy evaluation failed.",
+            hint=str(exc),
+        )
+
+
+@bundle_router.get("/decision-signals")
+def get_strategy_decision_signals(
+    dataset_id: str = DEFAULT_DATASET_ID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _ = current_user
+    try:
+        return build_decision_surface(dataset_id=dataset_id, db=db)
+    except KeyError as exc:
+        _raise_error(status_code=404, code="NOT_FOUND", message=str(exc))
+    except StrategyValidationError as exc:
+        _raise_error(
+            status_code=422,
+            code="VALIDATION_ERROR",
+            message="Decision signal generation failed.",
             hint=str(exc),
         )
 
