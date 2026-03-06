@@ -128,58 +128,96 @@ def _normalize_candidate(raw: Any, snapshot: DatasetSchemaSnapshot) -> dict[str,
     return normalized
 
 
+def _first_matching_column(available_columns: set[str], preferred_names: list[str]) -> str | None:
+    for name in preferred_names:
+        if name in available_columns:
+            return name
+    return None
+
+
+def _find_column_by_keywords(available_columns: set[str], keywords: list[str]) -> str | None:
+    lowered_map = {column.lower(): column for column in available_columns}
+    for key in keywords:
+        key_lower = key.lower()
+        for lowered_name, original in lowered_map.items():
+            if key_lower in lowered_name:
+                return original
+    return None
+
+
+def _best_column(available_columns: set[str], preferred_names: list[str], keywords: list[str]) -> str | None:
+    return _first_matching_column(available_columns, preferred_names) or _find_column_by_keywords(available_columns, keywords)
+
+
 def _heuristic_candidates(text: str, snapshot: DatasetSchemaSnapshot) -> tuple[list[dict[str, Any]], list[str]]:
     lowered = text.lower()
     available_columns = _available_columns(snapshot)
     candidates: list[dict[str, Any]] = []
     notes: list[str] = []
 
-    def first_available(options: list[str], fallback: str) -> str:
-        for option in options:
-            if option in available_columns:
-                return option
-        return fallback
+    sales_col = _best_column(
+        available_columns,
+        ["net_sales", "sales_amount", "revenue", "total_sales"],
+        ["sales", "revenue", "amount"],
+    )
+    order_col = _best_column(
+        available_columns,
+        ["order_id", "transaction_id"],
+        ["order", "transaction"],
+    )
+    customer_col = _best_column(
+        available_columns,
+        ["customer_id", "client_id"],
+        ["customer", "client"],
+    )
 
-    if any(token in lowered for token in ("sales", "revenue", "net sales")):
-        sales_col = first_available(["net_sales", "sales_amount", "revenue", "total_sales"], "net_sales")
+    intent_specs = [
+        {
+            "intent_id": "total_sales",
+            "keywords": ["sales", "revenue", "net sales"],
+            "required": [sales_col],
+            "formula": lambda: f"sum({sales_col})" if sales_col else "count(*)",
+            "description": "Total sales across selected marts.",
+        },
+        {
+            "intent_id": "transactions",
+            "keywords": ["transaction", "order count", "orders"],
+            "required": [order_col],
+            "formula": lambda: f"count({order_col})" if order_col else "count(*)",
+            "description": "Total transaction volume.",
+        },
+        {
+            "intent_id": "average_basket_value",
+            "keywords": ["avg basket", "average basket", "average order value", "aov"],
+            "required": [sales_col, order_col],
+            "formula": lambda: (
+                f"sum({sales_col}) / nullif(count({order_col}), 0)"
+                if sales_col and order_col
+                else "count(*)"
+            ),
+            "description": "Average basket value per order.",
+        },
+        {
+            "intent_id": "active_customers",
+            "keywords": ["active customers", "customer count"],
+            "required": [customer_col],
+            "formula": lambda: f"count_distinct({customer_col})" if customer_col else "count(*)",
+            "description": "Distinct customer count.",
+        },
+    ]
+
+    matched_intents = [item for item in intent_specs if any(token in lowered for token in item["keywords"])]
+    for intent in matched_intents:
+        required_columns = [item for item in intent["required"] if item]
+        marts = _infer_marts(required_columns, snapshot)
         candidates.append(
             {
-                "id": "total_sales",
-                "display_name": "Total Sales",
-                "description": "Total sales across selected marts.",
-                "formula": f"sum({sales_col})",
-                "required_columns": [sales_col],
-                "pillar_id": "growth",
-                "owner": "strategy_agent",
-                "default_grain": "day",
-            }
-        )
-
-    if any(token in lowered for token in ("transaction", "order count", "orders")):
-        order_col = first_available(["order_id", "transaction_id"], "order_id")
-        candidates.append(
-            {
-                "id": "transactions",
-                "display_name": "Transactions",
-                "description": "Count of distinct transactions.",
-                "formula": f"count_distinct({order_col})",
-                "required_columns": [order_col],
-                "pillar_id": "growth",
-                "owner": "strategy_agent",
-                "default_grain": "day",
-            }
-        )
-
-    if any(token in lowered for token in ("average order value", "aov")):
-        sales_col = first_available(["net_sales", "sales_amount", "revenue"], "net_sales")
-        order_col = first_available(["order_id", "transaction_id"], "order_id")
-        candidates.append(
-            {
-                "id": "average_order_value",
-                "display_name": "Average Order Value",
-                "description": "Average value per order.",
-                "formula": f"sum({sales_col}) / nullif(count_distinct({order_col}), 0)",
-                "required_columns": [sales_col, order_col],
+                "id": intent["intent_id"],
+                "display_name": intent["intent_id"].replace("_", " ").title(),
+                "description": intent["description"],
+                "formula": intent["formula"](),
+                "required_columns": required_columns,
+                "marts": marts,
                 "pillar_id": "growth",
                 "owner": "strategy_agent",
                 "default_grain": "day",
@@ -187,14 +225,18 @@ def _heuristic_candidates(text: str, snapshot: DatasetSchemaSnapshot) -> tuple[l
         )
 
     if not candidates:
-        fallback_column = "net_sales" if "net_sales" in available_columns else next(iter(available_columns), "id")
+        fallback_column = sales_col or order_col or customer_col or next(iter(available_columns), "id")
+        fallback_formula = f"sum({fallback_column})" if fallback_column in available_columns else "count(*)"
+        fallback_required = [fallback_column] if fallback_column in available_columns else []
+        fallback_marts = _infer_marts(fallback_required, snapshot)
         candidates.append(
             {
                 "id": "key_metric",
                 "display_name": "Key Metric",
                 "description": "Heuristic KPI candidate extracted from strategy notes.",
-                "formula": f"sum({fallback_column})" if fallback_column != "id" else "count(*)",
-                "required_columns": [] if fallback_column == "id" else [fallback_column],
+                "formula": fallback_formula,
+                "required_columns": fallback_required,
+                "marts": fallback_marts,
                 "pillar_id": "growth",
                 "owner": "strategy_agent",
                 "default_grain": "day",
@@ -202,7 +244,7 @@ def _heuristic_candidates(text: str, snapshot: DatasetSchemaSnapshot) -> tuple[l
         )
         notes.append("No explicit KPI keywords found; returned a generic KPI candidate.")
     else:
-        notes.append("Heuristic extraction generated KPI candidates from strategy text.")
+        notes.append("Heuristic extraction pipeline matched KPI intents from strategy text.")
 
     normalized: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
@@ -229,10 +271,12 @@ def _openai_extract_candidates(text: str, snapshot: DatasetSchemaSnapshot) -> tu
         for mart_id, columns in sorted(snapshot.mart_columns.items(), key=lambda item: item[0])
     ]
     system_prompt = (
-        "You extract KPI candidates from business strategy notes. "
-        "Return JSON with key 'candidates' as a list of KPI objects. "
-        "Each KPI should include id, display_name, description, formula, marts, required_columns, "
-        "dimensions, default_grain, pillar_id, owner. Keep output concise."
+        "You extract KPI candidates from business strategy notes.\n"
+        "Use this deterministic pipeline: keyword detection -> column matching -> mart inference -> formula suggestion.\n"
+        "Return strict JSON object with key 'candidates' as a list.\n"
+        "Each candidate must include: id, display_name, description, formula, marts, required_columns, "
+        "dimensions, default_grain, pillar_id, owner.\n"
+        "Only use columns that exist in the provided schema and avoid free-form prose."
     )
     user_prompt = (
         "Dataset schema:\n"

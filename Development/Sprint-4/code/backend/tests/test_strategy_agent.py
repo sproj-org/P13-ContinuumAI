@@ -75,6 +75,24 @@ def test_extract_kpis_heuristic_path(strategy_agent_client: TestClient) -> None:
     assert any("heuristic" in note.lower() for note in payload["notes"])
 
 
+def test_extract_kpis_pipeline_avg_basket(strategy_agent_client: TestClient) -> None:
+    response = strategy_agent_client.post(
+        "/api/strategy/agent/extract-kpis",
+        json={
+            "dataset_id": "silkroute",
+            "text": "Track avg basket and order volume improvements.",
+            "expected_revision": "r0001",
+        },
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    candidate_ids = {item["id"] for item in payload["candidates"]}
+    assert "average_basket_value" in candidate_ids
+    avg_candidate = next(item for item in payload["candidates"] if item["id"] == "average_basket_value")
+    assert "sum(" in avg_candidate["formula"]
+    assert "count(" in avg_candidate["formula"]
+
+
 def test_reconcile_reports_missing_dependencies(strategy_agent_client: TestClient) -> None:
     response = strategy_agent_client.post(
         "/api/strategy/agent/reconcile",
