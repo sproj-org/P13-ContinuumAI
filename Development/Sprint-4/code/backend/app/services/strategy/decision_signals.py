@@ -82,7 +82,7 @@ def build_decision_surface(
     strategy_bundle = StrategyBundle.model_validate(strategy_payload)
     kpi_registry = KPIRegistry.model_validate(kpi_payload)
     schema_snapshot = load_dataset_schema(dataset_id)
-    readiness, coverage_gaps, _summaries, readiness_flags = compute_readiness_and_coverage(
+    readiness, coverage_gaps, summaries, readiness_flags = compute_readiness_and_coverage(
         strategy_bundle=strategy_bundle,
         kpi_registry=kpi_registry,
         schema_snapshot=schema_snapshot,
@@ -171,7 +171,14 @@ def build_decision_surface(
         "kpis_critical": critical,
         "triggered_rules": len(evaluation_payload.get("triggered_rules", [])),
     }
-    readiness_notes = list(readiness_flags.placeholders)
+    readiness_notes = []
+    raw_notes = summaries.get("readiness_notes") if isinstance(summaries, dict) else None
+    if isinstance(raw_notes, list):
+        readiness_notes.extend(str(item) for item in raw_notes if str(item).strip())
+    if readiness_flags.placeholders:
+        readiness_notes.extend(
+            item for item in readiness_flags.placeholders if item not in readiness_notes
+        )
     narrative = _render_narrative(summary, readiness.overall_score, readiness_notes)
 
     return {
@@ -185,4 +192,3 @@ def build_decision_surface(
         "decision_signals": signals,
         "recommendations": unique_recommendations[:8],
     }
-

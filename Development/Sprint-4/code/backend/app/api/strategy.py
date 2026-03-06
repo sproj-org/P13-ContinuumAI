@@ -186,6 +186,8 @@ class StrategyRulePayload(BaseModel):
     action: str
     severity: Literal["info", "warn", "block"]
     rationale: str | None = None
+    ai_suggested: bool | None = None
+    source: str | None = None
 
     @field_validator("id", "condition", "action")
     @classmethod

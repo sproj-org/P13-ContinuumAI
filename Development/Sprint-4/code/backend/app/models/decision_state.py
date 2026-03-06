@@ -47,5 +47,6 @@ class DecisionStatePayload(BaseModel):
     kpi_registry: dict[str, Any]
     readiness: DecisionReadiness
     readiness_flags: ReadinessFlags | None = None
+    readiness_notes: list[str] = Field(default_factory=list)
     coverage_gaps: list[CoverageGapItem] = Field(default_factory=list)
     summaries: dict[str, Any] | None = None

@@ -173,6 +173,7 @@ def compute_readiness_and_coverage(
     }
     total_weight = sum(scoring_weights.values()) or 1.0
     placeholders = []
+    readiness_notes: list[str] = []
     if not kpis_defined:
         overall_score = 0.0
         placeholders.append("no_kpis_defined")
@@ -180,6 +181,7 @@ def compute_readiness_and_coverage(
             "No KPIs defined yet; readiness is preliminary. "
             "Add KPIs to enable KPI, target, reconciliation, and data readiness calculations."
         )
+        readiness_notes.append("No KPIs defined yet; readiness remains preliminary.")
     else:
         overall_score = _clamp_01(
             (
@@ -199,6 +201,16 @@ def compute_readiness_and_coverage(
             f"Missing columns: {missing_columns_total}/{required_columns_total or 0}. "
             f"Rule conditions validated: {valid_rules}/{len(strategy_bundle.decision_rules)}."
         )
+        unresolved_count = len(coverage_gaps)
+        if unresolved_count > 0:
+            readiness_notes.append(f"{unresolved_count} KPI(s) have unresolved dependencies.")
+        missing_targets_count = max(total_kpis - kpis_with_targets, 0)
+        if missing_targets_count > 0:
+            readiness_notes.append(f"{missing_targets_count} KPI(s) are missing targets.")
+        if unknown_rule_references > 0:
+            readiness_notes.append(f"{unknown_rule_references} rule reference(s) point to unavailable KPIs.")
+        if not readiness_notes:
+            readiness_notes.append("Readiness metrics are healthy with no critical structural gaps.")
 
     readiness = DecisionReadiness(
         overall_score=overall_score,
@@ -231,5 +243,6 @@ def compute_readiness_and_coverage(
         "unavailable_marts": schema_snapshot.unavailable_marts,
         "notes": schema_snapshot.notes,
         "legacy_scoring_weights": _legacy_weights(strategy_bundle),
+        "readiness_notes": readiness_notes,
     }
     return readiness, coverage_gaps, summaries, readiness_flags

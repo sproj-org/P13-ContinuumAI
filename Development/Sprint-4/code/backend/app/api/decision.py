@@ -40,6 +40,11 @@ def get_decision_state(
         kpi_registry=kpi_registry,
         schema_snapshot=schema_snapshot,
     )
+    readiness_notes: list[str] = []
+    if isinstance(summaries, dict):
+        raw_notes = summaries.get("readiness_notes")
+        if isinstance(raw_notes, list):
+            readiness_notes = [str(item) for item in raw_notes if str(item).strip()]
     payload = DecisionStatePayload(
         revision=revision,
         generated_at=datetime.now(timezone.utc),
@@ -47,6 +52,7 @@ def get_decision_state(
         kpi_registry=kpi_registry.model_dump(mode="python"),
         readiness=readiness,
         readiness_flags=readiness_flags,
+        readiness_notes=readiness_notes,
         coverage_gaps=coverage_gaps,
         summaries=summaries,
     )

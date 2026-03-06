@@ -382,6 +382,8 @@ def _suggest_guardrail_rule(candidate: dict[str, Any]) -> dict[str, Any]:
         "action": f"Review corrective plan for {kpi_id} and assign owner.",
         "severity": "warn",
         "rationale": "Auto-generated rule to monitor newly extracted KPI.",
+        "ai_suggested": True,
+        "source": "agent",
     }
 
 
@@ -672,6 +674,8 @@ def reconcile_kpis(candidates: list[dict[str, Any]], dataset_schema: DatasetSche
                             "action": f"Review corrective plan for {candidate['id']}.",
                             "severity": "warn",
                             "rationale": "Auto-generated guardrail for candidate KPI.",
+                            "ai_suggested": True,
+                            "source": "agent",
                         }
                     },
                     rationale="Add guardrail rule for KPI monitoring.",

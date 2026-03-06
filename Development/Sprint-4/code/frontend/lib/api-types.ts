@@ -335,6 +335,8 @@ export interface StrategyRule {
   action: string;
   severity: "info" | "warn" | "block";
   rationale?: string | null;
+  ai_suggested?: boolean | null;
+  source?: string | null;
 }
 
 export interface StrategyRulesResponse {
