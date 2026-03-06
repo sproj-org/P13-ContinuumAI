@@ -30,6 +30,7 @@ class KPIRegistryEntry(BaseModel):
     pillar_id: str | None = None
     owner: str | None = None
     display_name: str | None = None
+    derived_metrics: dict[str, str] = Field(default_factory=dict)
 
     @field_validator("id")
     @classmethod
@@ -58,6 +59,17 @@ class KPIRegistryEntry(BaseModel):
             if trimmed:
                 output.append(trimmed)
         return output
+
+    @field_validator("derived_metrics")
+    @classmethod
+    def normalize_derived_metrics(cls, value: dict[str, str]) -> dict[str, str]:
+        normalized: dict[str, str] = {}
+        for key, metric_formula in value.items():
+            key_trimmed = key.strip()
+            formula_trimmed = metric_formula.strip()
+            if key_trimmed and formula_trimmed:
+                normalized[key_trimmed] = formula_trimmed
+        return normalized
 
     @field_validator("pillar_id", "owner", "display_name")
     @classmethod

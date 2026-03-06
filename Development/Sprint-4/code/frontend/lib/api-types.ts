@@ -270,6 +270,7 @@ export interface StrategyKpi {
   pillar_id?: string | null;
   owner?: string | null;
   display_name?: string | null;
+  derived_metrics?: Record<string, string>;
 }
 
 export interface StrategyKpiLibraryResponse {
