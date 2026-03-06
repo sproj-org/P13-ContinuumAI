@@ -12,8 +12,12 @@ import type {
   StrategyBundleEditorResponse,
   StrategyAgentExtractRequest,
   StrategyAgentExtractResponse,
+  StrategyAgentApplyRequest,
+  StrategyAgentApplyResponse,
   StrategyAgentReconcileRequest,
   StrategyAgentReconcileResponse,
+  StrategyAgentUndoRequest,
+  StrategyAgentUndoResponse,
   StrategyOverviewResponse,
   StrategyOverviewUpdateRequest,
   StrategyTargetDeleteRequest,
@@ -380,6 +384,20 @@ class ApiClient {
 
   async reconcileStrategyKpis(payload: StrategyAgentReconcileRequest): Promise<StrategyAgentReconcileResponse> {
     return this.request<StrategyAgentReconcileResponse>("/strategy/agent/reconcile", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async applyStrategyPatches(payload: StrategyAgentApplyRequest): Promise<StrategyAgentApplyResponse> {
+    return this.request<StrategyAgentApplyResponse>("/strategy/agent/apply", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async undoStrategyPatches(payload: StrategyAgentUndoRequest): Promise<StrategyAgentUndoResponse> {
+    return this.request<StrategyAgentUndoResponse>("/strategy/agent/undo", {
       method: "POST",
       body: JSON.stringify(payload),
     });

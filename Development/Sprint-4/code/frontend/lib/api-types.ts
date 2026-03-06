@@ -460,6 +460,17 @@ export interface StrategyAgentMissingItem {
   } | null;
 }
 
+export interface StrategyAgentPatch {
+  patch_id: string;
+  type: "add_kpi" | "update_formula" | "replace_column" | "set_target" | "add_rule" | "legacy";
+  target_id: string;
+  before?: Record<string, unknown>;
+  after: Record<string, unknown>;
+  rationale: string;
+  confidence: number;
+  source: string;
+}
+
 export interface StrategyAgentReconcileResponse {
   revision: string;
   candidates: Array<StrategyKpi & { status?: string }>;
@@ -478,4 +489,39 @@ export interface StrategyAgentReconcileResponse {
     missing_column: string;
     suggested_columns: string[];
   }>;
+  patches: StrategyAgentPatch[];
+}
+
+export interface StrategyAgentApplyRequest {
+  dataset_id: string;
+  expected_revision: string;
+  selected_patch_ids?: string[];
+  patches?: StrategyAgentPatch[] | null;
+  patch?: Record<string, unknown> | null;
+  author: string;
+  reason: string;
+}
+
+export interface StrategyAgentApplyResponse {
+  revision: string;
+  previous_revision?: string;
+  applied_summary: {
+    selected_patch_ids?: string[];
+    applied_patch_types?: string[];
+    applied_count: number;
+    kpi_count: number;
+  };
+}
+
+export interface StrategyAgentUndoRequest {
+  dataset_id: string;
+  revision_to_restore: string;
+  expected_revision?: string | null;
+  author: string;
+  reason: string;
+}
+
+export interface StrategyAgentUndoResponse {
+  revision: string;
+  restored_from_revision: string;
 }

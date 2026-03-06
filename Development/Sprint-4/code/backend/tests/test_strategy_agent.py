@@ -120,6 +120,7 @@ def test_reconcile_reports_missing_dependencies(strategy_agent_client: TestClien
     assert len(payload["candidates"]) == 1
     assert payload["candidates"][0]["id"] == "returns_rate"
     assert any(item["kpi_id"] == "returns_rate" for item in payload["column_matches"])
+    assert len(payload["patches"]) >= 1
 
 
 def test_apply_patch_conflict(strategy_agent_client: TestClient) -> None:
@@ -175,3 +176,56 @@ def test_apply_patch_conflict(strategy_agent_client: TestClient) -> None:
     assert apply_stale.status_code == 409
     detail = apply_stale.json()["detail"]
     assert detail["code"] == "REVISION_CONFLICT"
+
+
+def test_apply_selected_patch_ids_and_undo(strategy_agent_client: TestClient) -> None:
+    reconcile = strategy_agent_client.post(
+        "/api/strategy/agent/reconcile",
+        json={
+            "dataset_id": "silkroute",
+            "expected_revision": "r0001",
+            "candidates": [
+                {
+                    "id": "sales_total_from_patch_center",
+                    "description": "Sales total",
+                    "formula": "sum(net_sales)",
+                    "marts": ["gold_sales_daily"],
+                    "required_columns": ["net_sales"],
+                }
+            ],
+        },
+    )
+    assert reconcile.status_code == 200
+    reconcile_payload = reconcile.json()
+    patch_ids = [item["patch_id"] for item in reconcile_payload["patches"] if item["type"] == "add_kpi"]
+    assert patch_ids
+
+    apply_resp = strategy_agent_client.post(
+        "/api/strategy/agent/apply",
+        json={
+            "dataset_id": "silkroute",
+            "expected_revision": "r0001",
+            "selected_patch_ids": patch_ids,
+            "patches": reconcile_payload["patches"],
+            "author": "tester",
+            "reason": "apply selected patches",
+        },
+    )
+    assert apply_resp.status_code == 200
+    apply_payload = apply_resp.json()
+    assert apply_payload["revision"] == "r0002"
+    assert apply_payload["applied_summary"]["applied_count"] >= 1
+
+    undo_resp = strategy_agent_client.post(
+        "/api/strategy/agent/undo",
+        json={
+            "dataset_id": "silkroute",
+            "revision_to_restore": apply_payload["previous_revision"],
+            "expected_revision": apply_payload["revision"],
+            "author": "tester",
+            "reason": "undo apply",
+        },
+    )
+    assert undo_resp.status_code == 200
+    undo_payload = undo_resp.json()
+    assert undo_payload["restored_from_revision"] == "r0001"

@@ -386,3 +386,63 @@ def update_kpi_registry(
 
         new_revision = bump_revision(author=author, reason=reason)
         return validated, new_revision
+
+
+def commit_base_artifacts(
+    *,
+    base_strategy_payload: dict[str, Any],
+    base_kpi_payload: dict[str, Any],
+    expected_revision: str,
+    author: str,
+    reason: str,
+) -> tuple[dict[str, Any], dict[str, Any], str]:
+    ensure_strategy_config_initialized()
+    with _LOCK:
+        _require_revision_match(expected_revision)
+
+        override_strategy = load_yaml(OVERRIDE_STRATEGY_PATH)
+        override_kpi = load_yaml(OVERRIDE_KPI_PATH)
+
+        merged_strategy = merge_dicts(base_strategy_payload, override_strategy)
+        merged_kpi = merge_dicts(base_kpi_payload, override_kpi)
+
+        validated_strategy = _validate_strategy_bundle(merged_strategy)
+        validated_kpi = _validate_kpi_registry(merged_kpi)
+
+        write_yaml(BASE_STRATEGY_PATH, base_strategy_payload)
+        write_yaml(BASE_KPI_PATH, base_kpi_payload)
+
+        new_revision = bump_revision(author=author, reason=reason)
+        return validated_strategy, validated_kpi, new_revision
+
+
+def restore_revision_snapshot(
+    *,
+    revision_to_restore: str,
+    expected_revision: str,
+    author: str,
+    reason: str,
+) -> str:
+    ensure_strategy_config_initialized()
+    with _LOCK:
+        _require_revision_match(expected_revision)
+        revision_dir = REVISIONS_DIR / revision_to_restore
+        if not revision_dir.exists():
+            raise StrategyValidationError(f"Revision '{revision_to_restore}' does not exist.")
+
+        required_files = {
+            "strategy_bundle.yaml": BASE_STRATEGY_PATH,
+            "kpi_registry.yaml": BASE_KPI_PATH,
+            "strategy_bundle.override.yaml": OVERRIDE_STRATEGY_PATH,
+            "kpi_registry.override.yaml": OVERRIDE_KPI_PATH,
+        }
+        for source_name, destination in required_files.items():
+            source_path = revision_dir / source_name
+            if not source_path.exists():
+                raise StrategyValidationError(
+                    f"Revision '{revision_to_restore}' is missing '{source_name}'."
+                )
+            payload = parse_yaml_text(source_path.read_text(encoding="utf-8"))
+            write_yaml(destination, payload)
+
+        return bump_revision(author=author, reason=reason)

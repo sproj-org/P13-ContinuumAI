@@ -8,6 +8,7 @@ import { ApiRequestError, apiClient } from "@/lib/api";
 import type {
   CoverageGap,
   DecisionStateResponse,
+  StrategyAgentPatch,
   StrategyAgentMissingItem,
   StrategyContextPayload,
   StrategyDecisionSignalsResponse,
@@ -180,10 +181,15 @@ export default function StrategyTab() {
   const [strategyNotes, setStrategyNotes] = useState("");
   const [agentCandidates, setAgentCandidates] = useState<StrategyKpi[]>([]);
   const [agentNotes, setAgentNotes] = useState<string[]>([]);
+  const [agentPatches, setAgentPatches] = useState<StrategyAgentPatch[]>([]);
+  const [selectedPatchIds, setSelectedPatchIds] = useState<string[]>([]);
   const [agentMissingById, setAgentMissingById] = useState<Record<string, string>>({});
   const [agentColumnMatchesById, setAgentColumnMatchesById] = useState<Record<string, string[]>>({});
   const [ignoredCandidateIds, setIgnoredCandidateIds] = useState<string[]>([]);
   const [agentLoading, setAgentLoading] = useState(false);
+  const [agentApplying, setAgentApplying] = useState(false);
+  const [agentUndoing, setAgentUndoing] = useState(false);
+  const [lastApplyBaseRevision, setLastApplyBaseRevision] = useState<string | null>(null);
   const [addingCandidateId, setAddingCandidateId] = useState<string | null>(null);
   const [overviewRevision, setOverviewRevision] = useState<string | null>(null);
   const [strategyContextDraft, setStrategyContextDraft] = useState<StrategyContextPayload>({
@@ -398,6 +404,10 @@ export default function StrategyTab() {
   const visibleAgentCandidates = useMemo(
     () => agentCandidates.filter((item) => !ignoredCandidateIds.includes(item.id)),
     [agentCandidates, ignoredCandidateIds]
+  );
+  const unresolvedSuggestionCount = useMemo(
+    () => Object.keys(agentMissingById).length + (agentPatches || []).length,
+    [agentMissingById, agentPatches]
   );
 
   const kpiStatus = useCallback(
@@ -878,10 +888,19 @@ export default function StrategyTab() {
           nextMatches[item.kpi_id].push(rendered);
         }
         setAgentColumnMatchesById(nextMatches);
+        const nextPatches = reconciled.patches || [];
+        setAgentPatches(nextPatches);
+        setSelectedPatchIds(
+          nextPatches
+            .filter((item) => (item.confidence || 0) >= 0.65)
+            .map((item) => item.patch_id)
+        );
         setIgnoredCandidateIds([]);
       } else {
         setAgentMissingById({});
         setAgentColumnMatchesById({});
+        setAgentPatches([]);
+        setSelectedPatchIds([]);
         setIgnoredCandidateIds([]);
       }
 
@@ -932,6 +951,74 @@ export default function StrategyTab() {
 
   const ignoreSuggestedKpi = (kpiId: string) => {
     setIgnoredCandidateIds((prev) => (prev.includes(kpiId) ? prev : [...prev, kpiId]));
+  };
+
+  const applySelectedAgentPatches = async (patchIds: string[]) => {
+    if (!revision) {
+      setError("Missing revision. Refresh and try again.");
+      return;
+    }
+    if (patchIds.length === 0) {
+      setError("Select at least one patch to apply.");
+      return;
+    }
+    setAgentApplying(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const response = await apiClient.applyStrategyPatches({
+        dataset_id: datasetId,
+        expected_revision: revision,
+        selected_patch_ids: patchIds,
+        patches: agentPatches,
+        author: user?.username ?? "strategy_editor",
+        reason: "Apply selected reconciliation patches",
+      });
+      setLastApplyBaseRevision(response.previous_revision || revision);
+      setSuccess(`Applied ${response.applied_summary.applied_count} patch(es).`);
+      setAgentPatches((prev) => prev.filter((item) => !patchIds.includes(item.patch_id)));
+      setSelectedPatchIds([]);
+      await load();
+    } catch (requestError) {
+      handleApiError(requestError, "Failed to apply selected patches.");
+    } finally {
+      setAgentApplying(false);
+    }
+  };
+
+  const applyAllSafeAgentPatches = async () => {
+    const safeIds = agentPatches.filter((item) => (item.confidence || 0) >= 0.7).map((item) => item.patch_id);
+    await applySelectedAgentPatches(safeIds);
+  };
+
+  const undoLastPatchApply = async () => {
+    if (!revision) {
+      setError("Missing revision. Refresh and try again.");
+      return;
+    }
+    if (!lastApplyBaseRevision) {
+      setError("No patch application to undo in this session.");
+      return;
+    }
+    setAgentUndoing(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const response = await apiClient.undoStrategyPatches({
+        dataset_id: datasetId,
+        revision_to_restore: lastApplyBaseRevision,
+        expected_revision: revision,
+        author: user?.username ?? "strategy_editor",
+        reason: "Undo last patch apply",
+      });
+      setSuccess(`Restored strategy artifacts from ${response.restored_from_revision}.`);
+      setLastApplyBaseRevision(null);
+      await load();
+    } catch (requestError) {
+      handleApiError(requestError, "Failed to undo patch apply.");
+    } finally {
+      setAgentUndoing(false);
+    }
   };
 
   const runEvaluation = async () => {
@@ -1374,97 +1461,148 @@ export default function StrategyTab() {
         <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
           <div>
             <h3 className="text-sm font-semibold text-slate-900">Reconciliation</h3>
-            <p className="text-xs text-slate-600">Paste strategic notes to suggest KPI candidates, then add selected KPIs to the library.</p>
+            <p className="text-xs text-slate-600">
+              Patch Center workflow: extract suggestions, review dependency fixes, apply selected patches, and undo if needed.
+            </p>
           </div>
-          <textarea
-            value={strategyNotes}
-            onChange={(event) => setStrategyNotes(event.target.value)}
-            placeholder="Paste strategy notes..."
-            className="h-28 w-full rounded-lg border border-slate-300 bg-slate-50 p-3 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-          />
-          <div className="flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => void suggestKpis()}
-              disabled={agentLoading}
-              className="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs text-white hover:bg-indigo-700 disabled:opacity-60"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Suggest KPIs
-            </button>
-            <span className="text-xs text-slate-500">{visibleAgentCandidates.length} suggestion(s)</span>
-          </div>
-          {agentNotes.length > 0 ? (
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-              <p className="text-[11px] font-medium text-slate-600">Agent Notes</p>
-              <ul className="mt-1 space-y-1 text-xs text-slate-700">
-                {agentNotes.map((note) => (
-                  <li key={note}>{note}</li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-          {visibleAgentCandidates.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-slate-200 text-slate-500">
-                    <th className="px-2 py-2">ID</th>
-                    <th className="px-2 py-2">Description</th>
-                    <th className="px-2 py-2">Formula</th>
-                    <th className="px-2 py-2">Dependencies</th>
-                    <th className="px-2 py-2">Column Suggestions</th>
-                    <th className="px-2 py-2">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visibleAgentCandidates.map((candidate) => (
-                    <tr key={candidate.id} className="border-b border-slate-100">
-                      <td className="px-2 py-2 font-medium">{candidate.id}</td>
-                      <td className="px-2 py-2">{candidate.display_name || candidate.description}</td>
-                      <td className="px-2 py-2 font-mono text-[11px]">{candidate.formula}</td>
-                      <td className="px-2 py-2">
-                        <div>{(candidate.marts || []).join(", ") || "-"}</div>
-                        {agentMissingById[candidate.id] ? (
-                          <div className="mt-1 text-[11px] text-amber-700">{agentMissingById[candidate.id]}</div>
-                        ) : null}
-                      </td>
-                      <td className="px-2 py-2">
-                        {(agentColumnMatchesById[candidate.id] || []).length > 0 ? (
-                          <div className="space-y-1 text-[11px] text-slate-700">
-                            {agentColumnMatchesById[candidate.id].map((line) => (
-                              <div key={`${candidate.id}-${line}`}>{line}</div>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-[11px] text-slate-500">-</span>
-                        )}
-                      </td>
-                      <td className="px-2 py-2">
-                        <div className="flex gap-1">
-                          <button
-                            type="button"
-                            onClick={() => void addSuggestedKpi(candidate)}
-                            disabled={addingCandidateId === candidate.id}
-                            className="rounded border border-indigo-300 px-2 py-1 text-[11px] text-indigo-700 hover:bg-indigo-50 disabled:opacity-60"
-                          >
-                            {addingCandidateId === candidate.id ? "Adding..." : "Add KPI"}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => ignoreSuggestedKpi(candidate.id)}
-                            className="rounded border border-slate-300 px-2 py-1 text-[11px] text-slate-700 hover:bg-slate-100"
-                          >
-                            Ignore
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+          <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2">
+              <p className="text-xs font-semibold text-slate-700">Strategy Notes</p>
+              <textarea
+                value={strategyNotes}
+                onChange={(event) => setStrategyNotes(event.target.value)}
+                placeholder="Paste strategy notes..."
+                className="h-32 w-full rounded-lg border border-slate-300 bg-white p-3 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              />
+              <div className="flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => void suggestKpis()}
+                  disabled={agentLoading}
+                  className="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs text-white hover:bg-indigo-700 disabled:opacity-60"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Suggest KPIs
+                </button>
+                <span className="text-[11px] text-slate-500">{visibleAgentCandidates.length} candidates</span>
+              </div>
+              {agentNotes.length > 0 ? (
+                <ul className="list-disc space-y-1 pl-4 text-[11px] text-slate-700">
+                  {agentNotes.map((note) => (
+                    <li key={note}>{note}</li>
                   ))}
-                </tbody>
-              </table>
+                </ul>
+              ) : null}
             </div>
-          ) : null}
+
+            <div className="rounded-lg border border-slate-200 bg-white p-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-slate-700">Suggested KPIs</p>
+                <span className="text-[11px] text-slate-500">{visibleAgentCandidates.length} visible</span>
+              </div>
+              <div className="mt-2 max-h-80 overflow-auto space-y-2">
+                {visibleAgentCandidates.map((candidate) => (
+                  <div key={candidate.id} className="rounded border border-slate-200 p-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs font-medium text-slate-900">{candidate.display_name || candidate.id}</p>
+                      <p className="text-[10px] text-slate-500">{candidate.id}</p>
+                    </div>
+                    <p className="mt-1 font-mono text-[10px] text-slate-600">{candidate.formula}</p>
+                    <p className="mt-1 text-[10px] text-slate-600">{(candidate.marts || []).join(", ") || "-"}</p>
+                    {agentMissingById[candidate.id] ? (
+                      <p className="mt-1 text-[10px] text-amber-700">{agentMissingById[candidate.id]}</p>
+                    ) : null}
+                    {(agentColumnMatchesById[candidate.id] || []).length > 0 ? (
+                      <p className="mt-1 text-[10px] text-slate-600">{agentColumnMatchesById[candidate.id].join(" | ")}</p>
+                    ) : null}
+                    <div className="mt-2 flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() => void addSuggestedKpi(candidate)}
+                        disabled={addingCandidateId === candidate.id}
+                        className="rounded border border-indigo-300 px-2 py-0.5 text-[10px] text-indigo-700 hover:bg-indigo-50 disabled:opacity-60"
+                      >
+                        {addingCandidateId === candidate.id ? "Adding..." : "Add KPI"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => ignoreSuggestedKpi(candidate.id)}
+                        className="rounded border border-slate-300 px-2 py-0.5 text-[10px] text-slate-700 hover:bg-slate-100"
+                      >
+                        Ignore
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {visibleAgentCandidates.length === 0 ? (
+                  <p className="text-xs text-slate-500">No candidates yet.</p>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-slate-200 bg-white p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-slate-700">Patch Center</p>
+                <span className="text-[11px] text-slate-500">{unresolvedSuggestionCount} unresolved</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => void applySelectedAgentPatches(selectedPatchIds)}
+                  disabled={agentApplying || selectedPatchIds.length === 0}
+                  className="rounded border border-indigo-300 px-2 py-1 text-[11px] text-indigo-700 hover:bg-indigo-50 disabled:opacity-60"
+                >
+                  {agentApplying ? "Applying..." : "Apply Selected"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void applyAllSafeAgentPatches()}
+                  disabled={agentApplying || agentPatches.length === 0}
+                  className="rounded border border-slate-300 px-2 py-1 text-[11px] text-slate-700 hover:bg-slate-100 disabled:opacity-60"
+                >
+                  Apply All Safe Fixes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void undoLastPatchApply()}
+                  disabled={agentUndoing || !lastApplyBaseRevision}
+                  className="rounded border border-red-300 px-2 py-1 text-[11px] text-red-700 hover:bg-red-50 disabled:opacity-60"
+                >
+                  {agentUndoing ? "Undoing..." : "Undo Last Apply"}
+                </button>
+              </div>
+              <div className="max-h-80 space-y-2 overflow-auto">
+                {agentPatches.map((patch) => (
+                  <label key={patch.patch_id} className="block rounded border border-slate-200 p-2 text-[11px]">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedPatchIds.includes(patch.patch_id)}
+                        onChange={(event) =>
+                          setSelectedPatchIds((prev) =>
+                            event.target.checked
+                              ? prev.includes(patch.patch_id)
+                                ? prev
+                                : [...prev, patch.patch_id]
+                              : prev.filter((item) => item !== patch.patch_id)
+                          )
+                        }
+                      />
+                      <span className="font-medium text-slate-800">{patch.type}</span>
+                      <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">
+                        {(patch.confidence * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                    <p className="mt-1 text-slate-700">{patch.target_id}</p>
+                    <p className="mt-1 text-slate-600">{patch.rationale}</p>
+                  </label>
+                ))}
+                {agentPatches.length === 0 ? (
+                  <p className="text-xs text-slate-500">No patch suggestions yet.</p>
+                ) : null}
+              </div>
+            </div>
+          </div>
           {ignoredCandidateIds.length > 0 ? (
             <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
               Ignored suggestions: {ignoredCandidateIds.join(", ")}
