@@ -126,3 +126,73 @@ def test_strategy_evaluation_target_status_and_missing_dependencies(monkeypatch:
     returns_row = next(item for item in result["kpis"] if item["id"] == "returns_rate")
     assert returns_row["status"] == "unavailable"
     assert returns_row["value"] is None
+
+
+def test_strategy_rule_triggers(monkeypatch: pytest.MonkeyPatch) -> None:
+    strategy_payload = {
+        "schema_version": 1,
+        "version": "1.0.0",
+        "strategic_context": {
+            "company": "Demo",
+            "horizon": "12m",
+            "north_star_metric": "sales_growth",
+        },
+        "pillars": [{"id": "growth", "description": "Growth"}],
+        "swot": {"strengths": [], "weaknesses": [], "opportunities": [], "threats": []},
+        "targets": {
+            "sales_growth": {
+                "target": 0.1,
+                "yellow_threshold": 0.06,
+                "red_threshold": 0.03,
+                "direction": "up",
+            }
+        },
+        "decision_rules": [
+            {
+                "id": "rule_sales_drop",
+                "condition": 'kpi("sales_growth") < target("sales_growth")',
+                "action": "Escalate",
+                "severity": "warn",
+            }
+        ],
+        "scoring_model": {
+            "weights": {
+                "kpi_coverage": 0.4,
+                "rule_readiness": 0.2,
+                "hierarchy_readiness": 0.2,
+                "data_readiness": 0.2,
+            }
+        },
+    }
+    kpi_payload = {
+        "schema_version": 1,
+        "version": "1.0.0",
+        "kpis": [
+            {
+                "id": "sales_growth",
+                "description": "Sales growth",
+                "formula": "sum(net_sales)/sum(order_count)",
+                "marts": ["gold_sales_daily"],
+                "required_columns": ["net_sales", "order_count"],
+                "dimensions": [],
+            }
+        ],
+    }
+    snapshot = DatasetSchemaSnapshot(
+        dataset_id="silkroute",
+        available_marts={"gold_sales_daily"},
+        mart_columns={"gold_sales_daily": {"net_sales", "order_count"}},
+    )
+
+    monkeypatch.setattr(evaluation, "load_current_artifacts", lambda: (strategy_payload, kpi_payload, "r0009"))
+    monkeypatch.setattr(evaluation, "load_dataset_schema", lambda dataset_id: snapshot)
+    monkeypatch.setattr(
+        evaluation,
+        "evaluate_kpi_formula",
+        lambda **kwargs: {"value": 0.08, "provenance": {"source": "mock"}},
+    )
+
+    result = evaluation.evaluate_strategy(dataset_id="silkroute", db=SimpleNamespace())
+    assert result["revision"] == "r0009"
+    assert len(result["triggered_rules"]) == 1
+    assert result["triggered_rules"][0]["id"] == "rule_sales_drop"
