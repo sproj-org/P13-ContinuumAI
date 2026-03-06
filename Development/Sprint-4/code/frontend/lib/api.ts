@@ -210,6 +210,103 @@ class ApiClient {
       body: JSON.stringify(request),
     });
   }
+
+  // ============================================
+  // Saved Charts (Dashboard Persistence)
+  // ============================================
+
+  async listSavedCharts(datasetId?: string): Promise<SavedChartAPI[]> {
+    const qs = datasetId ? `?dataset_id=${encodeURIComponent(datasetId)}` : "";
+    return this.request<SavedChartAPI[]>(`/saved-charts${qs}`);
+  }
+
+  async createSavedChart(data: SavedChartCreateAPI): Promise<SavedChartAPI> {
+    return this.request<SavedChartAPI>("/saved-charts", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateSavedChart(chartId: number, data: { title?: string; position?: number }): Promise<SavedChartAPI> {
+    return this.request<SavedChartAPI>(`/saved-charts/${chartId}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteSavedChart(chartId: number): Promise<void> {
+    await this.request<void>(`/saved-charts/${chartId}`, { method: "DELETE" });
+  }
+
+  async clearAllSavedCharts(datasetId?: string): Promise<void> {
+    const qs = datasetId ? `?dataset_id=${encodeURIComponent(datasetId)}` : "";
+    await this.request<void>(`/saved-charts${qs}`, { method: "DELETE" });
+  }
+
+  // ============================================
+  // Chat Threads (Chat Persistence)
+  // ============================================
+
+  async listChatThreads(): Promise<ChatThreadAPI[]> {
+    return this.request<ChatThreadAPI[]>("/chat-threads");
+  }
+
+  async upsertChatThread(data: ChatThreadUpsertAPI): Promise<ChatThreadAPI> {
+    return this.request<ChatThreadAPI>("/chat-threads", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteChatThread(threadKey: string): Promise<void> {
+    await this.request<void>(`/chat-threads/${encodeURIComponent(threadKey)}`, {
+      method: "DELETE",
+    });
+  }
+
+  async clearAllChatThreads(): Promise<void> {
+    await this.request<void>("/chat-threads", { method: "DELETE" });
+  }
+}
+
+export interface SavedChartAPI {
+  id: number;
+  dataset_id: string;
+  mart_id: string;
+  title: string;
+  chart_spec: Record<string, unknown>;
+  rows: Record<string, unknown>[];
+  position: number;
+  created_at: string;
+}
+
+export interface SavedChartCreateAPI {
+  dataset_id: string;
+  mart_id: string;
+  title: string;
+  chart_spec: Record<string, unknown>;
+  rows: Record<string, unknown>[];
+  position?: number;
+}
+
+export interface ChatThreadAPI {
+  id: number;
+  thread_key: string;
+  turns: Record<string, unknown>[];
+  chat_state: Record<string, unknown> | null;
+  last_chart_spec: Record<string, unknown> | null;
+  saved_prompts: string[];
+  chat_mode: string;
+  updated_at: string;
+}
+
+export interface ChatThreadUpsertAPI {
+  thread_key: string;
+  turns: Record<string, unknown>[];
+  chat_state: Record<string, unknown> | null;
+  last_chart_spec: Record<string, unknown> | null;
+  saved_prompts: string[];
+  chat_mode: string;
 }
 
 export const apiClient = new ApiClient(API_URL);

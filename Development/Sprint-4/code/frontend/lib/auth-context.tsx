@@ -10,6 +10,8 @@ import React, {
 } from "react";
 import { useRouter } from "next/navigation";
 import { apiClient, User, AuthResponse } from "@/lib/api";
+import { rehydrateStore } from "@/lib/store";
+import { getQueryClient } from "@/lib/query-provider";
 
 interface AuthContextType {
   user: User | null;
@@ -72,6 +74,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     localStorage.setItem("user", JSON.stringify(response.user));
     setUser(response.user);
     setError(null);
+    // Clear React Query cache so no stale data from the previous user leaks
+    getQueryClient()?.clear();
+    // Rehydrate Zustand from the new user's localStorage bucket
+    rehydrateStore();
     router.push("/dashboard");
   }, [router]);
 
@@ -118,6 +124,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const logout = useCallback(() => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("user");
+    // Clear React Query cache so next user starts fresh
+    getQueryClient()?.clear();
+    // Rehydrate store — with no user, falls back to empty defaults
+    rehydrateStore();
     setUser(null);
     router.push("/");
   }, [router]);

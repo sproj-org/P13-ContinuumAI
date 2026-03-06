@@ -2,8 +2,9 @@
  * React Query hooks for profiling data
  */
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from './api';
+import type { SavedChartAPI, SavedChartCreateAPI, ChatThreadAPI, ChatThreadUpsertAPI } from './api';
 import type {
   DatasetProfileAPI,
   ColumnProfileAPI,
@@ -101,5 +102,126 @@ export function useChartsPreview(datasetId: string, chartSpec: ChartSpecV1 | nul
     queryFn: () => apiClient.postChartsPreview(datasetId, chartSpec!, { debug }),
     enabled: !!datasetId && !!chartSpec,
     staleTime: 1 * 60 * 1000,
+  });
+}
+
+// ============================================
+// Saved Charts (Dashboard Persistence)
+// ============================================
+
+/**
+ * Fetch all saved charts for the current user, optionally filtered by dataset.
+ */
+export function useSavedCharts(datasetId?: string) {
+  return useQuery<SavedChartAPI[], Error>({
+    queryKey: ['savedCharts', datasetId ?? 'all'],
+    queryFn: () => apiClient.listSavedCharts(datasetId),
+    staleTime: 30 * 1000, // 30 seconds
+  });
+}
+
+/**
+ * Mutation: create a saved chart on the backend.
+ */
+export function useCreateSavedChart() {
+  const queryClient = useQueryClient();
+  return useMutation<SavedChartAPI, Error, SavedChartCreateAPI>({
+    mutationFn: (data) => apiClient.createSavedChart(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['savedCharts'] });
+    },
+  });
+}
+
+/**
+ * Mutation: update a saved chart (title or position).
+ */
+export function useUpdateSavedChart() {
+  const queryClient = useQueryClient();
+  return useMutation<SavedChartAPI, Error, { chartId: number; data: { title?: string; position?: number } }>({
+    mutationFn: ({ chartId, data }) => apiClient.updateSavedChart(chartId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['savedCharts'] });
+    },
+  });
+}
+
+/**
+ * Mutation: delete a single saved chart.
+ */
+export function useDeleteSavedChart() {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, number>({
+    mutationFn: (chartId) => apiClient.deleteSavedChart(chartId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['savedCharts'] });
+    },
+  });
+}
+
+/**
+ * Mutation: clear all saved charts for a dataset.
+ */
+export function useClearSavedCharts() {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, string | undefined>({
+    mutationFn: (datasetId) => apiClient.clearAllSavedCharts(datasetId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['savedCharts'] });
+    },
+  });
+}
+
+// ============================================
+// Chat Threads (Chat Persistence)
+// ============================================
+
+/**
+ * Fetch all chat threads for the current user.
+ */
+export function useChatThreads() {
+  return useQuery<ChatThreadAPI[], Error>({
+    queryKey: ['chatThreads'],
+    queryFn: () => apiClient.listChatThreads(),
+    staleTime: 30 * 1000,
+  });
+}
+
+/**
+ * Mutation: upsert (create/update) a chat thread.
+ */
+export function useUpsertChatThread() {
+  const queryClient = useQueryClient();
+  return useMutation<ChatThreadAPI, Error, ChatThreadUpsertAPI>({
+    mutationFn: (data) => apiClient.upsertChatThread(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chatThreads'] });
+    },
+  });
+}
+
+/**
+ * Mutation: delete a single chat thread by key.
+ */
+export function useDeleteChatThread() {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, string>({
+    mutationFn: (threadKey) => apiClient.deleteChatThread(threadKey),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chatThreads'] });
+    },
+  });
+}
+
+/**
+ * Mutation: clear all chat threads.
+ */
+export function useClearChatThreads() {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, void>({
+    mutationFn: () => apiClient.clearAllChatThreads(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chatThreads'] });
+    },
   });
 }

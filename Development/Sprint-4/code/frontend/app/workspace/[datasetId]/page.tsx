@@ -4,6 +4,8 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
 import { useAppStore, WorkspaceTab } from "@/lib/store";
 import { useAggregations } from "@/lib/hooks";
+import { useChatSync } from "@/lib/useChatSync";
+import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
@@ -43,6 +45,9 @@ function WorkspaceContent() {
     setAvailableMarts,
   } = useAppStore();
   const { data: aggregationsData } = useAggregations(selectedDatasetId);
+
+  // Bidirectional sync: hydrate chat state from DB + debounced write-back
+  useChatSync();
 
   // Set active dataset on mount
   useEffect(() => {
@@ -116,7 +121,7 @@ function WorkspaceContent() {
               </button>
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-slate-900 font-medium font-[family-name:var(--font-special-gothic)]">ContinuumAi</span>
+                  <Link href="/dashboard" className="text-slate-900 font-medium font-[family-name:var(--font-special-gothic)] hover:text-[#4f46e5] transition-colors">ContinuumAi</Link>
                   <span className="text-slate-300">/</span>
                   <div className="flex items-center gap-2">
                     <Database className="w-4 h-4 text-[#4f46e5]" />

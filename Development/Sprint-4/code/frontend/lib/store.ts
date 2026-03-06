@@ -8,6 +8,7 @@ export type WorkspaceTab = 'marts' | 'chart-builder' | 'dashboard';
 
 export interface SavedChart {
   id: string;
+  backendId?: number;  // DB primary key for persistence
   title: string;
   chartSpec: ChartSpecV1;
   rows: any[];
@@ -62,6 +63,7 @@ interface AppState {
   updateChartTitle: (chartId: string, newTitle: string) => void;
   removeSavedChart: (chartId: string) => void;
   clearSavedCharts: () => void;
+  hydrateSavedCharts: (charts: SavedChart[]) => void;
 
   // Dataset selection
   activeDataset: DatasetId | null;
@@ -105,6 +107,19 @@ interface AppState {
   addSavedPrompt: (key: string, prompt: string) => void;
   removeSavedPrompt: (key: string, prompt: string) => void;
   clearSavedPrompts: (key: string) => void;
+
+  /** Bulk-load chat threads from the backend, replacing local state. */
+  hydrateChatThreads: (threads: {
+    thread_key: string;
+    turns: ChatTurn[];
+    chat_state: ChatThreadState | null;
+    last_chart_spec: ChartSpecV1 | null;
+    saved_prompts: string[];
+    chat_mode: ChatMode;
+  }[]) => void;
+
+  /** Wipe all persisted state (call on logout) */
+  resetStore: () => void;
 }
 
 export interface ChartConfig {
@@ -127,6 +142,42 @@ const noopStorage: StateStorage = {
   getItem: () => null,
   setItem: () => undefined,
   removeItem: () => undefined,
+};
+
+// ── Per-user storage adapter ─────────────────────────────
+// Reads the logged-in user ID from localStorage and namespaces
+// the Zustand persistence key so each user gets isolated state.
+function getUserId(): number | null {
+  if (typeof globalThis.window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem('user');
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return typeof parsed?.id === 'number' ? parsed.id : null;
+  } catch {
+    return null;
+  }
+}
+
+const userScopedStorage: StateStorage = {
+  getItem: (name: string) => {
+    if (typeof globalThis.window === 'undefined') return null;
+    const uid = getUserId();
+    const key = uid !== null ? `${name}-user-${uid}` : name;
+    return localStorage.getItem(key);
+  },
+  setItem: (name: string, value: string) => {
+    if (typeof globalThis.window === 'undefined') return;
+    const uid = getUserId();
+    const key = uid !== null ? `${name}-user-${uid}` : name;
+    localStorage.setItem(key, value);
+  },
+  removeItem: (name: string) => {
+    if (typeof globalThis.window === 'undefined') return;
+    const uid = getUserId();
+    const key = uid !== null ? `${name}-user-${uid}` : name;
+    localStorage.removeItem(key);
+  },
 };
 
 type PersistedAppState = {
@@ -457,6 +508,7 @@ export const useAppStore = create<AppState>()(
           savedCharts: state.savedCharts.filter((c) => c.id !== chartId),
         })),
       clearSavedCharts: () => set({ savedCharts: [] }),
+      hydrateSavedCharts: (charts) => set({ savedCharts: charts }),
 
       // Workspace
       selectedAggregation: null,
@@ -502,13 +554,16 @@ export const useAppStore = create<AppState>()(
           const nextTurns = { ...state.chatTurnsByKey };
           const nextSpecs = { ...state.lastChartSpecByKey };
           const nextChatState = { ...state.chatStateByKey };
+          const nextPrompts = { ...state.savedPromptsByKey };
           delete nextTurns[key];
           delete nextSpecs[key];
           delete nextChatState[key];
+          delete nextPrompts[key];
           return {
             chatTurnsByKey: nextTurns,
             lastChartSpecByKey: nextSpecs,
             chatStateByKey: nextChatState,
+            savedPromptsByKey: nextPrompts,
           };
         }),
       setLastChartSpec: (key, spec) =>
@@ -596,11 +651,53 @@ export const useAppStore = create<AppState>()(
           delete clone[key];
           return { savedPromptsByKey: clone };
         }),
+
+      hydrateChatThreads: (threads) =>
+        set(() => {
+          const nextTurns: Record<string, ChatTurn[]> = {};
+          const nextSpecs: Record<string, ChartSpecV1 | null> = {};
+          const nextChatState: Record<string, ChatThreadState> = {};
+          const nextPrompts: SavedPromptsState = {};
+          let mode: ChatMode = 'auto';
+          for (const t of threads) {
+            nextTurns[t.thread_key] = t.turns;
+            nextSpecs[t.thread_key] = t.last_chart_spec;
+            if (t.chat_state) {
+              nextChatState[t.thread_key] = t.chat_state;
+            }
+            if (t.saved_prompts.length > 0) {
+              nextPrompts[t.thread_key] = t.saved_prompts;
+            }
+            // Use the mode from the most recent thread
+            if (t.chat_mode === 'chart' || t.chat_mode === 'explain' || t.chat_mode === 'auto') {
+              mode = t.chat_mode;
+            }
+          }
+          return {
+            chatTurnsByKey: nextTurns,
+            lastChartSpecByKey: nextSpecs,
+            chatStateByKey: nextChatState,
+            savedPromptsByKey: nextPrompts,
+            chatMode: mode,
+          };
+        }),
+
+      resetStore: () =>
+        set({
+          activeTab: 'marts',
+          selectedAggregation: null,
+          savedCharts: [],
+          chatTurnsByKey: {},
+          lastChartSpecByKey: {},
+          chatStateByKey: {},
+          chatMode: 'auto' as ChatMode,
+          savedPromptsByKey: {},
+        }),
     }),
     {
       name: 'continuumai-app-store',
       version: 5,
-      storage: createJSONStorage(() => (typeof window !== 'undefined' ? localStorage : noopStorage)),
+      storage: createJSONStorage(() => userScopedStorage),
       migrate: (persistedState: unknown, version: number) => {
         const state = (persistedState ?? {}) as PersistedAppState;
         if (version >= 5) {
@@ -624,7 +721,9 @@ export const useAppStore = create<AppState>()(
         };
       },
       partialize: (state) => ({
+        activeTab: state.activeTab,
         selectedAggregation: state.selectedAggregation,
+        savedCharts: state.savedCharts,
         chatTurnsByKey: state.chatTurnsByKey,
         lastChartSpecByKey: state.lastChartSpecByKey,
         chatStateByKey: state.chatStateByKey,
@@ -634,3 +733,14 @@ export const useAppStore = create<AppState>()(
     }
   )
 );
+
+/**
+ * Call after login/logout so the store rehydrates from the
+ * correct per-user localStorage bucket.
+ */
+export function rehydrateStore() {
+  // Reset in-memory state to defaults first
+  useAppStore.getState().resetStore();
+  // Then rehydrate from the (now user-scoped) storage
+  useAppStore.persist.rehydrate();
+}

@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, Text
+from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.database import Base
@@ -66,6 +67,52 @@ class User(Base):
     
     # Relationships
     organization = relationship("Organization", back_populates="users")
+    saved_charts = relationship("SavedChart", back_populates="user", cascade="all, delete-orphan")
+    chat_threads = relationship("ChatThread", back_populates="user", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<User(id={self.id}, username={self.username}, email={self.email})>"
+
+
+class SavedChart(Base):
+    """Persisted chart saved by a user to their dashboard."""
+
+    __tablename__ = "saved_charts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    dataset_id = Column(String(100), nullable=False, index=True)
+    mart_id = Column(String(100), nullable=False)
+    title = Column(String(500), nullable=False)
+    chart_spec = Column(JSON, nullable=False)
+    rows_snapshot = Column(JSON, nullable=False)
+    position = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    user = relationship("User", back_populates="saved_charts")
+
+    def __repr__(self):
+        return f"<SavedChart(id={self.id}, user_id={self.user_id}, title={self.title})>"
+
+
+class ChatThread(Base):
+    """Persisted chat thread per user per dataset:mart key."""
+
+    __tablename__ = "chat_threads"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    thread_key = Column(String(255), nullable=False, index=True)  # e.g. "silkroute:gold_sales_daily"
+    turns = Column(JSON, nullable=False, default=list)             # ChatTurn[]
+    chat_state = Column(JSON, nullable=True)                       # ChatThreadState
+    last_chart_spec = Column(JSON, nullable=True)                  # ChartSpecV1 | null
+    saved_prompts = Column(JSON, nullable=False, default=list)     # string[]
+    chat_mode = Column(String(20), nullable=False, default="auto") # 'auto' | 'chart' | 'explain'
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    # Relationships
+    user = relationship("User", back_populates="chat_threads")
+
+    def __repr__(self):
+        return f"<ChatThread(id={self.id}, user_id={self.user_id}, key={self.thread_key})>"

@@ -8,6 +8,8 @@ from app.api.auth import router as auth_router
 from app.api.admin import router as admin_router
 from app.api.datasets import router as datasets_router
 from app.api.profiling import router as profiling_router
+from app.api.dashboards import router as dashboards_router
+from app.api.chat_threads import router as chat_threads_router
 
 settings = get_settings()
 
@@ -42,6 +44,8 @@ app.include_router(auth_router, prefix="/api")
 app.include_router(admin_router, prefix="/api")
 app.include_router(profiling_router, prefix="/api")
 app.include_router(datasets_router, prefix="/api")
+app.include_router(dashboards_router, prefix="/api")
+app.include_router(chat_threads_router, prefix="/api")
 
 
 @app.get("/")
