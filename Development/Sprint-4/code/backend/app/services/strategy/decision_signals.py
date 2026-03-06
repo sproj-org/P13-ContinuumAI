@@ -49,10 +49,10 @@ def _status_recommendation(status: str) -> str:
 
 
 def _render_narrative(summary: dict[str, int], readiness_score: float, notes: list[str]) -> str:
-    critical = summary["critical"]
-    warning = summary["warning"]
-    on_track = summary["on_track"]
-    rule_count = summary["triggered_rules"]
+    critical = int(summary.get("critical", summary.get("kpis_critical", 0)))
+    warning = int(summary.get("warning", summary.get("kpis_warning", 0)))
+    on_track = int(summary.get("on_track", summary.get("kpis_on_track", 0)))
+    rule_count = int(summary.get("triggered_rules", 0))
 
     base = (
         f"Readiness is at {readiness_score * 100:.1f}%. "

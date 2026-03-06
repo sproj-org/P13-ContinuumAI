@@ -172,6 +172,7 @@ export default function StrategyTab() {
   const [editor, setEditor] = useState<EditorKind>("strategy");
   const [strategyText, setStrategyText] = useState("");
   const [kpiText, setKpiText] = useState("");
+  const [yamlValidationMessage, setYamlValidationMessage] = useState<string | null>(null);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [formMode, setFormMode] = useState<KpiFormMode>("create");
@@ -962,6 +963,7 @@ export default function StrategyTab() {
     setSaving(true);
     setError(null);
     setSuccess(null);
+    setYamlValidationMessage(null);
     try {
       if (editor === "strategy") {
         await apiClient.putStrategyBundle({
@@ -981,12 +983,27 @@ export default function StrategyTab() {
         });
       }
       setSuccess("Saved.");
+      setYamlValidationMessage(`Saved ${editor === "strategy" ? "strategy bundle" : "KPI registry"} YAML at revision ${revision}.`);
       await load();
     } catch (requestError) {
+      if (requestError instanceof ApiRequestError && requestError.code) {
+        const hint = requestError.hint ? ` ${requestError.hint}` : "";
+        setYamlValidationMessage(`${requestError.code}: ${requestError.message}.${hint}`.trim());
+      } else {
+        setYamlValidationMessage("YAML save failed. Resolve validation issues and try again.");
+      }
       handleApiError(requestError, "Failed to save YAML.");
     } finally {
       setSaving(false);
     }
+  };
+
+  const refreshYamlEditors = async () => {
+    setError(null);
+    setSuccess(null);
+    setYamlValidationMessage(null);
+    await load();
+    setSuccess("Refreshed YAML editors from latest revision.");
   };
 
   const suggestKpis = async () => {
@@ -2144,7 +2161,31 @@ export default function StrategyTab() {
       ) : null}
 
       {section === "advanced_yaml" ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-xs font-semibold text-slate-700">Advanced YAML (Fallback)</p>
+              <p className="text-[11px] text-slate-500">
+                Revision: <span className="font-mono text-slate-700">{revision ?? "n/a"}</span>. Prefer structured tabs for routine edits.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void refreshYamlEditors()}
+              className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Refresh Latest
+            </button>
+          </div>
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            Structured UI is recommended for safer updates. Use YAML only for advanced bulk changes.
+          </div>
+          {yamlValidationMessage ? (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
+              {yamlValidationMessage}
+            </div>
+          ) : null}
           <div className="flex items-center gap-2">
             <button type="button" onClick={() => setEditor("strategy")} className={`rounded-lg px-3 py-1.5 text-xs border ${editor === "strategy" ? "border-indigo-300 bg-indigo-100 text-indigo-700" : "border-slate-300 bg-white text-slate-700"}`}>Strategy Bundle</button>
             <button type="button" onClick={() => setEditor("kpi")} className={`rounded-lg px-3 py-1.5 text-xs border ${editor === "kpi" ? "border-indigo-300 bg-indigo-100 text-indigo-700" : "border-slate-300 bg-white text-slate-700"}`}>KPI Registry</button>
