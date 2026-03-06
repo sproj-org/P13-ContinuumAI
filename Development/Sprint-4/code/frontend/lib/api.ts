@@ -17,6 +17,9 @@ import type {
   StrategyOverviewResponse,
   StrategyOverviewUpdateRequest,
   StrategyTargetDeleteRequest,
+  StrategyRuleDeleteRequest,
+  StrategyRuleUpsertRequest,
+  StrategyRulesResponse,
   StrategyTargetUpsertRequest,
   StrategyTargetsResponse,
   StrategyKpiDeleteRequest,
@@ -288,6 +291,31 @@ class ApiClient {
 
   async deleteStrategyTarget(kpiId: string, payload: StrategyTargetDeleteRequest): Promise<StrategyTargetsResponse> {
     return this.request<StrategyTargetsResponse>(`/strategy/targets/${encodeURIComponent(kpiId)}`, {
+      method: "DELETE",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async getStrategyRules(): Promise<StrategyRulesResponse> {
+    return this.request<StrategyRulesResponse>("/strategy/rules");
+  }
+
+  async createStrategyRule(payload: StrategyRuleUpsertRequest): Promise<StrategyRulesResponse> {
+    return this.request<StrategyRulesResponse>("/strategy/rules", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async updateStrategyRule(ruleId: string, payload: StrategyRuleUpsertRequest): Promise<StrategyRulesResponse> {
+    return this.request<StrategyRulesResponse>(`/strategy/rules/${encodeURIComponent(ruleId)}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async deleteStrategyRule(ruleId: string, payload: StrategyRuleDeleteRequest): Promise<StrategyRulesResponse> {
+    return this.request<StrategyRulesResponse>(`/strategy/rules/${encodeURIComponent(ruleId)}`, {
       method: "DELETE",
       body: JSON.stringify(payload),
     });

@@ -323,6 +323,33 @@ export interface StrategyTargetDeleteRequest {
   reason: string;
 }
 
+export interface StrategyRule {
+  id: string;
+  condition: string;
+  action: string;
+  severity: "info" | "warn" | "block";
+  rationale?: string | null;
+}
+
+export interface StrategyRulesResponse {
+  revision: string;
+  rules: StrategyRule[];
+  available_kpis: string[];
+}
+
+export interface StrategyRuleUpsertRequest {
+  expected_revision: string;
+  rule: StrategyRule;
+  author: string;
+  reason: string;
+}
+
+export interface StrategyRuleDeleteRequest {
+  expected_revision: string;
+  author: string;
+  reason: string;
+}
+
 export interface StrategyAgentExtractRequest {
   dataset_id: string;
   text: string;

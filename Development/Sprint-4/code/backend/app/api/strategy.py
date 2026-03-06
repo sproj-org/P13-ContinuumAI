@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 from typing import Literal
 
@@ -175,6 +176,51 @@ class StrategyTargetDeleteRequest(BaseModel):
         return trimmed
 
 
+class StrategyRulePayload(BaseModel):
+    id: str
+    condition: str
+    action: str
+    severity: Literal["info", "warn", "block"]
+    rationale: str | None = None
+
+    @field_validator("id", "condition", "action")
+    @classmethod
+    def validate_required(cls, value: str) -> str:
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("value is required")
+        return trimmed
+
+
+class StrategyRuleUpsertRequest(BaseModel):
+    expected_revision: str
+    rule: StrategyRulePayload
+    author: str
+    reason: str
+
+    @field_validator("expected_revision", "author", "reason")
+    @classmethod
+    def validate_non_empty(cls, value: str) -> str:
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("value is required")
+        return trimmed
+
+
+class StrategyRuleDeleteRequest(BaseModel):
+    expected_revision: str
+    author: str
+    reason: str
+
+    @field_validator("expected_revision", "author", "reason")
+    @classmethod
+    def validate_non_empty(cls, value: str) -> str:
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("value is required")
+        return trimmed
+
+
 def _safe_yaml_text(payload: dict[str, Any]) -> str:
     rendered = yaml.safe_dump(payload, sort_keys=False, allow_unicode=False)
     return rendered if rendered.endswith("\n") else rendered + "\n"
@@ -303,6 +349,31 @@ def _target_threshold_from_payload(payload: StrategyTargetPayload) -> dict[str, 
         horizon=payload.horizon,
     )
     return validated.model_dump(mode="python", exclude_none=True)
+
+
+_RULE_REFERENCE_RE = re.compile(r"""(?:kpi|target)\(\s*["']([^"']+)["']\s*\)""")
+
+
+def _extract_rule_kpi_references(condition: str) -> set[str]:
+    return {item.strip() for item in _RULE_REFERENCE_RE.findall(condition) if item.strip()}
+
+
+def _validate_rule_references(condition: str, known_kpis: set[str]) -> list[str]:
+    references = _extract_rule_kpi_references(condition)
+    return sorted([item for item in references if item not in known_kpis])
+
+
+def _rules_response(
+    *,
+    revision: str,
+    strategy_payload: dict[str, Any],
+    kpi_registry_payload: dict[str, Any],
+) -> dict[str, Any]:
+    return {
+        "revision": revision,
+        "rules": strategy_payload.get("decision_rules", []),
+        "available_kpis": _kpi_ids_from_registry(kpi_registry_payload),
+    }
 
 
 @router.get("/summary")
@@ -703,6 +774,218 @@ def delete_strategy_target(
             status_code=422,
             code="VALIDATION_ERROR",
             message="Strategy targets validation failed.",
+            hint=str(exc),
+        )
+
+
+@bundle_router.get("/rules")
+def get_strategy_rules(
+    current_user: User = Depends(get_current_user),
+):
+    _ = current_user
+    try:
+        base_strategy = _base_strategy_bundle_payload()
+        base_registry = _base_kpi_registry_payload()
+        revision = get_current_revision_id()
+        return _rules_response(
+            revision=revision,
+            strategy_payload=base_strategy,
+            kpi_registry_payload=base_registry,
+        )
+    except StrategyValidationError as exc:
+        _raise_error(
+            status_code=422,
+            code="VALIDATION_ERROR",
+            message="Strategy rules validation failed.",
+            hint=str(exc),
+        )
+
+
+@bundle_router.post("/rules")
+def create_strategy_rule(
+    request: StrategyRuleUpsertRequest,
+    current_user: User = Depends(get_current_user),
+):
+    _ = current_user
+    try:
+        if request.expected_revision != get_current_revision_id():
+            raise StrategyRevisionConflictError("stale revision")
+
+        base_strategy = _base_strategy_bundle_payload()
+        base_registry = _base_kpi_registry_payload()
+        known_kpis = set(_kpi_ids_from_registry(base_registry))
+        missing_refs = _validate_rule_references(request.rule.condition, known_kpis)
+        if missing_refs:
+            _raise_error(
+                status_code=422,
+                code="VALIDATION_ERROR",
+                message=f"Rule references unknown KPI ids: {', '.join(missing_refs)}",
+            )
+
+        rules = base_strategy.get("decision_rules", [])
+        if not isinstance(rules, list):
+            rules = []
+        if any(isinstance(item, dict) and item.get("id") == request.rule.id for item in rules):
+            _raise_error(
+                status_code=422,
+                code="VALIDATION_ERROR",
+                message=f"Rule '{request.rule.id}' already exists.",
+            )
+
+        rules.append(request.rule.model_dump(mode="python", exclude_none=True))
+        base_strategy["decision_rules"] = rules
+        _, new_revision = update_strategy_bundle(
+            mode="base",
+            raw_yaml=_safe_yaml_text(base_strategy),
+            expected_revision=request.expected_revision,
+            author=request.author,
+            reason=request.reason,
+        )
+
+        refreshed_strategy = _base_strategy_bundle_payload()
+        refreshed_registry = _base_kpi_registry_payload()
+        return _rules_response(
+            revision=new_revision,
+            strategy_payload=refreshed_strategy,
+            kpi_registry_payload=refreshed_registry,
+        )
+    except StrategyRevisionConflictError:
+        _raise_error(
+            status_code=409,
+            code="REVISION_CONFLICT",
+            message="Revision conflict while creating rule.",
+            hint="Refresh decision state",
+        )
+    except StrategyValidationError as exc:
+        _raise_error(
+            status_code=422,
+            code="VALIDATION_ERROR",
+            message="Strategy rules validation failed.",
+            hint=str(exc),
+        )
+
+
+@bundle_router.put("/rules/{rule_id}")
+def update_strategy_rule(
+    rule_id: str,
+    request: StrategyRuleUpsertRequest,
+    current_user: User = Depends(get_current_user),
+):
+    _ = current_user
+    try:
+        if request.rule.id != rule_id:
+            _raise_error(
+                status_code=422,
+                code="VALIDATION_ERROR",
+                message="Rule id in path and body must match.",
+            )
+        if request.expected_revision != get_current_revision_id():
+            raise StrategyRevisionConflictError("stale revision")
+
+        base_strategy = _base_strategy_bundle_payload()
+        base_registry = _base_kpi_registry_payload()
+        known_kpis = set(_kpi_ids_from_registry(base_registry))
+        missing_refs = _validate_rule_references(request.rule.condition, known_kpis)
+        if missing_refs:
+            _raise_error(
+                status_code=422,
+                code="VALIDATION_ERROR",
+                message=f"Rule references unknown KPI ids: {', '.join(missing_refs)}",
+            )
+
+        rules = base_strategy.get("decision_rules", [])
+        if not isinstance(rules, list):
+            rules = []
+        updated = False
+        updated_rules: list[dict[str, Any]] = []
+        for item in rules:
+            if isinstance(item, dict) and item.get("id") == rule_id:
+                updated_rules.append(request.rule.model_dump(mode="python", exclude_none=True))
+                updated = True
+            elif isinstance(item, dict):
+                updated_rules.append(item)
+        if not updated:
+            _raise_error(status_code=404, code="NOT_FOUND", message=f"Rule '{rule_id}' not found.")
+
+        base_strategy["decision_rules"] = updated_rules
+        _, new_revision = update_strategy_bundle(
+            mode="base",
+            raw_yaml=_safe_yaml_text(base_strategy),
+            expected_revision=request.expected_revision,
+            author=request.author,
+            reason=request.reason,
+        )
+
+        refreshed_strategy = _base_strategy_bundle_payload()
+        refreshed_registry = _base_kpi_registry_payload()
+        return _rules_response(
+            revision=new_revision,
+            strategy_payload=refreshed_strategy,
+            kpi_registry_payload=refreshed_registry,
+        )
+    except StrategyRevisionConflictError:
+        _raise_error(
+            status_code=409,
+            code="REVISION_CONFLICT",
+            message="Revision conflict while updating rule.",
+            hint="Refresh decision state",
+        )
+    except StrategyValidationError as exc:
+        _raise_error(
+            status_code=422,
+            code="VALIDATION_ERROR",
+            message="Strategy rules validation failed.",
+            hint=str(exc),
+        )
+
+
+@bundle_router.delete("/rules/{rule_id}")
+def delete_strategy_rule(
+    rule_id: str,
+    request: StrategyRuleDeleteRequest,
+    current_user: User = Depends(get_current_user),
+):
+    _ = current_user
+    try:
+        if request.expected_revision != get_current_revision_id():
+            raise StrategyRevisionConflictError("stale revision")
+
+        base_strategy = _base_strategy_bundle_payload()
+        rules = base_strategy.get("decision_rules", [])
+        if not isinstance(rules, list):
+            rules = []
+        next_rules = [item for item in rules if not (isinstance(item, dict) and item.get("id") == rule_id)]
+        if len(next_rules) == len(rules):
+            _raise_error(status_code=404, code="NOT_FOUND", message=f"Rule '{rule_id}' not found.")
+
+        base_strategy["decision_rules"] = next_rules
+        _, new_revision = update_strategy_bundle(
+            mode="base",
+            raw_yaml=_safe_yaml_text(base_strategy),
+            expected_revision=request.expected_revision,
+            author=request.author,
+            reason=request.reason,
+        )
+
+        refreshed_strategy = _base_strategy_bundle_payload()
+        refreshed_registry = _base_kpi_registry_payload()
+        return _rules_response(
+            revision=new_revision,
+            strategy_payload=refreshed_strategy,
+            kpi_registry_payload=refreshed_registry,
+        )
+    except StrategyRevisionConflictError:
+        _raise_error(
+            status_code=409,
+            code="REVISION_CONFLICT",
+            message="Revision conflict while deleting rule.",
+            hint="Refresh decision state",
+        )
+    except StrategyValidationError as exc:
+        _raise_error(
+            status_code=422,
+            code="VALIDATION_ERROR",
+            message="Strategy rules validation failed.",
             hint=str(exc),
         )
 
