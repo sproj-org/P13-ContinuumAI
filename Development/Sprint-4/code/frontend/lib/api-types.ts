@@ -355,6 +355,43 @@ export interface StrategyRuleDeleteRequest {
   reason: string;
 }
 
+export interface StrategyEvaluationTimeRange {
+  column: string;
+  from?: string | number | null;
+  to?: string | number | null;
+}
+
+export interface StrategyEvaluationRequest {
+  dataset_id: string;
+  filters?: Array<Record<string, unknown>>;
+  time_range?: StrategyEvaluationTimeRange | null;
+}
+
+export interface StrategyEvaluationKpiResult {
+  id: string;
+  value: number | null;
+  target: number | null;
+  variance: number | null;
+  status: string;
+  provenance?: Record<string, unknown> | null;
+}
+
+export interface StrategyEvaluationRuleResult {
+  id: string;
+  condition: string;
+  action: string;
+  severity: "info" | "warn" | "block";
+  rationale?: string | null;
+}
+
+export interface StrategyEvaluationResponse {
+  dataset_id: string;
+  revision: string;
+  kpis: StrategyEvaluationKpiResult[];
+  triggered_rules: StrategyEvaluationRuleResult[];
+  evaluation_time: string;
+}
+
 export interface StrategyAgentExtractRequest {
   dataset_id: string;
   text: string;

@@ -20,6 +20,8 @@ import type {
   StrategyRuleDeleteRequest,
   StrategyRuleUpsertRequest,
   StrategyRulesResponse,
+  StrategyEvaluationRequest,
+  StrategyEvaluationResponse,
   StrategyTargetUpsertRequest,
   StrategyTargetsResponse,
   StrategyKpiDeleteRequest,
@@ -317,6 +319,13 @@ class ApiClient {
   async deleteStrategyRule(ruleId: string, payload: StrategyRuleDeleteRequest): Promise<StrategyRulesResponse> {
     return this.request<StrategyRulesResponse>(`/strategy/rules/${encodeURIComponent(ruleId)}`, {
       method: "DELETE",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async evaluateStrategy(payload: StrategyEvaluationRequest): Promise<StrategyEvaluationResponse> {
+    return this.request<StrategyEvaluationResponse>("/strategy/evaluate", {
+      method: "POST",
       body: JSON.stringify(payload),
     });
   }
