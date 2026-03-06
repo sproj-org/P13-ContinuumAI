@@ -131,6 +131,10 @@ def extract_strategy_kpis(
         "candidates": result.get("candidates", []),
         "notes": result.get("notes", []),
         "suggested_patches": result.get("suggested_patches", []),
+        "target_suggestions": result.get("target_suggestions", []),
+        "rule_suggestions": result.get("rule_suggestions", []),
+        "alias_suggestions": result.get("alias_suggestions", {}),
+        "derived_metric_suggestions": result.get("derived_metric_suggestions", {}),
     }
 
 

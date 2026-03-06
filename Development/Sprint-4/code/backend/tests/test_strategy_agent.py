@@ -73,6 +73,10 @@ def test_extract_kpis_heuristic_path(strategy_agent_client: TestClient) -> None:
     candidate_ids = {item["id"] for item in payload["candidates"]}
     assert "total_sales" in candidate_ids or "transactions" in candidate_ids
     assert any("heuristic" in note.lower() for note in payload["notes"])
+    assert isinstance(payload.get("target_suggestions"), list)
+    assert isinstance(payload.get("rule_suggestions"), list)
+    assert isinstance(payload.get("alias_suggestions"), dict)
+    assert isinstance(payload.get("derived_metric_suggestions"), dict)
 
 
 def test_extract_kpis_pipeline_avg_basket(strategy_agent_client: TestClient) -> None:

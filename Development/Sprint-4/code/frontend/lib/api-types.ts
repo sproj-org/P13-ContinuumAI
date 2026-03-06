@@ -443,6 +443,10 @@ export interface StrategyAgentExtractResponse {
   candidates: StrategyKpi[];
   notes: string[];
   suggested_patches: Array<Record<string, unknown>>;
+  target_suggestions?: Array<Record<string, unknown>>;
+  rule_suggestions?: Array<Record<string, unknown>>;
+  alias_suggestions?: Record<string, string>;
+  derived_metric_suggestions?: Record<string, string>;
 }
 
 export interface StrategyAgentReconcileRequest {

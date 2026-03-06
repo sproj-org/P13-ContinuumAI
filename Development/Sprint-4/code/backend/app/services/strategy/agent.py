@@ -330,6 +330,93 @@ def _openai_extract_candidates(text: str, snapshot: DatasetSchemaSnapshot) -> tu
         return None, [f"OpenAI extraction failed ({diagnostics.get('openai_error_type')}); used heuristic extraction."]
 
 
+def _default_target_for_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
+    kpi_id = str(candidate.get("id") or "").strip()
+    owner = str(candidate.get("owner") or "strategy")
+    if any(token in kpi_id for token in ["rate", "ratio", "risk", "churn"]):
+        if "discount" in kpi_id:
+            return {
+                "kpi_id": kpi_id,
+                "target_value": 0.04,
+                "yellow_threshold": 0.055,
+                "red_threshold": 0.07,
+                "direction": "down",
+                "owner": owner,
+                "horizon": "FY2026",
+            }
+        if "return" in kpi_id or "risk" in kpi_id or "churn" in kpi_id:
+            return {
+                "kpi_id": kpi_id,
+                "target_value": 0.08,
+                "yellow_threshold": 0.12,
+                "red_threshold": 0.18,
+                "direction": "down",
+                "owner": owner,
+                "horizon": "FY2026",
+            }
+        return {
+            "kpi_id": kpi_id,
+            "target_value": 0.12,
+            "yellow_threshold": 0.09,
+            "red_threshold": 0.06,
+            "direction": "up",
+            "owner": owner,
+            "horizon": "FY2026",
+        }
+    return {
+        "kpi_id": kpi_id,
+        "target_value": 1.0,
+        "yellow_threshold": 0.9,
+        "red_threshold": 0.8,
+        "direction": "up",
+        "owner": owner,
+        "horizon": "FY2026",
+    }
+
+
+def _suggest_guardrail_rule(candidate: dict[str, Any]) -> dict[str, Any]:
+    kpi_id = str(candidate.get("id") or "kpi_metric")
+    return {
+        "id": f"rule_{kpi_id}_guardrail",
+        "condition": f'kpi(\"{kpi_id}\") < target(\"{kpi_id}\")',
+        "action": f"Review corrective plan for {kpi_id} and assign owner.",
+        "severity": "warn",
+        "rationale": "Auto-generated rule to monitor newly extracted KPI.",
+    }
+
+
+def _generate_auxiliary_suggestions(
+    candidates: list[dict[str, Any]],
+    snapshot: DatasetSchemaSnapshot,
+) -> dict[str, Any]:
+    target_suggestions = [_default_target_for_candidate(item) for item in candidates]
+    rule_suggestions = [_suggest_guardrail_rule(item) for item in candidates]
+
+    alias_suggestions: dict[str, str] = {}
+    for item in candidates:
+        kpi_id = str(item.get("id") or "")
+        if "sales" in kpi_id:
+            alias_suggestions["revenue"] = kpi_id
+        if "avg" in kpi_id and "order" in kpi_id:
+            alias_suggestions["aov"] = kpi_id
+        if "return" in kpi_id:
+            alias_suggestions["returns_rate"] = kpi_id
+
+    derived_metric_suggestions: dict[str, str] = {}
+    all_columns = _available_columns(snapshot)
+    if "net_sales_after_returns" in all_columns and "gross_sales" in all_columns:
+        derived_metric_suggestions["net_realization_rate"] = "sum(net_sales_after_returns)/nullif(sum(gross_sales),0)"
+    if "discount_amount" in all_columns and "net_sales" in all_columns:
+        derived_metric_suggestions["discount_to_net_ratio"] = "sum(discount_amount)/nullif(sum(net_sales),0)"
+
+    return {
+        "target_suggestions": target_suggestions,
+        "rule_suggestions": rule_suggestions,
+        "alias_suggestions": alias_suggestions,
+        "derived_metric_suggestions": derived_metric_suggestions,
+    }
+
+
 def extract_kpis_from_text(text: str, dataset_id: str) -> dict[str, Any]:
     snapshot = load_dataset_schema(dataset_id)
     candidates, notes = _openai_extract_candidates(text, snapshot)
@@ -337,11 +424,40 @@ def extract_kpis_from_text(text: str, dataset_id: str) -> dict[str, Any]:
         candidates, heuristic_notes = _heuristic_candidates(text, snapshot)
         notes.extend(heuristic_notes)
 
+    auxiliary = _generate_auxiliary_suggestions(candidates, snapshot)
     suggested_patch = {"op": "upsert_kpis", "kpis": candidates}
+    target_patches = [
+        _build_patch(
+            patch_type="set_target",
+            target_id=str(item.get("kpi_id") or ""),
+            before={},
+            after={"target": item},
+            rationale="Generated default target from StrategyAgent extraction.",
+            confidence=0.56,
+            source="agent",
+        )
+        for item in auxiliary["target_suggestions"]
+    ]
+    rule_patches = [
+        _build_patch(
+            patch_type="add_rule",
+            target_id=str(item.get("id") or ""),
+            before={},
+            after={"rule": item},
+            rationale="Generated guardrail rule from StrategyAgent extraction.",
+            confidence=0.52,
+            source="agent",
+        )
+        for item in auxiliary["rule_suggestions"]
+    ]
     return {
         "candidates": candidates,
         "notes": notes,
-        "suggested_patches": [suggested_patch],
+        "suggested_patches": [suggested_patch, *target_patches, *rule_patches],
+        "target_suggestions": auxiliary["target_suggestions"],
+        "rule_suggestions": auxiliary["rule_suggestions"],
+        "alias_suggestions": auxiliary["alias_suggestions"],
+        "derived_metric_suggestions": auxiliary["derived_metric_suggestions"],
     }
 
 

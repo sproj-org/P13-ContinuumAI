@@ -865,7 +865,22 @@ export default function StrategyTab() {
         expected_revision: revision,
       });
       setAgentCandidates(extracted.candidates || []);
-      setAgentNotes(extracted.notes || []);
+      const extractedNotes = [...(extracted.notes || [])];
+      if (extracted.alias_suggestions && Object.keys(extracted.alias_suggestions).length > 0) {
+        extractedNotes.push(
+          `Alias suggestions: ${Object.entries(extracted.alias_suggestions)
+            .map(([key, value]) => `${key} -> ${value}`)
+            .join(", ")}`
+        );
+      }
+      if (extracted.derived_metric_suggestions && Object.keys(extracted.derived_metric_suggestions).length > 0) {
+        extractedNotes.push(
+          `Derived metric suggestions: ${Object.entries(extracted.derived_metric_suggestions)
+            .map(([key, value]) => `${key}=${value}`)
+            .join("; ")}`
+        );
+      }
+      setAgentNotes(extractedNotes);
 
       if ((extracted.candidates || []).length > 0) {
         const reconciled = await apiClient.reconcileStrategyKpis({
