@@ -126,9 +126,12 @@ def reconcile_strategy_kpis(
 
     return {
         "revision": get_current_revision_id(),
+        "candidates": result.get("candidates", []),
         "reconciled": result.get("reconciled", []),
         "missing": result.get("missing", []),
+        "missing_dependencies": result.get("missing_dependencies", []),
         "suggestions": result.get("suggestions", []),
+        "column_matches": result.get("column_matches", []),
     }
 
 

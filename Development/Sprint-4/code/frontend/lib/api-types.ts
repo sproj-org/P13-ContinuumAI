@@ -381,9 +381,17 @@ export interface StrategyAgentMissingItem {
 
 export interface StrategyAgentReconcileResponse {
   revision: string;
+  candidates: Array<StrategyKpi & { status?: string }>;
   reconciled: Array<StrategyKpi & { status?: string }>;
   missing: StrategyAgentMissingItem[];
+  missing_dependencies: StrategyAgentMissingItem[];
   suggestions: Array<{
+    kpi_id: string;
+    mart: string;
+    missing_column: string;
+    suggested_columns: string[];
+  }>;
+  column_matches: Array<{
     kpi_id: string;
     mart: string;
     missing_column: string;

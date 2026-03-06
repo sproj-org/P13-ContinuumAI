@@ -85,9 +85,9 @@ def test_reconcile_reports_missing_dependencies(strategy_agent_client: TestClien
                 {
                     "id": "returns_rate",
                     "description": "Returns rate",
-                    "formula": "sum(return_amount) / nullif(sum(net_sales), 0)",
+                    "formula": "sum(revenue) / nullif(sum(net_sales), 0)",
                     "marts": ["gold_sales_daily"],
-                    "required_columns": ["return_amount", "net_sales"],
+                    "required_columns": ["revenue", "net_sales"],
                 }
             ],
         },
@@ -97,6 +97,11 @@ def test_reconcile_reports_missing_dependencies(strategy_agent_client: TestClien
     assert payload["revision"] == "r0001"
     assert len(payload["missing"]) == 1
     assert payload["missing"][0]["kpi_id"] == "returns_rate"
+    assert len(payload["missing_dependencies"]) == 1
+    assert payload["missing_dependencies"][0]["kpi_id"] == "returns_rate"
+    assert len(payload["candidates"]) == 1
+    assert payload["candidates"][0]["id"] == "returns_rate"
+    assert any(item["kpi_id"] == "returns_rate" for item in payload["column_matches"])
 
 
 def test_apply_patch_conflict(strategy_agent_client: TestClient) -> None:

@@ -292,6 +292,14 @@ def reconcile_kpis(candidates: list[dict[str, Any]], dataset_schema: DatasetSche
     reconciled: list[dict[str, Any]] = []
     missing: list[dict[str, Any]] = []
     suggestions: list[dict[str, Any]] = []
+    column_matches: list[dict[str, Any]] = []
+
+    alias_map = {
+        "sales": ["net_sales", "sales_amount", "revenue"],
+        "revenue": ["net_sales", "revenue", "sales_amount"],
+        "orders": ["order_id", "transaction_id"],
+        "transactions": ["transaction_id", "order_id"],
+    }
 
     for raw in candidates:
         candidate = _normalize_candidate(raw, dataset_schema)
@@ -326,20 +334,32 @@ def reconcile_kpis(candidates: list[dict[str, Any]], dataset_schema: DatasetSche
                 available = sorted(dataset_schema.mart_columns.get(mart, set()))
                 for column in columns:
                     close_matches = difflib.get_close_matches(column, available, n=3, cutoff=0.6)
+                    lowered = column.lower()
+                    if not close_matches:
+                        for alias_key, alias_targets in alias_map.items():
+                            if alias_key in lowered:
+                                close_matches = [item for item in alias_targets if item in available]
+                                if close_matches:
+                                    break
                     if close_matches:
+                        match_payload = {
+                            "kpi_id": candidate["id"],
+                            "mart": mart,
+                            "missing_column": column,
+                            "suggested_columns": close_matches,
+                        }
                         suggestions.append(
-                            {
-                                "kpi_id": candidate["id"],
-                                "mart": mart,
-                                "missing_column": column,
-                                "suggested_columns": close_matches,
-                            }
+                            match_payload
                         )
+                        column_matches.append(match_payload)
 
     return {
+        "candidates": reconciled,
         "reconciled": reconciled,
         "missing": missing,
+        "missing_dependencies": missing,
         "suggestions": suggestions,
+        "column_matches": column_matches,
     }
 
 
