@@ -1,0 +1,12 @@
+{
+  "revision": "r0003",
+  "created_at": "2026-03-06T03:55:22Z",
+  "author": "seed_bot",
+  "reason": "Seed rich demo-ready strategy bundle",
+  "hashes": {
+    "strategy_bundle.yaml": "39c919458be65e58d53339b295a4bd6f57cceb8dc56bb76af242d7fa3785dd29",
+    "kpi_registry.yaml": "f38929d6d71a37ff511804f991f17b00b71e6c580799ea43c17a2b2f6157e307",
+    "strategy_bundle.override.yaml": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+    "kpi_registry.override.yaml": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+  }
+}
