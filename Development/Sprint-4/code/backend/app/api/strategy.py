@@ -7,11 +7,13 @@ from typing import Any
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+from sqlalchemy.orm import Session
 import yaml
 
 from app.core.mart_registry import DEFAULT_DATASET_ID
 from app.core.security import get_current_user
+from app.db.database import get_db
 from app.db.models import User
 from app.models.kpi_registry import KPIRegistry, KPIRegistryEntry
 from app.models.strategy_bundle import (
@@ -27,6 +29,7 @@ from app.services.strategy.errors import (
     StrategyValidationError,
     StrategyYamlParseError,
 )
+from app.services.strategy.evaluation import evaluate_strategy
 from app.services.strategy import storage as strategy_storage
 from app.services.strategy.storage import (
     get_current_revision_id,
@@ -218,6 +221,36 @@ class StrategyRuleDeleteRequest(BaseModel):
         trimmed = value.strip()
         if not trimmed:
             raise ValueError("value is required")
+        return trimmed
+
+
+class StrategyEvaluateTimeRange(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+
+    column: str
+    from_value: Any | None = Field(default=None, alias="from")
+    to_value: Any | None = Field(default=None, alias="to")
+
+    @field_validator("column")
+    @classmethod
+    def validate_column(cls, value: str) -> str:
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("column is required")
+        return trimmed
+
+
+class StrategyEvaluateRequest(BaseModel):
+    dataset_id: str = DEFAULT_DATASET_ID
+    filters: list[dict[str, Any]] = Field(default_factory=list)
+    time_range: StrategyEvaluateTimeRange | None = None
+
+    @field_validator("dataset_id")
+    @classmethod
+    def validate_dataset_id(cls, value: str) -> str:
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("dataset_id is required")
         return trimmed
 
 
@@ -986,6 +1019,40 @@ def delete_strategy_rule(
             status_code=422,
             code="VALIDATION_ERROR",
             message="Strategy rules validation failed.",
+            hint=str(exc),
+        )
+
+
+@bundle_router.post("/evaluate")
+def evaluate_strategy_bundle(
+    request: StrategyEvaluateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _ = current_user
+    time_range = (
+        {
+            "column": request.time_range.column,
+            "from": request.time_range.from_value,
+            "to": request.time_range.to_value,
+        }
+        if request.time_range
+        else None
+    )
+    try:
+        return evaluate_strategy(
+            dataset_id=request.dataset_id,
+            db=db,
+            filters=request.filters,
+            time_range=time_range,
+        )
+    except KeyError as exc:
+        _raise_error(status_code=404, code="NOT_FOUND", message=str(exc))
+    except StrategyValidationError as exc:
+        _raise_error(
+            status_code=422,
+            code="VALIDATION_ERROR",
+            message="Strategy evaluation failed.",
             hint=str(exc),
         )
 
