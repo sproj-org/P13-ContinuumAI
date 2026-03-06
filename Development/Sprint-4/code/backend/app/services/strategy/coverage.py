@@ -1,4 +1,4 @@
-"""Readiness scoring and KPI coverage analysis for Task-2."""
+"""Readiness scoring and KPI coverage analysis for Strategy workspace."""
 
 from __future__ import annotations
 
@@ -22,6 +22,7 @@ _CONDITION_KEYWORDS = {
     "false",
     "null",
 }
+_RULE_REFERENCE_RE = re.compile(r"""(?:kpi|target)\(\s*["']([^"']+)["']\s*\)""")
 
 
 def _clamp_01(value: float) -> float:
@@ -40,29 +41,36 @@ def _condition_identifiers(condition: str) -> set[str]:
     }
 
 
-def _compute_rule_readiness(
+def _rule_references(condition: str) -> set[str]:
+    refs = {item.strip() for item in _RULE_REFERENCE_RE.findall(condition) if item.strip()}
+    if refs:
+        return refs
+    return _condition_identifiers(condition)
+
+
+def _compute_rule_completeness(
     *,
     kpi_ids: set[str],
     strategy_bundle: StrategyBundle,
 ) -> tuple[float, int, int]:
     rules = strategy_bundle.decision_rules
     if not rules:
-        return 1.0, 0, 0
+        return 0.0, 0, 0
 
-    ready = 0
+    valid_rules = 0
     unknown_ref_count = 0
     for rule in rules:
-        identifiers = _condition_identifiers(rule.condition or "")
+        identifiers = _rule_references(rule.condition or "")
         unknown = [item for item in identifiers if item not in kpi_ids]
         if not unknown:
-            ready += 1
+            valid_rules += 1
         else:
             unknown_ref_count += len(unknown)
 
-    return _clamp_01(ready / len(rules)), ready, unknown_ref_count
+    return _clamp_01(valid_rules / len(rules)), valid_rules, unknown_ref_count
 
 
-def _weights(strategy_bundle: StrategyBundle) -> dict[str, float]:
+def _legacy_weights(strategy_bundle: StrategyBundle) -> dict[str, float]:
     values = strategy_bundle.scoring_model.weights
     return {
         "kpi_coverage": float(values.kpi_coverage),
@@ -115,7 +123,7 @@ def compute_readiness_and_coverage(
         )
 
     kpis_defined = total_kpis > 0
-    kpi_coverage = _clamp_01(kpis_with_full_dependencies / total_kpis) if kpis_defined else 0.0
+    kpi_completeness = _clamp_01(kpis_with_full_dependencies / total_kpis) if kpis_defined else 0.0
     if not kpis_defined:
         data_readiness = 0.0
     elif required_columns_total > 0:
@@ -123,63 +131,105 @@ def compute_readiness_and_coverage(
     else:
         data_readiness = 1.0
 
+    targets = strategy_bundle.targets or {}
+    targets_defined = len(targets) > 0
+    kpis_with_targets = len([kpi for kpi in kpi_registry.kpis if kpi.id in targets])
+    target_completeness = _clamp_01(kpis_with_targets / total_kpis) if kpis_defined else 0.0
+
     kpi_ids = {kpi.id for kpi in kpi_registry.kpis}
-    rule_readiness, ready_rules, unknown_rule_references = _compute_rule_readiness(
+    rule_completeness, valid_rules, unknown_rule_references = _compute_rule_completeness(
         kpi_ids=kpi_ids,
         strategy_bundle=strategy_bundle,
     )
-    hierarchy_readiness = 1.0
-    placeholders = ["hierarchy_readiness_placeholder"]
+    rules_defined = len(strategy_bundle.decision_rules) > 0
 
-    weights = _weights(strategy_bundle)
-    total_weight = sum(weights.values()) or 1.0
+    context = strategy_bundle.strategic_context
+    context_score = sum(
+        1
+        for item in [context.company, context.horizon, context.north_star_metric]
+        if isinstance(item, str) and item.strip()
+    ) / 3
+    pillars_score = 1.0 if strategy_bundle.pillars else 0.0
+    swot = strategy_bundle.swot
+    swot_score = 0.0
+    if swot:
+        swot_score = (
+            (1.0 if swot.strengths else 0.0)
+            + (1.0 if swot.weaknesses else 0.0)
+            + (1.0 if swot.opportunities else 0.0)
+            + (1.0 if swot.threats else 0.0)
+        ) / 4
+    strategy_completeness = _clamp_01((context_score + pillars_score + swot_score) / 3)
+
+    reconciliation_completeness = _clamp_01(1.0 - (len(coverage_gaps) / total_kpis)) if kpis_defined else 0.0
+
+    scoring_weights = {
+        "strategy_completeness": 0.15,
+        "kpi_completeness": 0.2,
+        "target_completeness": 0.15,
+        "rule_completeness": 0.2,
+        "reconciliation_completeness": 0.15,
+        "data_readiness": 0.15,
+    }
+    total_weight = sum(scoring_weights.values()) or 1.0
+    placeholders = []
     if not kpis_defined:
         overall_score = 0.0
         placeholders.append("no_kpis_defined")
         explanation = (
             "No KPIs defined yet; readiness is preliminary. "
-            "Add KPIs to enable coverage and data readiness calculations. "
-            "Hierarchy readiness is placeholder in Sprint-4; will be implemented in Strategy Expansion Track."
+            "Add KPIs to enable KPI, target, reconciliation, and data readiness calculations."
         )
     else:
         overall_score = _clamp_01(
             (
-                (kpi_coverage * weights["kpi_coverage"])
-                + (rule_readiness * weights["rule_readiness"])
-                + (hierarchy_readiness * weights["hierarchy_readiness"])
-                + (data_readiness * weights["data_readiness"])
+                (strategy_completeness * scoring_weights["strategy_completeness"])
+                + (kpi_completeness * scoring_weights["kpi_completeness"])
+                + (target_completeness * scoring_weights["target_completeness"])
+                + (rule_completeness * scoring_weights["rule_completeness"])
+                + (reconciliation_completeness * scoring_weights["reconciliation_completeness"])
+                + (data_readiness * scoring_weights["data_readiness"])
             )
             / total_weight
         )
         explanation = (
+            f"Strategy completeness: {strategy_completeness:.2f}. "
             f"KPIs with full dependencies: {kpis_with_full_dependencies}/{total_kpis}. "
+            f"Targets defined for KPIs: {kpis_with_targets}/{total_kpis}. "
             f"Missing columns: {missing_columns_total}/{required_columns_total or 0}. "
-            f"Rule conditions validated: {ready_rules}/{len(strategy_bundle.decision_rules)}. "
-            "Hierarchy readiness is placeholder in Sprint-4; will be implemented in Strategy Expansion Track."
+            f"Rule conditions validated: {valid_rules}/{len(strategy_bundle.decision_rules)}."
         )
 
     readiness = DecisionReadiness(
         overall_score=overall_score,
-        kpi_coverage=kpi_coverage,
-        rule_readiness=rule_readiness,
-        hierarchy_readiness=hierarchy_readiness,
+        strategy_completeness=strategy_completeness,
+        kpi_completeness=kpi_completeness,
+        target_completeness=target_completeness,
+        rule_completeness=rule_completeness,
+        reconciliation_completeness=reconciliation_completeness,
         data_readiness=data_readiness,
         explanation=explanation,
     )
-    readiness_flags = ReadinessFlags(kpis_defined=kpis_defined, placeholders=placeholders)
+    readiness_flags = ReadinessFlags(
+        kpis_defined=kpis_defined,
+        targets_defined=targets_defined,
+        rules_defined=rules_defined,
+        placeholders=placeholders,
+    )
 
     summaries = {
         "dataset_id": schema_snapshot.dataset_id,
         "total_kpis": total_kpis,
         "kpis_with_full_dependencies": kpis_with_full_dependencies,
+        "kpis_with_targets": kpis_with_targets,
         "missing_columns_total": missing_columns_total,
         "required_columns_total": required_columns_total,
         "rules_total": len(strategy_bundle.decision_rules),
-        "rules_ready": ready_rules,
+        "rules_ready": valid_rules,
         "unknown_rule_references": unknown_rule_references,
         "available_marts": sorted(schema_snapshot.available_marts),
         "unavailable_marts": schema_snapshot.unavailable_marts,
         "notes": schema_snapshot.notes,
-        "hierarchy_readiness_note": "not implemented in Task 2",
+        "legacy_scoring_weights": _legacy_weights(strategy_bundle),
     }
     return readiness, coverage_gaps, summaries, readiness_flags

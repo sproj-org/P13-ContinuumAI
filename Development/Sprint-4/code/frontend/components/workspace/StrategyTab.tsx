@@ -223,6 +223,8 @@ export default function StrategyTab() {
   const revision = kpiLibrary?.revision ?? decision?.revision ?? null;
   const readiness = decision?.readiness;
   const kpisDefined = decision?.readiness_flags?.kpis_defined ?? true;
+  const targetsDefined = decision?.readiness_flags?.targets_defined ?? false;
+  const rulesDefined = decision?.readiness_flags?.rules_defined ?? false;
   const kpis = kpiLibrary?.kpis ?? [];
   const availableMarts = kpiLibrary?.available_marts ?? [];
   const martColumns = kpiLibrary?.mart_columns ?? {};
@@ -898,7 +900,9 @@ export default function StrategyTab() {
       <div className="rounded-xl border border-indigo-200/60 bg-white p-4 shadow-sm flex items-center justify-between">
         <div>
           <h2 className="font-semibold text-slate-900">Strategy</h2>
-          <p className="text-xs text-slate-600">Dataset: {datasetId} | Revision: {revision ?? "n/a"}</p>
+          <p className="text-xs text-slate-600">
+            Dataset: {datasetId} | Revision: {revision ?? "n/a"} | Readiness: {readiness ? scoreText(readiness.overall_score) : "n/a"}
+          </p>
         </div>
         <button type="button" onClick={() => void load()} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50">
           <RefreshCw className="h-3.5 w-3.5" />
@@ -1036,12 +1040,16 @@ export default function StrategyTab() {
           {readiness ? (
             <>
               {!kpisDefined ? <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">No KPIs defined yet. Add KPIs to enable coverage and readiness.</div> : null}
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
+              {kpisDefined && !targetsDefined ? <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">Targets are missing. Configure targets to improve readiness.</div> : null}
+              {kpisDefined && !rulesDefined ? <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">Rules are missing. Add strategy rules to improve readiness.</div> : null}
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-6">
                 <div className="rounded-xl border border-indigo-200 bg-white p-3"><p className="text-xs text-slate-500">Overall</p><p className="text-lg font-semibold text-indigo-700">{scoreText(readiness.overall_score)}</p></div>
-                <div className="rounded-xl border border-indigo-200 bg-white p-3"><p className="text-xs text-slate-500">KPI Coverage</p><p className="text-lg font-semibold text-indigo-700">{scoreText(readiness.kpi_coverage)}</p></div>
+                <div className="rounded-xl border border-indigo-200 bg-white p-3"><p className="text-xs text-slate-500">Strategy</p><p className="text-lg font-semibold text-indigo-700">{scoreText(readiness.strategy_completeness)}</p></div>
+                <div className="rounded-xl border border-indigo-200 bg-white p-3"><p className="text-xs text-slate-500">KPI</p><p className="text-lg font-semibold text-indigo-700">{scoreText(readiness.kpi_completeness)}</p></div>
+                <div className="rounded-xl border border-indigo-200 bg-white p-3"><p className="text-xs text-slate-500">Targets</p><p className="text-lg font-semibold text-indigo-700">{scoreText(readiness.target_completeness)}</p></div>
+                <div className="rounded-xl border border-indigo-200 bg-white p-3"><p className="text-xs text-slate-500">Rules</p><p className="text-lg font-semibold text-indigo-700">{scoreText(readiness.rule_completeness)}</p></div>
                 <div className="rounded-xl border border-indigo-200 bg-white p-3"><p className="text-xs text-slate-500">Data Readiness</p><p className="text-lg font-semibold text-indigo-700">{kpisDefined ? scoreText(readiness.data_readiness) : "-"}</p></div>
-                <div className="rounded-xl border border-indigo-200 bg-white p-3"><p className="text-xs text-slate-500">Rule Readiness</p><p className="text-lg font-semibold text-indigo-700">{scoreText(readiness.rule_readiness)}</p></div>
-                <div className="rounded-xl border border-indigo-200 bg-white p-3"><p className="text-xs text-slate-500">Hierarchy Readiness</p><p className="text-lg font-semibold text-indigo-700">{scoreText(readiness.hierarchy_readiness)}</p></div>
+                <div className="rounded-xl border border-indigo-200 bg-white p-3"><p className="text-xs text-slate-500">Reconciliation</p><p className="text-lg font-semibold text-indigo-700">{scoreText(readiness.reconciliation_completeness)}</p></div>
               </div>
               <div className="rounded-xl border border-slate-200 bg-white p-4">
                 <h3 className="text-sm font-semibold text-slate-900">Coverage Gaps</h3>

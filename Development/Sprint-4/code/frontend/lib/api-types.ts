@@ -175,15 +175,19 @@ export interface AggregateResponse {
 
 export interface DecisionReadiness {
   overall_score: number;
-  kpi_coverage: number;
-  rule_readiness: number;
-  hierarchy_readiness: number;
+  strategy_completeness: number;
+  kpi_completeness: number;
+  target_completeness: number;
+  rule_completeness: number;
+  reconciliation_completeness: number;
   data_readiness: number;
   explanation?: string | null;
 }
 
 export interface ReadinessFlags {
   kpis_defined: boolean;
+  targets_defined: boolean;
+  rules_defined: boolean;
   placeholders: string[];
 }
 

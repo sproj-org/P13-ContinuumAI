@@ -111,6 +111,102 @@ def test_coverage_reports_missing_dependencies() -> None:
 
     assert len(gaps) == 1
     assert gaps[0].kpi_id == "sales_growth"
-    assert readiness.kpi_coverage < 1.0
+    assert readiness.kpi_completeness < 1.0
     assert summaries["missing_columns_total"] == 1
     assert readiness_flags.kpis_defined is True
+    assert readiness_flags.targets_defined is False
+    assert readiness_flags.rules_defined is True
+
+
+def test_readiness_no_kpis_forces_overall_zero() -> None:
+    strategy_bundle = _sample_strategy_bundle()
+    kpi_registry = KPIRegistry.model_validate(
+        {
+            "schema_version": 1,
+            "version": "1.0.0",
+            "kpis": [],
+        }
+    )
+    snapshot = DatasetSchemaSnapshot(
+        dataset_id="silkroute",
+        available_marts={"gold_sales_daily"},
+        mart_columns={"gold_sales_daily": {"net_sales", "region"}},
+    )
+
+    readiness, gaps, summaries, readiness_flags = compute_readiness_and_coverage(
+        strategy_bundle=strategy_bundle,
+        kpi_registry=kpi_registry,
+        schema_snapshot=snapshot,
+    )
+
+    assert gaps == []
+    assert readiness.overall_score == 0.0
+    assert readiness.kpi_completeness == 0.0
+    assert readiness.target_completeness == 0.0
+    assert readiness.data_readiness == 0.0
+    assert readiness_flags.kpis_defined is False
+
+
+def test_readiness_penalizes_missing_targets_and_broken_rules() -> None:
+    strategy_bundle = StrategyBundle.model_validate(
+        {
+            "schema_version": 1,
+            "version": "1.0.0",
+            "strategic_context": {
+                "company": "Demo Company",
+                "horizon": "12 months",
+                "north_star_metric": "net_sales",
+            },
+            "pillars": [{"id": "growth", "description": "Grow revenue"}],
+            "targets": {},
+            "decision_rules": [
+                {
+                    "id": "rule_broken",
+                    "condition": 'kpi("unknown_kpi") < 0.1',
+                    "action": "alert",
+                    "severity": "warn",
+                }
+            ],
+            "scoring_model": {
+                "weights": {
+                    "kpi_coverage": 0.4,
+                    "rule_readiness": 0.2,
+                    "hierarchy_readiness": 0.2,
+                    "data_readiness": 0.2,
+                }
+            },
+        }
+    )
+    kpi_registry = KPIRegistry.model_validate(
+        {
+            "schema_version": 1,
+            "version": "1.0.0",
+            "kpis": [
+                {
+                    "id": "sales_growth",
+                    "description": "Sales growth",
+                    "formula": "sum(net_sales)",
+                    "marts": ["gold_sales_daily"],
+                    "required_columns": ["net_sales"],
+                }
+            ],
+        }
+    )
+    snapshot = DatasetSchemaSnapshot(
+        dataset_id="silkroute",
+        available_marts={"gold_sales_daily"},
+        mart_columns={"gold_sales_daily": {"net_sales"}},
+    )
+
+    readiness, _gaps, _summaries, readiness_flags = compute_readiness_and_coverage(
+        strategy_bundle=strategy_bundle,
+        kpi_registry=kpi_registry,
+        schema_snapshot=snapshot,
+    )
+
+    assert readiness.kpi_completeness == 1.0
+    assert readiness.target_completeness == 0.0
+    assert readiness.rule_completeness == 0.0
+    assert readiness.overall_score < 1.0
+    assert readiness_flags.targets_defined is False
+    assert readiness_flags.rules_defined is True

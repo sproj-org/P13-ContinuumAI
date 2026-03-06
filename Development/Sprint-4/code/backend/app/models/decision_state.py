@@ -12,9 +12,11 @@ class DecisionReadiness(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     overall_score: float
-    kpi_coverage: float
-    rule_readiness: float
-    hierarchy_readiness: float
+    strategy_completeness: float
+    kpi_completeness: float
+    target_completeness: float
+    rule_completeness: float
+    reconciliation_completeness: float
     data_readiness: float
     explanation: str | None = None
 
@@ -23,6 +25,8 @@ class ReadinessFlags(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     kpis_defined: bool
+    targets_defined: bool
+    rules_defined: bool
     placeholders: list[str] = Field(default_factory=list)
 
 
