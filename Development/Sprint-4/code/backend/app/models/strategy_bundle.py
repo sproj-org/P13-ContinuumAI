@@ -39,6 +39,9 @@ class TargetThreshold(BaseModel):
     target: float
     red_threshold: float | None = None
     yellow_threshold: float | None = None
+    direction: Literal["up", "down"] = "up"
+    owner: str | None = None
+    horizon: str | None = None
 
 
 class DecisionRule(BaseModel):

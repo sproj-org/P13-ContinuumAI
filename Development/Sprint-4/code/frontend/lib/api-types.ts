@@ -294,6 +294,35 @@ export interface StrategyKpiDeleteRequest {
   reason: string;
 }
 
+export interface StrategyTarget {
+  kpi_id: string;
+  target_value: number;
+  red_threshold?: number | null;
+  yellow_threshold?: number | null;
+  direction: "up" | "down";
+  owner?: string | null;
+  horizon?: string | null;
+}
+
+export interface StrategyTargetsResponse {
+  revision: string;
+  targets: StrategyTarget[];
+  available_kpis: string[];
+}
+
+export interface StrategyTargetUpsertRequest {
+  expected_revision: string;
+  target: StrategyTarget;
+  author: string;
+  reason: string;
+}
+
+export interface StrategyTargetDeleteRequest {
+  expected_revision: string;
+  author: string;
+  reason: string;
+}
+
 export interface StrategyAgentExtractRequest {
   dataset_id: string;
   text: string;

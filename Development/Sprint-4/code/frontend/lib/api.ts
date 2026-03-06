@@ -16,6 +16,9 @@ import type {
   StrategyAgentReconcileResponse,
   StrategyOverviewResponse,
   StrategyOverviewUpdateRequest,
+  StrategyTargetDeleteRequest,
+  StrategyTargetUpsertRequest,
+  StrategyTargetsResponse,
   StrategyKpiDeleteRequest,
   StrategyKpiLibraryResponse,
   StrategyKpiUpsertRequest,
@@ -261,6 +264,31 @@ class ApiClient {
   async putStrategyOverview(payload: StrategyOverviewUpdateRequest): Promise<StrategyOverviewResponse> {
     return this.request<StrategyOverviewResponse>("/strategy/overview", {
       method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async getStrategyTargets(): Promise<StrategyTargetsResponse> {
+    return this.request<StrategyTargetsResponse>("/strategy/targets");
+  }
+
+  async createStrategyTarget(payload: StrategyTargetUpsertRequest): Promise<StrategyTargetsResponse> {
+    return this.request<StrategyTargetsResponse>("/strategy/targets", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async updateStrategyTarget(kpiId: string, payload: StrategyTargetUpsertRequest): Promise<StrategyTargetsResponse> {
+    return this.request<StrategyTargetsResponse>(`/strategy/targets/${encodeURIComponent(kpiId)}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async deleteStrategyTarget(kpiId: string, payload: StrategyTargetDeleteRequest): Promise<StrategyTargetsResponse> {
+    return this.request<StrategyTargetsResponse>(`/strategy/targets/${encodeURIComponent(kpiId)}`, {
+      method: "DELETE",
       body: JSON.stringify(payload),
     });
   }

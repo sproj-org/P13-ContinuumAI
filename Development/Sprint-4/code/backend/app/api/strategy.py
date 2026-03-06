@@ -13,7 +13,13 @@ from app.core.mart_registry import DEFAULT_DATASET_ID
 from app.core.security import get_current_user
 from app.db.models import User
 from app.models.kpi_registry import KPIRegistry, KPIRegistryEntry
-from app.models.strategy_bundle import SWOTBlock, StrategicContext, StrategyBundle, StrategyPillar
+from app.models.strategy_bundle import (
+    SWOTBlock,
+    StrategicContext,
+    StrategyBundle,
+    StrategyPillar,
+    TargetThreshold,
+)
 from app.services.strategy.errors import (
     StrategyNotFoundError,
     StrategyRevisionConflictError,
@@ -122,6 +128,53 @@ class StrategyOverviewUpdateRequest(BaseModel):
         return trimmed
 
 
+class StrategyTargetPayload(BaseModel):
+    kpi_id: str
+    target_value: float
+    red_threshold: float | None = None
+    yellow_threshold: float | None = None
+    direction: Literal["up", "down"] = "up"
+    owner: str | None = None
+    horizon: str | None = None
+
+    @field_validator("kpi_id")
+    @classmethod
+    def validate_kpi_id(cls, value: str) -> str:
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("kpi_id is required")
+        return trimmed
+
+
+class StrategyTargetUpsertRequest(BaseModel):
+    expected_revision: str
+    target: StrategyTargetPayload
+    author: str
+    reason: str
+
+    @field_validator("expected_revision", "author", "reason")
+    @classmethod
+    def validate_non_empty(cls, value: str) -> str:
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("value is required")
+        return trimmed
+
+
+class StrategyTargetDeleteRequest(BaseModel):
+    expected_revision: str
+    author: str
+    reason: str
+
+    @field_validator("expected_revision", "author", "reason")
+    @classmethod
+    def validate_non_empty(cls, value: str) -> str:
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("value is required")
+        return trimmed
+
+
 def _safe_yaml_text(payload: dict[str, Any]) -> str:
     rendered = yaml.safe_dump(payload, sort_keys=False, allow_unicode=False)
     return rendered if rendered.endswith("\n") else rendered + "\n"
@@ -195,6 +248,61 @@ def _overview_response(*, revision: str, strategy_payload: dict[str, Any]) -> di
         "pillars": strategy_payload.get("pillars", []),
         "swot": strategy_payload.get("swot"),
     }
+
+
+def _target_entry_payload(kpi_id: str, target_payload: dict[str, Any]) -> dict[str, Any]:
+    validated = TargetThreshold.model_validate(target_payload).model_dump(mode="python", exclude_none=True)
+    return {
+        "kpi_id": kpi_id,
+        "target_value": validated.get("target"),
+        "red_threshold": validated.get("red_threshold"),
+        "yellow_threshold": validated.get("yellow_threshold"),
+        "direction": validated.get("direction", "up"),
+        "owner": validated.get("owner"),
+        "horizon": validated.get("horizon"),
+    }
+
+
+def _kpi_ids_from_registry(kpi_registry_payload: dict[str, Any]) -> list[str]:
+    ids: list[str] = []
+    for item in kpi_registry_payload.get("kpis", []):
+        if isinstance(item, dict):
+            kpi_id = str(item.get("id", "")).strip()
+            if kpi_id:
+                ids.append(kpi_id)
+    return sorted(set(ids))
+
+
+def _targets_response(
+    *,
+    revision: str,
+    strategy_payload: dict[str, Any],
+    kpi_registry_payload: dict[str, Any],
+) -> dict[str, Any]:
+    raw_targets = strategy_payload.get("targets", {})
+    targets: list[dict[str, Any]] = []
+    if isinstance(raw_targets, dict):
+        for kpi_id, target_payload in sorted(raw_targets.items(), key=lambda item: str(item[0])):
+            if isinstance(target_payload, dict):
+                targets.append(_target_entry_payload(str(kpi_id), target_payload))
+
+    return {
+        "revision": revision,
+        "targets": targets,
+        "available_kpis": _kpi_ids_from_registry(kpi_registry_payload),
+    }
+
+
+def _target_threshold_from_payload(payload: StrategyTargetPayload) -> dict[str, Any]:
+    validated = TargetThreshold(
+        target=payload.target_value,
+        red_threshold=payload.red_threshold,
+        yellow_threshold=payload.yellow_threshold,
+        direction=payload.direction,
+        owner=payload.owner,
+        horizon=payload.horizon,
+    )
+    return validated.model_dump(mode="python", exclude_none=True)
 
 
 @router.get("/summary")
@@ -391,6 +499,210 @@ def put_strategy_overview(
             status_code=422,
             code="VALIDATION_ERROR",
             message="Strategy bundle validation failed.",
+            hint=str(exc),
+        )
+
+
+@bundle_router.get("/targets")
+def get_strategy_targets(
+    current_user: User = Depends(get_current_user),
+):
+    _ = current_user
+    try:
+        base_strategy = _base_strategy_bundle_payload()
+        base_registry = _base_kpi_registry_payload()
+        revision = get_current_revision_id()
+        return _targets_response(
+            revision=revision,
+            strategy_payload=base_strategy,
+            kpi_registry_payload=base_registry,
+        )
+    except StrategyValidationError as exc:
+        _raise_error(
+            status_code=422,
+            code="VALIDATION_ERROR",
+            message="Strategy targets validation failed.",
+            hint=str(exc),
+        )
+
+
+@bundle_router.post("/targets")
+def create_strategy_target(
+    request: StrategyTargetUpsertRequest,
+    current_user: User = Depends(get_current_user),
+):
+    _ = current_user
+    try:
+        if request.expected_revision != get_current_revision_id():
+            raise StrategyRevisionConflictError("stale revision")
+
+        base_strategy = _base_strategy_bundle_payload()
+        base_registry = _base_kpi_registry_payload()
+        kpi_ids = set(_kpi_ids_from_registry(base_registry))
+        if request.target.kpi_id not in kpi_ids:
+            _raise_error(
+                status_code=422,
+                code="VALIDATION_ERROR",
+                message=f"KPI '{request.target.kpi_id}' does not exist in KPI registry.",
+            )
+
+        targets = base_strategy.get("targets", {})
+        if not isinstance(targets, dict):
+            targets = {}
+        if request.target.kpi_id in targets:
+            _raise_error(
+                status_code=422,
+                code="VALIDATION_ERROR",
+                message=f"Target for KPI '{request.target.kpi_id}' already exists.",
+            )
+
+        targets[request.target.kpi_id] = _target_threshold_from_payload(request.target)
+        base_strategy["targets"] = targets
+        _, new_revision = update_strategy_bundle(
+            mode="base",
+            raw_yaml=_safe_yaml_text(base_strategy),
+            expected_revision=request.expected_revision,
+            author=request.author,
+            reason=request.reason,
+        )
+
+        refreshed_strategy = _base_strategy_bundle_payload()
+        refreshed_registry = _base_kpi_registry_payload()
+        return _targets_response(
+            revision=new_revision,
+            strategy_payload=refreshed_strategy,
+            kpi_registry_payload=refreshed_registry,
+        )
+    except StrategyRevisionConflictError:
+        _raise_error(
+            status_code=409,
+            code="REVISION_CONFLICT",
+            message="Revision conflict while creating target.",
+            hint="Refresh decision state",
+        )
+    except StrategyValidationError as exc:
+        _raise_error(
+            status_code=422,
+            code="VALIDATION_ERROR",
+            message="Strategy targets validation failed.",
+            hint=str(exc),
+        )
+
+
+@bundle_router.put("/targets/{kpi_id}")
+def update_strategy_target(
+    kpi_id: str,
+    request: StrategyTargetUpsertRequest,
+    current_user: User = Depends(get_current_user),
+):
+    _ = current_user
+    try:
+        if request.target.kpi_id != kpi_id:
+            _raise_error(
+                status_code=422,
+                code="VALIDATION_ERROR",
+                message="KPI id in path and body must match.",
+            )
+
+        if request.expected_revision != get_current_revision_id():
+            raise StrategyRevisionConflictError("stale revision")
+
+        base_strategy = _base_strategy_bundle_payload()
+        base_registry = _base_kpi_registry_payload()
+        kpi_ids = set(_kpi_ids_from_registry(base_registry))
+        if request.target.kpi_id not in kpi_ids:
+            _raise_error(
+                status_code=422,
+                code="VALIDATION_ERROR",
+                message=f"KPI '{request.target.kpi_id}' does not exist in KPI registry.",
+            )
+
+        targets = base_strategy.get("targets", {})
+        if not isinstance(targets, dict):
+            targets = {}
+        if kpi_id not in targets:
+            _raise_error(status_code=404, code="NOT_FOUND", message=f"Target '{kpi_id}' not found.")
+
+        targets[kpi_id] = _target_threshold_from_payload(request.target)
+        base_strategy["targets"] = targets
+        _, new_revision = update_strategy_bundle(
+            mode="base",
+            raw_yaml=_safe_yaml_text(base_strategy),
+            expected_revision=request.expected_revision,
+            author=request.author,
+            reason=request.reason,
+        )
+
+        refreshed_strategy = _base_strategy_bundle_payload()
+        refreshed_registry = _base_kpi_registry_payload()
+        return _targets_response(
+            revision=new_revision,
+            strategy_payload=refreshed_strategy,
+            kpi_registry_payload=refreshed_registry,
+        )
+    except StrategyRevisionConflictError:
+        _raise_error(
+            status_code=409,
+            code="REVISION_CONFLICT",
+            message="Revision conflict while updating target.",
+            hint="Refresh decision state",
+        )
+    except StrategyValidationError as exc:
+        _raise_error(
+            status_code=422,
+            code="VALIDATION_ERROR",
+            message="Strategy targets validation failed.",
+            hint=str(exc),
+        )
+
+
+@bundle_router.delete("/targets/{kpi_id}")
+def delete_strategy_target(
+    kpi_id: str,
+    request: StrategyTargetDeleteRequest,
+    current_user: User = Depends(get_current_user),
+):
+    _ = current_user
+    try:
+        if request.expected_revision != get_current_revision_id():
+            raise StrategyRevisionConflictError("stale revision")
+
+        base_strategy = _base_strategy_bundle_payload()
+        targets = base_strategy.get("targets", {})
+        if not isinstance(targets, dict):
+            targets = {}
+        if kpi_id not in targets:
+            _raise_error(status_code=404, code="NOT_FOUND", message=f"Target '{kpi_id}' not found.")
+
+        targets.pop(kpi_id, None)
+        base_strategy["targets"] = targets
+        _, new_revision = update_strategy_bundle(
+            mode="base",
+            raw_yaml=_safe_yaml_text(base_strategy),
+            expected_revision=request.expected_revision,
+            author=request.author,
+            reason=request.reason,
+        )
+
+        refreshed_strategy = _base_strategy_bundle_payload()
+        refreshed_registry = _base_kpi_registry_payload()
+        return _targets_response(
+            revision=new_revision,
+            strategy_payload=refreshed_strategy,
+            kpi_registry_payload=refreshed_registry,
+        )
+    except StrategyRevisionConflictError:
+        _raise_error(
+            status_code=409,
+            code="REVISION_CONFLICT",
+            message="Revision conflict while deleting target.",
+            hint="Refresh decision state",
+        )
+    except StrategyValidationError as exc:
+        _raise_error(
+            status_code=422,
+            code="VALIDATION_ERROR",
+            message="Strategy targets validation failed.",
             hint=str(exc),
         )
 
