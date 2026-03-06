@@ -15,15 +15,17 @@ import {
   LayoutGrid,
   ArrowLeft,
   Sparkles,
+  ClipboardList,
 } from "lucide-react";
 
 // Tab components
-import { MartsTab, ChartBuilderTab, DashboardTab, NumiChatbot } from "@/components/workspace";
+import { MartsTab, ChartBuilderTab, DashboardTab, StrategyTab, VizAgentChatbot } from "@/components/workspace";
 
 const tabs: { id: WorkspaceTab; label: string; icon: React.ReactNode }[] = [
   { id: "marts", label: "Profiling", icon: <Database className="w-4 h-4" /> },
   { id: "chart-builder", label: "Chart Builder", icon: <BarChart3 className="w-4 h-4" /> },
   { id: "dashboard", label: "Dashboard", icon: <LayoutGrid className="w-4 h-4" /> },
+  { id: "strategy", label: "Strategy", icon: <ClipboardList className="w-4 h-4" /> },
 ];
 
 function WorkspaceContent() {
@@ -31,7 +33,7 @@ function WorkspaceContent() {
   const router = useRouter();
   const params = useParams();
   const datasetId = params.datasetId as string;
-  const [isNumiOpen, setIsNumiOpen] = useState(false);
+  const [isVizAgentOpen, setIsVizAgentOpen] = useState(false);
 
   const {
     activeTab,
@@ -88,10 +90,10 @@ function WorkspaceContent() {
     router.push("/dashboard");
   };
 
-  // Trigger window resize when Numi opens/closes to make charts resize properly
+  // Trigger window resize when VizAgent opens/closes to make charts resize properly
   useEffect(() => {
     window.dispatchEvent(new Event('resize'));
-  }, [isNumiOpen]);
+  }, [isVizAgentOpen]);
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -101,6 +103,8 @@ function WorkspaceContent() {
         return <ChartBuilderTab />;
       case "dashboard":
         return <DashboardTab />;
+      case "strategy":
+        return <StrategyTab />;
       default:
         return <MartsTab />;
     }
@@ -153,11 +157,11 @@ function WorkspaceContent() {
 
             <div className="flex items-center gap-4">
               <button
-                onClick={() => setIsNumiOpen(!isNumiOpen)}
+                onClick={() => setIsVizAgentOpen(!isVizAgentOpen)}
                 className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-gradient-to-r from-[#4f46e5] to-indigo-600 rounded-lg hover:from-indigo-600 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg"
               >
                 <Sparkles className="w-4 h-4" />
-                <span>Ask Numi</span>
+                <span>Ask VizAgent</span>
               </button>
             </div>
           </div>
@@ -171,14 +175,14 @@ function WorkspaceContent() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
         className={`h-[calc(100vh-3.5rem)] transition-all duration-100 ${
-          isNumiOpen ? "mr-96" : "mr-0"
+          isVizAgentOpen ? "mr-96" : "mr-0"
         }`}
       >
         {renderTabContent()}
       </motion.main>
 
-      {/* Numi Chatbot Sidebar */}
-      <NumiChatbot isOpen={isNumiOpen} onClose={() => setIsNumiOpen(false)} />
+      {/* VizAgent Chatbot Sidebar */}
+      <VizAgentChatbot isOpen={isVizAgentOpen} onClose={() => setIsVizAgentOpen(false)} />
     </div>
   );
 }

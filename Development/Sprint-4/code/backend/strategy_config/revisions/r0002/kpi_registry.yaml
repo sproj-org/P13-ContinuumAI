@@ -1,0 +1,16 @@
+schema_version: 1
+version: 1.0.0
+kpis:
+- id: sales_gap_demo
+  description: Demo KPI
+  formula: sum(net_sales)
+  marts:
+  - gold_sales_daily
+  required_columns:
+  - net_sales
+  - missing_col
+  dimensions:
+  - store_id
+  default_grain: monthly
+aliases: {}
+derived_metrics: {}

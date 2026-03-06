@@ -6,6 +6,16 @@ export type MetricAggregation = 'sum' | 'avg' | 'count' | 'min' | 'max';
 export type MissingField = 'metric' | 'x_axis' | 'time_grain' | 'table';
 export type ChatRole = 'user' | 'assistant';
 export type ChatResponseType = 'chart' | 'chart_patch' | 'explain' | 'clarify' | 'refuse';
+export type ChatFallbackReason = 'missing_key' | 'openai_error';
+
+export interface ChatDebugMetadata {
+  used_fallback?: boolean;
+  openai_configured?: boolean;
+  fallback_reason?: ChatFallbackReason;
+  openai_error_type?: string | null;
+  openai_status_code?: number | null;
+  openai_error_hint?: string | null;
+}
 
 export interface ChatSelections {
   metric?: string;
@@ -44,7 +54,7 @@ export interface ChartSpecPatch {
   add?: Record<string, unknown>;
 }
 
-export interface ChatChartResponse {
+export interface ChatChartResponse extends ChatDebugMetadata {
   response_type: 'chart';
   chart_spec: ChartSpecV1;
   columns: string[];
@@ -53,14 +63,14 @@ export interface ChatChartResponse {
   meta: Record<string, unknown>;
 }
 
-export interface ChatPatchResponse {
+export interface ChatPatchResponse extends ChatDebugMetadata {
   response_type: 'chart_patch';
   patch: ChartSpecPatch;
   narrative?: string;
   meta: Record<string, unknown>;
 }
 
-export interface ChatExplainResponse {
+export interface ChatExplainResponse extends ChatDebugMetadata {
   response_type: 'explain';
   message: string;
   citations: string[];
@@ -74,7 +84,7 @@ export interface ClarifyOptions {
   time_grains: TimeGrain[];
 }
 
-export interface ChatClarifyResponse {
+export interface ChatClarifyResponse extends ChatDebugMetadata {
   response_type: 'clarify';
   clarify_id: string;
   question: string;
@@ -96,7 +106,7 @@ export interface ChatHintsResponse {
   };
 }
 
-export interface ChatRefuseResponse {
+export interface ChatRefuseResponse extends ChatDebugMetadata {
   response_type: 'refuse';
   message: string;
   meta: Record<string, unknown>;

@@ -1,0 +1,12 @@
+{
+  "revision": "r0001",
+  "created_at": "2026-03-05T00:00:00Z",
+  "author": "system",
+  "reason": "bootstrap_defaults",
+  "hashes": {
+    "strategy_bundle.yaml": "343718097aa76ea875a13a6cf4ad669b2abcd8279711ab8017c323d3119f3eb8",
+    "kpi_registry.yaml": "e3004ea3738860a4658fe4a44ab53cd452011601683f866d34058b38488cd7ef",
+    "strategy_bundle.override.yaml": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+    "kpi_registry.override.yaml": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+  }
+}

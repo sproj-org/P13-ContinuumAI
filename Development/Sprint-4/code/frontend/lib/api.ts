@@ -8,6 +8,31 @@ import type {
   ChartDataResponse,
   ColumnProfileAPI,
   DatasetProfileAPI,
+  DecisionStateResponse,
+  StrategyBundleEditorResponse,
+  StrategyAgentExtractRequest,
+  StrategyAgentExtractResponse,
+  StrategyAgentApplyRequest,
+  StrategyAgentApplyResponse,
+  StrategyAgentReconcileRequest,
+  StrategyAgentReconcileResponse,
+  StrategyAgentUndoRequest,
+  StrategyAgentUndoResponse,
+  StrategyOverviewResponse,
+  StrategyOverviewUpdateRequest,
+  StrategyTargetDeleteRequest,
+  StrategyRuleDeleteRequest,
+  StrategyRuleUpsertRequest,
+  StrategyRulesResponse,
+  StrategyDecisionSignalsResponse,
+  StrategyEvaluationRequest,
+  StrategyEvaluationResponse,
+  StrategyTargetUpsertRequest,
+  StrategyTargetsResponse,
+  StrategyKpiDeleteRequest,
+  StrategyKpiLibraryResponse,
+  StrategyKpiUpsertRequest,
+  StrategyBundleUpdateRequest,
 } from "./api-types";
 import type {
   ChartSpecV1,
@@ -32,15 +57,19 @@ export interface AuthResponse {
 }
 
 export interface ApiError {
-  detail: string;
+  detail: string | { code?: string; message?: string; hint?: string };
 }
 
 export class ApiRequestError extends Error {
   status: number;
+  code?: string;
+  hint?: string;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, options?: { code?: string; hint?: string }) {
     super(message);
     this.status = status;
+    this.code = options?.code;
+    this.hint = options?.hint;
     this.name = "ApiRequestError";
   }
 }
@@ -75,13 +104,21 @@ class ApiClient {
 
     if (!response.ok) {
       let detail = "An error occurred";
+      let errorCode: string | undefined = undefined;
+      let errorHint: string | undefined = undefined;
       try {
         const error = (await response.json()) as ApiError;
-        detail = error.detail || detail;
+        if (typeof error.detail === "string") {
+          detail = error.detail || detail;
+        } else if (error.detail && typeof error.detail === "object") {
+          detail = error.detail.message || detail;
+          errorCode = error.detail.code;
+          errorHint = error.detail.hint;
+        }
       } catch {
         detail = response.statusText || detail;
       }
-      throw new ApiRequestError(response.status, detail);
+      throw new ApiRequestError(response.status, detail, { code: errorCode, hint: errorHint });
     }
 
     return response.json();
@@ -266,6 +303,161 @@ class ApiClient {
 
   async clearAllChatThreads(): Promise<void> {
     await this.request<void>("/chat-threads", { method: "DELETE" });
+  }
+
+  // ============================================
+  // Task-2 Strategy/Decision Endpoints
+  // ============================================
+
+  async getDecisionState(datasetId: string): Promise<DecisionStateResponse> {
+    return this.request<DecisionStateResponse>(`/decision/state?dataset_id=${encodeURIComponent(datasetId)}`);
+  }
+
+  async getStrategyBundle(): Promise<StrategyBundleEditorResponse> {
+    return this.request<StrategyBundleEditorResponse>("/strategy/bundle");
+  }
+
+  async putStrategyBundle(payload: StrategyBundleUpdateRequest): Promise<StrategyBundleEditorResponse> {
+    return this.request<StrategyBundleEditorResponse>("/strategy/bundle", {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async getStrategyOverview(): Promise<StrategyOverviewResponse> {
+    return this.request<StrategyOverviewResponse>("/strategy/overview");
+  }
+
+  async putStrategyOverview(payload: StrategyOverviewUpdateRequest): Promise<StrategyOverviewResponse> {
+    return this.request<StrategyOverviewResponse>("/strategy/overview", {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async getStrategyTargets(): Promise<StrategyTargetsResponse> {
+    return this.request<StrategyTargetsResponse>("/strategy/targets");
+  }
+
+  async createStrategyTarget(payload: StrategyTargetUpsertRequest): Promise<StrategyTargetsResponse> {
+    return this.request<StrategyTargetsResponse>("/strategy/targets", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async updateStrategyTarget(kpiId: string, payload: StrategyTargetUpsertRequest): Promise<StrategyTargetsResponse> {
+    return this.request<StrategyTargetsResponse>(`/strategy/targets/${encodeURIComponent(kpiId)}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async deleteStrategyTarget(kpiId: string, payload: StrategyTargetDeleteRequest): Promise<StrategyTargetsResponse> {
+    return this.request<StrategyTargetsResponse>(`/strategy/targets/${encodeURIComponent(kpiId)}`, {
+      method: "DELETE",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async getStrategyRules(): Promise<StrategyRulesResponse> {
+    return this.request<StrategyRulesResponse>("/strategy/rules");
+  }
+
+  async createStrategyRule(payload: StrategyRuleUpsertRequest): Promise<StrategyRulesResponse> {
+    return this.request<StrategyRulesResponse>("/strategy/rules", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async updateStrategyRule(ruleId: string, payload: StrategyRuleUpsertRequest): Promise<StrategyRulesResponse> {
+    return this.request<StrategyRulesResponse>(`/strategy/rules/${encodeURIComponent(ruleId)}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async deleteStrategyRule(ruleId: string, payload: StrategyRuleDeleteRequest): Promise<StrategyRulesResponse> {
+    return this.request<StrategyRulesResponse>(`/strategy/rules/${encodeURIComponent(ruleId)}`, {
+      method: "DELETE",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async evaluateStrategy(payload: StrategyEvaluationRequest): Promise<StrategyEvaluationResponse> {
+    return this.request<StrategyEvaluationResponse>("/strategy/evaluate", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async getStrategyDecisionSignals(datasetId: string): Promise<StrategyDecisionSignalsResponse> {
+    return this.request<StrategyDecisionSignalsResponse>(`/strategy/decision-signals?dataset_id=${encodeURIComponent(datasetId)}`);
+  }
+
+  async getKpiRegistryBundle(): Promise<StrategyBundleEditorResponse> {
+    return this.request<StrategyBundleEditorResponse>("/kpi-registry/bundle");
+  }
+
+  async putKpiRegistryBundle(payload: StrategyBundleUpdateRequest): Promise<StrategyBundleEditorResponse> {
+    return this.request<StrategyBundleEditorResponse>("/kpi-registry/bundle", {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async getStrategyKpis(datasetId: string): Promise<StrategyKpiLibraryResponse> {
+    return this.request<StrategyKpiLibraryResponse>(`/strategy/kpis?dataset_id=${encodeURIComponent(datasetId)}`);
+  }
+
+  async createStrategyKpi(payload: StrategyKpiUpsertRequest): Promise<StrategyKpiLibraryResponse> {
+    return this.request<StrategyKpiLibraryResponse>("/strategy/kpis", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async updateStrategyKpi(kpiId: string, payload: StrategyKpiUpsertRequest): Promise<StrategyKpiLibraryResponse> {
+    return this.request<StrategyKpiLibraryResponse>(`/strategy/kpis/${encodeURIComponent(kpiId)}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async deleteStrategyKpi(kpiId: string, payload: StrategyKpiDeleteRequest): Promise<StrategyKpiLibraryResponse> {
+    return this.request<StrategyKpiLibraryResponse>(`/strategy/kpis/${encodeURIComponent(kpiId)}`, {
+      method: "DELETE",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async extractStrategyKpis(payload: StrategyAgentExtractRequest): Promise<StrategyAgentExtractResponse> {
+    return this.request<StrategyAgentExtractResponse>("/strategy/agent/extract-kpis", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async reconcileStrategyKpis(payload: StrategyAgentReconcileRequest): Promise<StrategyAgentReconcileResponse> {
+    return this.request<StrategyAgentReconcileResponse>("/strategy/agent/reconcile", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async applyStrategyPatches(payload: StrategyAgentApplyRequest): Promise<StrategyAgentApplyResponse> {
+    return this.request<StrategyAgentApplyResponse>("/strategy/agent/apply", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async undoStrategyPatches(payload: StrategyAgentUndoRequest): Promise<StrategyAgentUndoResponse> {
+    return this.request<StrategyAgentUndoResponse>("/strategy/agent/undo", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   }
 }
 

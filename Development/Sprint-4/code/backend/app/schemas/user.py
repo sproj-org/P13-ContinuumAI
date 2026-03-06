@@ -11,7 +11,7 @@ class UserCreate(BaseModel):
     confirm_password: str
     organization_id: Optional[int] = None
     is_admin: bool = False
-    
+
     @field_validator("username")
     @classmethod
     def username_valid(cls, v: str) -> str:
@@ -22,14 +22,14 @@ class UserCreate(BaseModel):
         if not v.isalnum():
             raise ValueError("Username must contain only alphanumeric characters")
         return v.lower()
-    
+
     @field_validator("password")
     @classmethod
     def password_valid(cls, v: str) -> str:
         if len(v) < 6:
             raise ValueError("Password must be at least 6 characters long")
         return v
-    
+
     @field_validator("confirm_password")
     @classmethod
     def passwords_match(cls, v: str, info) -> str:
@@ -49,7 +49,7 @@ class OrganizationBasic(BaseModel):
     id: int
     name: str
     slug: str
-    
+
     class Config:
         from_attributes = True
 
@@ -64,7 +64,7 @@ class UserResponse(BaseModel):
     organization: Optional[OrganizationBasic] = None
     organization_id: Optional[int] = None
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
@@ -90,7 +90,7 @@ class OrganizationCreate(BaseModel):
     name: str
     slug: str
     description: Optional[str] = None
-    
+
     @field_validator("slug")
     @classmethod
     def slug_valid(cls, v: str) -> str:
@@ -119,7 +119,7 @@ class OrganizationResponse(BaseModel):
     description: Optional[str] = None
     is_active: bool
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
@@ -128,7 +128,7 @@ class OrganizationDatasetBasic(BaseModel):
     """Basic dataset info for embedding in organization responses."""
     id: int
     dataset_name: str
-    
+
     class Config:
         from_attributes = True
 
@@ -137,10 +137,10 @@ class OrganizationWithUsers(OrganizationResponse):
     """Organization with its users and datasets."""
     users: list[UserResponse] = []
     datasets: list[OrganizationDatasetBasic] = []
-    
+
     class Config:
         from_attributes = True
-    
+
     @classmethod
     def model_validate(cls, obj, **kwargs):
         """Custom validation to map dataset_id to dataset_name."""
@@ -152,7 +152,7 @@ class OrganizationWithUsers(OrganizationResponse):
                     id=d.id,
                     dataset_name=d.dataset_id  # Map dataset_id -> dataset_name
                 ))
-        
+
         return cls(
             id=obj.id,
             name=obj.name,
@@ -183,10 +183,10 @@ class OrganizationDatasetResponse(BaseModel):
     display_name: Optional[str] = None
     is_active: bool
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
-        
+
     @classmethod
     def from_orm_with_mapping(cls, obj):
         """Map dataset_id to dataset_name from ORM object."""
@@ -211,7 +211,7 @@ class AdminUserCreate(BaseModel):
     password: str
     organization_id: int
     is_admin: bool = False
-    
+
     @field_validator("username")
     @classmethod
     def username_valid(cls, v: str) -> str:
@@ -222,7 +222,7 @@ class AdminUserCreate(BaseModel):
         if not v.isalnum():
             raise ValueError("Username must contain only alphanumeric characters")
         return v.lower()
-    
+
     @field_validator("password")
     @classmethod
     def password_valid(cls, v: str) -> str:
