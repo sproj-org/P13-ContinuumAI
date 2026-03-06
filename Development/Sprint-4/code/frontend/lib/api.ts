@@ -10,6 +10,10 @@ import type {
   DatasetProfileAPI,
   DecisionStateResponse,
   StrategyBundleEditorResponse,
+  StrategyAgentExtractRequest,
+  StrategyAgentExtractResponse,
+  StrategyAgentReconcileRequest,
+  StrategyAgentReconcileResponse,
   StrategyKpiDeleteRequest,
   StrategyKpiLibraryResponse,
   StrategyKpiUpsertRequest,
@@ -280,6 +284,20 @@ class ApiClient {
   async deleteStrategyKpi(kpiId: string, payload: StrategyKpiDeleteRequest): Promise<StrategyKpiLibraryResponse> {
     return this.request<StrategyKpiLibraryResponse>(`/strategy/kpis/${encodeURIComponent(kpiId)}`, {
       method: "DELETE",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async extractStrategyKpis(payload: StrategyAgentExtractRequest): Promise<StrategyAgentExtractResponse> {
+    return this.request<StrategyAgentExtractResponse>("/strategy/agent/extract-kpis", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async reconcileStrategyKpis(payload: StrategyAgentReconcileRequest): Promise<StrategyAgentReconcileResponse> {
+    return this.request<StrategyAgentReconcileResponse>("/strategy/agent/reconcile", {
+      method: "POST",
       body: JSON.stringify(payload),
     });
   }

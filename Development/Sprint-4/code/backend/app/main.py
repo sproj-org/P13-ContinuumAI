@@ -13,6 +13,7 @@ from app.api.debug import router as debug_router
 from app.api.profiling import router as profiling_router
 from app.api.decision import router as decision_router
 from app.api.strategy import bundle_router as strategy_bundle_router
+from app.api.strategy_agent import router as strategy_agent_router
 from app.api.kpi_registry import router as kpi_registry_router
 
 settings = get_settings()
@@ -57,6 +58,7 @@ app.include_router(datasets_router, prefix="/api")
 app.include_router(debug_router, prefix="/api")
 app.include_router(decision_router, prefix="/api")
 app.include_router(strategy_bundle_router, prefix="/api")
+app.include_router(strategy_agent_router, prefix="/api")
 app.include_router(kpi_registry_router, prefix="/api")
 
 

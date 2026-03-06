@@ -257,3 +257,43 @@ export interface StrategyKpiDeleteRequest {
   author: string;
   reason: string;
 }
+
+export interface StrategyAgentExtractRequest {
+  dataset_id: string;
+  text: string;
+  expected_revision?: string | null;
+}
+
+export interface StrategyAgentExtractResponse {
+  revision: string;
+  candidates: StrategyKpi[];
+  notes: string[];
+  suggested_patches: Array<Record<string, unknown>>;
+}
+
+export interface StrategyAgentReconcileRequest {
+  dataset_id: string;
+  candidates: StrategyKpi[];
+  expected_revision?: string | null;
+}
+
+export interface StrategyAgentMissingItem {
+  kpi_id: string;
+  reason: string;
+  details?: {
+    missing_marts?: string[];
+    missing_columns_by_mart?: Record<string, string[]>;
+  } | null;
+}
+
+export interface StrategyAgentReconcileResponse {
+  revision: string;
+  reconciled: Array<StrategyKpi & { status?: string }>;
+  missing: StrategyAgentMissingItem[];
+  suggestions: Array<{
+    kpi_id: string;
+    mart: string;
+    missing_column: string;
+    suggested_columns: string[];
+  }>;
+}

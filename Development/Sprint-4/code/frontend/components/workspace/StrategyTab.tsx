@@ -5,7 +5,13 @@ import { useParams } from "next/navigation";
 import { AlertTriangle, Plus, RefreshCw, Save, Trash2, X } from "lucide-react";
 
 import { ApiRequestError, apiClient } from "@/lib/api";
-import type { CoverageGap, DecisionStateResponse, StrategyKpi, StrategyKpiLibraryResponse } from "@/lib/api-types";
+import type {
+  CoverageGap,
+  DecisionStateResponse,
+  StrategyAgentMissingItem,
+  StrategyKpi,
+  StrategyKpiLibraryResponse,
+} from "@/lib/api-types";
 import { useAuth } from "@/lib/auth-context";
 
 type Section = "overview" | "kpi_library" | "targets" | "rules" | "reconciliation" | "advanced_yaml";
@@ -73,6 +79,22 @@ function gapSummary(gap: CoverageGap): string {
   return parts.join(". ") || "No details";
 }
 
+function missingSummary(item: StrategyAgentMissingItem): string {
+  const parts: string[] = [];
+  const missingMarts = item.details?.missing_marts ?? [];
+  const missingColumns = item.details?.missing_columns_by_mart ?? {};
+  if (missingMarts.length > 0) {
+    parts.push(`Missing marts: ${missingMarts.join(", ")}`);
+  }
+  const columnParts = Object.entries(missingColumns)
+    .map(([mart, cols]) => `${mart}: ${cols.join(", ")}`)
+    .filter(Boolean);
+  if (columnParts.length > 0) {
+    parts.push(`Missing columns: ${columnParts.join(" | ")}`);
+  }
+  return parts.join(". ");
+}
+
 export default function StrategyTab() {
   const params = useParams<{ datasetId: string }>();
   const datasetId = params?.datasetId ?? "silkroute";
@@ -102,6 +124,12 @@ export default function StrategyTab() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<StrategyKpi>(emptyKpi());
   const [dimensionsDraft, setDimensionsDraft] = useState("");
+  const [strategyNotes, setStrategyNotes] = useState("");
+  const [agentCandidates, setAgentCandidates] = useState<StrategyKpi[]>([]);
+  const [agentNotes, setAgentNotes] = useState<string[]>([]);
+  const [agentMissingById, setAgentMissingById] = useState<Record<string, string>>({});
+  const [agentLoading, setAgentLoading] = useState(false);
+  const [addingCandidateId, setAddingCandidateId] = useState<string | null>(null);
 
   const revision = kpiLibrary?.revision ?? decision?.revision ?? null;
   const readiness = decision?.readiness;
@@ -292,6 +320,83 @@ export default function StrategyTab() {
     }
   };
 
+  const suggestKpis = async () => {
+    if (!revision) {
+      setError("Missing revision. Refresh and try again.");
+      return;
+    }
+    if (!strategyNotes.trim()) {
+      setError("Add strategy notes before requesting KPI suggestions.");
+      return;
+    }
+
+    setAgentLoading(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const extracted = await apiClient.extractStrategyKpis({
+        dataset_id: datasetId,
+        text: strategyNotes,
+        expected_revision: revision,
+      });
+      setAgentCandidates(extracted.candidates || []);
+      setAgentNotes(extracted.notes || []);
+
+      if ((extracted.candidates || []).length > 0) {
+        const reconciled = await apiClient.reconcileStrategyKpis({
+          dataset_id: datasetId,
+          candidates: extracted.candidates || [],
+          expected_revision: extracted.revision,
+        });
+        const nextMissing: Record<string, string> = {};
+        for (const item of reconciled.missing || []) {
+          nextMissing[item.kpi_id] = missingSummary(item);
+        }
+        setAgentMissingById(nextMissing);
+      } else {
+        setAgentMissingById({});
+      }
+
+      setSuccess(`Suggested ${(extracted.candidates || []).length} KPI(s).`);
+    } catch (requestError) {
+      handleApiError(requestError, "Failed to generate KPI suggestions.");
+    } finally {
+      setAgentLoading(false);
+    }
+  };
+
+  const addSuggestedKpi = async (candidate: StrategyKpi) => {
+    if (!revision) {
+      setError("Missing revision. Refresh and try again.");
+      return;
+    }
+    const normalized = normalizeKpi(candidate);
+    setAddingCandidateId(normalized.id);
+    setError(null);
+    setSuccess(null);
+    try {
+      await apiClient.createStrategyKpi({
+        expected_revision: revision,
+        dataset_id: datasetId,
+        kpi: normalized,
+        author: user?.username ?? "strategy_editor",
+        reason: `Add suggested KPI ${normalized.id}`,
+      });
+      setSuccess(`Added KPI '${normalized.id}'.`);
+      setAgentCandidates((prev) => prev.filter((item) => item.id !== normalized.id));
+      setAgentMissingById((prev) => {
+        const next = { ...prev };
+        delete next[normalized.id];
+        return next;
+      });
+      await load();
+    } catch (requestError) {
+      handleApiError(requestError, "Failed to add suggested KPI.");
+    } finally {
+      setAddingCandidateId(null);
+    }
+  };
+
   return (
     <div className="h-full overflow-y-auto p-4 space-y-4 bg-gradient-to-br from-white via-indigo-50/20 to-violet-50/20">
       <div className="rounded-xl border border-indigo-200/60 bg-white p-4 shadow-sm flex items-center justify-between">
@@ -346,7 +451,82 @@ export default function StrategyTab() {
 
       {section === "targets" ? <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">Targets UI stub. Full editor is next iteration.</div> : null}
       {section === "rules" ? <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">Rules UI stub. Full editor is next iteration.</div> : null}
-      {section === "reconciliation" ? <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">Reconciliation UI scaffold is ready. StrategyAgent hook will be added next.</div> : null}
+      {section === "reconciliation" ? (
+        <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900">Reconciliation</h3>
+            <p className="text-xs text-slate-600">Paste strategic notes to suggest KPI candidates, then add selected KPIs to the library.</p>
+          </div>
+          <textarea
+            value={strategyNotes}
+            onChange={(event) => setStrategyNotes(event.target.value)}
+            placeholder="Paste strategy notes..."
+            className="h-28 w-full rounded-lg border border-slate-300 bg-slate-50 p-3 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          />
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => void suggestKpis()}
+              disabled={agentLoading}
+              className="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs text-white hover:bg-indigo-700 disabled:opacity-60"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Suggest KPIs
+            </button>
+            <span className="text-xs text-slate-500">{agentCandidates.length} suggestion(s)</span>
+          </div>
+          {agentNotes.length > 0 ? (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+              <p className="text-[11px] font-medium text-slate-600">Agent Notes</p>
+              <ul className="mt-1 space-y-1 text-xs text-slate-700">
+                {agentNotes.map((note) => (
+                  <li key={note}>{note}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          {agentCandidates.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-slate-200 text-slate-500">
+                    <th className="px-2 py-2">ID</th>
+                    <th className="px-2 py-2">Description</th>
+                    <th className="px-2 py-2">Formula</th>
+                    <th className="px-2 py-2">Dependencies</th>
+                    <th className="px-2 py-2">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {agentCandidates.map((candidate) => (
+                    <tr key={candidate.id} className="border-b border-slate-100">
+                      <td className="px-2 py-2 font-medium">{candidate.id}</td>
+                      <td className="px-2 py-2">{candidate.display_name || candidate.description}</td>
+                      <td className="px-2 py-2 font-mono text-[11px]">{candidate.formula}</td>
+                      <td className="px-2 py-2">
+                        <div>{(candidate.marts || []).join(", ") || "-"}</div>
+                        {agentMissingById[candidate.id] ? (
+                          <div className="mt-1 text-[11px] text-amber-700">{agentMissingById[candidate.id]}</div>
+                        ) : null}
+                      </td>
+                      <td className="px-2 py-2">
+                        <button
+                          type="button"
+                          onClick={() => void addSuggestedKpi(candidate)}
+                          disabled={addingCandidateId === candidate.id}
+                          className="rounded border border-indigo-300 px-2 py-1 text-[11px] text-indigo-700 hover:bg-indigo-50 disabled:opacity-60"
+                        >
+                          {addingCandidateId === candidate.id ? "Adding..." : "Add"}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       {section === "advanced_yaml" ? (
         <div className="rounded-xl border border-slate-200 bg-white p-4">
