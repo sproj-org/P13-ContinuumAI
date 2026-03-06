@@ -9,8 +9,11 @@ import type {
   CoverageGap,
   DecisionStateResponse,
   StrategyAgentMissingItem,
+  StrategyContextPayload,
   StrategyKpi,
   StrategyKpiLibraryResponse,
+  StrategyPillarPayload,
+  StrategySwotPayload,
 } from "@/lib/api-types";
 import { useAuth } from "@/lib/auth-context";
 
@@ -95,6 +98,17 @@ function missingSummary(item: StrategyAgentMissingItem): string {
   return parts.join(". ");
 }
 
+function linesToList(value: string): string[] {
+  return value
+    .split("\n")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function listToLines(value: string[] | undefined | null): string {
+  return (value || []).join("\n");
+}
+
 export default function StrategyTab() {
   const params = useParams<{ datasetId: string }>();
   const datasetId = params?.datasetId ?? "silkroute";
@@ -130,6 +144,20 @@ export default function StrategyTab() {
   const [agentMissingById, setAgentMissingById] = useState<Record<string, string>>({});
   const [agentLoading, setAgentLoading] = useState(false);
   const [addingCandidateId, setAddingCandidateId] = useState<string | null>(null);
+  const [overviewRevision, setOverviewRevision] = useState<string | null>(null);
+  const [strategyContextDraft, setStrategyContextDraft] = useState<StrategyContextPayload>({
+    company: "",
+    horizon: "",
+    north_star_metric: "",
+    narrative: "",
+  });
+  const [pillarsDraft, setPillarsDraft] = useState<StrategyPillarPayload[]>([]);
+  const [swotText, setSwotText] = useState({
+    strengths: "",
+    weaknesses: "",
+    opportunities: "",
+    threats: "",
+  });
 
   const revision = kpiLibrary?.revision ?? decision?.revision ?? null;
   const readiness = decision?.readiness;
@@ -142,11 +170,12 @@ export default function StrategyTab() {
     setLoading(true);
     setError(null);
     try {
-      const [decisionState, strategyBundle, kpiBundle, kpiState] = await Promise.all([
+      const [decisionState, strategyBundle, kpiBundle, kpiState, overviewState] = await Promise.all([
         apiClient.getDecisionState(datasetId),
         apiClient.getStrategyBundle(),
         apiClient.getKpiRegistryBundle(),
         apiClient.getStrategyKpis(datasetId),
+        apiClient.getStrategyOverview(),
       ]);
       setDecision(decisionState);
       setKpiLibrary(kpiState);
@@ -158,6 +187,26 @@ export default function StrategyTab() {
       setKpiMode("base");
       setStrategyText(strategyBundle.base_yaml);
       setKpiText(kpiBundle.base_yaml);
+      setOverviewRevision(overviewState.revision);
+      setStrategyContextDraft({
+        company: overviewState.strategy_context.company || "",
+        horizon: overviewState.strategy_context.horizon || "",
+        north_star_metric: overviewState.strategy_context.north_star_metric || "",
+        narrative: overviewState.strategy_context.narrative || "",
+      });
+      setPillarsDraft(overviewState.pillars || []);
+      const nextSwot: StrategySwotPayload = overviewState.swot || {
+        strengths: [],
+        weaknesses: [],
+        opportunities: [],
+        threats: [],
+      };
+      setSwotText({
+        strengths: listToLines(nextSwot.strengths),
+        weaknesses: listToLines(nextSwot.weaknesses),
+        opportunities: listToLines(nextSwot.opportunities),
+        threats: listToLines(nextSwot.threats),
+      });
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Failed to load strategy state");
     } finally {
@@ -232,6 +281,71 @@ export default function StrategyTab() {
       return;
     }
     setError(requestError instanceof Error ? requestError.message : fallback);
+  };
+
+  const addPillarRow = () => {
+    setPillarsDraft((prev) => [...prev, { id: "", description: "", owner: "" }]);
+  };
+
+  const removePillarRow = (index: number) => {
+    setPillarsDraft((prev) => prev.filter((_, itemIndex) => itemIndex !== index));
+  };
+
+  const updatePillarField = (index: number, field: keyof StrategyPillarPayload, value: string) => {
+    setPillarsDraft((prev) =>
+      prev.map((item, itemIndex) => (itemIndex === index ? { ...item, [field]: value } : item))
+    );
+  };
+
+  const saveOverview = async () => {
+    const expectedRevision = overviewRevision || revision;
+    if (!expectedRevision) return setError("Missing revision. Refresh and try again.");
+
+    const pillars = pillarsDraft
+      .map((item) => ({
+        id: (item.id || "").trim(),
+        description: (item.description || "").trim(),
+        owner: (item.owner || "").trim() || null,
+      }))
+      .filter((item) => item.id && item.description);
+
+    const swotPayload: StrategySwotPayload = {
+      strengths: linesToList(swotText.strengths),
+      weaknesses: linesToList(swotText.weaknesses),
+      opportunities: linesToList(swotText.opportunities),
+      threats: linesToList(swotText.threats),
+    };
+
+    const contextPayload: StrategyContextPayload = {
+      company: (strategyContextDraft.company || "").trim(),
+      horizon: (strategyContextDraft.horizon || "").trim(),
+      north_star_metric: (strategyContextDraft.north_star_metric || "").trim(),
+      narrative: (strategyContextDraft.narrative || "").trim() || null,
+    };
+    if (!contextPayload.company || !contextPayload.horizon || !contextPayload.north_star_metric) {
+      return setError("Company, horizon, and north star metric are required.");
+    }
+
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const updated = await apiClient.putStrategyOverview({
+        expected_revision: expectedRevision,
+        strategy_context: contextPayload,
+        pillars,
+        swot: swotPayload,
+        author: user?.username ?? "strategy_editor",
+        reason: "Update strategy overview",
+      });
+      setOverviewRevision(updated.revision);
+      setSuccess("Overview saved.");
+      await load();
+    } catch (requestError) {
+      handleApiError(requestError, "Failed to save strategy overview.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const saveKpi = async () => {
@@ -420,22 +534,141 @@ export default function StrategyTab() {
       {error ? <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"><div className="flex items-center gap-2"><AlertTriangle className="h-4 w-4" /><span>{error}</span></div></div> : null}
       {success ? <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{success}</div> : null}
 
-      {section === "overview" && readiness ? (
+      {section === "overview" ? (
         <div className="space-y-3">
-          {!kpisDefined ? <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">No KPIs defined yet. Add KPIs to enable coverage and readiness.</div> : null}
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
-            <div className="rounded-xl border border-indigo-200 bg-white p-3"><p className="text-xs text-slate-500">Overall</p><p className="text-lg font-semibold text-indigo-700">{scoreText(readiness.overall_score)}</p></div>
-            <div className="rounded-xl border border-indigo-200 bg-white p-3"><p className="text-xs text-slate-500">KPI Coverage</p><p className="text-lg font-semibold text-indigo-700">{scoreText(readiness.kpi_coverage)}</p></div>
-            <div className="rounded-xl border border-indigo-200 bg-white p-3"><p className="text-xs text-slate-500">Data Readiness</p><p className="text-lg font-semibold text-indigo-700">{kpisDefined ? scoreText(readiness.data_readiness) : "-"}</p></div>
-            <div className="rounded-xl border border-indigo-200 bg-white p-3"><p className="text-xs text-slate-500">Rule Readiness</p><p className="text-lg font-semibold text-indigo-700">{scoreText(readiness.rule_readiness)}</p></div>
-            <div className="rounded-xl border border-indigo-200 bg-white p-3"><p className="text-xs text-slate-500">Hierarchy Readiness</p><p className="text-lg font-semibold text-indigo-700">{scoreText(readiness.hierarchy_readiness)}</p></div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-slate-900">Strategy Overview</h3>
+              <button
+                type="button"
+                onClick={() => void saveOverview()}
+                disabled={saving}
+                className="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs text-white hover:bg-indigo-700 disabled:opacity-60"
+              >
+                <Save className="h-3.5 w-3.5" />
+                Save Overview
+              </button>
+            </div>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <input
+                value={strategyContextDraft.company}
+                onChange={(event) => setStrategyContextDraft((prev) => ({ ...prev, company: event.target.value }))}
+                placeholder="Company"
+                className="rounded border border-slate-300 px-2 py-1.5 text-xs"
+              />
+              <input
+                value={strategyContextDraft.horizon}
+                onChange={(event) => setStrategyContextDraft((prev) => ({ ...prev, horizon: event.target.value }))}
+                placeholder="Horizon"
+                className="rounded border border-slate-300 px-2 py-1.5 text-xs"
+              />
+              <input
+                value={strategyContextDraft.north_star_metric}
+                onChange={(event) => setStrategyContextDraft((prev) => ({ ...prev, north_star_metric: event.target.value }))}
+                placeholder="North Star Metric"
+                className="rounded border border-slate-300 px-2 py-1.5 text-xs md:col-span-2"
+              />
+              <textarea
+                value={strategyContextDraft.narrative || ""}
+                onChange={(event) => setStrategyContextDraft((prev) => ({ ...prev, narrative: event.target.value }))}
+                placeholder="Narrative"
+                className="h-20 rounded border border-slate-300 px-2 py-1.5 text-xs md:col-span-2"
+              />
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-semibold text-slate-700">Pillars</h4>
+                <button
+                  type="button"
+                  onClick={addPillarRow}
+                  className="inline-flex items-center gap-1 rounded border border-slate-300 px-2 py-1 text-[11px] text-slate-700 hover:bg-slate-50"
+                >
+                  <Plus className="h-3 w-3" />
+                  Add Pillar
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-slate-500">
+                      <th className="px-2 py-2">ID</th>
+                      <th className="px-2 py-2">Description</th>
+                      <th className="px-2 py-2">Owner</th>
+                      <th className="px-2 py-2">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pillarsDraft.map((pillar, index) => (
+                      <tr key={`${pillar.id || "pillar"}-${index}`} className="border-b border-slate-100">
+                        <td className="px-2 py-2">
+                          <input
+                            value={pillar.id}
+                            onChange={(event) => updatePillarField(index, "id", event.target.value)}
+                            className="w-full rounded border border-slate-300 px-2 py-1 text-xs"
+                          />
+                        </td>
+                        <td className="px-2 py-2">
+                          <input
+                            value={pillar.description}
+                            onChange={(event) => updatePillarField(index, "description", event.target.value)}
+                            className="w-full rounded border border-slate-300 px-2 py-1 text-xs"
+                          />
+                        </td>
+                        <td className="px-2 py-2">
+                          <input
+                            value={pillar.owner || ""}
+                            onChange={(event) => updatePillarField(index, "owner", event.target.value)}
+                            className="w-full rounded border border-slate-300 px-2 py-1 text-xs"
+                          />
+                        </td>
+                        <td className="px-2 py-2">
+                          <button
+                            type="button"
+                            onClick={() => removePillarRow(index)}
+                            className="inline-flex items-center gap-1 rounded border border-red-300 px-2 py-1 text-[11px] text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {pillarsDraft.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="px-2 py-3 text-center text-slate-500">
+                          No pillars configured.
+                        </td>
+                      </tr>
+                    ) : null}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <textarea value={swotText.strengths} onChange={(event) => setSwotText((prev) => ({ ...prev, strengths: event.target.value }))} placeholder="Strengths (one per line)" className="h-24 rounded border border-slate-300 px-2 py-1.5 text-xs" />
+              <textarea value={swotText.weaknesses} onChange={(event) => setSwotText((prev) => ({ ...prev, weaknesses: event.target.value }))} placeholder="Weaknesses (one per line)" className="h-24 rounded border border-slate-300 px-2 py-1.5 text-xs" />
+              <textarea value={swotText.opportunities} onChange={(event) => setSwotText((prev) => ({ ...prev, opportunities: event.target.value }))} placeholder="Opportunities (one per line)" className="h-24 rounded border border-slate-300 px-2 py-1.5 text-xs" />
+              <textarea value={swotText.threats} onChange={(event) => setSwotText((prev) => ({ ...prev, threats: event.target.value }))} placeholder="Threats (one per line)" className="h-24 rounded border border-slate-300 px-2 py-1.5 text-xs" />
+            </div>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <h3 className="text-sm font-semibold text-slate-900">Coverage Gaps</h3>
-            {(decision?.coverage_gaps || []).length === 0 ? <p className="mt-2 text-sm text-slate-600">No coverage gaps detected.</p> : (
-              <div className="mt-2 overflow-x-auto"><table className="min-w-full text-left text-xs"><thead><tr className="border-b border-slate-200 text-slate-500"><th className="px-2 py-2">KPI</th><th className="px-2 py-2">Reason</th><th className="px-2 py-2">Details</th></tr></thead><tbody>{(decision?.coverage_gaps || []).map((gap) => <tr key={`${gap.kpi_id}-${gap.reason}`} className="border-b border-slate-100"><td className="px-2 py-2 font-medium">{gap.kpi_id}</td><td className="px-2 py-2">{gap.reason}</td><td className="px-2 py-2">{gapSummary(gap)}</td></tr>)}</tbody></table></div>
-            )}
-          </div>
+          {readiness ? (
+            <>
+              {!kpisDefined ? <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">No KPIs defined yet. Add KPIs to enable coverage and readiness.</div> : null}
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
+                <div className="rounded-xl border border-indigo-200 bg-white p-3"><p className="text-xs text-slate-500">Overall</p><p className="text-lg font-semibold text-indigo-700">{scoreText(readiness.overall_score)}</p></div>
+                <div className="rounded-xl border border-indigo-200 bg-white p-3"><p className="text-xs text-slate-500">KPI Coverage</p><p className="text-lg font-semibold text-indigo-700">{scoreText(readiness.kpi_coverage)}</p></div>
+                <div className="rounded-xl border border-indigo-200 bg-white p-3"><p className="text-xs text-slate-500">Data Readiness</p><p className="text-lg font-semibold text-indigo-700">{kpisDefined ? scoreText(readiness.data_readiness) : "-"}</p></div>
+                <div className="rounded-xl border border-indigo-200 bg-white p-3"><p className="text-xs text-slate-500">Rule Readiness</p><p className="text-lg font-semibold text-indigo-700">{scoreText(readiness.rule_readiness)}</p></div>
+                <div className="rounded-xl border border-indigo-200 bg-white p-3"><p className="text-xs text-slate-500">Hierarchy Readiness</p><p className="text-lg font-semibold text-indigo-700">{scoreText(readiness.hierarchy_readiness)}</p></div>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-4">
+                <h3 className="text-sm font-semibold text-slate-900">Coverage Gaps</h3>
+                {(decision?.coverage_gaps || []).length === 0 ? <p className="mt-2 text-sm text-slate-600">No coverage gaps detected.</p> : (
+                  <div className="mt-2 overflow-x-auto"><table className="min-w-full text-left text-xs"><thead><tr className="border-b border-slate-200 text-slate-500"><th className="px-2 py-2">KPI</th><th className="px-2 py-2">Reason</th><th className="px-2 py-2">Details</th></tr></thead><tbody>{(decision?.coverage_gaps || []).map((gap) => <tr key={`${gap.kpi_id}-${gap.reason}`} className="border-b border-slate-100"><td className="px-2 py-2 font-medium">{gap.kpi_id}</td><td className="px-2 py-2">{gap.reason}</td><td className="px-2 py-2">{gapSummary(gap)}</td></tr>)}</tbody></table></div>
+                )}
+              </div>
+            </>
+          ) : null}
         </div>
       ) : null}
 

@@ -223,6 +223,42 @@ export interface StrategyBundleUpdateRequest {
   reason: string;
 }
 
+export interface StrategyContextPayload {
+  company: string;
+  horizon: string;
+  north_star_metric: string;
+  narrative?: string | null;
+}
+
+export interface StrategyPillarPayload {
+  id: string;
+  description: string;
+  owner?: string | null;
+}
+
+export interface StrategySwotPayload {
+  strengths: string[];
+  weaknesses: string[];
+  opportunities: string[];
+  threats: string[];
+}
+
+export interface StrategyOverviewResponse {
+  revision: string;
+  strategy_context: StrategyContextPayload;
+  pillars: StrategyPillarPayload[];
+  swot: StrategySwotPayload | null;
+}
+
+export interface StrategyOverviewUpdateRequest {
+  expected_revision: string;
+  strategy_context: StrategyContextPayload;
+  pillars: StrategyPillarPayload[];
+  swot: StrategySwotPayload | null;
+  author: string;
+  reason: string;
+}
+
 export interface StrategyKpi {
   id: string;
   description: string;

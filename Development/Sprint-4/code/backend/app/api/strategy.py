@@ -13,6 +13,7 @@ from app.core.mart_registry import DEFAULT_DATASET_ID
 from app.core.security import get_current_user
 from app.db.models import User
 from app.models.kpi_registry import KPIRegistry, KPIRegistryEntry
+from app.models.strategy_bundle import SWOTBlock, StrategicContext, StrategyBundle, StrategyPillar
 from app.services.strategy.errors import (
     StrategyNotFoundError,
     StrategyRevisionConflictError,
@@ -104,6 +105,23 @@ class KpiDeleteRequest(BaseModel):
         return trimmed
 
 
+class StrategyOverviewUpdateRequest(BaseModel):
+    expected_revision: str
+    strategy_context: StrategicContext
+    pillars: list[StrategyPillar]
+    swot: SWOTBlock | None = None
+    author: str
+    reason: str
+
+    @field_validator("expected_revision", "author", "reason")
+    @classmethod
+    def validate_non_empty(cls, value: str) -> str:
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("value is required")
+        return trimmed
+
+
 def _safe_yaml_text(payload: dict[str, Any]) -> str:
     rendered = yaml.safe_dump(payload, sort_keys=False, allow_unicode=False)
     return rendered if rendered.endswith("\n") else rendered + "\n"
@@ -123,6 +141,40 @@ def _base_kpi_registry_payload() -> dict[str, Any]:
     return validated.model_dump(mode="python")
 
 
+def _base_strategy_bundle_payload() -> dict[str, Any]:
+    payload = strategy_storage.load_yaml(strategy_storage.BASE_STRATEGY_PATH)
+    if not payload:
+        payload = {
+            "schema_version": 1,
+            "version": "1.0.0",
+            "strategic_context": {
+                "company": "Demo Company",
+                "horizon": "12 months",
+                "north_star_metric": "net_sales_after_returns",
+                "narrative": "Baseline strategy bundle.",
+            },
+            "pillars": [],
+            "swot": {
+                "strengths": [],
+                "weaknesses": [],
+                "opportunities": [],
+                "threats": [],
+            },
+            "targets": {},
+            "decision_rules": [],
+            "scoring_model": {
+                "weights": {
+                    "kpi_coverage": 0.4,
+                    "rule_readiness": 0.2,
+                    "hierarchy_readiness": 0.2,
+                    "data_readiness": 0.2,
+                }
+            },
+        }
+    validated = StrategyBundle.model_validate(payload)
+    return validated.model_dump(mode="python")
+
+
 def _kpi_library_response(*, dataset_id: str, revision: str, kpi_registry_payload: dict[str, Any]) -> dict[str, Any]:
     schema_snapshot = load_dataset_schema(dataset_id)
     return {
@@ -133,6 +185,15 @@ def _kpi_library_response(*, dataset_id: str, revision: str, kpi_registry_payloa
             mart_id: sorted(columns)
             for mart_id, columns in sorted(schema_snapshot.mart_columns.items(), key=lambda item: item[0])
         },
+    }
+
+
+def _overview_response(*, revision: str, strategy_payload: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "revision": revision,
+        "strategy_context": strategy_payload.get("strategic_context", {}),
+        "pillars": strategy_payload.get("pillars", []),
+        "swot": strategy_payload.get("swot"),
     }
 
 
@@ -270,6 +331,68 @@ def put_strategy_bundle(
         "base_yaml": base_yaml,
         "override_yaml": override_yaml,
     }
+
+
+@bundle_router.get("/overview")
+def get_strategy_overview(
+    current_user: User = Depends(get_current_user),
+):
+    _ = current_user
+    try:
+        base_payload = _base_strategy_bundle_payload()
+        revision = get_current_revision_id()
+        return _overview_response(revision=revision, strategy_payload=base_payload)
+    except StrategyValidationError as exc:
+        _raise_error(
+            status_code=422,
+            code="VALIDATION_ERROR",
+            message="Strategy bundle validation failed.",
+            hint=str(exc),
+        )
+
+
+@bundle_router.put("/overview")
+def put_strategy_overview(
+    request: StrategyOverviewUpdateRequest,
+    current_user: User = Depends(get_current_user),
+):
+    _ = current_user
+    try:
+        base_payload = _base_strategy_bundle_payload()
+        base_payload["strategic_context"] = request.strategy_context.model_dump(mode="python", exclude_none=True)
+        base_payload["pillars"] = [item.model_dump(mode="python", exclude_none=True) for item in request.pillars]
+        base_payload["swot"] = request.swot.model_dump(mode="python", exclude_none=True) if request.swot else None
+
+        _, new_revision = update_strategy_bundle(
+            mode="base",
+            raw_yaml=_safe_yaml_text(base_payload),
+            expected_revision=request.expected_revision,
+            author=request.author,
+            reason=request.reason,
+        )
+        refreshed_base = _base_strategy_bundle_payload()
+        return _overview_response(revision=new_revision, strategy_payload=refreshed_base)
+    except StrategyRevisionConflictError:
+        _raise_error(
+            status_code=409,
+            code="REVISION_CONFLICT",
+            message="Revision conflict while updating strategy overview.",
+            hint="Refresh decision state",
+        )
+    except StrategyYamlParseError as exc:
+        _raise_error(
+            status_code=422,
+            code="YAML_PARSE_ERROR",
+            message="Unable to parse strategy YAML.",
+            hint=str(exc),
+        )
+    except StrategyValidationError as exc:
+        _raise_error(
+            status_code=422,
+            code="VALIDATION_ERROR",
+            message="Strategy bundle validation failed.",
+            hint=str(exc),
+        )
 
 
 @bundle_router.get("/kpis")

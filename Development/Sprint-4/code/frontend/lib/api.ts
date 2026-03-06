@@ -14,6 +14,8 @@ import type {
   StrategyAgentExtractResponse,
   StrategyAgentReconcileRequest,
   StrategyAgentReconcileResponse,
+  StrategyOverviewResponse,
+  StrategyOverviewUpdateRequest,
   StrategyKpiDeleteRequest,
   StrategyKpiLibraryResponse,
   StrategyKpiUpsertRequest,
@@ -247,6 +249,17 @@ class ApiClient {
 
   async putStrategyBundle(payload: StrategyBundleUpdateRequest): Promise<StrategyBundleEditorResponse> {
     return this.request<StrategyBundleEditorResponse>("/strategy/bundle", {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async getStrategyOverview(): Promise<StrategyOverviewResponse> {
+    return this.request<StrategyOverviewResponse>("/strategy/overview");
+  }
+
+  async putStrategyOverview(payload: StrategyOverviewUpdateRequest): Promise<StrategyOverviewResponse> {
+    return this.request<StrategyOverviewResponse>("/strategy/overview", {
       method: "PUT",
       body: JSON.stringify(payload),
     });
