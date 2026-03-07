@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useAppStore } from "@/lib/store";
 import type { SavedChart } from "@/lib/store";
-import { renderChart } from "@/components/workspace/renderChart";
+import DrillDownChart from "@/components/workspace/DrillDownChart";
 import { LayoutGrid, Trash2, Calendar, Database, Edit2, Wrench, Eye, X, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -376,10 +376,15 @@ export default function DashboardTab() {
                   </div>
                 </div>
 
-                {/* Chart Content */}
+                {/* Chart Content — DrillDownChart with click-to-drill */}
                 <div className="p-5 bg-gradient-to-br from-slate-50/30 to-white">
-                  <div className="h-72 rounded-xl overflow-hidden bg-white border border-slate-100 shadow-sm">
-                    {renderChart(chart.chartSpec, chart.rows)}
+                  <div className="h-80 rounded-xl overflow-hidden bg-white border border-slate-100 shadow-sm relative">
+                    <DrillDownChart
+                      chartSpec={chart.chartSpec}
+                      rows={chart.rows}
+                      datasetId={selectedDatasetId}
+                      height="100%"
+                    />
                   </div>
                 </div>
 
@@ -469,11 +474,16 @@ export default function DashboardTab() {
                 </button>
               </div>
 
-              {/* Modal Content */}
+              {/* Modal Content — DrillDownChart with full drill-down in preview */}
               <div className="p-8 overflow-y-auto max-h-[calc(90vh-200px)]">
                 <div className="bg-gradient-to-br from-slate-50/30 to-white rounded-2xl p-8 border border-slate-100 shadow-inner">
-                  <div className="h-[600px]">
-                    {renderChart(previewChart.chartSpec, previewChart.rows)}
+                  <div className="h-[600px] relative">
+                    <DrillDownChart
+                      chartSpec={previewChart.chartSpec}
+                      rows={previewChart.rows}
+                      datasetId={selectedDatasetId}
+                      height="100%"
+                    />
                   </div>
                 </div>
               </div>
