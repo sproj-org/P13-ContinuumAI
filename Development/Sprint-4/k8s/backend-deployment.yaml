@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment  # The type of Kubernetes object being defined. Deployment manages replicas of pods and handles updates, scaling, and self-healing
+metadata:
+  name: backend
+  namespace: continuum-app
+spec:             # define desired state of the deployment
+  replicas: 1     # desired number of pods. You can scale this up later (e.g., 2 or 3 pods).
+  selector:       # selects which pods this deployment manages
+    matchLabels:
+      app: backend
+  template:       # Defines what new pods should look like
+    metadata:
+      labels:     # Key-value pair attached to a pod, used for selecting and grouping pods.
+        app: backend
+    spec:
+      imagePullSecrets:    #Tells Kubernetes how to pull images from private registries.
+        - name: ghcr-secret
+      containers:   # The Docker containers inside the pod
+        - name: backend
+          image: ghcr.io/OWNER/backend:latest  # Will be replaced by CD pipeline with actual image
+          imagePullPolicy: Always  #always pull the latest image when creating or restarting a pod.
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DATABASE_URL
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: JWT_SECRET_KEY
+            - name: JWT_ALGORITHM
+              value: "HS256"
+            - name: ACCESS_TOKEN_EXPIRE_MINUTES
+              value: "30"
+            - name: FRONTEND_URL
+              value: "http://frontend-svc:3000"  
