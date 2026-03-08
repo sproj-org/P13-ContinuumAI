@@ -1,9 +1,9 @@
 # ============================================
-# CI Workflow for ContinuumAI Sprint-3
+# CI Workflow for ContinuumAI Sprint-4
 # ============================================
 # This workflow automatically builds Docker images 
 # and pushes them to GitHub Container Registry (GHCR)
-# whenever you push to the main or Sprint3_Final branch.
+# whenever you push to the main or sprint4v1 branch.
 
 name: CI-GHCR
 
@@ -12,9 +12,9 @@ name: CI-GHCR
 # ─────────────────────────────────────────────
 on:
   push:
-    branches: [main, Sprint3_Final]  # Runs on main OR Sprint3_Final branch
+    branches: [main, sprint4v1]  # Runs on main OR sprint4v1 branch
     paths:                           # Only triggers if these folders change
-      - Development/Sprint-3/code/** # Backend or frontend code changes
+      - Development/Sprint-4/code/** # Backend or frontend code changes
       - .github/workflows/**         # Workflow file changes
 
 # ─────────────────────────────────────────────
@@ -69,7 +69,7 @@ jobs:
           docker buildx build \
             -t $GHCR_IMAGE_PREFIX/backend:${{ github.sha }} \
             -t $GHCR_IMAGE_PREFIX/backend:latest \
-            --push Development/Sprint-3/code/backend
+            --push Development/Sprint-4/code/backend
 
       # ───────────────────────────────────────
       # Step 5: Build & Push Frontend Image
@@ -82,4 +82,4 @@ jobs:
             --build-arg NEXT_PUBLIC_API_URL=/api \
             -t $GHCR_IMAGE_PREFIX/frontend:${{ github.sha }} \
             -t $GHCR_IMAGE_PREFIX/frontend:latest \
-            --push Development/Sprint-3/code/frontend
+            --push Development/Sprint-4/code/frontend
