@@ -10,6 +10,7 @@ export interface SavedChart {
   id: string;
   backendId?: number;  // DB primary key for persistence
   title: string;
+  dashboardName: string;
   chartSpec: ChartSpecV1;
   rows: any[];
   datasetId: string;

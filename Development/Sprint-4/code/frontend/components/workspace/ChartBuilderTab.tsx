@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useAppStore, ChartConfig } from "@/lib/store";
-import { useTableProfile, useChartsPreview } from "@/lib/hooks";
+import { useTableProfile, useChartsPreview, useDashboards } from "@/lib/hooks";
 import {
   transformColumnProfile,
   type ColumnRole,
@@ -237,8 +237,22 @@ export default function ChartBuilderTab() {
   const [showExecutionDetails, setShowExecutionDetails] = useState<boolean>(false);
   const [debugTab, setDebugTab] = useState<DebugTab>("chartspec");
   const [copiedTab, setCopiedTab] = useState<DebugTab | null>(null);
+  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState<boolean>(false);
+  const [selectedDashboards, setSelectedDashboards] = useState<string[]>([]);
 
   const { data: profile, isLoading } = useTableProfile(selectedDatasetId, selectedAggregation);
+  const { data: dashboardsData } = useDashboards(selectedDatasetId);
+
+  const dashboardOptions = useMemo(() => {
+    const base = new Set<string>(["Default"]);
+    for (const dashboard of dashboardsData ?? []) {
+      const name = dashboard.name?.trim();
+      if (name) {
+        base.add(name);
+      }
+    }
+    return Array.from(base).sort((a, b) => a.localeCompare(b));
+  }, [dashboardsData]);
 
   const transformedColumns = useMemo(() => {
     return profile?.columns.map(transformColumnProfile) ?? [];
@@ -504,24 +518,42 @@ export default function ChartBuilderTab() {
     setValidationMessage(null);
   };
 
+  const openSaveDialog = () => {
+    if (!previewData || !chartSpec || !selectedDatasetId || !selectedAggregation) {
+      return;
+    }
+
+    setSelectedDashboards((prev) => (prev.length ? prev : [dashboardOptions[0] ?? "Default"]));
+    setIsSaveDialogOpen(true);
+  };
+
   const handleSaveToDashboard = () => {
     if (!previewData || !chartSpec || !selectedDatasetId || !selectedAggregation) {
+      return;
+    }
+
+    if (selectedDashboards.length === 0) {
+      showToast("Select at least one dashboard.", "error");
       return;
     }
 
     // Generate a title based on the chart config
     const title = `${chartConfig.yAxis || 'Metric'} by ${chartConfig.xAxis || 'Dimension'}`;
 
-    saveChart({
-      title,
-      chartSpec: previewData.chart_spec,
-      rows: previewData.rows,
-      datasetId: selectedDatasetId,
-      martId: selectedAggregation,
-    });
+    for (const dashboardName of selectedDashboards) {
+      saveChart({
+        title,
+        dashboardName,
+        chartSpec: previewData.chart_spec,
+        rows: previewData.rows,
+        datasetId: selectedDatasetId,
+        martId: selectedAggregation,
+      });
+    }
 
     // Show success feedback
-    showToast(`Chart "${title}" saved to dashboard!`, "success");
+    showToast(`Chart "${title}" saved to ${selectedDashboards.length} dashboard(s)!`, "success");
+    setIsSaveDialogOpen(false);
   };
 
   return (
@@ -977,12 +1009,12 @@ export default function ChartBuilderTab() {
           </div>
 
           <button
-            onClick={handleSaveToDashboard}
+            onClick={openSaveDialog}
             disabled={!previewData || !chartSpec}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-[#4f46e5] to-indigo-600 text-white hover:from-indigo-600 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md"
           >
             <Save className="w-4 h-4" />
-            Save to Dashboard
+            Add to Dashboard
           </button>
 
           <button
@@ -994,6 +1026,58 @@ export default function ChartBuilderTab() {
           </button>
         </div>
       </div>
+
+      {isSaveDialogOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-lg rounded-xl bg-white p-5 shadow-2xl border border-slate-200">
+            <h3 className="text-lg font-semibold text-slate-900 mb-1">Save to Dashboard</h3>
+            <p className="text-sm text-slate-600 mb-4">Choose one or more dashboards.</p>
+
+            <div className="max-h-56 overflow-y-auto space-y-2 border border-slate-200 rounded-lg p-3">
+              {dashboardOptions.map((name) => {
+                const checked = selectedDashboards.includes(name);
+                return (
+                  <label key={name} className="flex items-center gap-2 text-sm text-slate-800">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(event) => {
+                        const enabled = event.target.checked;
+                        setSelectedDashboards((prev) => {
+                          if (enabled) {
+                            return prev.includes(name) ? prev : [...prev, name];
+                          }
+                          return prev.filter((item) => item !== name);
+                        });
+                      }}
+                    />
+                    <span>{name}</span>
+                  </label>
+                );
+              })}
+            </div>
+
+            <p className="text-xs text-slate-500 mt-2">
+              Create new dashboards from the Dashboard tab.
+            </p>
+
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <button
+                onClick={() => setIsSaveDialogOpen(false)}
+                className="px-3 py-2 text-sm rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveToDashboard}
+                className="px-3 py-2 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <DragOverlay>
         {activeColumn && (

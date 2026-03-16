@@ -6,8 +6,8 @@ import Aurora from "@/components/ui/Aurora";
 import CountUp from "@/components/ui/CountUp";
 import LogoLoop, { LogoItem } from "@/components/ui/LogoLoop";
 import { MagicBento, MagicBentoItem } from "@/components/ui/MagicBento";
-import Noise from "@/components/Noise";
-import TextType from "@/components/TextType";
+import Noise from "@/components/ui/Noise";
+import TextType from "@/components/ui/TextType";
 import { 
   SiPython, 
   SiPostgresql, 

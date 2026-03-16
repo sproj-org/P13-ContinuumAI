@@ -11,7 +11,10 @@ import {
   useCreateSavedChart,
   useDeleteSavedChart,
   useUpdateSavedChart,
-  useClearSavedCharts,
+  useDashboards,
+  useCreateDashboard,
+  useRenameDashboard,
+  useDeleteDashboard,
 } from "@/lib/hooks";
 
 export default function DashboardTab() {
@@ -19,7 +22,6 @@ export default function DashboardTab() {
     savedCharts,
     updateChartTitle,
     removeSavedChart,
-    clearSavedCharts,
     setActiveTab,
     setSelectedAggregation,
     setChartConfig,
@@ -29,14 +31,25 @@ export default function DashboardTab() {
   const [editingChartId, setEditingChartId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
   const [previewChart, setPreviewChart] = useState<typeof savedCharts[0] | null>(null);
-  const [selectedDay, setSelectedDay] = useState<string | null>(null); // null = "All"
+  const [selectedDashboardName, setSelectedDashboardName] = useState<string | null>(null);
+  const [newDashboardName, setNewDashboardName] = useState("");
+  const [isCreateDashboardOpen, setIsCreateDashboardOpen] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    dashboardId: number;
+    dashboardName: string;
+  } | null>(null);
 
   // ── Backend sync hooks ──────────────────────────────────
   const { data: backendCharts } = useSavedCharts(selectedDatasetId);
+  const { data: dashboardsData } = useDashboards(selectedDatasetId);
   const createMutation = useCreateSavedChart();
   const deleteMutation = useDeleteSavedChart();
   const updateMutation = useUpdateSavedChart();
-  const clearMutation = useClearSavedCharts();
+  const createDashboardMutation = useCreateDashboard();
+  const renameDashboardMutation = useRenameDashboard();
+  const deleteDashboardMutation = useDeleteDashboard();
 
   // Track which local chart IDs have already been synced to prevent re-POSTing
   const syncedIdsRef = useRef<Set<string>>(new Set());
@@ -51,6 +64,7 @@ export default function DashboardTab() {
         id: localId,
         backendId: bc.id,
         title: bc.title,
+        dashboardName: bc.dashboard_name,
         chartSpec: bc.chart_spec as SavedChart["chartSpec"],
         rows: bc.rows,
         datasetId: bc.dataset_id,
@@ -72,6 +86,7 @@ export default function DashboardTab() {
 
       createMutation.mutate({
         dataset_id: chart.datasetId,
+        dashboard_name: chart.dashboardName,
         mart_id: chart.martId,
         title: chart.title,
         chart_spec: chart.chartSpec as Record<string, unknown>,
@@ -102,54 +117,110 @@ export default function DashboardTab() {
     [savedCharts, updateChartTitle, updateMutation],
   );
 
-  const handleClearAll = useCallback(() => {
-    clearSavedCharts();
-    clearMutation.mutate(selectedDatasetId);
-  }, [clearSavedCharts, clearMutation, selectedDatasetId]);
+  const dashboardIdByName = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const dashboard of dashboardsData ?? []) {
+      map.set(dashboard.name, dashboard.id);
+    }
+    return map;
+  }, [dashboardsData]);
 
-  // ── Day-based grouping ──────────────────────────────────
-  const dayKey = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  };
+  const handleCreateDashboard = useCallback(() => {
+    const name = newDashboardName.trim();
+    if (!name) {
+      return;
+    }
+    createDashboardMutation.mutate(
+      { dataset_id: selectedDatasetId, name },
+      {
+        onSuccess: () => {
+          setSelectedDashboardName(name);
+          setIsCreateDashboardOpen(false);
+          setNewDashboardName("");
+        },
+      }
+    );
+  }, [createDashboardMutation, newDashboardName, selectedDatasetId]);
 
-  const dayGroups = useMemo(() => {
-    const groups: Record<string, { label: string; dayName: string; charts: typeof savedCharts }> = {};
+  const handleRenameDashboard = useCallback(
+    (dashboardId: number, currentName: string) => {
+      const nextName = globalThis.prompt("Rename dashboard", currentName)?.trim();
+      if (!nextName || nextName === currentName) {
+        return;
+      }
+      renameDashboardMutation.mutate(
+        { dashboardId, data: { name: nextName } },
+        {
+          onSuccess: () => {
+            if (selectedDashboardName === currentName) {
+              setSelectedDashboardName(nextName);
+            }
+          },
+        }
+      );
+    },
+    [renameDashboardMutation, selectedDashboardName]
+  );
+
+  const handleDeleteDashboard = useCallback(
+    (dashboardId: number, dashboardName: string) => {
+      const confirmed = globalThis.confirm(
+        `Delete dashboard "${dashboardName}"? This will also remove charts saved in it.`
+      );
+      if (!confirmed) {
+        return;
+      }
+      deleteDashboardMutation.mutate(dashboardId, {
+        onSuccess: () => {
+          if (selectedDashboardName === dashboardName) {
+            setSelectedDashboardName("__all__");
+          }
+        },
+      });
+    },
+    [deleteDashboardMutation, selectedDashboardName]
+  );
+
+  const dashboardGroups = useMemo(() => {
+    const groups: Record<string, { charts: typeof savedCharts }> = {};
+
+    for (const dashboard of dashboardsData ?? []) {
+      groups[dashboard.name] = { charts: [] };
+    }
+
     for (const chart of savedCharts) {
-      const key = dayKey(chart.createdAt);
+      const key = chart.dashboardName || "Default";
       if (!groups[key]) {
-        const d = new Date(chart.createdAt);
-        groups[key] = {
-          label: d.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", year: "numeric" }),
-          dayName: d.toLocaleDateString("en-US", { weekday: "long" }),
-          charts: [],
-        };
+        groups[key] = { charts: [] };
       }
       groups[key].charts.push(chart);
     }
-    // Sort keys descending (most recent first)
-    const sorted = Object.entries(groups).sort(([a], [b]) => b.localeCompare(a));
-    return sorted;
-  }, [savedCharts]);
 
-  // Auto-select the most recent day when charts load and no day is selected
-  useEffect(() => {
-    if (selectedDay === null && dayGroups.length > 0) {
-      setSelectedDay(dayGroups[0][0]);
+    if (!groups.Default) {
+      groups.Default = { charts: [] };
     }
-  }, [dayGroups, selectedDay]);
+
+    const sorted = Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+    return sorted;
+  }, [dashboardsData, savedCharts]);
+
+  // Auto-select first dashboard when data arrives and no dashboard is selected.
+  useEffect(() => {
+    if (selectedDashboardName === null && dashboardGroups.length > 0) {
+      setSelectedDashboardName(dashboardGroups[0][0]);
+    }
+  }, [dashboardGroups, selectedDashboardName]);
 
   const filteredCharts = useMemo(() => {
-    if (selectedDay === "__all__") return savedCharts;
-    if (!selectedDay) return savedCharts;
-    return savedCharts.filter((c) => dayKey(c.createdAt) === selectedDay);
-  }, [savedCharts, selectedDay]);
+    if (selectedDashboardName === "__all__") return savedCharts;
+    if (!selectedDashboardName) return savedCharts;
+    return savedCharts.filter((c) => (c.dashboardName || "Default") === selectedDashboardName);
+  }, [savedCharts, selectedDashboardName]);
 
-  const selectedDayLabel = useMemo(() => {
-    if (selectedDay === "__all__") return "All Charts";
-    const group = dayGroups.find(([k]) => k === selectedDay);
-    return group ? group[1].label : "All Charts";
-  }, [selectedDay, dayGroups]);
+  const selectedDashboardLabel = useMemo(() => {
+    if (selectedDashboardName === "__all__") return "All Dashboards";
+    return selectedDashboardName || "All Dashboards";
+  }, [selectedDashboardName]);
 
   const handleOpenInChartBuilder = (chart: typeof savedCharts[0]) => {
     // Set the mart/aggregation
@@ -201,26 +272,34 @@ export default function DashboardTab() {
 
   return (
     <div className="h-full flex bg-gradient-to-br from-slate-50 via-indigo-50/20 to-violet-50/20">
-      {/* ── Sidebar: Day-based navigation ── */}
-      {savedCharts.length > 0 && (
+      {/* ── Sidebar: Named dashboard navigation ── */}
+      {dashboardGroups.length > 0 && (
         <aside className="w-64 shrink-0 border-r border-indigo-200/50 bg-white/70 backdrop-blur-sm flex flex-col overflow-hidden">
-          <div className="px-4 py-4 border-b border-slate-200/70">
-            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Dashboards</h2>
+          <div className="px-4 py-4 border-b border-slate-200/70 space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Dashboards</h2>
+              <button
+                onClick={() => setIsCreateDashboardOpen(true)}
+                className="text-xs px-2 py-1 rounded-md border border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+              >
+                + New
+              </button>
+            </div>
           </div>
           <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
-            {/* All Charts */}
+            {/* All Dashboards */}
             <button
-              onClick={() => setSelectedDay("__all__")}
+              onClick={() => setSelectedDashboardName("__all__")}
               className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm transition-all ${
-                selectedDay === "__all__"
+                selectedDashboardName === "__all__"
                   ? "bg-gradient-to-r from-[#4f46e5] to-indigo-600 text-white shadow-md shadow-indigo-200"
                   : "text-slate-700 hover:bg-indigo-50 hover:text-[#4f46e5]"
               }`}
             >
               <LayoutGrid className="w-4 h-4 shrink-0" />
-              <span className="flex-1 text-left font-medium truncate">All Charts</span>
+              <span className="flex-1 text-left font-medium truncate">All Dashboards</span>
               <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${
-                selectedDay === "__all__" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
+                selectedDashboardName === "__all__" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
               }`}>
                 {savedCharts.length}
               </span>
@@ -229,30 +308,40 @@ export default function DashboardTab() {
             {/* Divider */}
             <div className="my-2 border-t border-slate-200/70" />
 
-            {/* Day entries */}
-            {dayGroups.map(([key, group]) => (
+            {/* Dashboard entries */}
+            {dashboardGroups.map(([name, group]) => (
               <button
-                key={key}
-                onClick={() => setSelectedDay(key)}
+                key={name}
+                onClick={() => setSelectedDashboardName(name)}
+                onContextMenu={(event) => {
+                  const dashboardId = dashboardIdByName.get(name);
+                  if (!dashboardId) {
+                    return;
+                  }
+                  event.preventDefault();
+                  setContextMenu({
+                    x: event.clientX,
+                    y: event.clientY,
+                    dashboardId,
+                    dashboardName: name,
+                  });
+                }}
                 className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm transition-all ${
-                  selectedDay === key
+                  selectedDashboardName === name
                     ? "bg-gradient-to-r from-[#4f46e5] to-indigo-600 text-white shadow-md shadow-indigo-200"
                     : "text-slate-700 hover:bg-indigo-50 hover:text-[#4f46e5]"
                 }`}
               >
-                <Calendar className="w-4 h-4 shrink-0" />
+                <LayoutGrid className="w-4 h-4 shrink-0" />
                 <div className="flex-1 text-left min-w-0">
-                  <div className="font-medium truncate">{group.dayName}</div>
-                  <div className={`text-xs truncate ${selectedDay === key ? "text-indigo-200" : "text-slate-400"}`}>
-                    {key}
-                  </div>
+                  <div className="font-medium truncate">{name}</div>
                 </div>
                 <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${
-                  selectedDay === key ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
+                  selectedDashboardName === name ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
                 }`}>
                   {group.charts.length}
                 </span>
-                {selectedDay === key && <ChevronRight className="w-3.5 h-3.5 shrink-0" />}
+                {selectedDashboardName === name && <ChevronRight className="w-3.5 h-3.5 shrink-0" />}
               </button>
             ))}
           </nav>
@@ -269,21 +358,19 @@ export default function DashboardTab() {
                 <LayoutGrid className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-slate-900">{selectedDayLabel}</h1>
+                <h1 className="text-xl font-bold text-slate-900">{selectedDashboardLabel}</h1>
                 <p className="text-sm text-slate-600">
                   {filteredCharts.length} saved {filteredCharts.length === 1 ? "chart" : "charts"}
                 </p>
               </div>
             </div>
-            {savedCharts.length > 0 && (
-              <button
-                onClick={handleClearAll}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg border border-red-200 transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-                Clear All
-              </button>
-            )}
+            <button
+              onClick={() => setIsCreateDashboardOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50 rounded-lg border border-indigo-200 transition-colors"
+            >
+              <LayoutGrid className="w-4 h-4" />
+              New Dashboard
+            </button>
           </div>
         </div>
 
@@ -309,10 +396,10 @@ export default function DashboardTab() {
         ) : filteredCharts.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)]">
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center mb-4">
-              <Calendar className="w-10 h-10 text-[#4f46e5]" />
+              <LayoutGrid className="w-10 h-10 text-[#4f46e5]" />
             </div>
-            <h2 className="text-lg font-bold text-slate-900 mb-1">No charts on this day</h2>
-            <p className="text-slate-500 text-sm">Select another day from the sidebar or create new charts.</p>
+            <h2 className="text-lg font-bold text-slate-900 mb-1">No charts in this dashboard</h2>
+            <p className="text-slate-500 text-sm">Select another dashboard from the sidebar or create new charts.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -424,6 +511,72 @@ export default function DashboardTab() {
           </div>
         )}
       </div>
+
+      {contextMenu ? (
+        <>
+          <button
+            className="fixed inset-0 z-40 cursor-default"
+            onClick={() => setContextMenu(null)}
+            aria-label="Dismiss dashboard menu"
+          />
+          <div
+            className="fixed z-50 w-44 rounded-lg border border-slate-200 bg-white shadow-xl"
+            style={{ top: contextMenu.y, left: contextMenu.x }}
+          >
+            <button
+              className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+              onClick={() => {
+                handleRenameDashboard(contextMenu.dashboardId, contextMenu.dashboardName);
+                setContextMenu(null);
+              }}
+            >
+              Rename
+            </button>
+            <button
+              className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+              onClick={() => {
+                handleDeleteDashboard(contextMenu.dashboardId, contextMenu.dashboardName);
+                setContextMenu(null);
+              }}
+            >
+              Delete
+            </button>
+          </div>
+        </>
+      ) : null}
+
+      {isCreateDashboardOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-2xl border border-slate-200">
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">Create Dashboard</h3>
+            <input
+              autoFocus
+              type="text"
+              value={newDashboardName}
+              onChange={(event) => setNewDashboardName(event.target.value)}
+              placeholder="Dashboard name"
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+            />
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <button
+                onClick={() => {
+                  setIsCreateDashboardOpen(false);
+                  setNewDashboardName("");
+                }}
+                className="px-3 py-2 text-sm rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateDashboard}
+                className="px-3 py-2 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
+              >
+                Create
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* Chart Preview Modal */}
       <AnimatePresence>

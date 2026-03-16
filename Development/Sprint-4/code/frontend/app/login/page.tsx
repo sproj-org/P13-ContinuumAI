@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import Noise from "@/components/Noise";
-import ElectricBorder from "@/components/ElectricBorder";
+import Noise from "@/components/ui/Noise";
+import ElectricBorder from "@/components/ui/ElectricBorder";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");

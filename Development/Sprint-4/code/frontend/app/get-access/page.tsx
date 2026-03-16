@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { useEffect } from "react";
-import Noise from "@/components/Noise";
-import ElectricBorder from "@/components/ElectricBorder";
+import Noise from "@/components/ui/Noise";
+import ElectricBorder from "@/components/ui/ElectricBorder";
 import { Mail, Phone, MapPin, Building2, ArrowLeft } from "lucide-react";
 
 export default function GetAccessPage() {

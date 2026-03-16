@@ -39,15 +39,19 @@ import type {
   ChartsPreviewResponse,
 } from "./types/chartspec";
 import type { ChatHintsResponse, ChatRequest, ChatResponse } from "./types/chat";
+import { getApiBaseUrl } from "./api-base";
 
-// const API_URL = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api`;
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+const API_URL = getApiBaseUrl();
 
 export interface User {
   id: number;
   username: string;
   email: string;
   created_at: string;
+}
+
+export interface AvailableDatasetsResponse {
+  datasets: string[];
 }
 
 export interface AuthResponse {
@@ -82,7 +86,7 @@ class ApiClient {
   }
 
   private getToken(): string | null {
-    if (typeof globalThis.window === "undefined") return null;
+    if (globalThis.window === undefined) return null;
     return localStorage.getItem("access_token");
   }
 
@@ -184,6 +188,10 @@ class ApiClient {
     );
   }
 
+  async getAvailableDatasets(): Promise<AvailableDatasetsResponse> {
+    return this.request<AvailableDatasetsResponse>("/datasets/available");
+  }
+
   async getTableProfile(datasetId: string, tableName: string): Promise<DatasetProfileAPI> {
     return this.requestWithFallback<DatasetProfileAPI>(
       `/datasets/${datasetId}/profiling/aggregations/${tableName}/profile`,
@@ -252,8 +260,15 @@ class ApiClient {
   // Saved Charts (Dashboard Persistence)
   // ============================================
 
-  async listSavedCharts(datasetId?: string): Promise<SavedChartAPI[]> {
-    const qs = datasetId ? `?dataset_id=${encodeURIComponent(datasetId)}` : "";
+  async listSavedCharts(datasetId?: string, dashboardName?: string): Promise<SavedChartAPI[]> {
+    const parts: string[] = [];
+    if (datasetId) {
+      parts.push(`dataset_id=${encodeURIComponent(datasetId)}`);
+    }
+    if (dashboardName) {
+      parts.push(`dashboard_name=${encodeURIComponent(dashboardName)}`);
+    }
+    const qs = parts.length ? `?${parts.join("&")}` : "";
     return this.request<SavedChartAPI[]>(`/saved-charts${qs}`);
   }
 
@@ -264,7 +279,10 @@ class ApiClient {
     });
   }
 
-  async updateSavedChart(chartId: number, data: { title?: string; position?: number }): Promise<SavedChartAPI> {
+  async updateSavedChart(
+    chartId: number,
+    data: { title?: string; dashboard_name?: string; position?: number }
+  ): Promise<SavedChartAPI> {
     return this.request<SavedChartAPI>(`/saved-charts/${chartId}`, {
       method: "PATCH",
       body: JSON.stringify(data),
@@ -278,6 +296,29 @@ class ApiClient {
   async clearAllSavedCharts(datasetId?: string): Promise<void> {
     const qs = datasetId ? `?dataset_id=${encodeURIComponent(datasetId)}` : "";
     await this.request<void>(`/saved-charts${qs}`, { method: "DELETE" });
+  }
+
+  async listDashboards(datasetId?: string): Promise<UserDashboardAPI[]> {
+    const qs = datasetId ? `?dataset_id=${encodeURIComponent(datasetId)}` : "";
+    return this.request<UserDashboardAPI[]>(`/dashboards${qs}`);
+  }
+
+  async createDashboard(data: UserDashboardCreateAPI): Promise<UserDashboardAPI> {
+    return this.request<UserDashboardAPI>("/dashboards", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async renameDashboard(dashboardId: number, data: UserDashboardUpdateAPI): Promise<UserDashboardAPI> {
+    return this.request<UserDashboardAPI>(`/dashboards/${dashboardId}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteDashboard(dashboardId: number): Promise<void> {
+    await this.request<void>(`/dashboards/${dashboardId}`, { method: "DELETE" });
   }
 
   // ============================================
@@ -464,6 +505,7 @@ class ApiClient {
 export interface SavedChartAPI {
   id: number;
   dataset_id: string;
+  dashboard_name: string;
   mart_id: string;
   title: string;
   chart_spec: Record<string, unknown>;
@@ -474,11 +516,28 @@ export interface SavedChartAPI {
 
 export interface SavedChartCreateAPI {
   dataset_id: string;
+  dashboard_name: string;
   mart_id: string;
   title: string;
   chart_spec: Record<string, unknown>;
   rows: Record<string, unknown>[];
   position?: number;
+}
+
+export interface UserDashboardAPI {
+  id: number;
+  dataset_id: string;
+  name: string;
+  created_at: string;
+}
+
+export interface UserDashboardCreateAPI {
+  dataset_id: string;
+  name: string;
+}
+
+export interface UserDashboardUpdateAPI {
+  name: string;
 }
 
 export interface ChatThreadAPI {

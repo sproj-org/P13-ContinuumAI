@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -68,6 +68,7 @@ class User(Base):
     # Relationships
     organization = relationship("Organization", back_populates="users")
     saved_charts = relationship("SavedChart", back_populates="user", cascade="all, delete-orphan")
+    dashboards = relationship("UserDashboard", back_populates="user", cascade="all, delete-orphan")
     chat_threads = relationship("ChatThread", back_populates="user", cascade="all, delete-orphan")
     
     def __repr__(self):
@@ -82,6 +83,7 @@ class SavedChart(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     dataset_id = Column(String(100), nullable=False, index=True)
+    dashboard_name = Column(String(120), nullable=False, default="Default", server_default="Default", index=True)
     mart_id = Column(String(100), nullable=False)
     title = Column(String(500), nullable=False)
     chart_spec = Column(JSON, nullable=False)
@@ -94,6 +96,27 @@ class SavedChart(Base):
 
     def __repr__(self):
         return f"<SavedChart(id={self.id}, user_id={self.user_id}, title={self.title})>"
+
+
+class UserDashboard(Base):
+    """Named dashboard metadata for a user and dataset."""
+
+    __tablename__ = "user_dashboards"
+    __table_args__ = (
+        UniqueConstraint("user_id", "dataset_id", "name", name="uq_user_dashboard_name"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    dataset_id = Column(String(100), nullable=False, index=True)
+    name = Column(String(120), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    user = relationship("User", back_populates="dashboards")
+
+    def __repr__(self):
+        return f"<UserDashboard(id={self.id}, user_id={self.user_id}, dataset_id={self.dataset_id}, name={self.name})>"
 
 
 class ChatThread(Base):

@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import Noise from "@/components/Noise";
-import ElectricBorder from "@/components/ElectricBorder";
+import Noise from "@/components/ui/Noise";
+import ElectricBorder from "@/components/ui/ElectricBorder";
 import { Mail, Phone, MapPin, HelpCircle, Database, ArrowLeft, MessageSquare, Headphones } from "lucide-react";
 
 export default function SupportPage() {

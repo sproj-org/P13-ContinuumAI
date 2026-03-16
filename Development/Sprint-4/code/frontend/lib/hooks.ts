@@ -4,7 +4,15 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from './api';
-import type { SavedChartAPI, SavedChartCreateAPI, ChatThreadAPI, ChatThreadUpsertAPI } from './api';
+import type {
+  SavedChartAPI,
+  SavedChartCreateAPI,
+  ChatThreadAPI,
+  ChatThreadUpsertAPI,
+  UserDashboardAPI,
+  UserDashboardCreateAPI,
+  UserDashboardUpdateAPI,
+} from './api';
 import type {
   DatasetProfileAPI,
   ColumnProfileAPI,
@@ -112,10 +120,10 @@ export function useChartsPreview(datasetId: string, chartSpec: ChartSpecV1 | nul
 /**
  * Fetch all saved charts for the current user, optionally filtered by dataset.
  */
-export function useSavedCharts(datasetId?: string) {
+export function useSavedCharts(datasetId?: string, dashboardName?: string) {
   return useQuery<SavedChartAPI[], Error>({
-    queryKey: ['savedCharts', datasetId ?? 'all'],
-    queryFn: () => apiClient.listSavedCharts(datasetId),
+    queryKey: ['savedCharts', datasetId ?? 'all', dashboardName ?? 'all-dashboards'],
+    queryFn: () => apiClient.listSavedCharts(datasetId, dashboardName),
     staleTime: 30 * 1000, // 30 seconds
   });
 }
@@ -138,7 +146,7 @@ export function useCreateSavedChart() {
  */
 export function useUpdateSavedChart() {
   const queryClient = useQueryClient();
-  return useMutation<SavedChartAPI, Error, { chartId: number; data: { title?: string; position?: number } }>({
+  return useMutation<SavedChartAPI, Error, { chartId: number; data: { title?: string; dashboard_name?: string; position?: number } }>({
     mutationFn: ({ chartId, data }) => apiClient.updateSavedChart(chartId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['savedCharts'] });
@@ -167,6 +175,51 @@ export function useClearSavedCharts() {
   return useMutation<void, Error, string | undefined>({
     mutationFn: (datasetId) => apiClient.clearAllSavedCharts(datasetId),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['savedCharts'] });
+    },
+  });
+}
+
+// ============================================
+// Dashboards (Named Dashboard Management)
+// ============================================
+
+export function useDashboards(datasetId?: string) {
+  return useQuery<UserDashboardAPI[], Error>({
+    queryKey: ['dashboards', datasetId ?? 'all'],
+    queryFn: () => apiClient.listDashboards(datasetId),
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useCreateDashboard() {
+  const queryClient = useQueryClient();
+  return useMutation<UserDashboardAPI, Error, UserDashboardCreateAPI>({
+    mutationFn: (data) => apiClient.createDashboard(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dashboards'] });
+      queryClient.invalidateQueries({ queryKey: ['savedCharts'] });
+    },
+  });
+}
+
+export function useRenameDashboard() {
+  const queryClient = useQueryClient();
+  return useMutation<UserDashboardAPI, Error, { dashboardId: number; data: UserDashboardUpdateAPI }>({
+    mutationFn: ({ dashboardId, data }) => apiClient.renameDashboard(dashboardId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dashboards'] });
+      queryClient.invalidateQueries({ queryKey: ['savedCharts'] });
+    },
+  });
+}
+
+export function useDeleteDashboard() {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, number>({
+    mutationFn: (dashboardId) => apiClient.deleteDashboard(dashboardId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dashboards'] });
       queryClient.invalidateQueries({ queryKey: ['savedCharts'] });
     },
   });

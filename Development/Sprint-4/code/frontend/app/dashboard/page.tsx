@@ -1,24 +1,98 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth-context";
 import { useAppStore } from "@/lib/store";
+import { useSavedCharts } from "@/lib/hooks";
+import { apiClient } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Database, Plus, LogOut, BarChart3, TrendingUp, Sparkles, Activity, CheckCircle2, Headphones } from "lucide-react";
+import { Database, Plus, LogOut, BarChart3, TrendingUp, Activity, CheckCircle2, Headphones } from "lucide-react";
+
+function prettifyDatasetName(datasetId: string): string {
+  const stripped = datasetId.replace(/^gold_/i, "").replaceAll("_", " ");
+  return stripped
+    .split(" ")
+    .filter((part) => part.length > 0)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
 
 function DashboardContent() {
   const { user, logout } = useAuth();
   const router = useRouter();
   const setActiveDataset = useAppStore((state) => state.setActiveDataset);
   const setSelectedDatasetId = useAppStore((state) => state.setSelectedDatasetId);
+  const { data: allSavedCharts } = useSavedCharts();
+  const [availableDatasets, setAvailableDatasets] = useState<string[]>(["silkroute"]);
+  const [activeDatasetCount, setActiveDatasetCount] = useState<number>(0);
+  const [isDataSynced, setIsDataSynced] = useState<boolean>(false);
+  const [statsLoading, setStatsLoading] = useState<boolean>(true);
 
-  const handleDatasetSelect = (datasetId: "silkroute") => {
+  const handleDatasetSelect = (datasetId: string) => {
     setSelectedDatasetId(datasetId);
     setActiveDataset(datasetId);
     router.push(`/workspace/${datasetId}`);
   };
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadStats = async () => {
+      setStatsLoading(true);
+      try {
+        const available = await apiClient.getAvailableDatasets();
+        const datasetIds = available.datasets.length ? available.datasets : ["silkroute"];
+        if (!mounted) return;
+        setAvailableDatasets(datasetIds);
+
+        const checks = await Promise.all(
+          datasetIds.map(async (datasetId) => {
+            try {
+              const marts = await apiClient.getAggregations(datasetId);
+              return { datasetId, healthy: Array.isArray(marts.aggregations) && marts.aggregations.length > 0 };
+            } catch {
+              return { datasetId, healthy: false };
+            }
+          })
+        );
+        if (!mounted) return;
+        setActiveDatasetCount(checks.filter((item) => item.healthy).length);
+      } catch {
+        if (mounted) {
+          setAvailableDatasets(["silkroute"]);
+          setActiveDatasetCount(0);
+        }
+      }
+
+      try {
+        const marts = await apiClient.getAggregations("silkroute");
+        if (!mounted) return;
+        setIsDataSynced(Array.isArray(marts.aggregations) && marts.aggregations.length > 0);
+      } catch {
+        if (mounted) {
+          setIsDataSynced(false);
+        }
+      } finally {
+        if (mounted) {
+          setStatsLoading(false);
+        }
+      }
+    };
+
+    loadStats();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const dashboardCount = useMemo(() => {
+    const names = new Set((allSavedCharts ?? []).map((chart) => chart.dashboard_name || "Default"));
+    return names.size;
+  }, [allSavedCharts]);
 
   const capitalizedName = user?.username 
     ? user.username.charAt(0).toUpperCase() + user.username.slice(1) 
@@ -74,7 +148,7 @@ function DashboardContent() {
             Hello, {capitalizedName}!
           </h2>
           <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-            Behind every dataset is an opportunity — let&apos;s uncover insights that power smarter decisions.
+            Let&apos;s uncover insights that power smarter decisions.
           </p>
         </motion.div>
 
@@ -101,7 +175,9 @@ function DashboardContent() {
               </div>
               <div>
                 <p className="text-sm text-slate-500 font-medium mb-1">Active Datasets</p>
-                <p className="text-4xl font-bold bg-gradient-to-r from-[#4f46e5] to-indigo-700 bg-clip-text text-transparent">1</p>
+                <p className="text-4xl font-bold bg-gradient-to-r from-[#4f46e5] to-indigo-700 bg-clip-text text-transparent">
+                  {statsLoading ? "..." : activeDatasetCount}
+                </p>
               </div>
             </div>
           </motion.div>
@@ -122,7 +198,9 @@ function DashboardContent() {
               </div>
               <div>
                 <p className="text-sm text-slate-500 font-medium mb-1">Dashboards</p>
-                <p className="text-4xl font-bold bg-gradient-to-r from-violet-600 to-violet-800 bg-clip-text text-transparent">12</p>
+                <p className="text-4xl font-bold bg-gradient-to-r from-violet-600 to-violet-800 bg-clip-text text-transparent">
+                  {dashboardCount}
+                </p>
               </div>
             </div>
           </motion.div>
@@ -140,13 +218,25 @@ function DashboardContent() {
                   <CheckCircle2 className="w-6 h-6 text-white" />
                 </div>
                 <div className="relative flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                  {isDataSynced ? (
+                    <>
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                    </>
+                  ) : (
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                  )}
                 </div>
               </div>
               <div>
                 <p className="text-sm text-slate-500 font-medium mb-1">Data Status</p>
-                <p className="text-4xl font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">Synced</p>
+                <p className={`text-4xl font-bold bg-clip-text text-transparent ${
+                  isDataSynced
+                    ? "bg-gradient-to-r from-green-600 to-green-800"
+                    : "bg-gradient-to-r from-red-500 to-red-700"
+                }`}>
+                  {isDataSynced ? "Synced" : "..."}
+                </p>
               </div>
             </div>
           </motion.div>
@@ -180,60 +270,47 @@ function DashboardContent() {
                     Connect New Database
                   </h3>
                   <p className="text-sm text-slate-500 leading-relaxed">
-                    Connect your own PostgreSQL, MySQL, or other data sources
+                    Connect new data sources like PostgreSQL, MySQL, or other databases to ContinuumAI.
                   </p>
                 </div>
               </motion.div>
             </Link>
 
-            {/* SilkRoute Dataset Card */}
-            <motion.button
-              onClick={() => handleDatasetSelect("silkroute")}
-              whileHover={{ scale: 1.02, y: -4 }}
-              whileTap={{ scale: 0.98 }}
-              transition={{ type: "spring", stiffness: 300 }}
-              className="w-full text-left group relative p-8 rounded-2xl border-2 border-indigo-200/60 bg-gradient-to-br from-white via-indigo-50/30 to-violet-50/30 backdrop-blur-xl hover:border-[#4f46e5]/80 hover:shadow-2xl hover:shadow-indigo-500/20 transition-all duration-300 overflow-hidden"
-            >
-              {/* Animated gradient background */}
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-400/10 via-violet-400/10 to-purple-400/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              
-              {/* Glowing orb effect */}
-              <div className="absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br from-[#4f46e5]/30 to-violet-400/30 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              
-              <div className="relative">
-                <div className="flex items-start justify-between mb-5">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#4f46e5] to-indigo-600 border-2 border-white flex items-center justify-center shadow-xl shadow-indigo-500/30 group-hover:scale-110 transition-transform duration-300">
-                    <Database className="w-8 h-8 text-white" />
+            {availableDatasets.map((datasetId) => (
+              <motion.button
+                key={datasetId}
+                onClick={() => handleDatasetSelect(datasetId)}
+                whileHover={{ scale: 1.02, y: -4 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 300 }}
+                className="w-full text-left group relative p-8 rounded-2xl border-2 border-indigo-200/60 bg-gradient-to-br from-white via-indigo-50/30 to-violet-50/30 backdrop-blur-xl hover:border-[#4f46e5]/80 hover:shadow-2xl hover:shadow-indigo-500/20 transition-all duration-300 overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-400/10 via-violet-400/10 to-purple-400/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br from-[#4f46e5]/30 to-violet-400/30 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                <div className="relative">
+                  <div className="flex items-start justify-between mb-5">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#4f46e5] to-indigo-600 border-2 border-white flex items-center justify-center shadow-xl shadow-indigo-500/30 group-hover:scale-110 transition-transform duration-300">
+                      <Database className="w-8 h-8 text-white" />
+                    </div>
+                    <span className="px-3 py-1.5 text-xs font-semibold rounded-full bg-gradient-to-r from-green-400 to-green-500 text-white shadow-lg shadow-green-500/30">
+                      Ready
+                    </span>
                   </div>
-                  <span className="px-3 py-1.5 text-xs font-semibold rounded-full bg-gradient-to-r from-green-400 to-green-500 text-white shadow-lg shadow-green-500/30">
-                    Ready
-                  </span>
+
+                  <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-[#4f46e5] transition-colors duration-200 flex items-center gap-2">
+                    {prettifyDatasetName(datasetId)}
+                    <svg className="w-5 h-5 text-[#4f46e5] opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </h3>
+
+                  <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+                    Dataset ID: {datasetId}
+                  </p>
                 </div>
-                
-                <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-[#4f46e5] transition-colors duration-200 flex items-center gap-2">
-                  SilkRoute
-                  <svg className="w-5 h-5 text-[#4f46e5] opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </svg>
-                </h3>
-                
-                <p className="text-sm text-slate-600 mb-6 leading-relaxed">
-                  Retail benchmark dataset with sales, customers, stores, and inventory data
-                </p>
-                
-                <div className="flex flex-wrap gap-2">
-                  <span className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-indigo-50 to-indigo-100 border border-indigo-200 text-indigo-800 shadow-sm">
-                    45K+ transactions
-                  </span>
-                  <span className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-violet-50 to-violet-100 border border-violet-200 text-violet-800 shadow-sm">
-                    2.5K customers
-                  </span>
-                  <span className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 text-purple-800 shadow-sm">
-                    6 stores
-                  </span>
-                </div>
-              </div>
-            </motion.button>
+              </motion.button>
+            ))}
           </div>
         </motion.div>
       </main>

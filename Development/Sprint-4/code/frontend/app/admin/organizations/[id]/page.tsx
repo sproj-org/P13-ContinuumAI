@@ -3,8 +3,9 @@
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { getApiBaseUrl } from "@/lib/api-base";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE_URL = getApiBaseUrl();
 
 interface User {
   id: number;

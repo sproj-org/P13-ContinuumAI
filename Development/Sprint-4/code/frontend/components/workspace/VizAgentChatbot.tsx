@@ -31,6 +31,7 @@ import type {
 } from "@/lib/types/chat";
 import { renderChart } from "@/components/workspace/renderChart";
 import MarkdownMessage from "@/components/common/MarkdownMessage";
+import { useSavedCharts } from "@/lib/hooks";
 
 interface VizAgentChatbotProps {
   isOpen: boolean;
@@ -159,6 +160,8 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
     rows: any[];
     title: string;
   } | null>(null);
+  const [selectedDashboardOption, setSelectedDashboardOption] = useState<string>("Default");
+  const [newDashboardName, setNewDashboardName] = useState<string>("");
   const martPickerRef = useRef<HTMLDivElement | null>(null);
   const routeDatasetId = params?.datasetId || selectedDatasetId;
 
@@ -167,6 +170,7 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
     [routeDatasetId, selectedAggregation]
   );
   const turns = chatKey ? chatTurnsByKey[chatKey] ?? [] : [];
+  const { data: savedCharts } = useSavedCharts(routeDatasetId);
   const lastChartSpec = chatKey ? lastChartSpecByKey[chatKey] ?? null : null;
   const chatState = chatKey ? chatStateByKey[chatKey] : undefined;
   const savedPrompts = chatKey ? savedPromptsByKey[chatKey] ?? [] : [];
@@ -186,6 +190,16 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
       return label.includes(query) || id.includes(query) || description.includes(query);
     });
   }, [availableMarts, martQuery]);
+  const dashboardOptions = useMemo(() => {
+    const base = new Set<string>(["Default"]);
+    for (const chart of savedCharts ?? []) {
+      const name = chart.dashboard_name?.trim();
+      if (name) {
+        base.add(name);
+      }
+    }
+    return Array.from(base).sort((a, b) => a.localeCompare(b));
+  }, [savedCharts]);
   const firstUserIntent = useMemo(
     () => turns.find((turn) => turn.role === "user")?.message ?? null,
     [turns]
@@ -521,9 +535,19 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
 
   const handleSaveChartToDashboard = () => {
     if (!currentChartPreview || !selectedAggregation) return;
+
+    const resolvedDashboardName =
+      selectedDashboardOption === "__new__"
+        ? newDashboardName.trim()
+        : selectedDashboardOption.trim();
+    if (!resolvedDashboardName) {
+      showToast("Please select or enter a dashboard name.", "error");
+      return;
+    }
     
     saveChart({
       title: currentChartPreview.title,
+      dashboardName: resolvedDashboardName,
       chartSpec: currentChartPreview.chartSpec,
       rows: currentChartPreview.rows,
       datasetId: routeDatasetId,
@@ -531,7 +555,7 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
     });
     
     // Show success feedback
-    showToast(`Chart "${currentChartPreview.title}" saved to dashboard!`, "success");
+    showToast(`Chart "${currentChartPreview.title}" saved to "${resolvedDashboardName}" dashboard!`, "success");
     setCurrentChartPreview(null);
   };
 
@@ -603,6 +627,30 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
 
           {/* Chart Actions */}
           <div className="border-t border-slate-200 p-6 bg-gradient-to-r from-slate-50 to-white">
+            <div className="mb-4 space-y-2">
+              <label className="text-xs font-medium text-slate-700">Target Dashboard</label>
+              <select
+                value={selectedDashboardOption}
+                onChange={(event) => setSelectedDashboardOption(event.target.value)}
+                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/50"
+              >
+                {dashboardOptions.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+                <option value="__new__">+ Create new dashboard</option>
+              </select>
+              {selectedDashboardOption === "__new__" ? (
+                <input
+                  type="text"
+                  value={newDashboardName}
+                  onChange={(event) => setNewDashboardName(event.target.value)}
+                  placeholder="Enter new dashboard name"
+                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/50"
+                />
+              ) : null}
+            </div>
             <div className="grid grid-cols-3 gap-3">
               <button
                 onClick={handleEditInChartBuilder}
