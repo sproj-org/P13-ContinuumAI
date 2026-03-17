@@ -32,6 +32,7 @@ import type {
 import { renderChart } from "@/components/workspace/renderChart";
 import MarkdownMessage from "@/components/common/MarkdownMessage";
 import { useSavedCharts } from "@/lib/hooks";
+import { getMartDrillAdvisory } from "@/lib/mart-drill-utils";
 
 interface VizAgentChatbotProps {
   isOpen: boolean;
@@ -270,6 +271,21 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
   const showMissingDebugFlags = useMemo(() => {
     return Boolean(latestAssistantResponse && !debugFlagsPresent);
   }, [latestAssistantResponse, debugFlagsPresent]);
+  const chartPreviewAdvisory = useMemo(() => {
+    if (!currentChartPreview) {
+      return null;
+    }
+
+    const previewSpec = currentChartPreview.chartSpec;
+    const xField = previewSpec?.encoding?.x?.field ?? null;
+    const martId = typeof previewSpec?.table === "string" ? previewSpec.table : selectedAggregation;
+
+    return getMartDrillAdvisory({
+      xField,
+      martId,
+      availableMarts,
+    });
+  }, [currentChartPreview, selectedAggregation, availableMarts]);
 
   useEffect(() => {
     setError(null);
@@ -572,6 +588,10 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
       aggregationFn: chartSpec.encoding.y[0]?.aggregation || 'sum',
       colorBy: null, // ChartSpecV1 doesn't have colorBy, but we'll let user add it
     });
+
+    if (chartPreviewAdvisory) {
+      showToast(chartPreviewAdvisory, "warning", 5000);
+    }
     
     // Switch to chart builder tab
     setActiveTab('chart-builder');
@@ -627,6 +647,11 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
 
           {/* Chart Actions */}
           <div className="border-t border-slate-200 p-6 bg-gradient-to-r from-slate-50 to-white">
+            {chartPreviewAdvisory ? (
+              <div className="mb-4 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs text-violet-800">
+                {chartPreviewAdvisory}
+              </div>
+            ) : null}
             <div className="mb-4 space-y-2">
               <label className="text-xs font-medium text-slate-700">Target Dashboard</label>
               <select

@@ -7,6 +7,7 @@ import {
   transformColumnProfile,
   type ColumnRole,
 } from "@/lib/transformers";
+import { getMartDrillAdvisory } from "@/lib/mart-drill-utils";
 import { renderChart } from "@/components/workspace/renderChart";
 import type { ChartSpecV1, FilterOperator, FilterSpec } from "@/lib/types/chartspec";
 import { motion, AnimatePresence } from "framer-motion";
@@ -257,6 +258,28 @@ export default function ChartBuilderTab() {
   const transformedColumns = useMemo(() => {
     return profile?.columns.map(transformColumnProfile) ?? [];
   }, [profile]);
+
+  const selectedXAxisColumn = useMemo(
+    () => transformedColumns.find((column) => column.name === chartConfig.xAxis),
+    [transformedColumns, chartConfig.xAxis],
+  );
+
+  const highCardinalityWarning = useMemo(() => {
+    if (!selectedXAxisColumn) return null;
+    if (selectedXAxisColumn.role !== "dimension") return null;
+    if (selectedXAxisColumn.uniqueCount <= 50) return null;
+    return `X-axis '${selectedXAxisColumn.name}' has ${selectedXAxisColumn.uniqueCount.toLocaleString()} unique values. Consider reducing limit, adding filters, or switching to a higher-level dimension.`;
+  }, [selectedXAxisColumn]);
+
+  const martSwitchSuggestion = useMemo(() => {
+    if (!selectedXAxisColumn) return null;
+    return getMartDrillAdvisory({
+      xField: selectedXAxisColumn.name,
+      martId: selectedAggregation,
+      availableMarts,
+      availableColumnNames: transformedColumns.map((column) => column.name),
+    });
+  }, [selectedXAxisColumn, selectedAggregation, transformedColumns, availableMarts]);
 
   const { groupedColumns, columnRoleMap } = useMemo(() => {
     if (transformedColumns.length === 0) {
@@ -982,6 +1005,16 @@ export default function ChartBuilderTab() {
                 }}
                 className="w-full bg-white border border-slate-200 rounded px-2 py-2 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
               />
+              {highCardinalityWarning ? (
+                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
+                  {highCardinalityWarning}
+                </p>
+              ) : null}
+              {martSwitchSuggestion ? (
+                <p className="text-xs text-violet-700 bg-violet-50 border border-violet-200 rounded p-2">
+                  {martSwitchSuggestion}
+                </p>
+              ) : null}
             </div>
           </div>
 

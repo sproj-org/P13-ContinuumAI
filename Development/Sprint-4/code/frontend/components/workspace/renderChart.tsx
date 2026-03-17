@@ -34,10 +34,19 @@ export function renderChart(chartSpec: ChartSpecV1, rows: ChartRows) {
     value: y[index] ?? 0,
   }));
   const histogramData = y.map((value) => ({ value }));
-  const pieData = x.map((type, index) => ({
+  const pieDataRaw = x.map((type, index) => ({
     type,
     value: y[index] ?? 0,
   }));
+  const pieData =
+    pieDataRaw.length <= 8
+      ? pieDataRaw
+      : (() => {
+          const sorted = [...pieDataRaw].sort((left, right) => right.value - left.value);
+          const head = sorted.slice(0, 7);
+          const otherValue = sorted.slice(7).reduce((sum, item) => sum + item.value, 0);
+          return otherValue > 0 ? [...head, { type: "Other", value: otherValue }] : head;
+        })();
 
   if (chartType === "pie") {
     return (
