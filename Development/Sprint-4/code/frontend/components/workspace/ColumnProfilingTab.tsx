@@ -8,8 +8,8 @@ import {
   type TransformedColumnProfile,
   type ColumnRole,
 } from "@/lib/transformers";
+import { Pie } from "@ant-design/plots";
 import { motion } from "framer-motion";
-import dynamic from "next/dynamic";
 import {
   Columns3,
   BarChart3,
@@ -20,9 +20,6 @@ import {
   ArrowRight,
   Loader2,
 } from "lucide-react";
-
-// Dynamic import for Plotly to avoid SSR issues
-const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
 
 const roleIcons: Record<ColumnRole, React.ReactNode> = {
   dimension: <Hash className="w-4 h-4" />,
@@ -93,31 +90,15 @@ function DimensionDetails({ column }: { column: TransformedColumnProfile }) {
       {/* Pie Chart for Distribution */}
       {column.topValues && column.topValues.length > 0 && column.topValues.length <= 6 && (
         <div className="bg-white/[0.03] rounded-xl p-4">
-          <Plot
-            data={[
-              {
-                type: "pie",
-                values: column.topValues.map(v => v.count),
-                labels: column.topValues.map(v => v.value),
-                textinfo: "percent",
-                textposition: "inside",
-                marker: {
-                  colors: ["#3b82f6", "#8b5cf6", "#4f46e5", "#6366f1", "#f59e0b", "#ef4444"],
-                },
-                hole: 0.4,
-              },
-            ]}
-            layout={{
-              paper_bgcolor: "transparent",
-              plot_bgcolor: "transparent",
-              font: { color: "#94a3b8", size: 12 },
-              showlegend: true,
-              legend: { orientation: "h", y: -0.2 },
-              margin: { t: 20, b: 40, l: 20, r: 20 },
-              height: 250,
-            }}
-            config={{ displayModeBar: false, responsive: true }}
-            style={{ width: "100%" }}
+          <Pie
+            data={column.topValues.map((value) => ({ type: value.value, value: value.count }))}
+            angleField="value"
+            colorField="type"
+            innerRadius={0.4}
+            label={{ text: "value", position: "inside" }}
+            legend={{ color: { position: "bottom" } }}
+            scale={{ color: { range: ["#3b82f6", "#8b5cf6", "#4f46e5", "#6366f1", "#f59e0b", "#ef4444"] } }}
+            height={250}
           />
         </div>
       )}

@@ -13,7 +13,7 @@ import {
   formatDate,
 } from "@/lib/transformers";
 import { motion, AnimatePresence } from "framer-motion";
-import dynamic from "next/dynamic";
+import { Pie } from "@ant-design/plots";
 import {
   Database,
   Activity,
@@ -29,8 +29,6 @@ import {
   CheckCircle2,
   HelpCircle,
 } from "lucide-react";
-
-const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
 
 const roleIcons: Record<ColumnRole, React.ReactNode> = {
   dimension: <Hash className="w-4 h-4" />,
@@ -140,31 +138,15 @@ function DimensionDetails({ column }: { column: TransformedColumnProfile }) {
         {/* Pie Chart for Distribution */}
         {column.topValues && column.topValues.length > 0 && column.topValues.length <= 8 && (
           <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-            <Plot
-              data={[
-                {
-                  type: "pie",
-                  values: column.topValues.map(v => v.count),
-                  labels: column.topValues.map(v => v.value),
-                  textinfo: "percent",
-                  textposition: "inside",
-                  marker: {
-                    colors: ["#4F46E5", "#8b5cf6", "#a78bfa", "#6366f1", "#f59e0b", "#ef4444", "#ec4899", "#818cf8"],
-                  },
-                  hole: 0.4,
-                },
-              ]}
-              layout={{
-                paper_bgcolor: "transparent",
-                plot_bgcolor: "transparent",
-                font: { color: "#64748b", size: 12 },
-                showlegend: true,
-                legend: { orientation: "h", y: -0.2 },
-                margin: { t: 20, b: 60, l: 20, r: 20 },
-                height: 280,
-              }}
-              config={{ displayModeBar: false, responsive: true }}
-              style={{ width: "100%" }}
+            <Pie
+              data={column.topValues.map((value) => ({ type: value.value, value: value.count }))}
+              angleField="value"
+              colorField="type"
+              innerRadius={0.4}
+              label={{ text: "value", position: "inside" }}
+              legend={{ color: { position: "bottom" } }}
+              scale={{ color: { range: ["#4F46E5", "#8b5cf6", "#a78bfa", "#6366f1", "#f59e0b", "#ef4444", "#ec4899", "#818cf8"] } }}
+              height={280}
             />
           </div>
         )}

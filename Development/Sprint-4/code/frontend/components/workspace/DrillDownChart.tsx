@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * DrillDownChart — Plotly-based chart with multi-level drill-down.
+ * DrillDownChart — AntV-based chart with multi-level drill-down.
  *
  * Architecture:
  * 1. Receives the original chartSpec + rows from the saved chart (level 0).
@@ -17,15 +17,12 @@
  */
 
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import dynamic from "next/dynamic";
+import { Column, Histogram, Line, Pie } from "@ant-design/plots";
 import type { ChartSpecV1 } from "@/lib/types/chartspec";
 import type { AggregateFilter, DatasetProfileAPI } from "@/lib/api-types";
 import { apiClient } from "@/lib/api";
 import { useTableProfile } from "@/lib/hooks";
 import { ChevronRight, RotateCcw, Loader2 } from "lucide-react";
-
-/* ── Plotly (client-only) ─────────────────────────────────────── */
-const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
 
 /* ── Types ────────────────────────────────────────────────────── */
 type ChartRows = Array<Record<string, unknown>>;
@@ -175,14 +172,10 @@ export default function DrillDownChart({
   );
 
   /* ── Click handler — drill down ── */
-  const handleChartClick = useCallback(
-    (event: Readonly<Plotly.PlotMouseEvent>) => {
-      if (!canDrill || !event.points || event.points.length === 0) return;
+  const handleDatumClick = useCallback(
+    (rawValue: unknown) => {
+      if (!canDrill) return;
 
-      const point = event.points[0];
-      // For pie charts, the label is in point.label; for bar/line it's in point.x
-      const ptAny = point as unknown as Record<string, unknown>;
-      const rawValue = ptAny.label ?? ptAny.x ?? "";
       let clickedValue: string;
       if (rawValue == null) {
         clickedValue = "";
@@ -247,86 +240,104 @@ export default function DrillDownChart({
   }, [currentRows, currentDimension, metric?.alias, drillStack.length]);
 
   const chartType = chartSpec.chart.type;
+  const chartData = useMemo(
+    () => x.map((category, index) => ({ category, value: y[index] ?? 0 })),
+    [x, y],
+  );
+  const pieData = useMemo(
+    () => x.map((type, index) => ({ type, value: y[index] ?? 0 })),
+    [x, y],
+  );
+  const histogramData = useMemo(() => y.map((value) => ({ value })), [y]);
 
-  /* ── Build Plotly trace ── */
-  const trace = useMemo((): Partial<Plotly.Data> => {
+  const renderAntVChart = () => {
     if (chartType === "pie") {
-      return {
-        type: "pie" as const,
-        values: y,
-        labels: x,
-        textinfo: "percent" as const,
-        textposition: "inside" as const,
-        marker: { colors: PALETTE },
-        hole: 0.3,
-        hoverinfo: "label+value+percent" as const,
-      };
+      return (
+        <Pie
+          data={pieData}
+          angleField="value"
+          colorField="type"
+          innerRadius={0.3}
+          label={{ text: "value", position: "inside" }}
+          legend={{ color: { position: "bottom" } }}
+          scale={{ color: { range: PALETTE } }}
+          interaction={{ elementSelect: { single: true } }}
+          onReady={({ chart }) => {
+            if (!canDrill) return;
+            chart.on("element:click", (event: unknown) => {
+              const datum = (event as { data?: { data?: Record<string, unknown> } })?.data?.data;
+              handleDatumClick(datum?.type ?? datum?.[currentDimension]);
+            });
+          }}
+          height={320}
+        />
+      );
     }
+
     if (chartType === "line") {
-      return {
-        type: "scatter",
-        mode: "lines+markers" as const,
-        x,
-        y,
-        line: { color: "#8b5cf6", width: 3 },
-        marker: { color: "#8b5cf6", size: 8 },
-        fill: "tozeroy" as const,
-        fillcolor: "rgba(139, 92, 246, 0.1)",
-      };
+      return (
+        <Line
+          data={chartData}
+          xField="category"
+          yField="value"
+          point
+          shapeField="smooth"
+          style={{ stroke: "#8b5cf6" }}
+          axis={{
+            x: { title: currentDimension, labelFill: "#475569" },
+            y: { title: metricLabel, labelFill: "#475569" },
+          }}
+          interaction={{ elementSelect: { single: true } }}
+          onReady={({ chart }) => {
+            if (!canDrill) return;
+            chart.on("element:click", (event: unknown) => {
+              const datum = (event as { data?: { data?: Record<string, unknown> } })?.data?.data;
+              handleDatumClick(datum?.category ?? datum?.[currentDimension]);
+            });
+          }}
+          height={320}
+        />
+      );
     }
+
     if (chartType === "histogram") {
-      return {
-        type: "histogram",
-        x: y,
-        marker: { color: "#4f46e5", opacity: 0.8 },
-        nbinsx: 10,
-      } as unknown as Partial<Plotly.Data>;
+      return (
+        <Histogram
+          data={histogramData}
+          binField="value"
+          axis={{
+            x: { title: metricLabel, labelFill: "#475569" },
+            y: { title: "Frequency", labelFill: "#475569" },
+          }}
+          style={{ fill: "#4f46e5", fillOpacity: 0.8 }}
+          height={320}
+        />
+      );
     }
-    // Default: bar
-    return {
-      type: "bar",
-      x,
-      y,
-      marker: {
-        color: y.map((_, i) => PALETTE[i % PALETTE.length]),
-        opacity: 0.9,
-      },
-    };
-  }, [chartType, x, y]);
 
-  /* ── Layout ── */
-  const layout = useMemo((): Partial<Plotly.Layout> => ({
-    title: {
-      text: `${metricLabel} by ${currentDimension}`,
-      font: { color: "#1e293b", size: 15, family: "Inter, system-ui, sans-serif" },
-    },
-    paper_bgcolor: "transparent",
-    plot_bgcolor: "transparent",
-    font: { color: "#64748b", family: "Inter, system-ui, sans-serif" },
-    xaxis: {
-      gridcolor: "#e2e8f0",
-      title: { text: currentDimension, font: { color: "#475569", size: 12 } },
-      tickfont: { color: "#475569" },
-    },
-    yaxis: {
-      gridcolor: "#e2e8f0",
-      title: { text: metricLabel, font: { color: "#475569", size: 12 } },
-      tickfont: { color: "#475569" },
-    },
-    margin: { t: 50, b: 60, l: 80, r: 40 },
-    showlegend: chartType === "pie",
-    legend: { orientation: "h" as const, y: -0.2 },
-  }), [metricLabel, currentDimension, chartType]);
-
-  /* ── Cursor style — show pointer when drillable ── */
-  const plotRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!plotRef.current) return;
-    const bars = plotRef.current.querySelectorAll<SVGElement>(".plot-container .trace .point, .plot-container .trace path.surface, .plot-container .slice");
-    bars.forEach((el) => {
-      el.style.cursor = canDrill ? "pointer" : "default";
-    });
-  });
+    return (
+      <Column
+        data={chartData}
+        xField="category"
+        yField="value"
+        colorField="category"
+        axis={{
+          x: { title: currentDimension, labelFill: "#475569" },
+          y: { title: metricLabel, labelFill: "#475569" },
+        }}
+        scale={{ color: { range: PALETTE } }}
+        interaction={{ elementSelect: { single: true } }}
+        onReady={({ chart }) => {
+          if (!canDrill) return;
+          chart.on("element:click", (event: unknown) => {
+            const datum = (event as { data?: { data?: Record<string, unknown> } })?.data?.data;
+            handleDatumClick(datum?.category ?? datum?.[currentDimension]);
+          });
+        }}
+        height={320}
+      />
+    );
+  };
 
   return (
     <div className="flex flex-col h-full" style={{ height }}>
@@ -425,14 +436,8 @@ export default function DrillDownChart({
       )}
 
       {/* ── Chart ── */}
-      <div ref={plotRef} className="flex-1 min-h-0 relative">
-        <Plot
-          data={[trace as Plotly.Data]}
-          layout={layout}
-          config={{ displayModeBar: false, responsive: true }}
-          style={{ width: "100%", height: "100%" }}
-          onClick={canDrill ? handleChartClick : undefined}
-        />
+      <div className={`flex-1 min-h-0 relative ${canDrill ? "cursor-pointer" : ""}`}>
+        {renderAntVChart()}
       </div>
     </div>
   );

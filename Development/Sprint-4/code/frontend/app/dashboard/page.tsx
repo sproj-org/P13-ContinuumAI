@@ -224,7 +224,7 @@ function DashboardContent() {
                       <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
                     </>
                   ) : (
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-yellow-500"></span>
                   )}
                 </div>
               </div>
@@ -233,9 +233,9 @@ function DashboardContent() {
                 <p className={`text-4xl font-bold bg-clip-text text-transparent ${
                   isDataSynced
                     ? "bg-gradient-to-r from-green-600 to-green-800"
-                    : "bg-gradient-to-r from-red-500 to-red-700"
+                    : "bg-gradient-to-r from-yellow-500 to-yellow-700"
                 }`}>
-                  {isDataSynced ? "Synced" : "..."}
+                  {isDataSynced ? "Synced" : "Syncing..."}
                 </p>
               </div>
             </div>

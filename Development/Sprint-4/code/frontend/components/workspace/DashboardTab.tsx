@@ -65,7 +65,7 @@ export default function DashboardTab() {
         backendId: bc.id,
         title: bc.title,
         dashboardName: bc.dashboard_name,
-        chartSpec: bc.chart_spec as SavedChart["chartSpec"],
+        chartSpec: bc.chart_spec as unknown as SavedChart["chartSpec"],
         rows: bc.rows,
         datasetId: bc.dataset_id,
         martId: bc.mart_id,
@@ -89,7 +89,7 @@ export default function DashboardTab() {
         dashboard_name: chart.dashboardName,
         mart_id: chart.martId,
         title: chart.title,
-        chart_spec: chart.chartSpec as Record<string, unknown>,
+        chart_spec: chart.chartSpec as unknown as Record<string, unknown>,
         rows: chart.rows as Record<string, unknown>[],
       });
     }
