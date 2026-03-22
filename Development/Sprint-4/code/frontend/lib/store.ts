@@ -143,12 +143,6 @@ const defaultChartConfig: ChartConfig = {
   aggregationFn: 'sum',
 };
 
-const noopStorage: StateStorage = {
-  getItem: () => null,
-  setItem: () => undefined,
-  removeItem: () => undefined,
-};
-
 // ── Per-user storage adapter ─────────────────────────────
 // Reads the logged-in user ID from localStorage and namespaces
 // the Zustand persistence key so each user gets isolated state.

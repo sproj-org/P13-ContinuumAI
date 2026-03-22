@@ -188,7 +188,6 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [chatHints, setChatHints] = useState<ChatHintsResponse | null>(null);
-  const [isHintsLoading, setIsHintsLoading] = useState(false);
   const [isMartOpen, setIsMartOpen] = useState(false);
   const [martQuery, setMartQuery] = useState("");
   const [showSavedPrompts, setShowSavedPrompts] = useState(false);
@@ -202,7 +201,7 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
     () => (selectedAggregation ? `${routeDatasetId}:${selectedAggregation}` : null),
     [routeDatasetId, selectedAggregation]
   );
-  const turns = chatKey ? chatTurnsByKey[chatKey] ?? [] : [];
+  const turns = useMemo(() => (chatKey ? chatTurnsByKey[chatKey] ?? [] : []), [chatKey, chatTurnsByKey]);
   const { data: savedCharts } = useSavedCharts(routeDatasetId);
   const { data: strategyKpiLibrary } = useStrategyKpis(routeDatasetId);
   const lastChartSpec = chatKey ? lastChartSpecByKey[chatKey] ?? null : null;
@@ -377,13 +376,11 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
     let isActive = true;
     if (!selectedAggregation) {
       setChatHints(null);
-      setIsHintsLoading(false);
       return () => {
         isActive = false;
       };
     }
 
-    setIsHintsLoading(true);
     apiClient
       .getChatHints(routeDatasetId, selectedAggregation)
       .then((hints) => {
@@ -394,11 +391,6 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
       .catch(() => {
         if (isActive) {
           setChatHints(null);
-        }
-      })
-      .finally(() => {
-        if (isActive) {
-          setIsHintsLoading(false);
         }
       });
 
