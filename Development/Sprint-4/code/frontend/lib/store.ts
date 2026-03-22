@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 import type { ChartSpecV1 } from './types/chartspec';
 import type { ChatResponse, QuerySpec, QuerySpecFilter } from './types/chat';
+import type { ChartBuilderSeed } from './chart-builder-seed';
 
 export type DatasetId = string;
 export type WorkspaceTab = 'marts' | 'chart-builder' | 'dashboard' | 'strategy';
@@ -86,6 +87,9 @@ interface AppState {
   chartConfig: ChartConfig;
   setChartConfig: (config: Partial<ChartConfig>) => void;
   resetChartConfig: () => void;
+  chartBuilderSeed: ChartBuilderSeed | null;
+  setChartBuilderSeed: (seed: ChartBuilderSeed | null) => void;
+  clearChartBuilderSeed: () => void;
 
   // Chat state (persisted by dataset+mart key)
   chatTurnsByKey: Record<string, ChatTurn[]>;
@@ -623,6 +627,9 @@ export const useAppStore = create<AppState>()(
           chartConfig: { ...state.chartConfig, ...config },
         })),
       resetChartConfig: () => set({ chartConfig: defaultChartConfig }),
+      chartBuilderSeed: null,
+      setChartBuilderSeed: (seed) => set({ chartBuilderSeed: seed }),
+      clearChartBuilderSeed: () => set({ chartBuilderSeed: null }),
 
       // Chat persistence
       chatTurnsByKey: {},
@@ -780,6 +787,7 @@ export const useAppStore = create<AppState>()(
         set({
           activeTab: 'marts',
           selectedAggregation: null,
+          chartBuilderSeed: null,
           savedCharts: [],
           chatTurnsByKey: {},
           lastChartSpecByKey: {},

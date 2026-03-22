@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { startTransition, useState, useMemo, useEffect } from "react";
 import { useAppStore, ChartConfig } from "@/lib/store";
 import { useTableProfile, useChartsPreview, useDashboards, useStrategyKpis } from "@/lib/hooks";
 import DrillDownChart from "@/components/workspace/DrillDownChart";
@@ -221,6 +221,8 @@ export default function ChartBuilderTab() {
     chartConfig,
     setChartConfig,
     resetChartConfig,
+    chartBuilderSeed,
+    clearChartBuilderSeed,
     saveChart,
   } = useAppStore();
 
@@ -424,6 +426,32 @@ export default function ChartBuilderTab() {
       }
     }
   }, [chartConfig.yAxis, chartConfig.aggregationFn, validAggregations, setChartConfig]);
+
+  useEffect(() => {
+    if (!chartBuilderSeed) {
+      return;
+    }
+
+    const seededFilters = chartBuilderSeed.filters.map((filter, index) => ({
+      id: `seed-${Date.now()}-${index}`,
+      field: filter.field,
+      op: filter.op,
+      value: filter.value,
+    }));
+
+    startTransition(() => {
+      setFilters(seededFilters);
+      setSortTarget(chartBuilderSeed.sortTarget);
+      setSortDirection(chartBuilderSeed.sortDirection);
+      setResultLimit(chartBuilderSeed.resultLimit);
+      setTimeWindow("none");
+      setTimeField("");
+      setCustomStartDate("");
+      setCustomEndDate("");
+      setValidationMessage(null);
+      clearChartBuilderSeed();
+    });
+  }, [chartBuilderSeed, clearChartBuilderSeed]);
 
   const chartSpec = useMemo<ChartSpecV1 | null>(() => {
     if (!selectedAggregation || !chartConfig.yAxis || !resolvedXAxis) {

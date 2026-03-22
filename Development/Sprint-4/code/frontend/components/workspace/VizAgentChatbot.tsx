@@ -35,6 +35,7 @@ import { renderChart } from "@/components/workspace/renderChart";
 import MarkdownMessage from "@/components/common/MarkdownMessage";
 import { useSavedCharts, useStrategyKpis } from "@/lib/hooks";
 import { resolveChartTitle } from "@/lib/chart-display";
+import { createChartBuilderSeed } from "@/lib/chart-builder-seed";
 import { getMartDrillAdvisory } from "@/lib/mart-drill-utils";
 
 interface VizAgentChatbotProps {
@@ -178,6 +179,7 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
     saveChart,
     setActiveTab,
     setChartConfig,
+    setChartBuilderSeed,
   } = useAppStore();
 
   const { showToast } = useToast();
@@ -649,6 +651,7 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
       aggregationFn: chartSpec.encoding.y[0]?.aggregation || 'sum',
       colorBy: null, // ChartSpecV1 doesn't have colorBy, but we'll let user add it
     });
+    setChartBuilderSeed(createChartBuilderSeed(chartSpec));
 
     if (chartPreviewAdvisory) {
       showToast(chartPreviewAdvisory, "warning", 5000);

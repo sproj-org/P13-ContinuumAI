@@ -18,6 +18,7 @@ import {
   useStrategyKpis,
 } from "@/lib/hooks";
 import { resolveChartTitle } from "@/lib/chart-display";
+import { createChartBuilderSeed } from "@/lib/chart-builder-seed";
 
 export default function DashboardTab() {
   const {
@@ -27,6 +28,7 @@ export default function DashboardTab() {
     setActiveTab,
     setSelectedAggregation,
     setChartConfig,
+    setChartBuilderSeed,
     hydrateSavedCharts,
     selectedDatasetId,
   } = useAppStore();
@@ -257,6 +259,7 @@ export default function DashboardTab() {
     };
     
     setChartConfig(chartConfig);
+    setChartBuilderSeed(createChartBuilderSeed(chart.chartSpec));
     
     // Switch to chart builder tab
     setActiveTab('chart-builder');
