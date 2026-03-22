@@ -282,11 +282,11 @@ function buildKpiDimensionBoosts(params: {
 
 export function suggestProductDrillMarts(availableMarts: AvailableMart[]): string[] {
   return availableMarts
-    .map((mart) => mart.id)
-    .filter((id) => {
-      const lower = id.toLowerCase();
+    .filter((mart) => {
+      const lower = mart.id.toLowerCase();
       return lower.includes("sku") || lower.includes("product") || lower.includes("inventory");
     })
+    .map((mart) => mart.label?.trim() || mart.id)
     .slice(0, 3);
 }
 

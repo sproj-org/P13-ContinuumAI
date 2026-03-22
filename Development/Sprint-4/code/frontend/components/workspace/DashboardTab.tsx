@@ -17,7 +17,7 @@ import {
   useDeleteDashboard,
   useStrategyKpis,
 } from "@/lib/hooks";
-import { resolveChartTitle } from "@/lib/chart-display";
+import { humanizeChartType, humanizeMartLabel, resolveChartTitle } from "@/lib/chart-display";
 import { createChartBuilderSeed } from "@/lib/chart-builder-seed";
 
 export default function DashboardTab() {
@@ -441,7 +441,7 @@ export default function DashboardTab() {
               <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                 <p className="text-xs uppercase tracking-wide text-slate-500">Composition</p>
                 <p className="mt-1 text-lg font-semibold text-slate-900">
-                  {chartTypeMix.length > 0 ? chartTypeMix.map(([type, count]) => `${type} ${count}`).join(" | ") : "No charts yet"}
+                  {chartTypeMix.length > 0 ? chartTypeMix.map(([type, count]) => `${humanizeChartType(type)} ${count}`).join(" | ") : "No charts yet"}
                 </p>
                 <p className="text-xs text-slate-600">{activeMartCount} mart(s) represented</p>
               </div>
@@ -538,7 +538,7 @@ export default function DashboardTab() {
                       <div className="flex items-center gap-3 text-xs text-slate-600">
                         <div className="flex items-center gap-1">
                           <Database className="w-3 h-3" />
-                          <span className="truncate">{chart.martId}</span>
+                          <span className="truncate">{humanizeMartLabel(chart.martId)}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
@@ -577,7 +577,7 @@ export default function DashboardTab() {
                         {chart.rows.length} data {chart.rows.length === 1 ? "point" : "points"}
                       </span>
                       <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded-full font-medium">
-                        {chart.chartSpec.chart.type}
+                        {humanizeChartType(chart.chartSpec.chart.type)}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -700,16 +700,16 @@ export default function DashboardTab() {
                   <div>
                     <h3 className="text-xl font-bold text-slate-900">{previewChartTitle}</h3>
                     <div className="flex items-center gap-3 text-xs text-slate-600 mt-1">
-                      <div className="flex items-center gap-1">
-                        <Database className="w-3 h-3" />
-                        <span>{previewChart.martId}</span>
-                      </div>
+                        <div className="flex items-center gap-1">
+                          <Database className="w-3 h-3" />
+                          <span>{humanizeMartLabel(previewChart.martId)}</span>
+                        </div>
                       <div className="flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
                         <span>{formatDate(previewChart.createdAt)}</span>
                       </div>
                       <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full font-medium">
-                        {previewChart.chartSpec.chart.type}
+                        {humanizeChartType(previewChart.chartSpec.chart.type)}
                       </span>
                     </div>
                   </div>

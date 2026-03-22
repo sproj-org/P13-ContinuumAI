@@ -297,6 +297,17 @@ export function chartDimensionLabel(fieldName: string): string {
   return humanizeFieldLabel(fieldName, { dropIdSuffix: true });
 }
 
+export function humanizeMartLabel(martId: string): string {
+  return humanizeFieldLabel(martId.replace(/^(gold|mart)[_-]?/i, ""));
+}
+
+export function humanizeChartType(chartType: ChartType | string): string {
+  if (chartType === "kpi") {
+    return "KPI";
+  }
+  return humanizeFieldLabel(chartType);
+}
+
 export function formatChartCategoryLabel(value: unknown, fieldName?: string | null): string {
   if (value == null || value === "") {
     return "No value";
