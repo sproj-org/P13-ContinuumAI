@@ -32,6 +32,8 @@ from app.services.agents.chat_models import (
     ChatState,
     ClarifyOptions,
     MissingField,
+    QuerySpec,
+    QuerySpecFilter,
     create_clarify_id,
 )
 from app.services.agents.mart_context import build_compact_mart_context
@@ -394,6 +396,278 @@ def _sanitize_selections(context: dict[str, Any], selections: ChatSelections) ->
     )
 
 
+_RESPONSE_TYPE_ALIASES = {
+    "answer": "explain",
+    "analysis": "explain",
+    "ask": "clarify",
+    "chart": "chart",
+    "chart_patch": "chart_patch",
+    "clarify": "clarify",
+    "edit_chart": "chart_patch",
+    "explain": "explain",
+    "patch": "chart_patch",
+    "plot": "chart",
+    "question": "clarify",
+    "refuse": "refuse",
+    "reject": "refuse",
+    "text": "explain",
+    "update_chart": "chart_patch",
+    "visualization": "chart",
+}
+
+_CHART_TYPE_ALIASES = {
+    "area": "line",
+    "column": "bar",
+    "distribution": "histogram",
+    "donut": "pie",
+    "time_series": "line",
+    "timeseries": "line",
+}
+
+_FILTER_OP_ALIASES = {
+    "eq": "=",
+    "equals": "=",
+    "greater_than": ">",
+    "greater_than_or_equal": ">=",
+    "gt": ">",
+    "gte": ">=",
+    "in": "in",
+    "less_than": "<",
+    "less_than_or_equal": "<=",
+    "lt": "<",
+    "lte": "<=",
+    "ne": "!=",
+    "neq": "!=",
+    "not_equals": "!=",
+}
+
+_ALLOWED_RESPONSE_TYPES = set(_RESPONSE_TYPE_ALIASES.values())
+_ALLOWED_CHART_TYPES = {"bar", "line", "pie", "histogram", "kpi"}
+_ALLOWED_FILTER_OPS = {"=", "!=", "in", "between", ">", ">=", "<", "<="}
+
+
+def _first_non_empty_string(*values: Any) -> str | None:
+    for value in values:
+        if isinstance(value, str):
+            trimmed = value.strip()
+            if trimmed:
+                return trimmed
+    return None
+
+
+def _coerce_response_type(payload: dict[str, Any]) -> str | None:
+    raw = _first_non_empty_string(
+        payload.get("response_type"),
+        payload.get("type"),
+        payload.get("kind"),
+        payload.get("action"),
+        payload.get("mode"),
+    )
+    if raw:
+        normalized = _RESPONSE_TYPE_ALIASES.get(_normalize_text(raw).replace(" ", "_"))
+        if normalized in _ALLOWED_RESPONSE_TYPES:
+            return normalized
+
+    if any(key in payload for key in ("chart_spec", "chartSpec", "encoding", "x", "y")):
+        return "chart"
+    if any(key in payload for key in ("patch", "chart_patch", "changes", "set", "unset", "add")):
+        return "chart_patch"
+    if any(key in payload for key in ("question", "missing", "options", "stage", "needs")):
+        return "clarify"
+    if payload.get("refusal") or payload.get("safe_alternative"):
+        return "refuse"
+    if _first_non_empty_string(payload.get("message"), payload.get("answer"), payload.get("text"), payload.get("narrative")):
+        return "explain"
+    return None
+
+
+def _normalize_chart_type(value: Any, *, default: str = "bar") -> str:
+    if not isinstance(value, str):
+        return default
+    normalized = _normalize_text(value).replace(" ", "_")
+    normalized = _CHART_TYPE_ALIASES.get(normalized, normalized)
+    if normalized in _ALLOWED_CHART_TYPES:
+        return normalized
+    return default
+
+
+def _normalize_filter_operator(value: Any) -> str:
+    if not isinstance(value, str):
+        return "="
+    normalized = _normalize_text(value).replace(" ", "_")
+    mapped = _FILTER_OP_ALIASES.get(normalized, value.strip())
+    if mapped in _ALLOWED_FILTER_OPS:
+        return mapped
+    return "="
+
+
+def _normalize_sort_direction(value: Any) -> str:
+    if not isinstance(value, str):
+        return "desc"
+    normalized = _normalize_text(value)
+    if normalized in {"ascending", "asc"}:
+        return "asc"
+    if normalized in {"descending", "desc"}:
+        return "desc"
+    return "desc"
+
+
+def _normalize_chart_spec_payload(
+    raw_spec: Any,
+    *,
+    dataset_id: str,
+    table: str,
+) -> dict[str, Any]:
+    candidate = raw_spec if isinstance(raw_spec, dict) else {}
+    normalized = dict(candidate)
+
+    chart_block = normalized.get("chart")
+    chart_type = _first_non_empty_string(
+        chart_block.get("type") if isinstance(chart_block, dict) else None,
+        chart_block if isinstance(chart_block, str) else None,
+        normalized.get("chart_type"),
+        normalized.get("chartType"),
+        normalized.get("type") if normalized.get("type") != "chart" else None,
+    )
+    normalized["chart"] = {"type": _normalize_chart_type(chart_type)}
+
+    encoding = normalized.get("encoding")
+    encoding = dict(encoding) if isinstance(encoding, dict) else {}
+
+    x_candidate = encoding.get("x", normalized.get("x"))
+    if x_candidate is None:
+        x_candidate = normalized.get("x_axis") or normalized.get("xAxis") or normalized.get("group_by")
+    if isinstance(x_candidate, str):
+        x_payload: dict[str, Any] = {"field": x_candidate}
+    elif isinstance(x_candidate, dict):
+        x_payload = {
+            "field": _first_non_empty_string(x_candidate.get("field"), x_candidate.get("name"), x_candidate.get("column"))
+        }
+    else:
+        x_payload = {}
+
+    y_candidate = encoding.get("y", normalized.get("y"))
+    if y_candidate is None:
+        y_candidate = normalized.get("measure") or normalized.get("metric") or normalized.get("y_axis") or normalized.get("yAxis")
+
+    def _normalize_y_item(item: Any) -> dict[str, Any]:
+        if isinstance(item, str):
+            return {
+                "field": item,
+                "aggregation": _first_non_empty_string(normalized.get("aggregation"), normalized.get("agg"), "sum"),
+            }
+        if isinstance(item, dict):
+            return {
+                "field": _first_non_empty_string(item.get("field"), item.get("column"), item.get("name")),
+                "aggregation": _first_non_empty_string(item.get("aggregation"), item.get("agg"), normalized.get("aggregation"), "sum"),
+                "alias": _first_non_empty_string(item.get("alias"), item.get("label")),
+            }
+        return {}
+
+    if isinstance(y_candidate, list):
+        y_payload = [_normalize_y_item(item) for item in y_candidate[:1]]
+    else:
+        y_payload = [_normalize_y_item(y_candidate)]
+
+    filters_raw = normalized.get("filters", [])
+    if isinstance(filters_raw, dict):
+        filters_raw = [filters_raw]
+    filters: list[dict[str, Any]] = []
+    if isinstance(filters_raw, list):
+        for item in filters_raw:
+            if not isinstance(item, dict):
+                continue
+            field = _first_non_empty_string(item.get("field"), item.get("column"), item.get("name"))
+            if not field:
+                continue
+            filters.append(
+                {
+                    "field": field,
+                    "op": _normalize_filter_operator(item.get("op")),
+                    "value": item.get("value"),
+                }
+            )
+
+    sort_raw = normalized.get("sort", [])
+    if isinstance(sort_raw, dict):
+        sort_raw = [sort_raw]
+    elif isinstance(sort_raw, str):
+        sort_raw = [{"field": sort_raw, "direction": "desc"}]
+    sort: list[dict[str, Any]] = []
+    if isinstance(sort_raw, list):
+        for item in sort_raw:
+            if not isinstance(item, dict):
+                continue
+            field = _first_non_empty_string(item.get("field"), item.get("column"), item.get("name"))
+            if not field:
+                continue
+            sort.append({"field": field, "direction": _normalize_sort_direction(item.get("direction"))})
+
+    limit_value = normalized.get("limit")
+    if isinstance(limit_value, str):
+        try:
+            limit_value = int(limit_value)
+        except ValueError:
+            limit_value = 20
+    if not isinstance(limit_value, int):
+        limit_value = 20
+
+    return {
+        "version": "v1",
+        "dataset_id": dataset_id,
+        "table": table,
+        "chart": normalized["chart"],
+        "encoding": {"x": x_payload, "y": y_payload},
+        "filters": filters,
+        "sort": sort,
+        "limit": limit_value,
+    }
+
+
+def _normalize_chart_patch_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    normalized = dict(payload)
+    patch_payload = normalized.get("patch")
+    if not isinstance(patch_payload, dict):
+        patch_payload = normalized.get("chart_patch")
+    if not isinstance(patch_payload, dict):
+        patch_payload = normalized.get("changes")
+    if not isinstance(patch_payload, dict) and any(key in normalized for key in ("set", "unset", "add")):
+        patch_payload = normalized
+    if not isinstance(patch_payload, dict):
+        patch_payload = {}
+
+    if not any(key in patch_payload for key in ("set", "unset", "add")):
+        patch_payload = {"set": patch_payload, "unset": [], "add": {}}
+
+    unset_raw = patch_payload.get("unset")
+    if isinstance(unset_raw, str):
+        unset = [unset_raw]
+    elif isinstance(unset_raw, list):
+        unset = [item for item in unset_raw if isinstance(item, str)]
+    else:
+        unset = []
+
+    normalized["patch"] = {
+        "set": patch_payload.get("set") if isinstance(patch_payload.get("set"), dict) else {},
+        "unset": unset,
+        "add": patch_payload.get("add") if isinstance(patch_payload.get("add"), dict) else {},
+    }
+    return normalized
+
+
+def _normalize_missing_fields(value: Any, *, fallback: MissingField = "metric") -> list[MissingField]:
+    raw_items = value if isinstance(value, list) else [value]
+    output: list[MissingField] = []
+    legacy_map = {"dimension": "x_axis", "temporal": "x_axis"}
+    for item in raw_items:
+        if not isinstance(item, str):
+            continue
+        normalized = legacy_map.get(item.strip().lower(), item.strip().lower())
+        if normalized in {"metric", "x_axis", "time_grain", "table"} and normalized not in output:
+            output.append(normalized)  # type: ignore[arg-type]
+    return output or [fallback]
+
+
 def _normalize_clarify_plan_payload(payload: dict[str, Any], context: dict[str, Any], *, message: str) -> dict[str, Any]:
     response_type = payload.get("response_type")
     if response_type != "clarify":
@@ -404,26 +678,112 @@ def _normalize_clarify_plan_payload(payload: dict[str, Any], context: dict[str, 
     if not isinstance(clarify_id, str) or not clarify_id.strip():
         normalized["clarify_id"] = create_clarify_id()
 
-    missing = normalized.get("missing")
-    if not isinstance(missing, list):
-        normalized["missing"] = ["metric"]
+    fallback_stage = "metric"
+    stage_hint = _first_non_empty_string(normalized.get("stage"), normalized.get("missing_field"), normalized.get("needs"))
+    if stage_hint:
+        fallback_stage = _normalize_missing_fields(stage_hint)[0]
+    normalized["missing"] = _normalize_missing_fields(normalized.get("missing"), fallback=fallback_stage)
+    stage = normalized["missing"][0]
 
     options = normalized.get("options")
+    question = _first_non_empty_string(normalized.get("question"), normalized.get("message"))
+    normalized["question"] = question or _question_for_stage(stage)
     if not isinstance(options, dict):
-        stage = "metric"
-        if isinstance(normalized.get("missing"), list) and normalized["missing"]:
-            first = str(normalized["missing"][0]).strip().lower()
-            if first in {"dimension", "temporal"}:
-                first = "x_axis"
-            if first in {"metric", "x_axis", "time_grain", "table"}:
-                stage = first
-        normalized["options"] = _build_stage_options(
-            stage,  # type: ignore[arg-type]
-            context,
-            prefer_temporal=_has_time_intent(message),
-            requested_grain=_requested_time_grain(message),
-        ).model_dump(mode="json")
+        options = {
+            "metrics": normalized.get("metrics"),
+            "dimensions": normalized.get("dimensions"),
+            "temporals": normalized.get("temporals"),
+            "time_grains": normalized.get("time_grains"),
+        }
+    if not isinstance(options, dict):
+        options = {}
+    try:
+        parsed_options = ClarifyOptions.model_validate(options)
+    except ValidationError:
+        parsed_options = ClarifyOptions()
+    normalized["options"] = _sanitize_options(
+        parsed_options,
+        context,
+        stage=stage,
+        prefer_temporal=_has_time_intent(message),
+        requested_grain=_requested_time_grain(message),
+    ).model_dump(mode="json")
     return normalized
+
+
+def _normalize_plan_payload(
+    payload: dict[str, Any],
+    context: dict[str, Any],
+    *,
+    dataset_id: str,
+    table: str,
+    message: str,
+) -> dict[str, Any]:
+    normalized = dict(payload)
+    response_type = _coerce_response_type(normalized)
+    if response_type:
+        normalized["response_type"] = response_type
+
+    if response_type == "chart":
+        raw_spec = normalized.get("chart_spec")
+        if not isinstance(raw_spec, dict):
+            raw_spec = normalized.get("chartSpec")
+        if not isinstance(raw_spec, dict):
+            raw_spec = normalized
+        normalized["chart_spec"] = _normalize_chart_spec_payload(raw_spec, dataset_id=dataset_id, table=table)
+        style = _first_non_empty_string(normalized.get("narrative_style"), normalized.get("style"))
+        if style in {"brief", "standard"}:
+            normalized["narrative_style"] = style
+        return normalized
+
+    if response_type == "chart_patch":
+        return _normalize_chart_patch_payload(normalized)
+
+    if response_type == "explain":
+        normalized["message"] = _first_non_empty_string(
+            normalized.get("message"),
+            normalized.get("answer"),
+            normalized.get("text"),
+            normalized.get("narrative"),
+            normalized.get("explanation"),
+        )
+        optional_chart_spec = normalized.get("optional_chart_spec")
+        if not isinstance(optional_chart_spec, dict):
+            optional_chart_spec = normalized.get("optionalChartSpec")
+        if not isinstance(optional_chart_spec, dict):
+            optional_chart_spec = normalized.get("chart_spec")
+        if isinstance(optional_chart_spec, dict):
+            normalized["optional_chart_spec"] = _normalize_chart_spec_payload(
+                optional_chart_spec,
+                dataset_id=dataset_id,
+                table=table,
+            )
+        return normalized
+
+    if response_type == "refuse":
+        normalized["message"] = _first_non_empty_string(
+            normalized.get("message"),
+            normalized.get("answer"),
+            normalized.get("text"),
+            normalized.get("reason"),
+        )
+        return normalized
+
+    if response_type == "clarify":
+        return _normalize_clarify_plan_payload(normalized, context, message=message)
+
+    return normalized
+
+
+def _summarize_plan_validation_error(exc: ValidationError) -> str:
+    fragments: list[str] = []
+    for error in exc.errors()[:3]:
+        loc = ".".join(str(item) for item in error.get("loc", ()))
+        message = str(error.get("msg") or "invalid value")
+        fragments.append(f"{loc}: {message}" if loc else message)
+    if not fragments:
+        return "OpenAI response schema mismatch"
+    return "Schema mismatch: " + "; ".join(fragments)
 
 
 def _state_driven_plan(
@@ -476,7 +836,7 @@ def _state_driven_plan(
             options=_build_stage_options("metric", context),
         )
 
-    chart_type = "line" if x_field in set(temporals) else "bar"
+    chart_type = _recommended_chart_type(intent_message, x_field=x_field, temporals=temporals)
     return ChatPlanChart(
         response_type="chart",
         chart_spec=ChartSpecV1(
@@ -512,6 +872,15 @@ def _aggregation_from_message(message: str) -> str:
     if _contains_any(text, ["maximum", "highest", "max"]):
         return "max"
     return "sum"
+
+
+def _recommended_chart_type(message: str, *, x_field: str, temporals: list[str]) -> str:
+    normalized = _normalize_text(message)
+    if x_field in set(temporals):
+        return "line"
+    if _contains_any(normalized, ["share", "composition", "mix", "split", "contribution", "portion"]):
+        return "pie"
+    return "bar"
 
 
 def _suggest_alternative_questions(context: dict[str, Any]) -> list[str]:
@@ -600,7 +969,7 @@ def _fallback_plan_from_context(
             chart_spec=ChartSpecV1(
                 version="v1",
                 table=table,
-                chart={"type": "line" if x_field in set(temporals) else "bar"},
+                chart={"type": _recommended_chart_type(message, x_field=x_field, temporals=temporals)},
                 encoding={
                     "x": {"field": x_field},
                     "y": [{"field": metric, "aggregation": _aggregation_from_message(message), "alias": "metric_value"}],
@@ -649,6 +1018,40 @@ def _coerce_chart_spec(dataset_id: str, table: str, candidate: ChartSpecV1) -> C
     )
 
 
+def _query_spec_from_chart_spec(
+    *,
+    dataset_id: str,
+    chart_spec: ChartSpecV1,
+    context: dict[str, Any],
+    intent_message: str,
+) -> QuerySpec:
+    _, _, temporals = _extract_fields(context)
+    x_field = chart_spec.encoding.x.field
+    y_metric = chart_spec.encoding.y[0]
+    time_field = x_field if x_field in set(temporals) else None
+    dimensions: list[str] = []
+    if chart_spec.chart.type != "histogram" and x_field not in dimensions:
+        dimensions.append(x_field)
+    elif chart_spec.chart.type == "histogram" and time_field is not None:
+        dimensions.append(x_field)
+
+    return QuerySpec(
+        dataset_id=dataset_id,
+        table=chart_spec.table,
+        chart_type=chart_spec.chart.type,
+        measures=[y_metric.field],
+        dimensions=dimensions,
+        time_field=time_field,
+        aggregation=y_metric.aggregation,
+        time_grain=_requested_time_grain(intent_message) if time_field else None,
+        filters=[
+            QuerySpecFilter(field=item.field, op=item.op, value=item.value)
+            for item in (chart_spec.filters or [])
+        ],
+        limit=chart_spec.limit,
+    )
+
+
 def _chart_narrative(
     chart_spec: ChartSpecV1,
     preview_payload: dict[str, Any],
@@ -662,7 +1065,28 @@ def _chart_narrative(
     metric_info = preview_payload.get("meta", {}).get("metric", {})
     x_field = chart_spec.encoding.x.field
     metric_output = str(metric_info.get("output_column", "agg_value"))
-    metric_label = f"{metric_info.get('aggregation', 'value')}({metric_info.get('field', metric_output)})"
+    metric_name = str(metric_info.get("field", metric_output))
+    metric_aggregation = str(metric_info.get("aggregation", "value"))
+
+    if chart_spec.chart.type == "histogram":
+        values = [
+            float(row[metric_output])
+            for row in rows
+            if isinstance(row, dict) and row.get(metric_output) is not None
+        ]
+        if not values:
+            return f"No numeric values were available to plot the distribution of {metric_name}."
+        sample_size = len(values)
+        lower = min(values)
+        upper = max(values)
+        if style == "brief":
+            return f"Distribution of {metric_name} across {sample_size} filtered records. Range {lower:,.2f} to {upper:,.2f}."
+        return (
+            f"Built a histogram for {metric_name} using {sample_size} filtered records. "
+            f"Observed range: {lower:,.2f} to {upper:,.2f}."
+        )
+
+    metric_label = f"{metric_aggregation}({metric_name})"
 
     top_row = rows[0]
     top_x = top_row.get(x_field)
@@ -730,6 +1154,12 @@ def _execute_chart(
         rows=list(preview_payload.get("rows", [])),
         narrative=_chart_narrative(normalized, preview_payload, style=style),
         meta=dict(preview_payload.get("meta", {})),
+        query_spec=_query_spec_from_chart_spec(
+            dataset_id=dataset_id,
+            chart_spec=normalized,
+            context=context,
+            intent_message=intent_message,
+        ),
     )
 
 
@@ -918,7 +1348,8 @@ def _build_user_prompt(
         "required": ["version", "table", "chart", "encoding"],
         "chart_type": ["bar", "line", "pie", "histogram", "kpi"],
         "x_rule": "encoding.x.field must be dimension|temporal",
-        "y_rule": "encoding.y[0].field must be measure, aggregation in sum|avg|count|min|max",
+        "y_rule": "sum|avg|min|max require measure; count can use any valid field",
+        "histogram_rule": "histogram bins raw values from encoding.y[0].field after filters",
         "filters": "=, !=, in, between, >, >=, <, <=",
     }
 
@@ -1030,13 +1461,20 @@ def _generate_plan(
                 None,
             )
 
-        normalized_payload = _normalize_clarify_plan_payload(payload, context, message=message)
+        normalized_payload = _normalize_plan_payload(
+            payload,
+            context,
+            dataset_id=dataset_id,
+            table=table,
+            message=message,
+        )
         try:
             return _PLAN_ADAPTER.validate_python(normalized_payload), None, None, None
-        except ValidationError:
+        except ValidationError as exc:
+            validation_hint = _summarize_plan_validation_error(exc)
             if attempt == 0:
                 corrective_prompt = (
-                    "Your previous response did not match schema. "
+                    f"Your previous response did not match schema ({validation_hint}). "
                     "Return one JSON object with response_type in [chart,chart_patch,explain,clarify,refuse]."
                 )
                 continue
@@ -1046,7 +1484,7 @@ def _generate_plan(
                 {
                     "openai_error_type": "unknown",
                     "openai_status_code": None,
-                    "openai_error_hint": "OpenAI response schema mismatch",
+                    "openai_error_hint": validation_hint,
                 },
                 "ValidationError",
             )

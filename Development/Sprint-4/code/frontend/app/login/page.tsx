@@ -84,7 +84,7 @@ export default function LoginPage() {
                 Login
               </h2>
               <p className="mt-2 text-center text-sm text-slate-600">
-                Don't have an account?{" "}
+                Need access?{" "}
                 <Link
                   href="/get-access"
                   className="cursor-target font-medium text-[#4f46e5] hover:text-indigo-700 transition-colors"

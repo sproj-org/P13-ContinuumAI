@@ -19,6 +19,7 @@ import type {
   AggregationsResponse,
   ChartDataResponse,
   AggregationFn,
+  StrategyKpiLibraryResponse,
 } from './api-types';
 import type { ChartSpecV1, ChartsPreviewResponse } from "./types/chartspec";
 
@@ -110,6 +111,15 @@ export function useChartsPreview(datasetId: string, chartSpec: ChartSpecV1 | nul
     queryFn: () => apiClient.postChartsPreview(datasetId, chartSpec!, { debug }),
     enabled: !!datasetId && !!chartSpec,
     staleTime: 1 * 60 * 1000,
+  });
+}
+
+export function useStrategyKpis(datasetId: string | null) {
+  return useQuery<StrategyKpiLibraryResponse, Error>({
+    queryKey: ["strategyKpis", datasetId],
+    queryFn: () => apiClient.getStrategyKpis(datasetId!),
+    enabled: !!datasetId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

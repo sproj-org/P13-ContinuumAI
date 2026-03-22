@@ -1,8 +1,49 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+
+const ADMIN_AUTH_EVENT = "continuum-admin-auth-change";
+
+type AdminUser = { username: string };
+
+function subscribeToAdminAuth(callback: () => void) {
+  if (typeof window === "undefined") {
+    return () => undefined;
+  }
+
+  const handleChange = () => callback();
+  window.addEventListener("storage", handleChange);
+  window.addEventListener(ADMIN_AUTH_EVENT, handleChange);
+  return () => {
+    window.removeEventListener("storage", handleChange);
+    window.removeEventListener(ADMIN_AUTH_EVENT, handleChange);
+  };
+}
+
+function getAdminAuthSnapshot(): {
+  isAuthenticated: boolean;
+  adminUser: AdminUser | null;
+  isReady: boolean;
+} {
+  if (typeof window === "undefined") {
+    return {
+      isAuthenticated: false,
+      adminUser: null,
+      isReady: false,
+    };
+  }
+
+  const token = localStorage.getItem("admin_token");
+  const rawUser = localStorage.getItem("admin_user");
+  const adminUser = rawUser ? (JSON.parse(rawUser) as AdminUser) : null;
+  return {
+    isAuthenticated: Boolean(token && adminUser),
+    adminUser,
+    isReady: true,
+  };
+}
 
 // Admin layout with sidebar navigation
 export default function AdminLayout({
@@ -12,32 +53,31 @@ export default function AdminLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [adminUser, setAdminUser] = useState<{ username: string } | null>(null);
+  const { isAuthenticated, adminUser, isReady } = useSyncExternalStore(
+    subscribeToAdminAuth,
+    getAdminAuthSnapshot,
+    () => ({
+      isAuthenticated: false,
+      adminUser: null,
+      isReady: false,
+    }),
+  );
 
   useEffect(() => {
-    // Check if admin is authenticated
-    const token = localStorage.getItem("admin_token");
-    const user = localStorage.getItem("admin_user");
-    
-    if (token && user) {
-      setAdminUser(JSON.parse(user));
-      setIsAuthenticated(true);
-    } else if (pathname !== "/admin/login") {
+    if (isReady && !isAuthenticated && pathname !== "/admin/login") {
       router.push("/admin/login");
     }
-    setIsLoading(false);
-  }, [pathname, router]);
+  }, [isAuthenticated, isReady, pathname, router]);
 
   const handleLogout = () => {
     localStorage.removeItem("admin_token");
     localStorage.removeItem("admin_user");
+    window.dispatchEvent(new Event(ADMIN_AUTH_EVENT));
     router.push("/admin/login");
   };
 
   // Show loading state
-  if (isLoading) {
+  if (!isReady) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-slate-100">
         <div className="text-lg text-slate-600">Loading...</div>

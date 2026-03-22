@@ -25,8 +25,10 @@ import type {
   ChatRequest,
   ChatResponse,
   ChatClarifyResponse,
+  ChatChartResponse,
   ChatHintsResponse,
   ChatHistoryTurn,
+  QuerySpec,
   ChatStatePayload,
 } from "@/lib/types/chat";
 import { renderChart } from "@/components/workspace/renderChart";
@@ -64,6 +66,31 @@ function normalizeStage(s: string | undefined): "metric" | "x_axis" | "time_grai
   if (lower.includes("dimension") || lower.includes("temporal") || lower.includes("x_axis")) return "x_axis";
   if (lower.includes("time_grain") || lower.includes("grain")) return "time_grain";
   return null;
+}
+
+function querySpecLabel(spec: QuerySpec | null | undefined): string[] {
+  if (!spec) {
+    return [];
+  }
+
+  const labels: string[] = [];
+  if (spec.chart_type) {
+    labels.push(`Chart: ${spec.chart_type}`);
+  }
+  if (spec.aggregation && spec.measures[0]) {
+    labels.push(`Metric: ${spec.aggregation}(${spec.measures[0]})`);
+  } else if (spec.measures[0]) {
+    labels.push(`Metric: ${spec.measures[0]}`);
+  }
+  if (spec.time_field) {
+    labels.push(`Time: ${spec.time_field}${spec.time_grain ? ` (${spec.time_grain})` : ""}`);
+  } else if (spec.dimensions[0]) {
+    labels.push(`Group by: ${spec.dimensions[0]}`);
+  }
+  if (spec.filters.length > 0) {
+    labels.push(`Filters: ${spec.filters.length}`);
+  }
+  return labels;
 }
 
 // Helper: build request state
@@ -121,6 +148,12 @@ const EMPTY_SELECTIONS = {
   limit: null,
 } as const;
 
+type ChartPreviewState = {
+  chartSpec: ChatChartResponse["chart_spec"];
+  rows: ChatChartResponse["rows"];
+  title: string;
+};
+
 export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
   const params = useParams<{ datasetId: string }>();
   const {
@@ -156,11 +189,7 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
   const [isMartOpen, setIsMartOpen] = useState(false);
   const [martQuery, setMartQuery] = useState("");
   const [showSavedPrompts, setShowSavedPrompts] = useState(false);
-  const [currentChartPreview, setCurrentChartPreview] = useState<{
-    chartSpec: any;
-    rows: any[];
-    title: string;
-  } | null>(null);
+  const [currentChartPreview, setCurrentChartPreview] = useState<ChartPreviewState | null>(null);
   const [selectedDashboardOption, setSelectedDashboardOption] = useState<string>("Default");
   const [newDashboardName, setNewDashboardName] = useState<string>("");
   const martPickerRef = useRef<HTMLDivElement | null>(null);
@@ -214,6 +243,11 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
     }
     return null;
   }, [turns]);
+  const latestQuerySpec = useMemo(
+    () => latestAssistantResponse?.query_spec ?? null,
+    [latestAssistantResponse],
+  );
+  const contextTags = useMemo(() => querySpecLabel(latestQuerySpec), [latestQuerySpec]);
   const debugFlagsPresent = useMemo(() => {
     if (!latestAssistantResponse) {
       return false;
@@ -245,10 +279,14 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
         typeof latestAssistantResponse.openai_error_hint === "string" && latestAssistantResponse.openai_error_hint.trim()
           ? latestAssistantResponse.openai_error_hint.trim()
           : "OpenAI call failed";
+      const isSchemaMismatch = hint.toLowerCase().startsWith("schema mismatch:");
       const statusCode =
         typeof latestAssistantResponse.openai_status_code === "number"
           ? latestAssistantResponse.openai_status_code
           : null;
+      if (isSchemaMismatch) {
+        return `⚠️ VizAgent fallback: OpenAI response did not match the expected schema${statusCode !== null ? ` (${statusCode})` : ""}`;
+      }
       return `⚠️ VizAgent fallback: OpenAI call failed. ${hint}${statusCode !== null ? ` (${statusCode})` : ""}`;
     }
 
@@ -266,7 +304,11 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
       typeof latestAssistantResponse.openai_status_code === "number"
         ? String(latestAssistantResponse.openai_status_code)
         : "n/a";
-    return `Type: ${type} • Status: ${status}`;
+    const hint =
+      typeof latestAssistantResponse.openai_error_hint === "string" && latestAssistantResponse.openai_error_hint.trim()
+        ? latestAssistantResponse.openai_error_hint.trim()
+        : null;
+    return `${hint ? `${hint} • ` : ""}Type: ${type} • Status: ${status}`;
   }, [latestAssistantResponse]);
   const showMissingDebugFlags = useMemo(() => {
     return Boolean(latestAssistantResponse && !debugFlagsPresent);
@@ -286,6 +328,12 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
       availableMarts,
     });
   }, [currentChartPreview, selectedAggregation, availableMarts]);
+  const martSummary = useMemo(() => {
+    if (!selectedMart) {
+      return null;
+    }
+    return selectedMart.description?.trim() || `Working in mart ${selectedMart.id}.`;
+  }, [selectedMart]);
 
   useEffect(() => {
     setError(null);
@@ -822,6 +870,28 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
             </button>
           ))}
         </div>
+
+        {selectedAggregation ? (
+          <div className="rounded-lg border border-indigo-200 bg-indigo-50/60 p-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-indigo-700">Active context</p>
+            <p className="mt-1 text-[11px] text-slate-700">
+              Dataset <span className="font-medium">{routeDatasetId}</span> using mart{" "}
+              <span className="font-medium">{selectedMart?.label ?? selectedAggregation}</span>
+            </p>
+            {martSummary ? <p className="mt-1 text-[10px] text-slate-600">{martSummary}</p> : null}
+            {contextTags.length > 0 ? (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {contextTags.map((tag) => (
+                  <span key={tag} className="rounded-full border border-indigo-200 bg-white px-2 py-0.5 text-[10px] text-indigo-700">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-2 text-[10px] text-slate-500">No structured query yet. Ask a chart question to build one.</p>
+            )}
+          </div>
+        ) : null}
       </div>
 
       {/* Messages */}
@@ -873,6 +943,15 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
                 {isAssistant && response?.response_type === "chart" ? (
                   <div className="mt-2 px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-lg">
                     <p className="text-xs text-indigo-700 font-medium">✨ Preview is being shown on the left panel</p>
+                  </div>
+                ) : null}
+                {isAssistant && response?.query_spec && querySpecLabel(response.query_spec).length > 0 ? (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {querySpecLabel(response.query_spec).map((tag) => (
+                      <span key={`${turn.createdAt}-${tag}`} className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] text-slate-700">
+                        {tag}
+                      </span>
+                    ))}
                   </div>
                 ) : null}
                 {isAssistant && response?.response_type === "clarify" ? (

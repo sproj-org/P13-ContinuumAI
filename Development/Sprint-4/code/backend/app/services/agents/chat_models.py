@@ -16,6 +16,7 @@ MissingField = Literal["metric", "x_axis", "time_grain", "table"]
 ChatRole = Literal["user", "assistant"]
 ChatResponseType = Literal["chart", "chart_patch", "explain", "clarify", "refuse"]
 ChatFallbackReason = Literal["missing_key", "openai_error"]
+ChartType = Literal["bar", "line", "pie", "histogram", "kpi"]
 
 
 def create_clarify_id() -> str:
@@ -100,6 +101,25 @@ class ChartSpecPatch(BaseModel):
     set: dict[str, Any] = Field(default_factory=dict)
     unset: list[str] = Field(default_factory=list)
     add: dict[str, Any] = Field(default_factory=dict)
+
+
+class QuerySpecFilter(BaseModel):
+    field: str
+    op: str
+    value: Any | None = None
+
+
+class QuerySpec(BaseModel):
+    dataset_id: str | None = None
+    table: str | None = None
+    chart_type: ChartType | None = None
+    measures: list[str] = Field(default_factory=list)
+    dimensions: list[str] = Field(default_factory=list)
+    time_field: str | None = None
+    aggregation: MetricAggregation | None = None
+    time_grain: TimeGrain | None = None
+    filters: list[QuerySpecFilter] = Field(default_factory=list)
+    limit: int | None = None
 
 
 class ClarifyOptions(BaseModel):
@@ -196,6 +216,7 @@ class ChatChartResponse(BaseModel):
     rows: list[dict[str, Any]]
     narrative: str
     meta: dict[str, Any] = Field(default_factory=dict)
+    query_spec: QuerySpec | None = None
     used_fallback: bool | None = None
     openai_configured: bool | None = None
     fallback_reason: ChatFallbackReason | None = None
@@ -209,6 +230,7 @@ class ChatPatchResponse(BaseModel):
     patch: ChartSpecPatch
     narrative: str | None = None
     meta: dict[str, Any] = Field(default_factory=dict)
+    query_spec: QuerySpec | None = None
     used_fallback: bool | None = None
     openai_configured: bool | None = None
     fallback_reason: ChatFallbackReason | None = None
@@ -222,6 +244,7 @@ class ChatExplainResponse(BaseModel):
     message: str
     citations: list[str] = Field(default_factory=list)
     meta: dict[str, Any] = Field(default_factory=dict)
+    query_spec: QuerySpec | None = None
     used_fallback: bool | None = None
     openai_configured: bool | None = None
     fallback_reason: ChatFallbackReason | None = None
@@ -237,6 +260,7 @@ class ChatClarifyResponse(BaseModel):
     missing: list[MissingField] = Field(default_factory=list)
     options: ClarifyOptions = Field(default_factory=ClarifyOptions)
     meta: dict[str, Any] = Field(default_factory=dict)
+    query_spec: QuerySpec | None = None
     used_fallback: bool | None = None
     openai_configured: bool | None = None
     fallback_reason: ChatFallbackReason | None = None
@@ -265,6 +289,7 @@ class ChatRefuseResponse(BaseModel):
     response_type: Literal["refuse"] = "refuse"
     message: str
     meta: dict[str, Any] = Field(default_factory=dict)
+    query_spec: QuerySpec | None = None
     used_fallback: bool | None = None
     openai_configured: bool | None = None
     fallback_reason: ChatFallbackReason | None = None

@@ -142,45 +142,6 @@ export default function DashboardTab() {
     );
   }, [createDashboardMutation, newDashboardName, selectedDatasetId]);
 
-  const handleRenameDashboard = useCallback(
-    (dashboardId: number, currentName: string) => {
-      const nextName = globalThis.prompt("Rename dashboard", currentName)?.trim();
-      if (!nextName || nextName === currentName) {
-        return;
-      }
-      renameDashboardMutation.mutate(
-        { dashboardId, data: { name: nextName } },
-        {
-          onSuccess: () => {
-            if (selectedDashboardName === currentName) {
-              setSelectedDashboardName(nextName);
-            }
-          },
-        }
-      );
-    },
-    [renameDashboardMutation, selectedDashboardName]
-  );
-
-  const handleDeleteDashboard = useCallback(
-    (dashboardId: number, dashboardName: string) => {
-      const confirmed = globalThis.confirm(
-        `Delete dashboard "${dashboardName}"? This will also remove charts saved in it.`
-      );
-      if (!confirmed) {
-        return;
-      }
-      deleteDashboardMutation.mutate(dashboardId, {
-        onSuccess: () => {
-          if (selectedDashboardName === dashboardName) {
-            setSelectedDashboardName("__all__");
-          }
-        },
-      });
-    },
-    [deleteDashboardMutation, selectedDashboardName]
-  );
-
   const dashboardGroups = useMemo(() => {
     const groups: Record<string, { charts: typeof savedCharts }> = {};
 
@@ -204,23 +165,80 @@ export default function DashboardTab() {
     return sorted;
   }, [dashboardsData, savedCharts]);
 
-  // Auto-select first dashboard when data arrives and no dashboard is selected.
-  useEffect(() => {
-    if (selectedDashboardName === null && dashboardGroups.length > 0) {
-      setSelectedDashboardName(dashboardGroups[0][0]);
+  const effectiveSelectedDashboardName = useMemo(() => {
+    if (selectedDashboardName === "__all__") {
+      return "__all__";
     }
+    if (selectedDashboardName && dashboardGroups.some(([name]) => name === selectedDashboardName)) {
+      return selectedDashboardName;
+    }
+    return dashboardGroups[0]?.[0] ?? "__all__";
   }, [dashboardGroups, selectedDashboardName]);
 
+  const handleRenameDashboard = useCallback(
+    (dashboardId: number, currentName: string) => {
+      const nextName = globalThis.prompt("Rename dashboard", currentName)?.trim();
+      if (!nextName || nextName === currentName) {
+        return;
+      }
+      renameDashboardMutation.mutate(
+        { dashboardId, data: { name: nextName } },
+        {
+          onSuccess: () => {
+            if (effectiveSelectedDashboardName === currentName) {
+              setSelectedDashboardName(nextName);
+            }
+          },
+        }
+      );
+    },
+    [effectiveSelectedDashboardName, renameDashboardMutation]
+  );
+
+  const handleDeleteDashboard = useCallback(
+    (dashboardId: number, dashboardName: string) => {
+      const confirmed = globalThis.confirm(
+        `Delete dashboard "${dashboardName}"? This will also remove charts saved in it.`
+      );
+      if (!confirmed) {
+        return;
+      }
+      deleteDashboardMutation.mutate(dashboardId, {
+        onSuccess: () => {
+          if (effectiveSelectedDashboardName === dashboardName) {
+            setSelectedDashboardName("__all__");
+          }
+        },
+      });
+    },
+    [deleteDashboardMutation, effectiveSelectedDashboardName]
+  );
+
   const filteredCharts = useMemo(() => {
-    if (selectedDashboardName === "__all__") return savedCharts;
-    if (!selectedDashboardName) return savedCharts;
-    return savedCharts.filter((c) => (c.dashboardName || "Default") === selectedDashboardName);
-  }, [savedCharts, selectedDashboardName]);
+    if (effectiveSelectedDashboardName === "__all__") return savedCharts;
+    return savedCharts.filter((c) => (c.dashboardName || "Default") === effectiveSelectedDashboardName);
+  }, [effectiveSelectedDashboardName, savedCharts]);
 
   const selectedDashboardLabel = useMemo(() => {
-    if (selectedDashboardName === "__all__") return "All Dashboards";
-    return selectedDashboardName || "All Dashboards";
-  }, [selectedDashboardName]);
+    if (effectiveSelectedDashboardName === "__all__") return "All Dashboards";
+    return effectiveSelectedDashboardName || "All Dashboards";
+  }, [effectiveSelectedDashboardName]);
+
+  const activeMartCount = useMemo(
+    () => new Set(filteredCharts.map((chart) => chart.martId)).size,
+    [filteredCharts],
+  );
+
+  const chartTypeMix = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const chart of filteredCharts) {
+      const type = chart.chartSpec.chart.type;
+      counts.set(type, (counts.get(type) ?? 0) + 1);
+    }
+    return Array.from(counts.entries())
+      .sort((left, right) => right[1] - left[1])
+      .slice(0, 3);
+  }, [filteredCharts]);
 
   const handleOpenInChartBuilder = (chart: typeof savedCharts[0]) => {
     // Set the mart/aggregation
@@ -270,6 +288,16 @@ export default function DashboardTab() {
     });
   };
 
+  const latestSavedLabel = useMemo(() => {
+    if (filteredCharts.length === 0) {
+      return "No saved charts";
+    }
+    const latest = [...filteredCharts].sort(
+      (left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
+    )[0];
+    return formatDate(latest.createdAt);
+  }, [filteredCharts]);
+
   return (
     <div className="h-full flex bg-gradient-to-br from-slate-50 via-indigo-50/20 to-violet-50/20">
       {/* ── Sidebar: Named dashboard navigation ── */}
@@ -288,10 +316,10 @@ export default function DashboardTab() {
           </div>
           <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
             {/* All Dashboards */}
-            <button
-              onClick={() => setSelectedDashboardName("__all__")}
-              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm transition-all ${
-                selectedDashboardName === "__all__"
+              <button
+                onClick={() => setSelectedDashboardName("__all__")}
+                className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm transition-all ${
+                effectiveSelectedDashboardName === "__all__"
                   ? "bg-gradient-to-r from-[#4f46e5] to-indigo-600 text-white shadow-md shadow-indigo-200"
                   : "text-slate-700 hover:bg-indigo-50 hover:text-[#4f46e5]"
               }`}
@@ -299,7 +327,7 @@ export default function DashboardTab() {
               <LayoutGrid className="w-4 h-4 shrink-0" />
               <span className="flex-1 text-left font-medium truncate">All Dashboards</span>
               <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${
-                selectedDashboardName === "__all__" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
+                effectiveSelectedDashboardName === "__all__" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
               }`}>
                 {savedCharts.length}
               </span>
@@ -327,7 +355,7 @@ export default function DashboardTab() {
                   });
                 }}
                 className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm transition-all ${
-                  selectedDashboardName === name
+                  effectiveSelectedDashboardName === name
                     ? "bg-gradient-to-r from-[#4f46e5] to-indigo-600 text-white shadow-md shadow-indigo-200"
                     : "text-slate-700 hover:bg-indigo-50 hover:text-[#4f46e5]"
                 }`}
@@ -337,11 +365,11 @@ export default function DashboardTab() {
                   <div className="font-medium truncate">{name}</div>
                 </div>
                 <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${
-                  selectedDashboardName === name ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
+                  effectiveSelectedDashboardName === name ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
                 }`}>
                   {group.charts.length}
                 </span>
-                {selectedDashboardName === name && <ChevronRight className="w-3.5 h-3.5 shrink-0" />}
+                {effectiveSelectedDashboardName === name && <ChevronRight className="w-3.5 h-3.5 shrink-0" />}
               </button>
             ))}
           </nav>
@@ -360,22 +388,53 @@ export default function DashboardTab() {
               <div>
                 <h1 className="text-xl font-bold text-slate-900">{selectedDashboardLabel}</h1>
                 <p className="text-sm text-slate-600">
-                  {filteredCharts.length} saved {filteredCharts.length === 1 ? "chart" : "charts"}
+                  Dataset {selectedDatasetId} with {filteredCharts.length} saved {filteredCharts.length === 1 ? "chart" : "charts"}
                 </p>
               </div>
             </div>
-            <button
-              onClick={() => setIsCreateDashboardOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50 rounded-lg border border-indigo-200 transition-colors"
-            >
-              <LayoutGrid className="w-4 h-4" />
-              New Dashboard
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setActiveTab("chart-builder")}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg border border-slate-200 transition-colors"
+              >
+                <Wrench className="w-4 h-4" />
+                Compose
+              </button>
+              <button
+                onClick={() => setIsCreateDashboardOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50 rounded-lg border border-indigo-200 transition-colors"
+              >
+                <LayoutGrid className="w-4 h-4" />
+                New Dashboard
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Content */}
         <div className="p-6">
+          {savedCharts.length > 0 ? (
+            <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-3">
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Active board</p>
+                <p className="mt-1 text-lg font-semibold text-slate-900">{selectedDashboardLabel}</p>
+                <p className="text-xs text-slate-600">{filteredCharts.length} chart card(s) visible</p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Composition</p>
+                <p className="mt-1 text-lg font-semibold text-slate-900">
+                  {chartTypeMix.length > 0 ? chartTypeMix.map(([type, count]) => `${type} ${count}`).join(" | ") : "No charts yet"}
+                </p>
+                <p className="text-xs text-slate-600">{activeMartCount} mart(s) represented</p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Latest save</p>
+                <p className="mt-1 text-lg font-semibold text-slate-900">{latestSavedLabel}</p>
+                <p className="text-xs text-slate-600">Use Edit to send a saved chart back to the builder.</p>
+              </div>
+            </div>
+          ) : null}
+
           {savedCharts.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)]">
             <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center mb-6">
@@ -388,10 +447,17 @@ export default function DashboardTab() {
             <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 max-w-md">
               <p className="text-sm text-indigo-900 font-medium mb-2">💡 Quick Tip</p>
               <p className="text-sm text-indigo-700">
-                Click the "Ask VizAgent" button and request a chart like "Show revenue by month" or
-                "Sales by store". Once VizAgent generates it, you can save it to this dashboard!
+                Click the &quot;Ask VizAgent&quot; button and request a chart like &quot;Show revenue by month&quot; or
+                &quot;Sales by store&quot;. Once VizAgent generates it, you can save it to this dashboard.
               </p>
             </div>
+            <button
+              onClick={() => setActiveTab("chart-builder")}
+              className="mt-5 inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+            >
+              <Wrench className="w-4 h-4" />
+              Open Chart Builder
+            </button>
           </div>
         ) : filteredCharts.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)]">
@@ -400,6 +466,13 @@ export default function DashboardTab() {
             </div>
             <h2 className="text-lg font-bold text-slate-900 mb-1">No charts in this dashboard</h2>
             <p className="text-slate-500 text-sm">Select another dashboard from the sidebar or create new charts.</p>
+            <button
+              onClick={() => setActiveTab("chart-builder")}
+              className="mt-4 inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+            >
+              <Wrench className="w-4 h-4" />
+              Build a chart
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -471,6 +544,7 @@ export default function DashboardTab() {
                       rows={chart.rows}
                       datasetId={selectedDatasetId}
                       height="100%"
+                      chartTitle={chart.title}
                     />
                   </div>
                 </div>
@@ -636,6 +710,7 @@ export default function DashboardTab() {
                       rows={previewChart.rows}
                       datasetId={selectedDatasetId}
                       height="100%"
+                      chartTitle={previewChart.title}
                     />
                   </div>
                 </div>

@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getApiBaseUrl } from "@/lib/api-base";
 
 const API_BASE_URL = getApiBaseUrl();
+const ADMIN_AUTH_EVENT = "continuum-admin-auth-change";
 
 export default function AdminLoginPage() {
   const [username, setUsername] = useState("");
@@ -67,6 +69,7 @@ export default function AdminLoginPage() {
         email: userData.email,
         id: userData.id,
       }));
+      window.dispatchEvent(new Event(ADMIN_AUTH_EVENT));
 
       router.push("/admin");
     } catch (err) {
@@ -141,12 +144,12 @@ export default function AdminLoginPage() {
 
           {/* Back link */}
           <div className="mt-6 text-center">
-            <a
+            <Link
               href="/"
               className="text-sm text-slate-500 hover:text-slate-700 transition-colors"
             >
               ← Back to main site
-            </a>
+            </Link>
           </div>
         </div>
       </div>

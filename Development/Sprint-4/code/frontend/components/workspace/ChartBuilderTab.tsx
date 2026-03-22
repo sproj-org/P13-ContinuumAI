@@ -3,12 +3,12 @@
 import { useState, useMemo, useEffect } from "react";
 import { useAppStore, ChartConfig } from "@/lib/store";
 import { useTableProfile, useChartsPreview, useDashboards } from "@/lib/hooks";
+import DrillDownChart from "@/components/workspace/DrillDownChart";
 import {
   transformColumnProfile,
   type ColumnRole,
 } from "@/lib/transformers";
 import { getMartDrillAdvisory } from "@/lib/mart-drill-utils";
-import { renderChart } from "@/components/workspace/renderChart";
 import type { ChartSpecV1, FilterOperator, FilterSpec } from "@/lib/types/chartspec";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/lib/toast-context";
@@ -259,6 +259,8 @@ export default function ChartBuilderTab() {
     return profile?.columns.map(transformColumnProfile) ?? [];
   }, [profile]);
 
+  const isHistogram = chartConfig.chartType === "histogram";
+
   const selectedXAxisColumn = useMemo(
     () => transformedColumns.find((column) => column.name === chartConfig.xAxis),
     [transformedColumns, chartConfig.xAxis],
@@ -302,18 +304,27 @@ export default function ChartBuilderTab() {
     };
   }, [transformedColumns]);
 
-  useEffect(() => {
+  const histogramFallbackXAxis = useMemo(
+    () => groupedColumns.dimensions[0]?.name ?? groupedColumns.temporal[0]?.name ?? null,
+    [groupedColumns.dimensions, groupedColumns.temporal],
+  );
+
+  const resolvedXAxis = isHistogram ? (chartConfig.xAxis ?? histogramFallbackXAxis) : chartConfig.xAxis;
+
+  const yAxisAcceptRoles = useMemo<ColumnRole[]>(
+    () => (chartConfig.aggregationFn === "count" ? ["measure", "dimension", "temporal"] : ["measure"]),
+    [chartConfig.aggregationFn],
+  );
+
+  const effectiveTimeField = useMemo(() => {
     if (groupedColumns.temporal.length === 0) {
-      if (timeField) {
-        setTimeField("");
-      }
-      return;
+      return "";
     }
 
-    const stillExists = groupedColumns.temporal.some((column) => column.name === timeField);
-    if (!stillExists) {
-      setTimeField(groupedColumns.temporal[0].name);
+    if (timeField && groupedColumns.temporal.some((column) => column.name === timeField)) {
+      return timeField;
     }
+    return groupedColumns.temporal[0]?.name ?? "";
   }, [groupedColumns.temporal, timeField]);
 
   const validAggregations = useMemo(() => {
@@ -331,6 +342,89 @@ export default function ChartBuilderTab() {
     return aggregationFns.filter((aggregation) => aggregation.id === "count");
   }, [chartConfig.yAxis, columnRoleMap]);
 
+  const chartTypeGuidance = useMemo(() => {
+    if (chartConfig.chartType === "line") {
+      return {
+        title: "Trend view",
+        body: "Use a temporal X-axis for changes over time. Smooth line rendering is enabled for clearer patterns.",
+      };
+    }
+    if (chartConfig.chartType === "pie") {
+      return {
+        title: "Composition view",
+        body: "Best for low-cardinality dimensions. If the slice count grows too large, switch to bar for readability.",
+      };
+    }
+    if (chartConfig.chartType === "histogram") {
+      return {
+        title: "Distribution view",
+        body: "Histogram bins raw values from the selected metric after filters. The context field is optional and used only to keep the saved spec compatible.",
+      };
+    }
+    return {
+      title: "Comparison view",
+      body: "Bar charts are best for ranking, comparing categories, and scanning top or bottom performers.",
+    };
+  }, [chartConfig.chartType]);
+
+  const chartSpecificWarning = useMemo(() => {
+    if (chartConfig.chartType === "pie" && selectedXAxisColumn && selectedXAxisColumn.uniqueCount > 12) {
+      return `Pie charts become hard to read with ${selectedXAxisColumn.uniqueCount.toLocaleString()} categories on '${selectedXAxisColumn.name}'. Consider bar instead.`;
+    }
+    if (isHistogram && !chartConfig.xAxis && histogramFallbackXAxis) {
+      return `Using '${histogramFallbackXAxis}' as the context field for this histogram.`;
+    }
+    return null;
+  }, [chartConfig.chartType, histogramFallbackXAxis, isHistogram, selectedXAxisColumn, chartConfig.xAxis]);
+
+  const chartTitlePreview = useMemo(() => {
+    const aggregationLabel = aggregationFns.find((item) => item.id === chartConfig.aggregationFn)?.label ?? "Metric";
+    if (isHistogram) {
+      return `Distribution of ${chartConfig.yAxis ?? "metric"}`;
+    }
+    if (chartConfig.aggregationFn === "count" && chartConfig.yAxis && columnRoleMap.get(chartConfig.yAxis) !== "measure") {
+      return `Record count by ${resolvedXAxis ?? "dimension"}`;
+    }
+    return `${aggregationLabel} ${chartConfig.yAxis ?? "metric"} by ${resolvedXAxis ?? "dimension"}`;
+  }, [chartConfig.aggregationFn, chartConfig.yAxis, columnRoleMap, isHistogram, resolvedXAxis]);
+
+  const selectionStateMessage = useMemo(() => {
+    if (!selectedAggregation) {
+      return "Select a mart, then map fields into the builder.";
+    }
+    if (isHistogram) {
+      if (!chartConfig.yAxis) {
+        return "Select the numeric metric you want to analyze as a distribution.";
+      }
+      return chartTypeGuidance.body;
+    }
+    if (!chartConfig.xAxis && !chartConfig.yAxis) {
+      return "Drag a grouping field to X-axis and a metric to Y-axis.";
+    }
+    if (!chartConfig.xAxis) {
+      return "Choose the grouping field for the X-axis.";
+    }
+    if (!chartConfig.yAxis) {
+      return chartConfig.aggregationFn === "count"
+        ? "Choose the field you want to count. Count can use measure, dimension, or temporal fields."
+        : "Choose the metric for the Y-axis.";
+    }
+    if (timeWindow === "custom" && (!customStartDate || !customEndDate)) {
+      return "Set both dates for the custom time window.";
+    }
+    return chartTypeGuidance.body;
+  }, [
+    chartConfig.xAxis,
+    chartConfig.yAxis,
+    chartConfig.aggregationFn,
+    chartTypeGuidance.body,
+    customEndDate,
+    customStartDate,
+    isHistogram,
+    selectedAggregation,
+    timeWindow,
+  ]);
+
   useEffect(() => {
     if (chartConfig.yAxis && validAggregations.length > 0) {
       const currentAggValid = validAggregations.some((aggregation) => aggregation.id === chartConfig.aggregationFn);
@@ -341,16 +435,19 @@ export default function ChartBuilderTab() {
   }, [chartConfig.yAxis, chartConfig.aggregationFn, validAggregations, setChartConfig]);
 
   const chartSpec = useMemo<ChartSpecV1 | null>(() => {
-    if (!selectedAggregation || !chartConfig.xAxis || !chartConfig.yAxis) {
+    if (!selectedAggregation || !chartConfig.yAxis || !resolvedXAxis) {
       return null;
     }
 
-    const xRole = columnRoleMap.get(chartConfig.xAxis);
+    const xRole = columnRoleMap.get(resolvedXAxis);
     const yRole = columnRoleMap.get(chartConfig.yAxis);
-    if (!(xRole === "dimension" || xRole === "temporal")) {
+    if (!isHistogram && !(xRole === "dimension" || xRole === "temporal")) {
       return null;
     }
-    if (yRole !== "measure") {
+    if (!yRole) {
+      return null;
+    }
+    if (chartConfig.aggregationFn !== "count" && yRole !== "measure") {
       return null;
     }
 
@@ -358,11 +455,11 @@ export default function ChartBuilderTab() {
       .map((item) => mapFilter(item))
       .filter((item): item is FilterSpec => item !== null);
 
-    if (timeWindow !== "none" && timeField) {
+    if (timeWindow !== "none" && effectiveTimeField) {
       if (timeWindow === "custom") {
         if (customStartDate && customEndDate) {
           chartFilters.push({
-            field: timeField,
+            field: effectiveTimeField,
             op: "between",
             value: [customStartDate, customEndDate],
           });
@@ -370,7 +467,7 @@ export default function ChartBuilderTab() {
       } else {
         const days = timeWindow === "last_7" ? 7 : timeWindow === "last_30" ? 30 : 90;
         chartFilters.push({
-          field: timeField,
+          field: effectiveTimeField,
           op: ">=",
           value: daysAgoISO(days),
         });
@@ -383,7 +480,7 @@ export default function ChartBuilderTab() {
       table: selectedAggregation,
       chart: { type: chartConfig.chartType === "kpi" ? "bar" : chartConfig.chartType },
       encoding: {
-        x: { field: chartConfig.xAxis },
+        x: { field: resolvedXAxis },
         y: [
           {
             field: chartConfig.yAxis,
@@ -393,12 +490,14 @@ export default function ChartBuilderTab() {
         ],
       },
       filters: chartFilters,
-      sort: [
-        {
-          field: sortTarget === "x" ? chartConfig.xAxis : "metric_value",
-          direction: sortDirection,
-        },
-      ],
+      sort: isHistogram
+        ? []
+        : [
+            {
+              field: sortTarget === "x" ? resolvedXAxis : "metric_value",
+              direction: sortDirection,
+            },
+          ],
       limit: resultLimit,
     };
   }, [
@@ -408,12 +507,14 @@ export default function ChartBuilderTab() {
     columnRoleMap,
     filters,
     timeWindow,
-    timeField,
+    effectiveTimeField,
     customStartDate,
     customEndDate,
     sortTarget,
     sortDirection,
     resultLimit,
+    resolvedXAxis,
+    isHistogram,
   ]);
 
   const {
@@ -491,8 +592,16 @@ export default function ChartBuilderTab() {
     }
 
     if (dropZone === "y-axis") {
-      if (role !== "measure") {
-        setValidationMessage("Y-axis only accepts measure fields.");
+      const acceptsRole =
+        chartConfig.aggregationFn === "count"
+          ? role === "measure" || role === "dimension" || role === "temporal"
+          : role === "measure";
+      if (!acceptsRole) {
+        setValidationMessage(
+          chartConfig.aggregationFn === "count"
+            ? "When aggregation is count, Y-axis accepts measure, dimension, or temporal fields."
+            : "Y-axis only accepts measure fields unless aggregation is count."
+        );
         return;
       }
       setChartConfig({ yAxis: columnName });
@@ -536,6 +645,7 @@ export default function ChartBuilderTab() {
     setSortDirection("desc");
     setResultLimit(20);
     setTimeWindow("none");
+    setTimeField("");
     setCustomStartDate("");
     setCustomEndDate("");
     setValidationMessage(null);
@@ -560,8 +670,7 @@ export default function ChartBuilderTab() {
       return;
     }
 
-    // Generate a title based on the chart config
-    const title = `${chartConfig.yAxis || 'Metric'} by ${chartConfig.xAxis || 'Dimension'}`;
+    const title = chartTitlePreview;
 
     for (const dashboardName of selectedDashboards) {
       saveChart({
@@ -585,7 +694,7 @@ export default function ChartBuilderTab() {
         <div className="w-64 border-r border-indigo-200/50 bg-white/80 backdrop-blur-sm overflow-y-auto p-4 shadow-sm">
           <div className="mb-6">
             <h3 className="text-sm font-medium text-indigo-900 uppercase tracking-wider mb-3">
-              Aggregation
+              Mart
             </h3>
             <select
               value={selectedAggregation || ""}
@@ -654,7 +763,20 @@ export default function ChartBuilderTab() {
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex-1 p-6 overflow-y-auto">
             <AnimatePresence mode="wait">
-              {!chartConfig.xAxis || !chartConfig.yAxis ? (
+              {validationMessage ? (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="h-full flex items-center justify-center"
+                >
+                  <div className="text-center">
+                    <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-slate-700 mb-2">Invalid axis mapping</h3>
+                    <p className="text-slate-600 text-sm max-w-sm">{validationMessage}</p>
+                  </div>
+                </motion.div>
+              ) : !chartSpec ? (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -669,21 +791,8 @@ export default function ChartBuilderTab() {
                       Build Your Chart
                     </h3>
                     <p className="text-slate-600 max-w-sm">
-                      Drag fields from the left panel to the axis drop zones on the right
+                      {selectionStateMessage}
                     </p>
-                  </div>
-                </motion.div>
-              ) : validationMessage ? (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="h-full flex items-center justify-center"
-                >
-                  <div className="text-center">
-                    <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-slate-700 mb-2">Invalid axis mapping</h3>
-                    <p className="text-slate-600 text-sm max-w-sm">{validationMessage}</p>
                   </div>
                 </motion.div>
               ) : isPreviewLoading ? (
@@ -714,13 +823,23 @@ export default function ChartBuilderTab() {
                 </motion.div>
               ) : previewData && chartSpec ? (
                 <motion.div
-                  key={`${chartConfig.xAxis}-${chartConfig.yAxis}-${chartConfig.chartType}`}
+                  key={`${resolvedXAxis}-${chartConfig.yAxis}-${chartConfig.chartType}`}
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   className="bg-white border border-slate-200 shadow-sm rounded-2xl p-6 h-full flex flex-col gap-4"
                 >
-                  <div className="min-h-[360px]">{renderChart(chartSpec, previewData.rows)}</div>
+                  <div className="rounded-xl border border-slate-100 bg-slate-50/40 min-h-[360px] overflow-hidden">
+                    <DrillDownChart
+                      chartSpec={chartSpec}
+                      rows={previewData.rows}
+                      datasetId={selectedDatasetId}
+                      profile={profile}
+                      height="100%"
+                      chartTitle={chartTitlePreview}
+                      defaultAutoDrill
+                    />
+                  </div>
 
                   {showExecutionDetails && executionDebug ? (
                     <div className="border border-slate-300 rounded-xl bg-slate-50 overflow-hidden">
@@ -807,6 +926,10 @@ export default function ChartBuilderTab() {
                 </button>
               ))}
             </div>
+            <div className="mt-3 rounded-xl border border-indigo-200 bg-indigo-50/70 px-3 py-2">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo-700">{chartTypeGuidance.title}</p>
+              <p className="mt-1 text-xs text-slate-700">{chartTypeGuidance.body}</p>
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -816,7 +939,7 @@ export default function ChartBuilderTab() {
 
             <DropZone
               id="x-axis"
-              label="X-Axis"
+              label={isHistogram ? "Context Field (Optional)" : "X-Axis"}
               value={chartConfig.xAxis}
               onClear={() => setChartConfig({ xAxis: null })}
               acceptRoles={["dimension", "temporal"]}
@@ -824,10 +947,10 @@ export default function ChartBuilderTab() {
 
             <DropZone
               id="y-axis"
-              label="Y-Axis"
+              label={isHistogram ? "Metric to Bin" : chartConfig.aggregationFn === "count" ? "Field to Count" : "Y-Axis"}
               value={chartConfig.yAxis}
               onClear={() => setChartConfig({ yAxis: null })}
-              acceptRoles={["measure"]}
+              acceptRoles={yAxisAcceptRoles}
             />
 
             <DropZone
@@ -928,7 +1051,7 @@ export default function ChartBuilderTab() {
             {groupedColumns.temporal.length > 0 ? (
               <div className="space-y-2">
                 <select
-                  value={timeField}
+                  value={effectiveTimeField}
                   onChange={(event) => setTimeField(event.target.value)}
                   className="w-full bg-white border border-slate-200 rounded px-2 py-2 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                 >
@@ -1013,6 +1136,11 @@ export default function ChartBuilderTab() {
               {martSwitchSuggestion ? (
                 <p className="text-xs text-violet-700 bg-violet-50 border border-violet-200 rounded p-2">
                   {martSwitchSuggestion}
+                </p>
+              ) : null}
+              {chartSpecificWarning ? (
+                <p className="text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded p-2">
+                  {chartSpecificWarning}
                 </p>
               ) : null}
             </div>

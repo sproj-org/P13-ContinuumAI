@@ -143,23 +143,6 @@ class ApiClient {
     }
   }
 
-  async signup(
-    username: string,
-    email: string,
-    password: string,
-    confirmPassword: string
-  ): Promise<AuthResponse> {
-    return this.request<AuthResponse>("/auth/signup", {
-      method: "POST",
-      body: JSON.stringify({
-        username,
-        email,
-        password,
-        confirm_password: confirmPassword,
-      }),
-    });
-  }
-
   async login(username: string, password: string): Promise<AuthResponse> {
     return this.request<AuthResponse>("/auth/login", {
       method: "POST",

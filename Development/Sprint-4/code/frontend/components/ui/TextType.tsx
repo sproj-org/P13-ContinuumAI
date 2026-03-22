@@ -51,7 +51,7 @@ const TextType = ({
   const [currentTextIndex, setCurrentTextIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(!startOnVisible);
   const cursorRef = useRef<HTMLSpanElement>(null);
-  const containerRef = useRef<HTMLElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const textArray = useMemo(() => (Array.isArray(text) ? text : [text]), [text]);
 
@@ -171,10 +171,9 @@ const TextType = ({
   const shouldHideCursor =
     hideCursorWhileTyping && (currentCharIndex < textArray[currentTextIndex].length || isDeleting);
 
-  return createElement(
+  const content = createElement(
     Component,
     {
-      ref: containerRef,
       className: `inline-block whitespace-pre-wrap tracking-tight ${className}`,
       ...props
     },
@@ -190,6 +189,12 @@ const TextType = ({
       </span>
     )
   );
+
+  if (startOnVisible) {
+    return <div ref={containerRef} className="inline-block">{content}</div>;
+  }
+
+  return content;
 };
 
 export default TextType;

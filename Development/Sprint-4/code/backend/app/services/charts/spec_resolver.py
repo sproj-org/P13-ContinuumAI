@@ -10,9 +10,17 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import HTTPException
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.api.query import AggregateFilter, AggregateRequest, AggregateSpec, execute_aggregate_request
+from app.api.query import (
+    AggregateFilter,
+    AggregateRequest,
+    AggregateSpec,
+    _build_where_clause,
+    _quote_identifier,
+    execute_aggregate_request,
+)
 from app.core.config import get_settings
 from app.core.mart_registry import get_mart, is_supported_dataset
 from app.services.cache.factory import get_cache
@@ -198,12 +206,12 @@ def resolve_chart_spec(dataset_id: str, chart_spec: ChartSpecV1) -> ResolvedChar
         )
 
     y_role = _resolve_role(y_column)
-    if y_role != "measure":
+    if y_metric.aggregation != "count" and y_role != "measure":
         raise HTTPException(
             status_code=400,
             detail=(
                 f"Y metric field '{y_metric.field}' has role '{y_role}'. "
-                "Y-axis metrics must be measure columns."
+                "Y-axis metrics must be measure columns unless aggregation is count."
             ),
         )
 
@@ -239,6 +247,154 @@ def resolve_chart_spec(dataset_id: str, chart_spec: ChartSpecV1) -> ResolvedChar
     )
 
 
+def _validate_histogram_spec(dataset_id: str, chart_spec: ChartSpecV1) -> tuple[ChartSpecV1, YMetricSpec, dict[str, Any], dict[str, dict[str, Any]]]:
+    if not is_supported_dataset(dataset_id):
+        raise HTTPException(status_code=404, detail=f"Unknown dataset_id '{dataset_id}'")
+
+    if chart_spec.dataset_id and chart_spec.dataset_id != dataset_id:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Chart spec dataset_id '{chart_spec.dataset_id}' does not match route "
+                f"dataset_id '{dataset_id}'"
+            ),
+        )
+
+    profile = _load_profile(dataset_id, chart_spec.table)
+    columns = _column_map(profile)
+    if not columns:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Table profile for '{chart_spec.table}' does not contain columns metadata",
+        )
+
+    x_field = chart_spec.encoding.x.field
+    if x_field not in columns:
+        raise HTTPException(
+            status_code=400,
+            detail=f"X-axis field '{x_field}' does not exist in table '{chart_spec.table}'",
+        )
+
+    y_metric = chart_spec.encoding.y[0]
+    y_column = columns.get(y_metric.field)
+    if y_column is None:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Y metric field '{y_metric.field}' does not exist in table '{chart_spec.table}'",
+        )
+
+    y_role = _resolve_role(y_column)
+    y_physical_type = _resolve_physical_type(y_column)
+    if y_role != "measure":
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Histogram metric field '{y_metric.field}' has role '{y_role}'. "
+                "Histogram requires a numeric measure field."
+            ),
+        )
+    if y_physical_type not in NUMERIC_PHYSICAL_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Histogram metric field '{y_metric.field}' has physical_type '{y_physical_type}'. "
+                "Histogram requires a numeric measure field."
+            ),
+        )
+
+    normalized_spec = chart_spec.model_copy(update={"dataset_id": dataset_id})
+    return normalized_spec, y_metric, profile, columns
+
+
+def _execute_histogram_preview(dataset_id: str, chart_spec: ChartSpecV1, db: Session, debug: bool = False) -> dict[str, Any]:
+    started_at = time.perf_counter()
+    settings = get_settings()
+    cache_enabled = bool(settings.CACHE_ENABLED) and not debug
+    ttl_seconds = int(settings.CACHE_TTL_SECONDS)
+
+    normalized_spec, y_metric, _, columns = _validate_histogram_spec(dataset_id, chart_spec)
+    cache_key = _build_cache_key(dataset_id=dataset_id, normalized_spec=normalized_spec)
+    cache = get_cache()
+
+    if cache_enabled:
+        cached_payload = cache.get(cache_key)
+        if isinstance(cached_payload, dict):
+            cached_meta = dict(cached_payload.get("meta", {}))
+            cached_meta["cache"] = _cache_meta(
+                enabled=True,
+                hit=True,
+                key=cache_key,
+                ttl_seconds=ttl_seconds,
+            )
+            cached_payload["meta"] = cached_meta
+            return sanitize_for_json(cached_payload)
+
+    aggregate_filters = _to_aggregate_filters(normalized_spec.filters)
+    aggregate_filters.append(AggregateFilter(column=y_metric.field, op="is_not_null"))
+    where_clause, params = _build_where_clause(aggregate_filters, set(columns.keys()))
+    mart = get_mart(dataset_id, normalized_spec.table)
+
+    sample_limit = min(max(normalized_spec.limit * 50, 250), 5000)
+    value_column = y_metric.alias or y_metric.field
+    sql = f"""
+        SELECT {_quote_identifier(y_metric.field)} AS {_quote_identifier(value_column)}
+        FROM "{mart['schema']}"."{normalized_spec.table}"
+        {where_clause}
+        LIMIT :limit
+    """
+    params["limit"] = sample_limit
+
+    statement = text(sql)
+    sql_debug: str | None = None
+    if debug:
+        try:
+            compiled = statement.compile(bind=db.get_bind(), compile_kwargs={"literal_binds": False})
+            sql_debug = str(compiled)
+        except Exception:
+            sql_debug = sql
+
+    try:
+        rows = db.execute(statement, params).fetchall()
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Histogram query failed: {exc}") from exc
+
+    output_rows = [{value_column: row[0]} for row in rows if row and row[0] is not None]
+    elapsed_ms = round((time.perf_counter() - started_at) * 1000, 2)
+    response = {
+        "chart_spec": normalized_spec.model_dump(mode="json"),
+        "columns": [value_column],
+        "rows": output_rows,
+        "meta": {
+            "resolver": "chartspec_v1",
+            "execution_ms": elapsed_ms,
+            "metric": {
+                "field": y_metric.field,
+                "aggregation": "distribution",
+                "output_column": value_column,
+            },
+            "histogram": {
+                "sample_size": len(output_rows),
+                "source_field": y_metric.field,
+            },
+            "cache": _cache_meta(
+                enabled=cache_enabled,
+                hit=False,
+                key=cache_key if cache_enabled else None,
+                ttl_seconds=ttl_seconds,
+            ),
+        },
+    }
+    if debug:
+        response["meta"]["debug"] = {
+            "chartspec_json": normalized_spec.model_dump(mode="json"),
+            "sql": sql_debug,
+            "params": params,
+        }
+    if cache_enabled:
+        cache.set(cache_key, response, ttl_seconds=ttl_seconds)
+    return sanitize_for_json(response)
+
+
 def _canonical_json(payload: dict[str, Any]) -> str:
     return json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
 
@@ -260,6 +416,9 @@ def _cache_meta(enabled: bool, hit: bool, key: str | None, ttl_seconds: int) -> 
 
 
 def execute_chart_preview(dataset_id: str, chart_spec: ChartSpecV1, db: Session, debug: bool = False) -> dict[str, Any]:
+    if chart_spec.chart.type == "histogram":
+        return _execute_histogram_preview(dataset_id=dataset_id, chart_spec=chart_spec, db=db, debug=debug)
+
     started_at = time.perf_counter()
     settings = get_settings()
     cache_enabled = bool(settings.CACHE_ENABLED) and not debug

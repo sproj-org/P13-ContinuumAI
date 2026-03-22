@@ -54,6 +54,25 @@ export interface ChartSpecPatch {
   add?: Record<string, unknown>;
 }
 
+export interface QuerySpecFilter {
+  field: string;
+  op: string;
+  value?: unknown;
+}
+
+export interface QuerySpec {
+  dataset_id?: string | null;
+  table?: string | null;
+  chart_type?: "bar" | "line" | "pie" | "histogram" | "kpi" | null;
+  measures: string[];
+  dimensions: string[];
+  time_field?: string | null;
+  aggregation?: MetricAggregation | null;
+  time_grain?: TimeGrain | null;
+  filters: QuerySpecFilter[];
+  limit?: number | null;
+}
+
 export interface ChatChartResponse extends ChatDebugMetadata {
   response_type: 'chart';
   chart_spec: ChartSpecV1;
@@ -61,6 +80,7 @@ export interface ChatChartResponse extends ChatDebugMetadata {
   rows: Array<Record<string, unknown>>;
   narrative: string;
   meta: Record<string, unknown>;
+  query_spec?: QuerySpec | null;
 }
 
 export interface ChatPatchResponse extends ChatDebugMetadata {
@@ -68,6 +88,7 @@ export interface ChatPatchResponse extends ChatDebugMetadata {
   patch: ChartSpecPatch;
   narrative?: string;
   meta: Record<string, unknown>;
+  query_spec?: QuerySpec | null;
 }
 
 export interface ChatExplainResponse extends ChatDebugMetadata {
@@ -75,6 +96,7 @@ export interface ChatExplainResponse extends ChatDebugMetadata {
   message: string;
   citations: string[];
   meta: Record<string, unknown>;
+  query_spec?: QuerySpec | null;
 }
 
 export interface ClarifyOptions {
@@ -93,6 +115,7 @@ export interface ChatClarifyResponse extends ChatDebugMetadata {
   message?: string;
   questions?: string[];
   meta: Record<string, unknown>;
+  query_spec?: QuerySpec | null;
 }
 
 export interface ChatHintsResponse {
@@ -110,6 +133,7 @@ export interface ChatRefuseResponse extends ChatDebugMetadata {
   response_type: 'refuse';
   message: string;
   meta: Record<string, unknown>;
+  query_spec?: QuerySpec | null;
 }
 
 export type ChatResponse =

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 import type { ChartSpecV1 } from './types/chartspec';
-import type { ChatResponse } from './types/chat';
+import type { ChatResponse, QuerySpec, QuerySpecFilter } from './types/chat';
 
 export type DatasetId = string;
 export type WorkspaceTab = 'marts' | 'chart-builder' | 'dashboard' | 'strategy';
@@ -12,7 +12,7 @@ export interface SavedChart {
   title: string;
   dashboardName: string;
   chartSpec: ChartSpecV1;
-  rows: any[];
+  rows: Array<Record<string, unknown>>;
   datasetId: string;
   martId: string;
   createdAt: string;
@@ -231,6 +231,72 @@ function asTimeGrainArray(value: unknown): TimeGrain[] {
   return output;
 }
 
+function sanitizeQuerySpecFilter(raw: unknown): QuerySpecFilter | null {
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+  const record = raw as Record<string, unknown>;
+  if (typeof record.field !== 'string' || typeof record.op !== 'string') {
+    return null;
+  }
+  const out: QuerySpecFilter = {
+    field: record.field,
+    op: record.op,
+  };
+  if (record.value !== undefined) {
+    out.value = record.value;
+  }
+  return out;
+}
+
+function sanitizeQuerySpec(raw: unknown): QuerySpec | null {
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+  const record = raw as Record<string, unknown>;
+  const filters = Array.isArray(record.filters)
+    ? record.filters
+        .map((item) => sanitizeQuerySpecFilter(item))
+        .filter((item): item is QuerySpecFilter => item !== null)
+    : [];
+  const chartType =
+    record.chart_type === 'bar' ||
+    record.chart_type === 'line' ||
+    record.chart_type === 'pie' ||
+    record.chart_type === 'histogram' ||
+    record.chart_type === 'kpi'
+      ? record.chart_type
+      : null;
+  const timeGrain =
+    record.time_grain === 'day' ||
+    record.time_grain === 'week' ||
+    record.time_grain === 'month' ||
+    record.time_grain === 'quarter' ||
+    record.time_grain === 'year'
+      ? record.time_grain
+      : null;
+  const aggregation =
+    record.aggregation === 'sum' ||
+    record.aggregation === 'avg' ||
+    record.aggregation === 'count' ||
+    record.aggregation === 'min' ||
+    record.aggregation === 'max'
+      ? record.aggregation
+      : null;
+  return {
+    dataset_id: asNullableString(record.dataset_id),
+    table: asNullableString(record.table),
+    chart_type: chartType,
+    measures: asStringArray(record.measures),
+    dimensions: asStringArray(record.dimensions),
+    time_field: asNullableString(record.time_field),
+    aggregation,
+    time_grain: timeGrain,
+    filters,
+    limit: asNullableNumber(record.limit),
+  };
+}
+
 function sanitizeChatResponse(raw: unknown): ChatResponse | null {
   if (!raw || typeof raw !== 'object') {
     return null;
@@ -284,6 +350,7 @@ function sanitizeChatResponse(raw: unknown): ChatResponse | null {
         time_grains: asTimeGrainArray(optionsRecord.time_grains),
       },
       meta,
+      query_spec: sanitizeQuerySpec(record.query_spec),
       ...debugMetadata,
     };
   }
@@ -293,6 +360,7 @@ function sanitizeChatResponse(raw: unknown): ChatResponse | null {
       response_type: 'refuse',
       message: record.message,
       meta,
+      query_spec: sanitizeQuerySpec(record.query_spec),
       ...debugMetadata,
     };
   }
@@ -303,6 +371,7 @@ function sanitizeChatResponse(raw: unknown): ChatResponse | null {
       message: record.message,
       citations: asStringArray(record.citations),
       meta,
+      query_spec: sanitizeQuerySpec(record.query_spec),
       ...debugMetadata,
     };
   }
@@ -313,6 +382,7 @@ function sanitizeChatResponse(raw: unknown): ChatResponse | null {
       patch: record.patch as Record<string, unknown>,
       narrative: typeof record.narrative === 'string' ? record.narrative : undefined,
       meta,
+      query_spec: sanitizeQuerySpec(record.query_spec),
       ...debugMetadata,
     };
   }
@@ -332,6 +402,7 @@ function sanitizeChatResponse(raw: unknown): ChatResponse | null {
       rows: record.rows.filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null),
       narrative: record.narrative,
       meta,
+      query_spec: sanitizeQuerySpec(record.query_spec),
       ...debugMetadata,
     };
   }

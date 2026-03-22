@@ -2,51 +2,40 @@
 
 import { Column, Histogram, Line, Pie } from "@ant-design/plots";
 import type { ChartSpecV1 } from "@/lib/types/chartspec";
+import {
+  buildCategoricalSeries,
+  buildHistogramData,
+  buildPieData,
+  chartMetricLabel,
+  CHART_PALETTE,
+  metricColumnCandidates,
+} from "@/lib/chart-rendering";
 
 type ChartRows = Array<Record<string, unknown>>;
 
-function toDisplayLabel(value: unknown): string {
-  if (value == null) return "NULL";
-  if (typeof value === "string") return value;
-  if (typeof value === "number" || typeof value === "boolean") return `${value}`;
-  return JSON.stringify(value);
-}
-
 function getAxisValues(chartSpec: ChartSpecV1, rows: ChartRows) {
   const xField = chartSpec.encoding.x.field;
-  const metric = chartSpec.encoding.y[0];
-  const yField = metric.alias ?? "agg_value";
+  const metricCandidates = metricColumnCandidates(chartSpec);
+  const { labels, values, data } = buildCategoricalSeries(rows, {
+    xField,
+    metricCandidates,
+  });
 
   return {
-    x: rows.map((row) => toDisplayLabel(row[xField])),
-    y: rows.map((row) => Number(row[yField] ?? 0)),
+    x: labels,
+    y: values,
     xField,
-    yField,
-    metricLabel: `${metric.aggregation.toUpperCase()}(${metric.field})`,
+    categoricalData: data,
+    metricLabel: chartMetricLabel(chartSpec),
+    metricCandidates,
   };
 }
 
 export function renderChart(chartSpec: ChartSpecV1, rows: ChartRows) {
-  const { x, y, xField, metricLabel } = getAxisValues(chartSpec, rows);
+  const { x, y, xField, metricLabel, categoricalData, metricCandidates } = getAxisValues(chartSpec, rows);
   const chartType = chartSpec.chart.type;
-  const categoricalData = x.map((category, index) => ({
-    category,
-    value: y[index] ?? 0,
-  }));
-  const histogramData = y.map((value) => ({ value }));
-  const pieDataRaw = x.map((type, index) => ({
-    type,
-    value: y[index] ?? 0,
-  }));
-  const pieData =
-    pieDataRaw.length <= 8
-      ? pieDataRaw
-      : (() => {
-          const sorted = [...pieDataRaw].sort((left, right) => right.value - left.value);
-          const head = sorted.slice(0, 7);
-          const otherValue = sorted.slice(7).reduce((sum, item) => sum + item.value, 0);
-          return otherValue > 0 ? [...head, { type: "Other", value: otherValue }] : head;
-        })();
+  const histogramData = buildHistogramData(rows, metricCandidates);
+  const pieData = buildPieData(x, y);
 
   if (chartType === "pie") {
     return (
@@ -58,7 +47,7 @@ export function renderChart(chartSpec: ChartSpecV1, rows: ChartRows) {
         label={{ text: "value", position: "inside" }}
         legend={{ color: { position: "bottom" } }}
         tooltip={{ title: "type" }}
-        scale={{ color: { range: ["#8b5cf6", "#3b82f6", "#4f46e5", "#6366f1", "#f59e0b", "#ef4444"] } }}
+        scale={{ color: { range: CHART_PALETTE } }}
         height={400}
       />
     );
@@ -71,7 +60,7 @@ export function renderChart(chartSpec: ChartSpecV1, rows: ChartRows) {
         xField="category"
         yField="value"
         point
-        shapeField="smooth"
+        smooth
         style={{ stroke: "#8b5cf6" }}
         axis={{
           x: { title: xField, labelFill: "#94a3b8" },
@@ -107,7 +96,7 @@ export function renderChart(chartSpec: ChartSpecV1, rows: ChartRows) {
         x: { title: xField, labelFill: "#94a3b8" },
         y: { title: metricLabel, labelFill: "#94a3b8" },
       }}
-      scale={{ color: { range: ["#8b5cf6", "#3b82f6", "#4f46e5", "#6366f1", "#f59e0b", "#ef4444"] } }}
+      scale={{ color: { range: CHART_PALETTE } }}
       style={{ maxWidth: 70 }}
       height={400}
     />

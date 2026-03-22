@@ -18,12 +18,6 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (username: string, password: string) => Promise<void>;
-  signup: (
-    username: string,
-    email: string,
-    password: string,
-    confirmPassword: string
-  ) => Promise<void>;
   logout: () => void;
   error: string | null;
   clearError: () => void;
@@ -96,31 +90,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [handleAuthSuccess]);
 
-  const signup = useCallback(async (
-    username: string,
-    email: string,
-    password: string,
-    confirmPassword: string
-  ) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await apiClient.signup(
-        username,
-        email,
-        password,
-        confirmPassword
-      );
-      handleAuthSuccess(response);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Signup failed");
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [handleAuthSuccess]);
-
   const logout = useCallback(() => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("user");
@@ -137,11 +106,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isLoading,
     isAuthenticated: !!user,
     login,
-    signup,
     logout,
     error,
     clearError,
-  }), [user, isLoading, login, signup, logout, error, clearError]);
+  }), [user, isLoading, login, logout, error, clearError]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

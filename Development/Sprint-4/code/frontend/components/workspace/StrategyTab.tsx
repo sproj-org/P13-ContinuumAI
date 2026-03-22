@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { AlertTriangle, Plus, RefreshCw, Save, Trash2, X } from "lucide-react";
+import { AlertTriangle, BarChart3, Plus, RefreshCw, Save, Trash2, X } from "lucide-react";
 
 import { ApiRequestError, apiClient } from "@/lib/api";
 import type {
@@ -24,6 +24,7 @@ import type {
   StrategyTargetsResponse,
 } from "@/lib/api-types";
 import { useAuth } from "@/lib/auth-context";
+import { useAppStore } from "@/lib/store";
 
 type Section = "overview" | "kpi_library" | "targets" | "rules" | "reconciliation" | "evaluation" | "advanced_yaml";
 type EditorMode = "base" | "override";
@@ -53,6 +54,37 @@ const sections: Array<{ id: Section; label: string }> = [
   { id: "evaluation", label: "Evaluation" },
   { id: "advanced_yaml", label: "Advanced YAML" },
 ];
+
+const sectionGuidance: Record<Section, { title: string; body: string }> = {
+  overview: {
+    title: "Frame the decision system",
+    body: "Capture the north star, pillars, SWOT context, and readiness gaps so downstream KPI, target, and rule work stays traceable.",
+  },
+  kpi_library: {
+    title: "Map strategy to data",
+    body: "Use Inspect in Analytics to open a KPI in the Chart Builder with its most likely mart and field mapping.",
+  },
+  targets: {
+    title: "Turn KPIs into thresholds",
+    body: "Targets define what good looks like. Evaluation and decision signals use these thresholds to classify KPI health.",
+  },
+  rules: {
+    title: "Translate signals into action",
+    body: "Rules connect KPI conditions to operational guidance. Keep thresholds explicit and reference the KPI IDs they protect.",
+  },
+  reconciliation: {
+    title: "Close strategy-data gaps",
+    body: "Use reconciliation notes to extract candidate KPIs, inspect missing marts or columns, and apply only safe patches.",
+  },
+  evaluation: {
+    title: "Review live decision posture",
+    body: "Run evaluation to compare actuals versus targets, inspect failing KPIs in analytics, and review triggered rules together.",
+  },
+  advanced_yaml: {
+    title: "Fallback for bulk edits",
+    body: "Use YAML for advanced changes only. Structured sections remain the safer path for routine strategy maintenance.",
+  },
+};
 
 function scoreText(value: number): string {
   return `${(value * 100).toFixed(1)}%`;
@@ -149,10 +181,242 @@ function extractRuleReferences(condition: string): string[] {
   return Array.from(refs);
 }
 
+function extractFormulaColumns(formula: string | null | undefined): string[] {
+  const reserved = new Set([
+    "sum",
+    "avg",
+    "count",
+    "min",
+    "max",
+    "case",
+    "when",
+    "then",
+    "else",
+    "end",
+    "and",
+    "or",
+    "not",
+    "null",
+    "coalesce",
+    "round",
+    "abs",
+  ]);
+  const matches = (formula || "").match(/[a-zA-Z_][a-zA-Z0-9_]*/g) ?? [];
+  return Array.from(
+    new Set(matches.filter((token) => !reserved.has(token.toLowerCase())))
+  );
+}
+
+function inferAggregationFromFormula(formula: string | null | undefined): "sum" | "avg" | "count" | "min" | "max" {
+  const normalized = (formula || "").toLowerCase();
+  if (normalized.includes("count(")) return "count";
+  if (normalized.includes("avg(")) return "avg";
+  if (normalized.includes("min(")) return "min";
+  if (normalized.includes("max(")) return "max";
+  return "sum";
+}
+
+function looksTemporal(column: string): boolean {
+  return /date|day|week|month|quarter|year/i.test(column);
+}
+
+type AnalyticsLaunchInput = Pick<StrategyKpi, "id" | "display_name" | "formula" | "marts" | "required_columns" | "dimensions">;
+type AnalyticsLaunchConfig = {
+  martId: string;
+  chartType: "bar" | "line" | "histogram";
+  xAxis: string | null;
+  yAxis: string;
+  aggregationFn: "sum" | "avg" | "count" | "min" | "max";
+  title: string;
+};
+
+function buildAnalyticsLaunchConfig(
+  item: AnalyticsLaunchInput,
+  martColumns: Record<string, string[]>,
+): AnalyticsLaunchConfig | null {
+  const formulaColumns = extractFormulaColumns(item.formula);
+  const aggregationFn = inferAggregationFromFormula(item.formula);
+
+  for (const martId of item.marts || []) {
+    const columns = martColumns[martId] || [];
+    if (columns.length === 0) {
+      continue;
+    }
+
+    const dimensionCandidates = (item.dimensions || []).filter((column) => columns.includes(column));
+    const measureCandidate =
+      formulaColumns.find((column) => columns.includes(column) && !dimensionCandidates.includes(column)) ||
+      (item.required_columns || []).find((column) => columns.includes(column) && !dimensionCandidates.includes(column)) ||
+      null;
+
+    if (!measureCandidate) {
+      continue;
+    }
+
+    const temporalCandidate = columns.find((column) => looksTemporal(column));
+    const xAxis = dimensionCandidates[0] || temporalCandidate || null;
+    const chartType: AnalyticsLaunchConfig["chartType"] = xAxis
+      ? (looksTemporal(xAxis) ? "line" : "bar")
+      : "histogram";
+
+    return {
+      martId,
+      chartType,
+      xAxis,
+      yAxis: measureCandidate,
+      aggregationFn,
+      title: item.display_name || item.id,
+    };
+  }
+
+  return null;
+}
+
+function humanizeIdentifier(value: string | null | undefined): string {
+  const text = (value || "").trim();
+  if (!text) {
+    return "Unknown";
+  }
+  return text
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function formatScalar(value: unknown): string | null {
+  if (typeof value === "number") {
+    return Number.isInteger(value) ? String(value) : value.toFixed(2);
+  }
+  if (typeof value === "string" && value.trim()) {
+    return value.trim();
+  }
+  return null;
+}
+
+function describePatch(
+  patch: StrategyAgentPatch,
+  kpiLabelById: Map<string, string>,
+): { title: string; subtitle: string | null; summary: string } {
+  const after = patch.after || {};
+  const before = patch.before || {};
+  const resolveKpiLabel = (kpiId: string | null | undefined, fallback?: string | null) => {
+    const key = (kpiId || "").trim();
+    if (key && kpiLabelById.has(key)) {
+      return kpiLabelById.get(key) as string;
+    }
+    const fallbackValue = (fallback || "").trim();
+    return fallbackValue || humanizeIdentifier(key);
+  };
+
+  if (patch.type === "add_kpi") {
+    const kpi = typeof after.kpi === "object" && after.kpi !== null ? (after.kpi as StrategyKpi) : null;
+    const label = resolveKpiLabel(kpi?.id, kpi?.display_name || kpi?.id || patch.target_id);
+    const marts = (kpi?.marts || []).join(", ");
+    const dimensions = (kpi?.dimensions || []).join(", ");
+    const owner = formatScalar(kpi?.owner);
+    const subtitle = [owner ? `Owner ${owner}` : null, kpi?.pillar_id ? `Pillar ${humanizeIdentifier(kpi.pillar_id)}` : null]
+      .filter(Boolean)
+      .join(" • ");
+    const summary = [
+      kpi?.formula ? `Formula ${kpi.formula}` : null,
+      marts ? `Marts ${marts}` : null,
+      dimensions ? `Dimensions ${dimensions}` : null,
+    ]
+      .filter(Boolean)
+      .join(" • ");
+    return {
+      title: `Add KPI: ${label}`,
+      subtitle: subtitle || null,
+      summary: summary || "Create a new KPI in the registry.",
+    };
+  }
+
+  if (patch.type === "set_target") {
+    const target =
+      typeof after.target === "object" && after.target !== null ? (after.target as Record<string, unknown>) : null;
+    const kpiId = typeof target?.kpi_id === "string" ? target.kpi_id : patch.target_id;
+    const label = resolveKpiLabel(kpiId, kpiId);
+    const subtitle = [formatScalar(target?.owner) ? `Owner ${formatScalar(target?.owner)}` : null, formatScalar(target?.horizon) ? `Horizon ${formatScalar(target?.horizon)}` : null]
+      .filter(Boolean)
+      .join(" • ");
+    const summary = [
+      formatScalar(target?.target_value) ? `Target ${formatScalar(target?.target_value)}` : null,
+      formatScalar(target?.yellow_threshold) ? `Yellow ${formatScalar(target?.yellow_threshold)}` : null,
+      formatScalar(target?.red_threshold) ? `Red ${formatScalar(target?.red_threshold)}` : null,
+      formatScalar(target?.direction) ? `Direction ${formatScalar(target?.direction)}` : null,
+    ]
+      .filter(Boolean)
+      .join(" • ");
+    return {
+      title: `Set Target for KPI: ${label}`,
+      subtitle: subtitle || null,
+      summary: summary || "Seed a target threshold for this KPI.",
+    };
+  }
+
+  if (patch.type === "add_rule") {
+    const rule = typeof after.rule === "object" && after.rule !== null ? (after.rule as Record<string, unknown>) : null;
+    const referencedKpiId = extractRuleReferences(typeof rule?.condition === "string" ? rule.condition : "")[0] || patch.target_id;
+    const label = resolveKpiLabel(referencedKpiId, referencedKpiId);
+    const subtitle = [
+      formatScalar(rule?.severity) ? `Severity ${String(formatScalar(rule?.severity)).toUpperCase()}` : null,
+      formatScalar(rule?.id) ? `Rule ${formatScalar(rule?.id)}` : null,
+    ]
+      .filter(Boolean)
+      .join(" • ");
+    const summary = [
+      typeof rule?.condition === "string" && rule.condition.trim() ? `When ${rule.condition.trim()}` : null,
+      typeof rule?.action === "string" && rule.action.trim() ? `Action ${rule.action.trim()}` : null,
+    ]
+      .filter(Boolean)
+      .join(" • ");
+    return {
+      title: `Add Rule for KPI: ${label}`,
+      subtitle: subtitle || null,
+      summary: summary || "Add a new decision rule for this KPI.",
+    };
+  }
+
+  if (patch.type === "replace_column") {
+    const details = after as Record<string, unknown>;
+    const kpiId = typeof details.kpi_id === "string" ? details.kpi_id : patch.target_id;
+    const label = resolveKpiLabel(kpiId, kpiId);
+    const mart = formatScalar(details.mart);
+    const fromColumn = formatScalar(details.from_column) || formatScalar((before as Record<string, unknown>).column);
+    const toColumn = formatScalar(details.to_column);
+    return {
+      title: `Replace Column for KPI: ${label}`,
+      subtitle: mart ? `Mart ${mart}` : null,
+      summary:
+        fromColumn && toColumn
+          ? `Swap ${fromColumn} -> ${toColumn}${mart ? ` in ${mart}` : ""}.`
+          : "Update the KPI to use an available column.",
+    };
+  }
+
+  if (patch.type === "update_formula") {
+    const formula = formatScalar((after as Record<string, unknown>).formula);
+    const label = resolveKpiLabel(patch.target_id, patch.target_id);
+    return {
+      title: `Update Formula for KPI: ${label}`,
+      subtitle: null,
+      summary: formula ? `New formula ${formula}` : "Update the KPI formula.",
+    };
+  }
+
+  return {
+    title: `${humanizeIdentifier(patch.type)}: ${humanizeIdentifier(patch.target_id)}`,
+    subtitle: null,
+    summary: "Apply a compatibility patch to the strategy layer.",
+  };
+}
+
 export default function StrategyTab() {
   const params = useParams<{ datasetId: string }>();
   const datasetId = params?.datasetId ?? "silkroute";
   const { user } = useAuth();
+  const { setActiveTab, setSelectedAggregation, setChartConfig } = useAppStore();
 
   const [section, setSection] = useState<Section>("overview");
   const [loading, setLoading] = useState(true);
@@ -248,9 +512,39 @@ export default function StrategyTab() {
   const targetsDefined = decision?.readiness_flags?.targets_defined ?? false;
   const rulesDefined = decision?.readiness_flags?.rules_defined ?? false;
   const kpis = kpiLibrary?.kpis ?? [];
+  const kpiLabelById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const item of kpis) {
+      map.set(item.id, item.display_name?.trim() || item.id);
+    }
+    return map;
+  }, [kpis]);
   const availableMarts = kpiLibrary?.available_marts ?? [];
   const martColumns = kpiLibrary?.mart_columns ?? {};
   const targets = targetsState?.targets ?? [];
+
+  const openInAnalytics = useCallback(
+    (item: AnalyticsLaunchInput) => {
+      const config = buildAnalyticsLaunchConfig(item, martColumns);
+      if (!config) {
+        setError(`No compatible analytics mapping was found for KPI '${item.id}'.`);
+        return;
+      }
+
+      setSelectedAggregation(config.martId);
+      setChartConfig({
+        chartType: config.chartType,
+        xAxis: config.xAxis,
+        yAxis: config.yAxis,
+        colorBy: null,
+        aggregationFn: config.aggregationFn,
+      });
+      setActiveTab("chart-builder");
+      setSection("kpi_library");
+      setSuccess(`Loaded ${config.title} into Chart Builder using mart '${config.martId}'.`);
+    },
+    [martColumns, setActiveTab, setChartConfig, setSelectedAggregation],
+  );
 
   const targetByKpiId = useMemo(() => {
     const map = new Map<string, StrategyTarget>();
@@ -1241,6 +1535,11 @@ export default function StrategyTab() {
         ))}
       </div>
 
+      <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 px-3 py-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">{sectionGuidance[section].title}</p>
+        <p className="mt-1 text-xs text-slate-700">{sectionGuidance[section].body}</p>
+      </div>
+
       {loading ? <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">Loading...</div> : null}
       {error ? <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"><div className="flex items-center gap-2"><AlertTriangle className="h-4 w-4" /><span>{error}</span></div></div> : null}
       {success ? <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{success}</div> : null}
@@ -1525,6 +1824,7 @@ export default function StrategyTab() {
                           </td>
                           <td className="px-2 py-2">
                             <div className="flex flex-wrap gap-1">
+                              <button type="button" onClick={() => openInAnalytics(kpi)} className="inline-flex items-center gap-1 rounded border border-indigo-300 px-2 py-0.5 text-[10px] text-indigo-700 hover:bg-indigo-50"><BarChart3 className="h-3 w-3" />Inspect</button>
                               <button type="button" onClick={() => openModal("edit", kpi)} className="rounded border border-slate-300 px-2 py-0.5 text-[10px] hover:bg-slate-100">Edit</button>
                               <button type="button" onClick={() => openModal("duplicate", kpi)} className="rounded border border-slate-300 px-2 py-0.5 text-[10px] hover:bg-slate-100">Duplicate</button>
                               <button type="button" onClick={() => void deleteKpi(kpi.id)} className="inline-flex items-center gap-1 rounded border border-red-300 px-2 py-0.5 text-[10px] text-red-700 hover:bg-red-50"><Trash2 className="h-3 w-3" />Delete</button>
@@ -1910,31 +2210,46 @@ export default function StrategyTab() {
                 </button>
               </div>
               <div className="max-h-80 space-y-2 overflow-auto">
-                {agentPatches.map((patch) => (
-                  <label key={patch.patch_id} className="block rounded border border-slate-200 p-2 text-[11px]">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={selectedPatchIds.includes(patch.patch_id)}
-                        onChange={(event) =>
-                          setSelectedPatchIds((prev) =>
-                            event.target.checked
-                              ? prev.includes(patch.patch_id)
-                                ? prev
-                                : [...prev, patch.patch_id]
-                              : prev.filter((item) => item !== patch.patch_id)
-                          )
-                        }
-                      />
-                      <span className="font-medium text-slate-800">{patch.type}</span>
-                      <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">
-                        {(patch.confidence * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                    <p className="mt-1 text-slate-700">{patch.target_id}</p>
-                    <p className="mt-1 text-slate-600">{patch.rationale}</p>
-                  </label>
-                ))}
+                {agentPatches.map((patch) => {
+                  const descriptor = describePatch(patch, kpiLabelById);
+                  return (
+                    <label key={patch.patch_id} className="block rounded border border-slate-200 p-2 text-[11px]">
+                      <div className="flex items-start gap-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedPatchIds.includes(patch.patch_id)}
+                          onChange={(event) =>
+                            setSelectedPatchIds((prev) =>
+                              event.target.checked
+                                ? prev.includes(patch.patch_id)
+                                  ? prev
+                                  : [...prev, patch.patch_id]
+                                : prev.filter((item) => item !== patch.patch_id)
+                            )
+                          }
+                          className="mt-0.5"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-medium text-slate-800">{descriptor.title}</span>
+                            <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">
+                              {(patch.confidence * 100).toFixed(0)}%
+                            </span>
+                            <span className="rounded-full bg-indigo-50 px-1.5 py-0.5 text-[10px] text-indigo-700">
+                              {humanizeIdentifier(patch.type)}
+                            </span>
+                          </div>
+                          {descriptor.subtitle ? <p className="mt-1 text-slate-500">{descriptor.subtitle}</p> : null}
+                          <p className="mt-1 text-slate-700">{descriptor.summary}</p>
+                          <p className="mt-1 text-slate-600">{patch.rationale}</p>
+                          <p className="mt-1 text-[10px] text-slate-500">
+                            Patch ID {patch.patch_id} • Source {patch.source}
+                          </p>
+                        </div>
+                      </div>
+                    </label>
+                  );
+                })}
                 {agentPatches.length === 0 ? (
                   <p className="text-xs text-slate-500">No patch suggestions yet.</p>
                 ) : null}
@@ -2103,13 +2418,30 @@ export default function StrategyTab() {
                               </span>
                             </td>
                             <td className="px-2 py-2">
-                              <button
-                                type="button"
-                                onClick={() => setSelectedEvaluationKpi(item)}
-                                className="rounded border border-slate-300 px-2 py-0.5 text-[10px] hover:bg-slate-100"
-                              >
-                                View details
-                              </button>
+                              <div className="flex flex-wrap gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => openInAnalytics({
+                                    id: item.id,
+                                    display_name: item.display_name,
+                                    formula: item.formula || "",
+                                    marts: item.marts || [],
+                                    required_columns: item.required_columns || [],
+                                    dimensions: item.dimensions || [],
+                                  })}
+                                  className="inline-flex items-center gap-1 rounded border border-indigo-300 px-2 py-0.5 text-[10px] text-indigo-700 hover:bg-indigo-50"
+                                >
+                                  <BarChart3 className="h-3 w-3" />
+                                  Inspect
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedEvaluationKpi(item)}
+                                  className="rounded border border-slate-300 px-2 py-0.5 text-[10px] hover:bg-slate-100"
+                                >
+                                  View details
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         );
@@ -2257,6 +2589,21 @@ export default function StrategyTab() {
               </div>
             </div>
             <div className="mt-4 flex items-center justify-end">
+              <button
+                type="button"
+                onClick={() => openInAnalytics({
+                  id: selectedEvaluationKpi.id,
+                  display_name: selectedEvaluationKpi.display_name,
+                  formula: selectedEvaluationKpi.formula || "",
+                  marts: selectedEvaluationKpi.marts || [],
+                  required_columns: selectedEvaluationKpi.required_columns || [],
+                  dimensions: selectedEvaluationKpi.dimensions || [],
+                })}
+                className="mr-2 inline-flex items-center gap-1 rounded-lg border border-indigo-300 px-3 py-1.5 text-xs text-indigo-700 hover:bg-indigo-50"
+              >
+                <BarChart3 className="h-3.5 w-3.5" />
+                Inspect in Analytics
+              </button>
               <button type="button" onClick={() => setSelectedEvaluationKpi(null)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50">Close</button>
             </div>
           </div>
