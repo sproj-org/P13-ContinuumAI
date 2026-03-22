@@ -8,8 +8,10 @@ import {
   buildPieData,
   chartMetricLabel,
   CHART_PALETTE,
+  type CategoricalSeriesDatum,
   metricColumnCandidates,
 } from "@/lib/chart-rendering";
+import { chartDimensionLabel } from "@/lib/chart-display";
 
 type ChartRows = Array<Record<string, unknown>>;
 
@@ -25,6 +27,7 @@ function getAxisValues(chartSpec: ChartSpecV1, rows: ChartRows) {
     x: labels,
     y: values,
     xField,
+    xLabel: chartDimensionLabel(xField),
     categoricalData: data,
     metricLabel: chartMetricLabel(chartSpec),
     metricCandidates,
@@ -32,10 +35,10 @@ function getAxisValues(chartSpec: ChartSpecV1, rows: ChartRows) {
 }
 
 export function renderChart(chartSpec: ChartSpecV1, rows: ChartRows) {
-  const { x, y, xField, metricLabel, categoricalData, metricCandidates } = getAxisValues(chartSpec, rows);
+  const { xLabel, metricLabel, categoricalData, metricCandidates } = getAxisValues(chartSpec, rows);
   const chartType = chartSpec.chart.type;
   const histogramData = buildHistogramData(rows, metricCandidates);
-  const pieData = buildPieData(x, y);
+  const pieData = buildPieData(categoricalData as CategoricalSeriesDatum[]);
 
   if (chartType === "pie") {
     return (
@@ -63,7 +66,7 @@ export function renderChart(chartSpec: ChartSpecV1, rows: ChartRows) {
         smooth
         style={{ stroke: "#8b5cf6" }}
         axis={{
-          x: { title: xField, labelFill: "#94a3b8" },
+          x: { title: xLabel, labelFill: "#94a3b8", labelAutoHide: true },
           y: { title: metricLabel, labelFill: "#94a3b8" },
         }}
         height={400}
@@ -93,7 +96,7 @@ export function renderChart(chartSpec: ChartSpecV1, rows: ChartRows) {
       yField="value"
       colorField="category"
       axis={{
-        x: { title: xField, labelFill: "#94a3b8" },
+        x: { title: xLabel, labelFill: "#94a3b8", labelAutoHide: true },
         y: { title: metricLabel, labelFill: "#94a3b8" },
       }}
       scale={{ color: { range: CHART_PALETTE } }}

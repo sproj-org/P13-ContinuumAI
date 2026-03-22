@@ -1,6 +1,10 @@
 "use client";
 
 import type { ChartSpecV1 } from "@/lib/types/chartspec";
+import {
+  chartMetricLabel as resolveChartMetricLabel,
+  formatChartCategoryLabel,
+} from "@/lib/chart-display";
 
 export const CHART_PALETTE = [
   "#8b5cf6",
@@ -15,11 +19,14 @@ export const CHART_PALETTE = [
 
 type ChartRows = Array<Record<string, unknown>>;
 
-export function toDisplayLabel(value: unknown): string {
-  if (value == null) return "NULL";
-  if (typeof value === "string") return value;
-  if (typeof value === "number" || typeof value === "boolean") return `${value}`;
-  return JSON.stringify(value);
+export interface CategoricalSeriesDatum {
+  category: string;
+  rawCategory: unknown;
+  value: number;
+}
+
+export function toDisplayLabel(value: unknown, fieldName?: string): string {
+  return formatChartCategoryLabel(value, fieldName);
 }
 
 export function metricColumnCandidates(chartSpec: ChartSpecV1): string[] {
@@ -31,11 +38,7 @@ export function metricColumnCandidates(chartSpec: ChartSpecV1): string[] {
 }
 
 export function chartMetricLabel(chartSpec: ChartSpecV1): string {
-  const metric = chartSpec.encoding.y[0];
-  if (chartSpec.chart.type === "histogram") {
-    return metric.field;
-  }
-  return `${metric.aggregation.toUpperCase()}(${metric.field})`;
+  return resolveChartMetricLabel(chartSpec);
 }
 
 export function pickRowMetricValue(
@@ -64,27 +67,32 @@ export function buildCategoricalSeries(
     xField: string;
     metricCandidates: string[];
   },
-): { labels: string[]; values: number[]; data: Array<{ category: string; value: number }> } {
-  const labels = rows.map((row) => toDisplayLabel(row[xField]));
-  const values = rows.map((row) => pickRowMetricValue(row, metricCandidates) ?? 0);
+): { labels: string[]; values: number[]; data: CategoricalSeriesDatum[] } {
+  const data = rows.map((row) => {
+    const rawCategory = row[xField];
+    return {
+      category: toDisplayLabel(rawCategory, xField),
+      rawCategory,
+      value: pickRowMetricValue(row, metricCandidates) ?? 0,
+    };
+  });
+  const labels = data.map((item) => item.category);
+  const values = data.map((item) => item.value);
   return {
     labels,
     values,
-    data: labels.map((category, index) => ({
-      category,
-      value: values[index] ?? 0,
-    })),
+    data,
   };
 }
 
 export function buildPieData(
-  labels: string[],
-  values: number[],
+  data: CategoricalSeriesDatum[],
   maxSlices = 8,
-): Array<{ type: string; value: number }> {
-  const pieDataRaw = labels.map((type, index) => ({
-    type,
-    value: values[index] ?? 0,
+): Array<{ type: string; value: number; rawCategory: unknown }> {
+  const pieDataRaw = data.map((item) => ({
+    type: item.category,
+    value: item.value,
+    rawCategory: item.rawCategory,
   }));
 
   if (pieDataRaw.length <= maxSlices) {
@@ -94,7 +102,7 @@ export function buildPieData(
   const sorted = [...pieDataRaw].sort((left, right) => right.value - left.value);
   const head = sorted.slice(0, maxSlices - 1);
   const otherValue = sorted.slice(maxSlices - 1).reduce((sum, item) => sum + item.value, 0);
-  return otherValue > 0 ? [...head, { type: "Other", value: otherValue }] : head;
+  return otherValue > 0 ? [...head, { type: "Other", value: otherValue, rawCategory: null }] : head;
 }
 
 export function buildHistogramData(

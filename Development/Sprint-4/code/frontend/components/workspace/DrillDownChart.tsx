@@ -7,12 +7,16 @@ import { ChevronRight, Loader2, RotateCcw } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import type { AggregateFilter, DatasetProfileAPI } from "@/lib/api-types";
 import {
+  chartDimensionLabel,
+  chartMetricLabel as resolveChartMetricLabel,
+  formatChartCategoryLabel,
+  getChartDisplayPolicy,
+} from "@/lib/chart-display";
+import {
   buildCategoricalSeries,
   buildHistogramData,
   buildPieData,
-  chartMetricLabel,
   CHART_PALETTE,
-  toDisplayLabel,
 } from "@/lib/chart-rendering";
 import { useStrategyKpis, useTableProfile } from "@/lib/hooks";
 import {
@@ -27,8 +31,14 @@ type ChartRows = Array<Record<string, unknown>>;
 
 interface DrillLevel {
   dimension: string;
-  clickedValue: string;
+  clickedValue: unknown;
+  clickedLabel: string;
   nextDimension: string;
+}
+
+interface PendingDrillSelection {
+  rawValue: unknown;
+  label: string;
 }
 
 export interface DrillDownChartProps {
@@ -66,30 +76,36 @@ export default function DrillDownChart({
 
   const [drillStack, setDrillStack] = useState<DrillLevel[]>([]);
   const [currentRows, setCurrentRows] = useState<ChartRows>(initialRows);
-  const [pendingClickValue, setPendingClickValue] = useState<string | null>(null);
+  const [pendingClick, setPendingClick] = useState<PendingDrillSelection | null>(null);
   const [selectedNextDimension, setSelectedNextDimension] = useState<string>("");
   const [isDimensionPickerOpen, setIsDimensionPickerOpen] = useState(false);
   const [quickDrillEnabled, setQuickDrillEnabled] = useState(defaultAutoDrill);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const chartIdRef = useRef<string>("");
-  const chartId = `${chartSpec.table}:${chartSpec.encoding.x.field}:${chartSpec.encoding.y[0]?.field}:${chartSpec.chart.type}`;
+  const baselineFingerprintRef = useRef<string>("");
+  const baselineFingerprint = useMemo(
+    () => JSON.stringify({ chartSpec, rows: initialRows, defaultAutoDrill }),
+    [chartSpec, initialRows, defaultAutoDrill],
+  );
+
   useEffect(() => {
-    if (chartIdRef.current !== chartId) {
-      chartIdRef.current = chartId;
+    if (baselineFingerprintRef.current !== baselineFingerprint) {
+      baselineFingerprintRef.current = baselineFingerprint;
       setDrillStack([]);
       setCurrentRows(initialRows);
-      setPendingClickValue(null);
+      setPendingClick(null);
       setIsDimensionPickerOpen(false);
       setSelectedNextDimension("");
       setQuickDrillEnabled(defaultAutoDrill);
       setError(null);
     }
-  }, [chartId, defaultAutoDrill, initialRows]);
+  }, [baselineFingerprint, defaultAutoDrill, initialRows]);
 
   const startDimension = chartSpec.encoding.x.field;
   const currentDimension = drillStack.length > 0 ? drillStack[drillStack.length - 1].nextDimension : startDimension;
+  const startDimensionLabel = chartDimensionLabel(startDimension);
+  const currentDimensionLabel = chartDimensionLabel(currentDimension);
 
   const usedDimensions = useMemo(() => {
     const used = new Set<string>([startDimension]);
@@ -118,7 +134,9 @@ export default function DrillDownChart({
   const metric = chartSpec.encoding.y[0];
   const metricField = metric?.field ?? "agg_value";
   const aggregation = metric?.aggregation ?? "sum";
-  const metricLabel = chartMetricLabel(chartSpec);
+  const metricLabel = resolveChartMetricLabel(chartSpec, {
+    strategyKpis: strategyKpiLibrary?.kpis ?? [],
+  });
   const metricCandidates = useMemo(
     () => Array.from(new Set([metric?.alias, "agg_value", metricField].filter((value): value is string => Boolean(value)))),
     [metric?.alias, metricField],
@@ -133,15 +151,32 @@ export default function DrillDownChart({
       usedDimensions,
       metricField,
       chartTitle,
+      chartType: chartSpec.chart.type,
       strategyKpis: strategyKpiLibrary?.kpis ?? [],
     });
-  }, [profile, chartSpec.table, currentDimension, usedDimensions, metricField, chartTitle, strategyKpiLibrary?.kpis]);
+  }, [profile, chartSpec.table, currentDimension, usedDimensions, metricField, chartTitle, chartSpec.chart.type, strategyKpiLibrary?.kpis]);
 
   const drillCandidates = useMemo(() => rankedDrillCandidates.map((candidate) => candidate.name), [rankedDrillCandidates]);
   const topRecommendation = rankedDrillCandidates[0] ?? null;
-  const canDrill = drillCandidates.length > 0;
-  const supportsDrill = canDrill && chartSpec.chart.type !== "histogram";
-  const canAutoDrill = supportsDrill && quickDrillEnabled && isStrongDrillRecommendation(rankedDrillCandidates);
+  const topRecommendationLabel = topRecommendation ? chartDimensionLabel(topRecommendation.name) : null;
+
+  const displayPolicy = useMemo(
+    () =>
+      getChartDisplayPolicy({
+        chartSpec,
+        currentDimension,
+        profile,
+        rankedCandidates: rankedDrillCandidates,
+      }),
+    [chartSpec, currentDimension, profile, rankedDrillCandidates],
+  );
+
+  const supportsDrill = displayPolicy.supportsDrill;
+  const canAutoDrill =
+    supportsDrill &&
+    displayPolicy.allowQuickDrill &&
+    quickDrillEnabled &&
+    isStrongDrillRecommendation(rankedDrillCandidates);
 
   const fetchDrillData = useCallback(
     async (dimension: string, filters: AggregateFilter[]) => {
@@ -153,7 +188,7 @@ export default function DrillDownChart({
           x: dimension,
           group_by: [dimension],
           filters,
-          agg: { column: metricField, fn: aggregation },
+          agg: { column: aggregation === "count" ? "*" : metricField, fn: aggregation },
           limit: chartSpec.limit ?? 20,
         });
         setCurrentRows(resp.rows);
@@ -187,16 +222,17 @@ export default function DrillDownChart({
   );
 
   const executeDrill = useCallback(
-    (nextDimension: string, clickedValueOverride?: string | null) => {
-      const effectiveClickValue = clickedValueOverride ?? pendingClickValue;
-      if (!effectiveClickValue || !nextDimension) {
+    (nextDimension: string, pendingSelectionOverride?: PendingDrillSelection | null) => {
+      const effectiveSelection = pendingSelectionOverride ?? pendingClick;
+      if (!effectiveSelection || effectiveSelection.rawValue == null || !nextDimension) {
         setIsDimensionPickerOpen(false);
         return;
       }
 
       const newLevel: DrillLevel = {
         dimension: currentDimension,
-        clickedValue: effectiveClickValue,
+        clickedValue: effectiveSelection.rawValue,
+        clickedLabel: effectiveSelection.label,
         nextDimension,
       };
       const newStack = [...drillStack, newLevel];
@@ -204,42 +240,42 @@ export default function DrillDownChart({
       setDrillStack(newStack);
       setIsDimensionPickerOpen(false);
       setSelectedNextDimension("");
-      setPendingClickValue(null);
-      fetchDrillData(nextDimension, buildFilters(newStack));
+      setPendingClick(null);
+      void fetchDrillData(nextDimension, buildFilters(newStack));
     },
-    [pendingClickValue, currentDimension, drillStack, fetchDrillData, buildFilters],
+    [pendingClick, currentDimension, drillStack, fetchDrillData, buildFilters],
   );
 
   const handleDatumClick = useCallback(
     (rawValue: unknown) => {
-      if (!supportsDrill) return;
+      if (!supportsDrill || rawValue == null || rawValue === "") return;
 
-      const clickedValue = toDisplayLabel(rawValue);
-      if (!clickedValue || clickedValue === "NULL") return;
-
+      const clickedLabel = formatChartCategoryLabel(rawValue, currentDimension);
       const topCandidate = topRecommendation?.name ?? drillCandidates[0] ?? "";
-      setPendingClickValue(clickedValue);
+      const nextSelection = { rawValue, label: clickedLabel };
+
+      setPendingClick(nextSelection);
       setSelectedNextDimension(topCandidate);
 
       if (canAutoDrill && topCandidate) {
-        void executeDrill(topCandidate, clickedValue);
+        executeDrill(topCandidate, nextSelection);
         return;
       }
 
       setIsDimensionPickerOpen(true);
     },
-    [supportsDrill, topRecommendation?.name, drillCandidates, canAutoDrill, executeDrill],
+    [supportsDrill, currentDimension, topRecommendation?.name, drillCandidates, canAutoDrill, executeDrill],
   );
 
   const confirmDrill = useCallback(() => {
     executeDrill(selectedNextDimension);
   }, [executeDrill, selectedNextDimension]);
 
-  const autoPickDrill = useCallback(() => {
+  const useRecommendedDrill = useCallback(() => {
     const topCandidate = topRecommendation?.name ?? drillCandidates[0];
     if (!topCandidate) {
       setIsDimensionPickerOpen(false);
-      setPendingClickValue(null);
+      setPendingClick(null);
       setSelectedNextDimension("");
       return;
     }
@@ -251,7 +287,7 @@ export default function DrillDownChart({
       if (levelIndex === -1) {
         setDrillStack([]);
         setCurrentRows(initialRows);
-        setPendingClickValue(null);
+        setPendingClick(null);
         setIsDimensionPickerOpen(false);
         setSelectedNextDimension("");
         setError(null);
@@ -261,17 +297,17 @@ export default function DrillDownChart({
       const newStack = drillStack.slice(0, levelIndex + 1);
       const nextDimension = newStack.at(-1)?.nextDimension ?? startDimension;
       setDrillStack(newStack);
-      setPendingClickValue(null);
+      setPendingClick(null);
       setIsDimensionPickerOpen(false);
       setSelectedNextDimension("");
       setError(null);
-      fetchDrillData(nextDimension, buildFilters(newStack));
+      void fetchDrillData(nextDimension, buildFilters(newStack));
     },
     [drillStack, initialRows, fetchDrillData, buildFilters, startDimension],
   );
 
   const chartType = chartSpec.chart.type;
-  const { labels, values, data: chartData } = useMemo(
+  const { data: chartData } = useMemo(
     () =>
       buildCategoricalSeries(currentRows, {
         xField: currentDimension,
@@ -279,13 +315,13 @@ export default function DrillDownChart({
       }),
     [currentRows, currentDimension, metricCandidates],
   );
-  const pieData = useMemo(() => buildPieData(labels, values), [labels, values]);
+  const pieData = useMemo(() => buildPieData(chartData), [chartData]);
   const histogramData = useMemo(() => buildHistogramData(currentRows, metricCandidates), [currentRows, metricCandidates]);
 
   const bindClickHandler = useCallback(
     (event: unknown) => {
       const datum = (event as { data?: { data?: Record<string, unknown> } })?.data?.data;
-      handleDatumClick(datum?.type ?? datum?.category ?? datum?.[currentDimension]);
+      handleDatumClick(datum?.rawCategory ?? datum?.[currentDimension]);
     },
     [handleDatumClick, currentDimension],
   );
@@ -321,7 +357,7 @@ export default function DrillDownChart({
           smooth
           style={{ stroke: "#8b5cf6" }}
           axis={{
-            x: { title: currentDimension, labelFill: "#475569" },
+            x: { title: currentDimensionLabel, labelFill: "#475569", labelAutoHide: true },
             y: { title: metricLabel, labelFill: "#475569" },
           }}
           interaction={{ elementSelect: { single: true } }}
@@ -356,7 +392,7 @@ export default function DrillDownChart({
         yField="value"
         colorField="category"
         axis={{
-          x: { title: currentDimension, labelFill: "#475569" },
+          x: { title: currentDimensionLabel, labelFill: "#475569", labelAutoHide: true },
           y: { title: metricLabel, labelFill: "#475569" },
         }}
         scale={{ color: { range: CHART_PALETTE } }}
@@ -388,11 +424,11 @@ export default function DrillDownChart({
             onClick={() => handleBreadcrumbClick(-1)}
             className="px-2 py-1 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors font-medium"
           >
-            {startDimension}
+            {startDimensionLabel}
           </button>
 
           {drillStack.map((level, index) => (
-            <span key={`${level.dimension}-${level.clickedValue}-${level.nextDimension}`} className="flex items-center gap-1">
+            <span key={`${level.dimension}-${String(level.clickedValue)}-${level.nextDimension}`} className="flex items-center gap-1">
               <ChevronRight className="w-3 h-3 text-slate-400" />
               <button
                 onClick={() => handleBreadcrumbClick(index)}
@@ -402,36 +438,38 @@ export default function DrillDownChart({
                     : "text-slate-600 hover:text-indigo-600 hover:bg-indigo-50"
                 }`}
               >
-                {level.clickedValue}
+                {level.clickedLabel}
               </button>
             </span>
           ))}
 
           <ChevronRight className="w-3 h-3 text-slate-400" />
-          <span className="px-2 py-1 text-indigo-500 font-medium italic">{currentDimension}</span>
+          <span className="px-2 py-1 text-indigo-500 font-medium italic">{currentDimensionLabel}</span>
 
           {supportsDrill ? (
             <div className="ml-auto flex items-center gap-2">
               <span className="text-slate-400 italic">
-                {canAutoDrill && topRecommendation
-                  ? `Quick drill targets ${topRecommendation.name}`
+                {canAutoDrill && topRecommendationLabel
+                  ? `Quick drill targets ${topRecommendationLabel}`
                   : "Click to choose the next drill dimension"}
               </span>
-              <button
-                type="button"
-                onClick={() => setQuickDrillEnabled((value) => !value)}
-                className={`rounded-full border px-2 py-1 text-[10px] font-medium transition-colors ${
-                  quickDrillEnabled
-                    ? "border-indigo-300 bg-indigo-100 text-indigo-700"
-                    : "border-slate-300 bg-white text-slate-600"
-                }`}
-              >
-                Quick drill {quickDrillEnabled ? "on" : "off"}
-              </button>
+              {displayPolicy.allowQuickDrill ? (
+                <button
+                  type="button"
+                  onClick={() => setQuickDrillEnabled((value) => !value)}
+                  className={`rounded-full border px-2 py-1 text-[10px] font-medium transition-colors ${
+                    quickDrillEnabled
+                      ? "border-indigo-300 bg-indigo-100 text-indigo-700"
+                      : "border-slate-300 bg-white text-slate-600"
+                  }`}
+                >
+                  Quick drill {quickDrillEnabled ? "on" : "off"}
+                </button>
+              ) : null}
             </div>
           ) : (
             <span className="ml-auto text-slate-400 italic">
-              {chartType === "histogram" ? "Histogram drilldown is not available" : "No deeper dimensions available"}
+              {displayPolicy.disabledReason ?? "No deeper dimensions available"}
             </span>
           )}
         </div>
@@ -441,24 +479,22 @@ export default function DrillDownChart({
         <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 bg-indigo-50/50 border-b border-indigo-100/50 rounded-t-xl text-xs flex-shrink-0">
           <span className="text-indigo-500 font-medium">
             {supportsDrill
-              ? canAutoDrill && topRecommendation
-                ? `Click a ${chartType === "pie" ? "slice" : chartType === "line" ? "point" : "bar"} to quick-drill into ${topRecommendation.name}`
+              ? canAutoDrill && topRecommendationLabel
+                ? `Click a ${chartType === "pie" ? "slice" : chartType === "line" ? "point" : "bar"} to quick-drill into ${topRecommendationLabel}`
                 : `Click a ${chartType === "pie" ? "slice" : chartType === "line" ? "point" : "bar"} to choose the next drill dimension`
-              : chartType === "histogram"
-              ? "Histogram shows the filtered distribution of the selected metric"
-              : "Drilldown is not available for this view"}
+              : displayPolicy.disabledReason ?? "Drilldown is not available for this view"}
           </span>
           <div className="flex items-center gap-2">
             <span className="text-slate-400">
-              {supportsDrill && topRecommendation
-                ? `${topRecommendation.name} • ${topRecommendation.recommendationLabel}`
+              {supportsDrill && topRecommendationLabel
+                ? `${topRecommendationLabel} - ${topRecommendation.recommendationLabel}`
                 : supportsDrill && configuredHierarchy.length > 0
-                ? `Recommended path: ${configuredHierarchy.join(" -> ")}`
+                ? `Recommended path: ${configuredHierarchy.map((dimension) => chartDimensionLabel(dimension)).join(" -> ")}`
                 : supportsDrill
                 ? `${drillCandidates.length} dimensions available`
                 : metricLabel}
             </span>
-            {supportsDrill ? (
+            {supportsDrill && displayPolicy.allowQuickDrill ? (
               <button
                 type="button"
                 onClick={() => setQuickDrillEnabled((value) => !value)}
@@ -498,11 +534,11 @@ export default function DrillDownChart({
           <div className="w-full max-w-sm rounded-xl border border-indigo-200 bg-white p-4 shadow-xl">
             <h4 className="text-sm font-semibold text-slate-900">Choose next drill dimension</h4>
             <p className="mt-1 text-xs text-slate-600">
-              Selected value: <span className="font-medium">{pendingClickValue}</span>
+              Selected value: <span className="font-medium">{pendingClick?.label}</span>
             </p>
-            {topRecommendation ? (
+            {topRecommendationLabel ? (
               <p className="mt-1 text-[11px] text-indigo-700">
-                Best match: <span className="font-medium">{topRecommendation.name}</span> • {topRecommendation.recommendationLabel}
+                Best match: <span className="font-medium">{topRecommendationLabel}</span> - {topRecommendation?.recommendationLabel}
               </p>
             ) : null}
             <select
@@ -512,7 +548,7 @@ export default function DrillDownChart({
             >
               {rankedDrillCandidates.map((candidate) => (
                 <option key={candidate.name} value={candidate.name}>
-                  {candidate.name}
+                  {chartDimensionLabel(candidate.name)}
                   {topRecommendation?.name === candidate.name ? " (recommended)" : preferredNextDimensions.includes(candidate.name) ? " (path)" : ""}
                 </option>
               ))}
@@ -526,7 +562,7 @@ export default function DrillDownChart({
               <button
                 onClick={() => {
                   setIsDimensionPickerOpen(false);
-                  setPendingClickValue(null);
+                  setPendingClick(null);
                   setSelectedNextDimension("");
                 }}
                 className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
@@ -534,10 +570,10 @@ export default function DrillDownChart({
                 Cancel
               </button>
               <button
-                onClick={autoPickDrill}
+                onClick={useRecommendedDrill}
                 className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-sm text-indigo-700 hover:bg-indigo-100"
               >
-                Auto Pick Best
+                Use recommendation
               </button>
               <button onClick={confirmDrill} className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm text-white hover:bg-indigo-700">
                 Drill

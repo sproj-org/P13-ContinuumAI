@@ -33,7 +33,8 @@ import type {
 } from "@/lib/types/chat";
 import { renderChart } from "@/components/workspace/renderChart";
 import MarkdownMessage from "@/components/common/MarkdownMessage";
-import { useSavedCharts } from "@/lib/hooks";
+import { useSavedCharts, useStrategyKpis } from "@/lib/hooks";
+import { resolveChartTitle } from "@/lib/chart-display";
 import { getMartDrillAdvisory } from "@/lib/mart-drill-utils";
 
 interface VizAgentChatbotProps {
@@ -201,9 +202,21 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
   );
   const turns = chatKey ? chatTurnsByKey[chatKey] ?? [] : [];
   const { data: savedCharts } = useSavedCharts(routeDatasetId);
+  const { data: strategyKpiLibrary } = useStrategyKpis(routeDatasetId);
   const lastChartSpec = chatKey ? lastChartSpecByKey[chatKey] ?? null : null;
   const chatState = chatKey ? chatStateByKey[chatKey] : undefined;
   const savedPrompts = chatKey ? savedPromptsByKey[chatKey] ?? [] : [];
+  const currentChartPreviewTitle = useMemo(
+    () =>
+      currentChartPreview
+        ? resolveChartTitle({
+            chartSpec: currentChartPreview.chartSpec,
+            preferredTitle: currentChartPreview.title,
+            strategyKpis: strategyKpiLibrary?.kpis ?? [],
+          })
+        : "",
+    [currentChartPreview, strategyKpiLibrary?.kpis],
+  );
   const selectedMart = useMemo(
     () => availableMarts.find((mart) => mart.id === selectedAggregation) ?? null,
     [availableMarts, selectedAggregation]
@@ -610,7 +623,7 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
     }
     
     saveChart({
-      title: currentChartPreview.title,
+      title: currentChartPreviewTitle,
       dashboardName: resolvedDashboardName,
       chartSpec: currentChartPreview.chartSpec,
       rows: currentChartPreview.rows,
@@ -619,7 +632,7 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
     });
     
     // Show success feedback
-    showToast(`Chart "${currentChartPreview.title}" saved to "${resolvedDashboardName}" dashboard!`, "success");
+    showToast(`Chart "${currentChartPreviewTitle}" saved to "${resolvedDashboardName}" dashboard!`, "success");
     setCurrentChartPreview(null);
   };
 
@@ -679,7 +692,7 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
                 {/* Chart Title Section */}
                 <div className="px-8 pt-8 pb-4 bg-gradient-to-r from-white to-indigo-50/30">
                   <h4 className="text-xl font-bold text-slate-900 text-center line-clamp-2">
-                    {currentChartPreview.title}
+                    {currentChartPreviewTitle}
                   </h4>
                 </div>
                 

@@ -15,7 +15,9 @@ import {
   useCreateDashboard,
   useRenameDashboard,
   useDeleteDashboard,
+  useStrategyKpis,
 } from "@/lib/hooks";
+import { resolveChartTitle } from "@/lib/chart-display";
 
 export default function DashboardTab() {
   const {
@@ -44,6 +46,7 @@ export default function DashboardTab() {
   // ── Backend sync hooks ──────────────────────────────────
   const { data: backendCharts } = useSavedCharts(selectedDatasetId);
   const { data: dashboardsData } = useDashboards(selectedDatasetId);
+  const { data: strategyKpiLibrary } = useStrategyKpis(selectedDatasetId);
   const createMutation = useCreateSavedChart();
   const deleteMutation = useDeleteSavedChart();
   const updateMutation = useUpdateSavedChart();
@@ -298,6 +301,18 @@ export default function DashboardTab() {
     return formatDate(latest.createdAt);
   }, [filteredCharts]);
 
+  const getDisplayTitle = useCallback(
+    (chart: SavedChart) =>
+      resolveChartTitle({
+        chartSpec: chart.chartSpec,
+        preferredTitle: chart.title,
+        strategyKpis: strategyKpiLibrary?.kpis ?? [],
+      }),
+    [strategyKpiLibrary?.kpis],
+  );
+
+  const previewChartTitle = previewChart ? getDisplayTitle(previewChart) : "";
+
   return (
     <div className="h-full flex bg-gradient-to-br from-slate-50 via-indigo-50/20 to-violet-50/20">
       {/* ── Sidebar: Named dashboard navigation ── */}
@@ -476,11 +491,13 @@ export default function DashboardTab() {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {filteredCharts.map((chart) => (
-              <div
-                key={chart.id}
-                className="group bg-white rounded-2xl border border-slate-200/80 shadow-md hover:shadow-xl hover:border-indigo-200 transition-all duration-300 overflow-hidden"
-              >
+            {filteredCharts.map((chart) => {
+              const chartDisplayTitle = getDisplayTitle(chart);
+              return (
+                <div
+                  key={chart.id}
+                  className="group bg-white rounded-2xl border border-slate-200/80 shadow-md hover:shadow-xl hover:border-indigo-200 transition-all duration-300 overflow-hidden"
+                >
                 {/* Chart Header */}
                 <div className="p-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-indigo-50/30">
                   <div className="flex items-start justify-between gap-3">
@@ -504,10 +521,10 @@ export default function DashboardTab() {
                       ) : (
                         <div className="flex items-center gap-2 mb-1">
                           <h3 className="font-semibold text-slate-900 truncate flex-1">
-                            {chart.title}
+                            {chartDisplayTitle}
                           </h3>
                           <button
-                            onClick={() => handleStartEdit(chart.id, chart.title)}
+                            onClick={() => handleStartEdit(chart.id, chartDisplayTitle)}
                             className="p-1 text-slate-400 hover:text-[#4f46e5] hover:bg-indigo-50 rounded opacity-0 group-hover:opacity-100 transition-opacity"
                             title="Edit title"
                           >
@@ -544,7 +561,7 @@ export default function DashboardTab() {
                       rows={chart.rows}
                       datasetId={selectedDatasetId}
                       height="100%"
-                      chartTitle={chart.title}
+                      chartTitle={chartDisplayTitle}
                     />
                   </div>
                 </div>
@@ -581,7 +598,8 @@ export default function DashboardTab() {
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -677,7 +695,7 @@ export default function DashboardTab() {
                     <Eye className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-slate-900">{previewChart.title}</h3>
+                    <h3 className="text-xl font-bold text-slate-900">{previewChartTitle}</h3>
                     <div className="flex items-center gap-3 text-xs text-slate-600 mt-1">
                       <div className="flex items-center gap-1">
                         <Database className="w-3 h-3" />
@@ -710,7 +728,7 @@ export default function DashboardTab() {
                       rows={previewChart.rows}
                       datasetId={selectedDatasetId}
                       height="100%"
-                      chartTitle={previewChart.title}
+                      chartTitle={previewChartTitle}
                     />
                   </div>
                 </div>

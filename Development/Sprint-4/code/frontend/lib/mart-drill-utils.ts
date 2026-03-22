@@ -35,6 +35,7 @@ export interface RankDrillCandidatesParams {
   usedDimensions: Set<string>;
   metricField?: string | null;
   chartTitle?: string | null;
+  chartType?: string | null;
   strategyKpis?: StrategyKpi[] | null;
 }
 
@@ -146,6 +147,48 @@ function roleScore(role: string): number {
   if (role === "dimension" || role === "text") return 5;
   if (role === "boolean") return 3;
   if (TEMPORAL_ROLES.has(role)) return 1;
+  return 0;
+}
+
+function looksTemporalFieldName(name: string): boolean {
+  const lower = name.toLowerCase();
+  return ["date", "day", "week", "month", "quarter", "year", "time", "timestamp"].some((token) => lower.includes(token));
+}
+
+function chartCompatibilityScore(params: RankDrillCandidatesParams, column: DatasetProfileAPI["columns"][number], currentRole: string): number {
+  const chartType = params.chartType ?? "bar";
+  const candidateIsTemporal = TEMPORAL_ROLES.has(column.effective_role) || looksTemporalFieldName(column.name);
+  const currentIsTemporal = TEMPORAL_ROLES.has(currentRole) || looksTemporalFieldName(params.currentDimension);
+
+  if (chartType === "histogram") {
+    return -100;
+  }
+
+  if (chartType === "line") {
+    if (currentIsTemporal) {
+      return -20;
+    }
+    if (candidateIsTemporal) {
+      return -8;
+    }
+    return 4;
+  }
+
+  if (chartType === "pie") {
+    let score = 0;
+    if (candidateIsTemporal) score -= 6;
+    if (column.distinct_count > 48) score -= 8;
+    if (column.distinct_count <= 12) score += 3;
+    return score;
+  }
+
+  if (chartType === "bar") {
+    if (!currentIsTemporal && candidateIsTemporal) {
+      return -4;
+    }
+    return 0;
+  }
+
   return 0;
 }
 
@@ -327,6 +370,8 @@ export function getConfiguredNextDimensions(params: {
 export function rankDrillCandidates(params: RankDrillCandidatesParams): RankedDrillCandidate[] {
   const availableColumns = params.profile.columns.map((column) => column.name);
   const availableColumnSet = new Set(availableColumns);
+  const currentColumn = params.profile.columns.find((column) => column.name === params.currentDimension);
+  const currentRole = currentColumn?.effective_role ?? "";
   const configuredNext = getConfiguredNextDimensions({
     martId: params.martId,
     currentDimension: params.currentDimension,
@@ -349,7 +394,9 @@ export function rankDrillCandidates(params: RankDrillCandidatesParams): RankedDr
     .filter((column) => column.name !== params.currentDimension)
     .filter((column) => !params.usedDimensions.has(column.name))
     .map((column) => {
+      const compatibility = chartCompatibilityScore(params, column, currentRole);
       const heuristicScore =
+        compatibility +
         keywordScore(column.name, params.currentDimension) +
         roleScore(column.effective_role) +
         Math.min(column.distinct_count, 1000) / 100;
@@ -401,10 +448,10 @@ export function isStrongDrillRecommendation(candidates: RankedDrillCandidate[]):
   const runnerUp = candidates[1];
   const scoreGap = top.score - runnerUp.score;
   if (top.recommendationReason === "kpi_context") {
-    return scoreGap >= 3;
+    return top.score >= 18 && scoreGap >= 3;
   }
   if (top.recommendationReason === "mart_hierarchy") {
-    return scoreGap >= 4;
+    return top.score >= 14 && scoreGap >= 2;
   }
-  return scoreGap >= 6;
+  return top.score >= 16 && scoreGap >= 7;
 }

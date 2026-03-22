@@ -2,12 +2,13 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useAppStore, ChartConfig } from "@/lib/store";
-import { useTableProfile, useChartsPreview, useDashboards } from "@/lib/hooks";
+import { useTableProfile, useChartsPreview, useDashboards, useStrategyKpis } from "@/lib/hooks";
 import DrillDownChart from "@/components/workspace/DrillDownChart";
 import {
   transformColumnProfile,
   type ColumnRole,
 } from "@/lib/transformers";
+import { humanizeFieldLabel, resolveChartTitle } from "@/lib/chart-display";
 import { getMartDrillAdvisory } from "@/lib/mart-drill-utils";
 import type { ChartSpecV1, FilterOperator, FilterSpec } from "@/lib/types/chartspec";
 import { motion, AnimatePresence } from "framer-motion";
@@ -243,6 +244,7 @@ export default function ChartBuilderTab() {
 
   const { data: profile, isLoading } = useTableProfile(selectedDatasetId, selectedAggregation);
   const { data: dashboardsData } = useDashboards(selectedDatasetId);
+  const { data: strategyKpiLibrary } = useStrategyKpis(selectedDatasetId);
 
   const dashboardOptions = useMemo(() => {
     const base = new Set<string>(["Default"]);
@@ -270,7 +272,7 @@ export default function ChartBuilderTab() {
     if (!selectedXAxisColumn) return null;
     if (selectedXAxisColumn.role !== "dimension") return null;
     if (selectedXAxisColumn.uniqueCount <= 50) return null;
-    return `X-axis '${selectedXAxisColumn.name}' has ${selectedXAxisColumn.uniqueCount.toLocaleString()} unique values. Consider reducing limit, adding filters, or switching to a higher-level dimension.`;
+    return `${humanizeFieldLabel(selectedXAxisColumn.name, { dropIdSuffix: true })} has ${selectedXAxisColumn.uniqueCount.toLocaleString()} distinct values on the X-axis. Consider reducing the limit, adding filters, or switching to a higher-level dimension.`;
   }, [selectedXAxisColumn]);
 
   const martSwitchSuggestion = useMemo(() => {
@@ -369,24 +371,13 @@ export default function ChartBuilderTab() {
 
   const chartSpecificWarning = useMemo(() => {
     if (chartConfig.chartType === "pie" && selectedXAxisColumn && selectedXAxisColumn.uniqueCount > 12) {
-      return `Pie charts become hard to read with ${selectedXAxisColumn.uniqueCount.toLocaleString()} categories on '${selectedXAxisColumn.name}'. Consider bar instead.`;
+      return `Pie charts become hard to read with ${selectedXAxisColumn.uniqueCount.toLocaleString()} categories on ${humanizeFieldLabel(selectedXAxisColumn.name, { dropIdSuffix: true })}. Consider bar instead.`;
     }
     if (isHistogram && !chartConfig.xAxis && histogramFallbackXAxis) {
-      return `Using '${histogramFallbackXAxis}' as the context field for this histogram.`;
+      return `Using ${humanizeFieldLabel(histogramFallbackXAxis, { dropIdSuffix: true })} as the context field for this histogram.`;
     }
     return null;
   }, [chartConfig.chartType, histogramFallbackXAxis, isHistogram, selectedXAxisColumn, chartConfig.xAxis]);
-
-  const chartTitlePreview = useMemo(() => {
-    const aggregationLabel = aggregationFns.find((item) => item.id === chartConfig.aggregationFn)?.label ?? "Metric";
-    if (isHistogram) {
-      return `Distribution of ${chartConfig.yAxis ?? "metric"}`;
-    }
-    if (chartConfig.aggregationFn === "count" && chartConfig.yAxis && columnRoleMap.get(chartConfig.yAxis) !== "measure") {
-      return `Record count by ${resolvedXAxis ?? "dimension"}`;
-    }
-    return `${aggregationLabel} ${chartConfig.yAxis ?? "metric"} by ${resolvedXAxis ?? "dimension"}`;
-  }, [chartConfig.aggregationFn, chartConfig.yAxis, columnRoleMap, isHistogram, resolvedXAxis]);
 
   const selectionStateMessage = useMemo(() => {
     if (!selectedAggregation) {
@@ -522,6 +513,18 @@ export default function ChartBuilderTab() {
     isLoading: isPreviewLoading,
     error: previewError,
   } = useChartsPreview(selectedDatasetId, chartSpec, showExecutionDetails);
+
+  const chartTitlePreview = useMemo(() => {
+    if (!chartSpec) {
+      return "Chart Preview";
+    }
+    return resolveChartTitle({
+      chartSpec,
+      strategyKpis: strategyKpiLibrary?.kpis ?? [],
+    });
+  }, [chartSpec, strategyKpiLibrary?.kpis]);
+
+  const previewIdentity = useMemo(() => (chartSpec ? JSON.stringify(chartSpec) : "preview-empty"), [chartSpec]);
 
   const executionDebug = useMemo(() => {
     if (!previewData || typeof previewData.meta !== "object" || previewData.meta === null) {
@@ -823,12 +826,19 @@ export default function ChartBuilderTab() {
                 </motion.div>
               ) : previewData && chartSpec ? (
                 <motion.div
-                  key={`${resolvedXAxis}-${chartConfig.yAxis}-${chartConfig.chartType}`}
+                  key={previewIdentity}
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   className="bg-white border border-slate-200 shadow-sm rounded-2xl p-6 h-full flex flex-col gap-4"
                 >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo-700">{chartTypeGuidance.title}</p>
+                      <h3 className="mt-1 text-xl font-semibold text-slate-900">{chartTitlePreview}</h3>
+                      <p className="mt-1 text-sm text-slate-500">{chartTypeGuidance.body}</p>
+                    </div>
+                  </div>
                   <div className="rounded-xl border border-slate-100 bg-slate-50/40 min-h-[360px] overflow-hidden">
                     <DrillDownChart
                       chartSpec={chartSpec}
