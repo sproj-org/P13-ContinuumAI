@@ -31,6 +31,7 @@ import type {
   QuerySpec,
   ChatStatePayload,
 } from "@/lib/types/chat";
+import DecisionIntelligencePanel from "@/components/workspace/DecisionIntelligencePanel";
 import { renderChart } from "@/components/workspace/renderChart";
 import MarkdownMessage from "@/components/common/MarkdownMessage";
 import { useSavedCharts, useStrategyKpis } from "@/lib/hooks";
@@ -154,6 +155,7 @@ type ChartPreviewState = {
   chartSpec: ChatChartResponse["chart_spec"];
   rows: ChatChartResponse["rows"];
   title: string;
+  analysis?: ChatChartResponse["analysis"];
 };
 
 export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
@@ -512,6 +514,7 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
           chartSpec: response.chart_spec,
           rows: response.rows,
           title: response.narrative || requestMessage,
+          analysis: response.analysis ?? null,
         });
       }
     } catch (requestError) {
@@ -699,6 +702,21 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
                 <div className="px-8 pb-8">
                   <div className="h-[520px] bg-gradient-to-br from-slate-50/30 to-white rounded-2xl p-8 border border-slate-200/50">
                     {renderChart(currentChartPreview.chartSpec, currentChartPreview.rows)}
+                  </div>
+                  <div className="mt-6">
+                    <DecisionIntelligencePanel
+                      datasetId={routeDatasetId}
+                      martId={selectedAggregation}
+                      chartSpec={currentChartPreview.chartSpec}
+                      chartRows={currentChartPreview.rows}
+                      chartTitle={currentChartPreviewTitle}
+                      kpiId={currentChartPreview.chartSpec.semantic_context?.matched_kpi_id ?? null}
+                      onChartSpecChange={(nextChartSpec) => {
+                        setCurrentChartPreview((current) =>
+                          current ? { ...current, chartSpec: nextChartSpec } : current,
+                        );
+                      }}
+                    />
                   </div>
                 </div>
               </div>
@@ -963,6 +981,28 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
                       <span key={`${turn.createdAt}-${tag}`} className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] text-slate-700">
                         {tag}
                       </span>
+                    ))}
+                  </div>
+                ) : null}
+                {isAssistant && response?.analysis ? (
+                  <div className="mt-2 rounded-lg border border-indigo-200 bg-indigo-50/60 p-2">
+                    <div className="flex flex-wrap gap-1.5">
+                      <span className="rounded-full border border-indigo-200 bg-white px-2 py-0.5 text-[10px] uppercase tracking-wide text-indigo-700">
+                        {response.analysis.task_type.replace("_", " ")}
+                      </span>
+                      <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] text-slate-600">
+                        {response.analysis.agent_role}
+                      </span>
+                      {response.analysis.plan_spec.matched_kpi_label ? (
+                        <span className="rounded-full border border-emerald-200 bg-white px-2 py-0.5 text-[10px] text-emerald-700">
+                          {response.analysis.plan_spec.matched_kpi_label}
+                        </span>
+                      ) : null}
+                    </div>
+                    {response.analysis.insight_cards.slice(0, 2).map((card) => (
+                      <p key={`${turn.createdAt}-${card.title}`} className="mt-1 text-[11px] text-slate-700">
+                        <span className="font-medium text-slate-900">{card.title}:</span> {card.summary}
+                      </p>
                     ))}
                   </div>
                 ) : null}

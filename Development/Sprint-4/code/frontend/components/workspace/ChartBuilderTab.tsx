@@ -3,14 +3,20 @@
 import { startTransition, useState, useMemo, useEffect } from "react";
 import { useAppStore, ChartConfig } from "@/lib/store";
 import { useTableProfile, useChartsPreview, useDashboards, useStrategyKpis } from "@/lib/hooks";
+import DecisionIntelligencePanel from "@/components/workspace/DecisionIntelligencePanel";
 import DrillDownChart from "@/components/workspace/DrillDownChart";
 import {
   transformColumnProfile,
   type ColumnRole,
 } from "@/lib/transformers";
-import { attachChartSemanticContext, humanizeFieldLabel, resolveChartTitle } from "@/lib/chart-display";
+import {
+  attachChartSemanticContext,
+  humanizeFieldLabel,
+  mergeChartSemanticContext,
+  resolveChartTitle,
+} from "@/lib/chart-display";
 import { getMartDrillAdvisory } from "@/lib/mart-drill-utils";
-import type { ChartSpecV1, FilterOperator, FilterSpec } from "@/lib/types/chartspec";
+import type { ChartSemanticContext, ChartSpecV1, FilterOperator, FilterSpec } from "@/lib/types/chartspec";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/lib/toast-context";
 import {
@@ -243,6 +249,10 @@ export default function ChartBuilderTab() {
   const [copiedTab, setCopiedTab] = useState<DebugTab | null>(null);
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState<boolean>(false);
   const [selectedDashboards, setSelectedDashboards] = useState<string[]>([]);
+  const [analysisSemanticContext, setAnalysisSemanticContext] = useState<{
+    signature: string;
+    context: Partial<ChartSemanticContext> | null;
+  } | null>(null);
 
   const { data: profile, isLoading } = useTableProfile(selectedDatasetId, selectedAggregation);
   const { data: dashboardsData } = useDashboards(selectedDatasetId);
@@ -449,6 +459,7 @@ export default function ChartBuilderTab() {
       setCustomStartDate("");
       setCustomEndDate("");
       setValidationMessage(null);
+      setAnalysisSemanticContext(null);
       clearChartBuilderSeed();
     });
   }, [chartBuilderSeed, clearChartBuilderSeed]);
@@ -542,17 +553,37 @@ export default function ChartBuilderTab() {
     error: previewError,
   } = useChartsPreview(selectedDatasetId, chartSpec, showExecutionDetails);
 
-  const chartTitlePreview = useMemo(() => {
+  const chartSpecSignature = useMemo(() => (chartSpec ? JSON.stringify(chartSpec) : "preview-empty"), [chartSpec]);
+
+  const activeAnalysisSemanticContext = useMemo(
+    () => (analysisSemanticContext?.signature === chartSpecSignature ? analysisSemanticContext.context : null),
+    [analysisSemanticContext, chartSpecSignature],
+  );
+
+  const previewChartSpec = useMemo(() => {
     if (!chartSpec) {
+      return null;
+    }
+    const baseChartSpec = attachChartSemanticContext(chartSpec, {
+      strategyKpis: strategyKpiLibrary?.kpis ?? [],
+    });
+    return activeAnalysisSemanticContext ? mergeChartSemanticContext(baseChartSpec, activeAnalysisSemanticContext) : baseChartSpec;
+  }, [activeAnalysisSemanticContext, chartSpec, strategyKpiLibrary?.kpis]);
+
+  const chartTitlePreview = useMemo(() => {
+    if (!previewChartSpec) {
       return "Chart Preview";
     }
     return resolveChartTitle({
-      chartSpec,
+      chartSpec: previewChartSpec,
       strategyKpis: strategyKpiLibrary?.kpis ?? [],
     });
-  }, [chartSpec, strategyKpiLibrary?.kpis]);
+  }, [previewChartSpec, strategyKpiLibrary?.kpis]);
 
-  const previewIdentity = useMemo(() => (chartSpec ? JSON.stringify(chartSpec) : "preview-empty"), [chartSpec]);
+  const previewIdentity = useMemo(
+    () => (previewChartSpec ? JSON.stringify(previewChartSpec) : "preview-empty"),
+    [previewChartSpec],
+  );
 
   const executionDebug = useMemo(() => {
     if (!previewData || typeof previewData.meta !== "object" || previewData.meta === null) {
@@ -680,6 +711,7 @@ export default function ChartBuilderTab() {
     setCustomStartDate("");
     setCustomEndDate("");
     setValidationMessage(null);
+    setAnalysisSemanticContext(null);
   };
 
   const openSaveDialog = () => {
@@ -702,9 +734,11 @@ export default function ChartBuilderTab() {
     }
 
     const title = chartTitlePreview;
-    const chartSpecWithSemanticContext = attachChartSemanticContext(previewData.chart_spec, {
-      strategyKpis: strategyKpiLibrary?.kpis ?? [],
-    });
+    const chartSpecWithSemanticContext =
+      previewChartSpec ??
+      attachChartSemanticContext(previewData.chart_spec, {
+        strategyKpis: strategyKpiLibrary?.kpis ?? [],
+      });
 
     for (const dashboardName of selectedDashboards) {
       saveChart({
@@ -872,7 +906,7 @@ export default function ChartBuilderTab() {
                   </div>
                   <div className="rounded-xl border border-slate-100 bg-slate-50/40 min-h-[360px] overflow-hidden">
                     <DrillDownChart
-                      chartSpec={chartSpec}
+                      chartSpec={previewChartSpec ?? chartSpec}
                       rows={previewData.rows}
                       datasetId={selectedDatasetId}
                       profile={profile}
@@ -881,6 +915,22 @@ export default function ChartBuilderTab() {
                       defaultAutoDrill
                     />
                   </div>
+
+                  {previewChartSpec ? (
+                    <DecisionIntelligencePanel
+                      datasetId={selectedDatasetId}
+                      martId={selectedAggregation}
+                      chartSpec={previewChartSpec}
+                      chartRows={previewData.rows}
+                      chartTitle={chartTitlePreview}
+                      onChartSpecChange={(nextChartSpec) => {
+                        setAnalysisSemanticContext({
+                          signature: chartSpecSignature,
+                          context: nextChartSpec.semantic_context ?? null,
+                        });
+                      }}
+                    />
+                  ) : null}
 
                   {showExecutionDetails && executionDebug ? (
                     <div className="border border-slate-300 rounded-xl bg-slate-50 overflow-hidden">

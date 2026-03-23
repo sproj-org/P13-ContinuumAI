@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useAppStore } from "@/lib/store";
 import type { SavedChart } from "@/lib/store";
+import DecisionIntelligencePanel from "@/components/workspace/DecisionIntelligencePanel";
 import DrillDownChart from "@/components/workspace/DrillDownChart";
 import { LayoutGrid, Trash2, Calendar, Database, Edit2, Wrench, Eye, X, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -724,16 +725,29 @@ export default function DashboardTab() {
 
               {/* Modal Content — DrillDownChart with full drill-down in preview */}
               <div className="p-8 overflow-y-auto max-h-[calc(90vh-200px)]">
-                <div className="bg-gradient-to-br from-slate-50/30 to-white rounded-2xl p-8 border border-slate-100 shadow-inner">
-                  <div className="h-[600px] relative">
-                    <DrillDownChart
-                      chartSpec={previewChart.chartSpec}
-                      rows={previewChart.rows}
-                      datasetId={selectedDatasetId}
-                      height="100%"
-                      chartTitle={previewChartTitle}
-                    />
+                <div className="space-y-6">
+                  <div className="bg-gradient-to-br from-slate-50/30 to-white rounded-2xl p-8 border border-slate-100 shadow-inner">
+                    <div className="h-[600px] relative">
+                      <DrillDownChart
+                        chartSpec={previewChart.chartSpec}
+                        rows={previewChart.rows}
+                        datasetId={selectedDatasetId}
+                        height="100%"
+                        chartTitle={previewChartTitle}
+                      />
+                    </div>
                   </div>
+                  <DecisionIntelligencePanel
+                    datasetId={selectedDatasetId}
+                    martId={previewChart.martId}
+                    chartSpec={previewChart.chartSpec}
+                    chartRows={previewChart.rows}
+                    chartTitle={previewChartTitle}
+                    kpiId={previewChart.chartSpec.semantic_context?.matched_kpi_id ?? null}
+                    onChartSpecChange={(nextChartSpec) => {
+                      setPreviewChart((current) => (current ? { ...current, chartSpec: nextChartSpec } : current));
+                    }}
+                  />
                 </div>
               </div>
 

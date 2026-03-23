@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { AlertTriangle, BarChart3, Plus, RefreshCw, Save, Trash2, X } from "lucide-react";
 
 import { ApiRequestError, apiClient } from "@/lib/api";
+import DecisionIntelligencePanel from "@/components/workspace/DecisionIntelligencePanel";
 import type {
   CoverageGap,
   DecisionStateResponse,
@@ -2610,6 +2611,14 @@ export default function StrategyTab() {
 {JSON.stringify(selectedEvaluationKpi.provenance || {}, null, 2)}
                 </pre>
               </div>
+            </div>
+            <div className="mt-4">
+              <DecisionIntelligencePanel
+                datasetId={datasetId}
+                martId={selectedEvaluationKpi.marts?.[0] ?? null}
+                chartTitle={selectedEvaluationKpi.display_name || selectedEvaluationKpi.id}
+                kpiId={selectedEvaluationKpi.id}
+              />
             </div>
             <div className="mt-4 flex items-center justify-end">
               <button
