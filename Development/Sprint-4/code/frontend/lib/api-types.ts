@@ -275,6 +275,12 @@ export interface StrategyKpi {
   pillar_id?: string | null;
   owner?: string | null;
   display_name?: string | null;
+  semantic_family?: string | null;
+  metric_aliases?: string[];
+  preferred_drill_path?: string[];
+  terminal_dimensions?: string[];
+  disallowed_drill_dimensions?: string[];
+  preferred_chart_types?: Array<"bar" | "line" | "pie" | "histogram" | "kpi">;
   derived_metrics?: Record<string, string>;
 }
 

@@ -30,6 +30,12 @@ class KPIRegistryEntry(BaseModel):
     pillar_id: str | None = None
     owner: str | None = None
     display_name: str | None = None
+    semantic_family: str | None = None
+    metric_aliases: list[str] = Field(default_factory=list)
+    preferred_drill_path: list[str] = Field(default_factory=list)
+    terminal_dimensions: list[str] = Field(default_factory=list)
+    disallowed_drill_dimensions: list[str] = Field(default_factory=list)
+    preferred_chart_types: list[str] = Field(default_factory=list)
     derived_metrics: dict[str, str] = Field(default_factory=dict)
 
     @field_validator("id")
@@ -50,13 +56,24 @@ class KPIRegistryEntry(BaseModel):
             raise ValueError(f"Unknown mart ids: {unknown_rendered}")
         return value
 
-    @field_validator("required_columns", "dimensions")
+    @field_validator("required_columns", "dimensions", "metric_aliases", "preferred_drill_path", "terminal_dimensions", "disallowed_drill_dimensions")
     @classmethod
     def normalize_string_arrays(cls, value: list[str]) -> list[str]:
         output: list[str] = []
         for item in value:
             trimmed = item.strip()
             if trimmed:
+                output.append(trimmed)
+        return output
+
+    @field_validator("preferred_chart_types")
+    @classmethod
+    def normalize_chart_type_arrays(cls, value: list[str]) -> list[str]:
+        allowed = {"bar", "line", "pie", "histogram", "kpi"}
+        output: list[str] = []
+        for item in value:
+            trimmed = item.strip().lower()
+            if trimmed in allowed and trimmed not in output:
                 output.append(trimmed)
         return output
 
@@ -71,7 +88,7 @@ class KPIRegistryEntry(BaseModel):
                 normalized[key_trimmed] = formula_trimmed
         return normalized
 
-    @field_validator("pillar_id", "owner", "display_name")
+    @field_validator("pillar_id", "owner", "display_name", "semantic_family")
     @classmethod
     def normalize_optional_text(cls, value: str | None) -> str | None:
         if value is None:

@@ -102,6 +102,12 @@ function emptyKpi(): StrategyKpi {
     default_grain: "day",
     pillar_id: "",
     owner: "",
+    semantic_family: "",
+    metric_aliases: [],
+    preferred_drill_path: [],
+    terminal_dimensions: [],
+    disallowed_drill_dimensions: [],
+    preferred_chart_types: [],
     derived_metrics: {},
   };
 }
@@ -119,6 +125,12 @@ function normalizeKpi(kpi: StrategyKpi): StrategyKpi {
     default_grain: clean(kpi.default_grain),
     pillar_id: clean(kpi.pillar_id),
     owner: clean(kpi.owner),
+    semantic_family: clean(kpi.semantic_family),
+    metric_aliases: (kpi.metric_aliases || []).map((item) => item.trim()).filter(Boolean),
+    preferred_drill_path: (kpi.preferred_drill_path || []).map((item) => item.trim()).filter(Boolean),
+    terminal_dimensions: (kpi.terminal_dimensions || []).map((item) => item.trim()).filter(Boolean),
+    disallowed_drill_dimensions: (kpi.disallowed_drill_dimensions || []).map((item) => item.trim()).filter(Boolean),
+    preferred_chart_types: (kpi.preferred_chart_types || []).filter(Boolean),
     derived_metrics: Object.fromEntries(
       Object.entries(kpi.derived_metrics || {})
         .map(([key, formula]) => [key.trim(), (formula || "").trim()])

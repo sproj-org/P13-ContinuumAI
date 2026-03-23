@@ -15,6 +15,19 @@ kpis:
   - region
   - store_type
   default_grain: month
+  semantic_family: revenue
+  metric_aliases:
+  - revenue_growth
+  - sales_growth
+  preferred_drill_path:
+  - region
+  - store_type
+  - store_id
+  terminal_dimensions:
+  - store_id
+  preferred_chart_types:
+  - bar
+  - line
   pillar_id: growth
   owner: commercial_analytics
   derived_metrics: {}
@@ -31,6 +44,21 @@ kpis:
   - store_id
   - channel_type
   default_grain: day
+  semantic_family: transactions
+  metric_aliases:
+  - orders
+  - order_count
+  - transactions
+  preferred_drill_path:
+  - channel_type
+  - store_id
+  - sales_date
+  terminal_dimensions:
+  - store_id
+  - sales_date
+  preferred_chart_types:
+  - bar
+  - line
   pillar_id: growth
   owner: retail_ops
   derived_metrics: {}
@@ -47,6 +75,21 @@ kpis:
   - store_id
   - channel_type
   default_grain: day
+  semantic_family: basket
+  metric_aliases:
+  - aov
+  - avg_basket_value
+  - basket_value
+  preferred_drill_path:
+  - channel_type
+  - store_id
+  - sales_date
+  terminal_dimensions:
+  - store_id
+  - sales_date
+  preferred_chart_types:
+  - bar
+  - line
   pillar_id: growth
   owner: commercial_analytics
   derived_metrics: {}
@@ -63,6 +106,19 @@ kpis:
   - city
   - region
   default_grain: month
+  semantic_family: customer_retention
+  metric_aliases:
+  - repeat_rate
+  - repeat_customers
+  preferred_drill_path:
+  - segment
+  - region
+  - city
+  terminal_dimensions:
+  - city
+  preferred_chart_types:
+  - bar
+  - pie
   pillar_id: retention
   owner: crm_analytics
   derived_metrics: {}
@@ -80,6 +136,20 @@ kpis:
   - store_id
   - channel_type
   default_grain: day
+  semantic_family: margin
+  metric_aliases:
+  - gross_margin
+  - margin_rate
+  preferred_drill_path:
+  - channel_type
+  - store_id
+  - sales_date
+  terminal_dimensions:
+  - store_id
+  - sales_date
+  preferred_chart_types:
+  - bar
+  - line
   pillar_id: margin
   owner: finance_analytics
   derived_metrics: {}
@@ -97,6 +167,20 @@ kpis:
   - store_id
   - channel_type
   default_grain: day
+  semantic_family: discount
+  metric_aliases:
+  - discount_ratio
+  - markdown_rate
+  preferred_drill_path:
+  - channel_type
+  - store_id
+  - sales_date
+  terminal_dimensions:
+  - store_id
+  - sales_date
+  preferred_chart_types:
+  - bar
+  - line
   pillar_id: margin
   owner: pricing_analytics
   derived_metrics: {}
@@ -114,6 +198,20 @@ kpis:
   - store_id
   - sku_id
   default_grain: day
+  semantic_family: inventory
+  metric_aliases:
+  - sell_through
+  - sku_sell_through
+  preferred_drill_path:
+  - store_id
+  - sku_id
+  - snapshot_date
+  terminal_dimensions:
+  - sku_id
+  - snapshot_date
+  preferred_chart_types:
+  - bar
+  - line
   pillar_id: inventory
   owner: inventory_analytics
   derived_metrics: {}
@@ -131,6 +229,20 @@ kpis:
   - store_id
   - sku_id
   default_grain: day
+  semantic_family: inventory
+  metric_aliases:
+  - stock_turn
+  - turnover
+  preferred_drill_path:
+  - store_id
+  - sku_id
+  - snapshot_date
+  terminal_dimensions:
+  - sku_id
+  - snapshot_date
+  preferred_chart_types:
+  - bar
+  - line
   pillar_id: inventory
   owner: supply_chain_analytics
   derived_metrics: {}
@@ -147,6 +259,20 @@ kpis:
   - store_id
   - sku_id
   default_grain: day
+  semantic_family: inventory
+  metric_aliases:
+  - stockout
+  - stockout_risk
+  preferred_drill_path:
+  - store_id
+  - sku_id
+  - snapshot_date
+  terminal_dimensions:
+  - sku_id
+  - snapshot_date
+  preferred_chart_types:
+  - bar
+  - pie
   pillar_id: inventory
   owner: supply_chain_analytics
   derived_metrics: {}
@@ -164,6 +290,20 @@ kpis:
   - store_id
   - channel_type
   default_grain: day
+  semantic_family: returns
+  metric_aliases:
+  - returns_rate
+  - refund_rate
+  preferred_drill_path:
+  - channel_type
+  - store_id
+  - sales_date
+  terminal_dimensions:
+  - store_id
+  - sales_date
+  preferred_chart_types:
+  - bar
+  - line
   pillar_id: retention
   owner: customer_experience
   derived_metrics: {}
@@ -181,6 +321,20 @@ kpis:
   - store_id
   - channel_type
   default_grain: day
+  semantic_family: basket
+  metric_aliases:
+  - upt
+  - units_per_order
+  preferred_drill_path:
+  - channel_type
+  - store_id
+  - sales_date
+  terminal_dimensions:
+  - store_id
+  - sales_date
+  preferred_chart_types:
+  - bar
+  - line
   pillar_id: growth
   owner: retail_ops
   derived_metrics: {}
@@ -197,6 +351,19 @@ kpis:
   - city
   - churn_risk_bucket
   default_grain: month
+  semantic_family: customer_risk
+  metric_aliases:
+  - churn_risk
+  - return_risk
+  preferred_drill_path:
+  - segment
+  - city
+  - churn_risk_bucket
+  terminal_dimensions:
+  - churn_risk_bucket
+  preferred_chart_types:
+  - bar
+  - pie
   pillar_id: retention
   owner: crm_analytics
   derived_metrics: {}
@@ -214,6 +381,18 @@ kpis:
   - sales_date
   - channel_type
   default_grain: week
+  semantic_family: marketing
+  metric_aliases:
+  - uplift
+  - campaign_roi
+  preferred_drill_path:
+  - channel_type
+  - sales_date
+  terminal_dimensions:
+  - sales_date
+  preferred_chart_types:
+  - bar
+  - line
   pillar_id: growth
   owner: marketing_analytics
   derived_metrics: {}

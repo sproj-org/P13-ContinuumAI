@@ -453,6 +453,7 @@ export function getChartDisplayPolicy(params: {
     const topCandidate = rankedCandidates[0];
     const hasExplicitBusinessPath =
       topCandidate?.recommendationReason === "kpi_context" ||
+      topCandidate?.recommendationReason === "semantic_policy" ||
       topCandidate?.recommendationReason === "mart_hierarchy";
 
     if (!hasExplicitBusinessPath) {
