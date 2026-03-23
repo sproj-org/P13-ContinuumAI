@@ -1,8 +1,15 @@
 import type { ChartSpecV1 } from './chartspec';
+import type {
+  AnalysisResponse,
+  MetricAggregation,
+  PlanSpec,
+  QuerySpec,
+  SpecFilter as QuerySpecFilter,
+  TimeGrain,
+} from './analysis';
+export type { AnalysisResponse, PlanSpec, QuerySpec, QuerySpecFilter };
 
 export type ChatMode = 'auto' | 'chart' | 'explain';
-export type TimeGrain = 'day' | 'week' | 'month' | 'quarter' | 'year';
-export type MetricAggregation = 'sum' | 'avg' | 'count' | 'min' | 'max';
 export type MissingField = 'metric' | 'x_axis' | 'time_grain' | 'table';
 export type ChatRole = 'user' | 'assistant';
 export type ChatResponseType = 'chart' | 'chart_patch' | 'explain' | 'clarify' | 'refuse';
@@ -54,25 +61,6 @@ export interface ChartSpecPatch {
   add?: Record<string, unknown>;
 }
 
-export interface QuerySpecFilter {
-  field: string;
-  op: string;
-  value?: unknown;
-}
-
-export interface QuerySpec {
-  dataset_id?: string | null;
-  table?: string | null;
-  chart_type?: "bar" | "line" | "pie" | "histogram" | "kpi" | null;
-  measures: string[];
-  dimensions: string[];
-  time_field?: string | null;
-  aggregation?: MetricAggregation | null;
-  time_grain?: TimeGrain | null;
-  filters: QuerySpecFilter[];
-  limit?: number | null;
-}
-
 export interface ChatChartResponse extends ChatDebugMetadata {
   response_type: 'chart';
   chart_spec: ChartSpecV1;
@@ -81,6 +69,8 @@ export interface ChatChartResponse extends ChatDebugMetadata {
   narrative: string;
   meta: Record<string, unknown>;
   query_spec?: QuerySpec | null;
+  plan_spec?: PlanSpec | null;
+  analysis?: AnalysisResponse | null;
 }
 
 export interface ChatPatchResponse extends ChatDebugMetadata {
@@ -89,6 +79,8 @@ export interface ChatPatchResponse extends ChatDebugMetadata {
   narrative?: string;
   meta: Record<string, unknown>;
   query_spec?: QuerySpec | null;
+  plan_spec?: PlanSpec | null;
+  analysis?: AnalysisResponse | null;
 }
 
 export interface ChatExplainResponse extends ChatDebugMetadata {
@@ -97,6 +89,8 @@ export interface ChatExplainResponse extends ChatDebugMetadata {
   citations: string[];
   meta: Record<string, unknown>;
   query_spec?: QuerySpec | null;
+  plan_spec?: PlanSpec | null;
+  analysis?: AnalysisResponse | null;
 }
 
 export interface ClarifyOptions {
@@ -116,6 +110,8 @@ export interface ChatClarifyResponse extends ChatDebugMetadata {
   questions?: string[];
   meta: Record<string, unknown>;
   query_spec?: QuerySpec | null;
+  plan_spec?: PlanSpec | null;
+  analysis?: AnalysisResponse | null;
 }
 
 export interface ChatHintsResponse {
@@ -134,6 +130,8 @@ export interface ChatRefuseResponse extends ChatDebugMetadata {
   message: string;
   meta: Record<string, unknown>;
   query_spec?: QuerySpec | null;
+  plan_spec?: PlanSpec | null;
+  analysis?: AnalysisResponse | null;
 }
 
 export type ChatResponse =

@@ -39,6 +39,7 @@ import type {
   ChartsPreviewResponse,
 } from "./types/chartspec";
 import type { ChatHintsResponse, ChatRequest, ChatResponse } from "./types/chat";
+import type { AnalysisRequest, AnalysisResponse } from "./types/analysis";
 import { getApiBaseUrl } from "./api-base";
 
 const API_URL = getApiBaseUrl();
@@ -219,6 +220,13 @@ class ApiClient {
 
   async postChat(datasetId: string, request: ChatRequest): Promise<ChatResponse> {
     return this.request<ChatResponse>(`/datasets/${datasetId}/chat`, {
+      method: "POST",
+      body: JSON.stringify(request),
+    });
+  }
+
+  async postAnalysis(datasetId: string, request: AnalysisRequest): Promise<AnalysisResponse> {
+    return this.request<AnalysisResponse>(`/datasets/${datasetId}/analysis/run`, {
       method: "POST",
       body: JSON.stringify(request),
     });

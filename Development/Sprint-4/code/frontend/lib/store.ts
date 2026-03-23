@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 import type { ChartSpecV1 } from './types/chartspec';
-import type { ChatResponse, QuerySpec, QuerySpecFilter } from './types/chat';
+import type { AnalysisResponse, ChatResponse, PlanSpec, QuerySpec, QuerySpecFilter } from './types/chat';
 import type { ChartBuilderSeed } from './chart-builder-seed';
 
 export type DatasetId = string;
@@ -237,9 +237,23 @@ function sanitizeQuerySpecFilter(raw: unknown): QuerySpecFilter | null {
   if (typeof record.field !== 'string' || typeof record.op !== 'string') {
     return null;
   }
+  const op =
+    record.op === '=' ||
+    record.op === '!=' ||
+    record.op === 'in' ||
+    record.op === 'between' ||
+    record.op === '>' ||
+    record.op === '>=' ||
+    record.op === '<' ||
+    record.op === '<='
+      ? record.op
+      : null;
+  if (!op) {
+    return null;
+  }
   const out: QuerySpecFilter = {
     field: record.field,
-    op: record.op,
+    op,
   };
   if (record.value !== undefined) {
     out.value = record.value;
@@ -292,7 +306,25 @@ function sanitizeQuerySpec(raw: unknown): QuerySpec | null {
     time_grain: timeGrain,
     filters,
     limit: asNullableNumber(record.limit),
+    kpi_id: asNullableString(record.kpi_id),
+    semantic_family: asNullableString(record.semantic_family),
+    drill_dimensions: asStringArray(record.drill_dimensions),
+    recommendation_source: asNullableString(record.recommendation_source),
   };
+}
+
+function sanitizePlanSpec(raw: unknown): PlanSpec | null {
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+  return raw as PlanSpec;
+}
+
+function sanitizeAnalysisResponse(raw: unknown): AnalysisResponse | null {
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+  return raw as AnalysisResponse;
 }
 
 function sanitizeChatResponse(raw: unknown): ChatResponse | null {
@@ -349,6 +381,8 @@ function sanitizeChatResponse(raw: unknown): ChatResponse | null {
       },
       meta,
       query_spec: sanitizeQuerySpec(record.query_spec),
+      plan_spec: sanitizePlanSpec(record.plan_spec),
+      analysis: sanitizeAnalysisResponse(record.analysis),
       ...debugMetadata,
     };
   }
@@ -359,6 +393,8 @@ function sanitizeChatResponse(raw: unknown): ChatResponse | null {
       message: record.message,
       meta,
       query_spec: sanitizeQuerySpec(record.query_spec),
+      plan_spec: sanitizePlanSpec(record.plan_spec),
+      analysis: sanitizeAnalysisResponse(record.analysis),
       ...debugMetadata,
     };
   }
@@ -370,6 +406,8 @@ function sanitizeChatResponse(raw: unknown): ChatResponse | null {
       citations: asStringArray(record.citations),
       meta,
       query_spec: sanitizeQuerySpec(record.query_spec),
+      plan_spec: sanitizePlanSpec(record.plan_spec),
+      analysis: sanitizeAnalysisResponse(record.analysis),
       ...debugMetadata,
     };
   }
@@ -381,6 +419,8 @@ function sanitizeChatResponse(raw: unknown): ChatResponse | null {
       narrative: typeof record.narrative === 'string' ? record.narrative : undefined,
       meta,
       query_spec: sanitizeQuerySpec(record.query_spec),
+      plan_spec: sanitizePlanSpec(record.plan_spec),
+      analysis: sanitizeAnalysisResponse(record.analysis),
       ...debugMetadata,
     };
   }
@@ -401,6 +441,8 @@ function sanitizeChatResponse(raw: unknown): ChatResponse | null {
       narrative: record.narrative,
       meta,
       query_spec: sanitizeQuerySpec(record.query_spec),
+      plan_spec: sanitizePlanSpec(record.plan_spec),
+      analysis: sanitizeAnalysisResponse(record.analysis),
       ...debugMetadata,
     };
   }
@@ -792,11 +834,11 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'continuumai-app-store',
-      version: 5,
+      version: 6,
       storage: createJSONStorage(() => userScopedStorage),
       migrate: (persistedState: unknown, version: number) => {
         const state = (persistedState ?? {}) as PersistedAppState;
-        if (version >= 5) {
+        if (version >= 6) {
           return {
             ...state,
             chatTurnsByKey: sanitizePersistedTurns(state.chatTurnsByKey),

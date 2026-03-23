@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from uuid import uuid4
 
 import pytest
 from _pytest import pathlib as pytest_pathlib
 from _pytest import tmpdir as pytest_tmpdir
+
+os.environ["DATABASE_URL"] = "sqlite:///./test_suite.db"
+os.environ["JWT_SECRET_KEY"] = "test-secret"
 
 _original_cleanup_dead_symlinks = pytest_pathlib.cleanup_dead_symlinks
 _original_make_numbered_dir = pytest_pathlib.make_numbered_dir

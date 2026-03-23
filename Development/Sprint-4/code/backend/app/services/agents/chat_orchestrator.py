@@ -36,6 +36,8 @@ from app.services.agents.chat_models import (
     QuerySpecFilter,
     create_clarify_id,
 )
+from app.services.intelligence.orchestrator import create_plan as create_analysis_plan, run_analysis_request
+from app.services.intelligence.specs import AnalysisRequest, AnalysisResponse
 from app.services.agents.mart_context import build_compact_mart_context
 from app.services.agents.spec_patch import apply_patch
 from app.services.charts.models import ChartSpecV1
@@ -1399,6 +1401,79 @@ def _query_spec_from_chart_spec(
     )
 
 
+def _analysis_narrative(analysis: AnalysisResponse) -> str:
+    first_card = analysis.insight_cards[0] if analysis.insight_cards else None
+    if first_card is not None:
+        return f"{first_card.title}. {first_card.summary}"
+    if analysis.primary_view and analysis.primary_view.summary:
+        return analysis.primary_view.summary
+    if analysis.prediction and analysis.prediction.explanation:
+        return analysis.prediction.explanation
+    if analysis.strategy and analysis.strategy.explanation:
+        return analysis.strategy.explanation
+    if analysis.segmentation:
+        return (
+            f"Segmented {len(analysis.segmentation.assignments)} entities into "
+            f"{analysis.segmentation.cluster_count} clusters."
+        )
+    return "Completed structured analysis."
+
+
+def _analysis_to_chat_response(analysis: AnalysisResponse) -> ChatResponseUnion:
+    meta = {
+        "analysis": analysis.model_dump(mode="json"),
+        **analysis.meta,
+    }
+    if analysis.primary_view and analysis.primary_view.chart_spec:
+        return ChatChartResponse(
+            response_type="chart",
+            chart_spec=analysis.primary_view.chart_spec,
+            columns=list(analysis.primary_view.columns),
+            rows=list(analysis.primary_view.rows),
+            narrative=_analysis_narrative(analysis),
+            meta=meta,
+            query_spec=analysis.query_spec,
+            plan_spec=analysis.plan_spec,
+            analysis=analysis,
+        )
+    return ChatExplainResponse(
+        response_type="explain",
+        message=_analysis_narrative(analysis),
+        citations=[],
+        meta=meta,
+        query_spec=analysis.query_spec,
+        plan_spec=analysis.plan_spec,
+        analysis=analysis,
+    )
+
+
+def _maybe_run_structured_analysis(
+    *,
+    dataset_id: str,
+    table: str,
+    message: str,
+    state: ChatState,
+    db: Session,
+) -> ChatResponseUnion | None:
+    chart_spec: ChartSpecV1 | None = None
+    if state.last_chart_spec:
+        try:
+            chart_spec = state.last_chart_spec if isinstance(state.last_chart_spec, ChartSpecV1) else ChartSpecV1.model_validate(state.last_chart_spec)
+        except ValidationError:
+            chart_spec = None
+
+    analysis_request = AnalysisRequest(
+        message=message,
+        table=table,
+        chart_spec=chart_spec,
+    )
+    plan, _ = create_analysis_plan(analysis_request, dataset_id=dataset_id)
+    if plan.primary_task in {"query", "insight"}:
+        return None
+    analysis = run_analysis_request(dataset_id=dataset_id, request=analysis_request, db=db)
+    return _analysis_to_chat_response(analysis)
+
+
 def _chart_narrative(
     chart_spec: ChartSpecV1,
     preview_payload: dict[str, Any],
@@ -2058,6 +2133,16 @@ def run_chat_orchestration(
                 meta={},
             ).model_dump(mode="json")
         )
+
+    structured_analysis_response = _maybe_run_structured_analysis(
+        dataset_id=dataset_id,
+        table=table,
+        message=intent_message,
+        state=parsed_state,
+        db=db,
+    )
+    if structured_analysis_response is not None:
+        return finalize(structured_analysis_response.model_dump(mode="json"))
 
     plan, generation_fallback_reason, generation_openai_diag, generation_exception_class = _generate_plan(
         dataset_id=dataset_id,

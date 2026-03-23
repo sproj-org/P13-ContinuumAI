@@ -252,20 +252,23 @@ export function buildChartSemanticContext(
   chartSpec: ChartSpecV1,
   options: { strategyKpis?: StrategyKpi[] | null } = {},
 ): ChartSemanticContext | null {
+  const existing = chartSpec.semantic_context ?? null;
   const matchedKpi = findBestMatchingKpi(chartSpec, options.strategyKpis);
   const preferredDrillPath = matchedKpi ? resolvedKpiDrillPath(matchedKpi, chartSpec.table) : [];
 
-  if (!matchedKpi && chartSpec.semantic_context) {
-    return chartSpec.semantic_context;
+  if (!matchedKpi && existing) {
+    return existing;
   }
 
   if (!matchedKpi) {
     return {
+      ...existing,
       chart_family: resolveTitleStrategy(chartSpec),
     };
   }
 
   return {
+    ...existing,
     matched_kpi_id: matchedKpi.id,
     matched_kpi_label: matchedKpiLabel(matchedKpi),
     semantic_family: matchedKpi.semantic_family?.trim() || null,
@@ -288,6 +291,19 @@ export function attachChartSemanticContext(
   return {
     ...chartSpec,
     semantic_context: semanticContext,
+  };
+}
+
+export function mergeChartSemanticContext(
+  chartSpec: ChartSpecV1,
+  patch: Partial<ChartSemanticContext>,
+): ChartSpecV1 {
+  return {
+    ...chartSpec,
+    semantic_context: {
+      ...(chartSpec.semantic_context ?? {}),
+      ...patch,
+    },
   };
 }
 

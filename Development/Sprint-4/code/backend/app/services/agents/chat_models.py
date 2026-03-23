@@ -8,6 +8,7 @@ from typing import Annotated, Any, Literal, Union
 from pydantic import BaseModel, Field, field_validator
 
 from app.services.charts.models import ChartSpecV1
+from app.services.intelligence.specs import AnalysisResponse, PlanSpec, QuerySpec, SpecFilter as QuerySpecFilter
 
 ChatMode = Literal["auto", "chart", "explain"]
 TimeGrain = Literal["day", "week", "month", "quarter", "year"]
@@ -101,25 +102,6 @@ class ChartSpecPatch(BaseModel):
     set: dict[str, Any] = Field(default_factory=dict)
     unset: list[str] = Field(default_factory=list)
     add: dict[str, Any] = Field(default_factory=dict)
-
-
-class QuerySpecFilter(BaseModel):
-    field: str
-    op: str
-    value: Any | None = None
-
-
-class QuerySpec(BaseModel):
-    dataset_id: str | None = None
-    table: str | None = None
-    chart_type: ChartType | None = None
-    measures: list[str] = Field(default_factory=list)
-    dimensions: list[str] = Field(default_factory=list)
-    time_field: str | None = None
-    aggregation: MetricAggregation | None = None
-    time_grain: TimeGrain | None = None
-    filters: list[QuerySpecFilter] = Field(default_factory=list)
-    limit: int | None = None
 
 
 class ClarifyOptions(BaseModel):
@@ -217,6 +199,8 @@ class ChatChartResponse(BaseModel):
     narrative: str
     meta: dict[str, Any] = Field(default_factory=dict)
     query_spec: QuerySpec | None = None
+    plan_spec: PlanSpec | None = None
+    analysis: AnalysisResponse | None = None
     used_fallback: bool | None = None
     openai_configured: bool | None = None
     fallback_reason: ChatFallbackReason | None = None
@@ -231,6 +215,8 @@ class ChatPatchResponse(BaseModel):
     narrative: str | None = None
     meta: dict[str, Any] = Field(default_factory=dict)
     query_spec: QuerySpec | None = None
+    plan_spec: PlanSpec | None = None
+    analysis: AnalysisResponse | None = None
     used_fallback: bool | None = None
     openai_configured: bool | None = None
     fallback_reason: ChatFallbackReason | None = None
@@ -245,6 +231,8 @@ class ChatExplainResponse(BaseModel):
     citations: list[str] = Field(default_factory=list)
     meta: dict[str, Any] = Field(default_factory=dict)
     query_spec: QuerySpec | None = None
+    plan_spec: PlanSpec | None = None
+    analysis: AnalysisResponse | None = None
     used_fallback: bool | None = None
     openai_configured: bool | None = None
     fallback_reason: ChatFallbackReason | None = None
@@ -261,6 +249,8 @@ class ChatClarifyResponse(BaseModel):
     options: ClarifyOptions = Field(default_factory=ClarifyOptions)
     meta: dict[str, Any] = Field(default_factory=dict)
     query_spec: QuerySpec | None = None
+    plan_spec: PlanSpec | None = None
+    analysis: AnalysisResponse | None = None
     used_fallback: bool | None = None
     openai_configured: bool | None = None
     fallback_reason: ChatFallbackReason | None = None
@@ -290,6 +280,8 @@ class ChatRefuseResponse(BaseModel):
     message: str
     meta: dict[str, Any] = Field(default_factory=dict)
     query_spec: QuerySpec | None = None
+    plan_spec: PlanSpec | None = None
+    analysis: AnalysisResponse | None = None
     used_fallback: bool | None = None
     openai_configured: bool | None = None
     fallback_reason: ChatFallbackReason | None = None

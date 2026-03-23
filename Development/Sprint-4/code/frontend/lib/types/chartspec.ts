@@ -42,6 +42,8 @@ export interface ChartSemanticContext {
   recommendation_source?: string | null;
   mart_hierarchy?: string[];
   terminal_dimensions?: string[];
+  prediction_context?: Record<string, unknown> | null;
+  segmentation_context?: Record<string, unknown> | null;
   chart_family?: string | null;
 }
 

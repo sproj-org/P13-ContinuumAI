@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.api.charts import router as charts_router
 from app.api.chat import router as chat_router
+from app.api.analysis import router as analysis_router
 from app.api.strategy import router as strategy_router
 from app.api.profiling import (
     ChartDataRequest,
@@ -28,6 +29,7 @@ dataset_router.include_router(query_router)
 dataset_router.include_router(charts_router)
 dataset_router.include_router(strategy_router)
 dataset_router.include_router(chat_router)
+dataset_router.include_router(analysis_router)
 
 
 @router.get("/available")
