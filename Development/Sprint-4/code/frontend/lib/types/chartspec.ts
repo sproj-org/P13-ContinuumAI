@@ -39,6 +39,9 @@ export interface ChartSemanticContext {
   matched_kpi_label?: string | null;
   semantic_family?: string | null;
   preferred_drill_path?: string[];
+  recommendation_source?: string | null;
+  mart_hierarchy?: string[];
+  terminal_dimensions?: string[];
   chart_family?: string | null;
 }
 

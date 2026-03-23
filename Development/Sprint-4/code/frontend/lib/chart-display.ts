@@ -196,6 +196,17 @@ function matchedKpiLabel(kpi: StrategyKpi): string {
   return normalizeWhitespace(kpi.display_name?.trim() || kpi.id);
 }
 
+function resolvedKpiDrillPath(kpi: StrategyKpi, table: string): string[] {
+  const martOverride = kpi.mart_drill_overrides?.[table] ?? [];
+  if (martOverride.length > 0) {
+    return martOverride;
+  }
+  if ((kpi.preferred_drill_path || []).length > 0) {
+    return kpi.preferred_drill_path || [];
+  }
+  return kpi.dimensions || [];
+}
+
 function findBestMatchingKpi(chartSpec: ChartSpecV1, strategyKpis?: StrategyKpi[] | null): StrategyKpi | null {
   if (!strategyKpis || strategyKpis.length === 0) {
     return null;
@@ -219,6 +230,7 @@ function findBestMatchingKpi(chartSpec: ChartSpecV1, strategyKpis?: StrategyKpi[
     const kpiTokens = new Set([
       ...normalizeTokens(kpi.id),
       ...normalizeTokens(kpi.display_name),
+      ...((kpi.business_concepts || []).flatMap((concept) => normalizeTokens(concept))),
       ...extractFormulaColumns(kpi.formula),
     ]);
     let score = 0;
@@ -241,9 +253,7 @@ export function buildChartSemanticContext(
   options: { strategyKpis?: StrategyKpi[] | null } = {},
 ): ChartSemanticContext | null {
   const matchedKpi = findBestMatchingKpi(chartSpec, options.strategyKpis);
-  const preferredDrillPath = matchedKpi?.preferred_drill_path?.length
-    ? matchedKpi.preferred_drill_path
-    : matchedKpi?.dimensions || [];
+  const preferredDrillPath = matchedKpi ? resolvedKpiDrillPath(matchedKpi, chartSpec.table) : [];
 
   if (!matchedKpi && chartSpec.semantic_context) {
     return chartSpec.semantic_context;
@@ -260,6 +270,9 @@ export function buildChartSemanticContext(
     matched_kpi_label: matchedKpiLabel(matchedKpi),
     semantic_family: matchedKpi.semantic_family?.trim() || null,
     preferred_drill_path: preferredDrillPath,
+    recommendation_source: preferredDrillPath.length > 0 ? "kpi_path" : "semantic_policy",
+    mart_hierarchy: matchedKpi.mart_drill_overrides?.[chartSpec.table] || preferredDrillPath,
+    terminal_dimensions: matchedKpi.terminal_dimensions || [],
     chart_family: resolveTitleStrategy(chartSpec),
   };
 }
@@ -502,9 +515,9 @@ export function getChartDisplayPolicy(params: {
 
     const topCandidate = rankedCandidates[0];
     const hasExplicitBusinessPath =
-      topCandidate?.recommendationReason === "kpi_context" ||
+      topCandidate?.recommendationReason === "kpi_path" ||
       topCandidate?.recommendationReason === "semantic_policy" ||
-      topCandidate?.recommendationReason === "mart_hierarchy";
+      topCandidate?.recommendationReason === "mart_path";
 
     if (!hasExplicitBusinessPath) {
       return {

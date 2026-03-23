@@ -103,8 +103,10 @@ function emptyKpi(): StrategyKpi {
     pillar_id: "",
     owner: "",
     semantic_family: "",
+    business_concepts: [],
     metric_aliases: [],
     preferred_drill_path: [],
+    mart_drill_overrides: {},
     terminal_dimensions: [],
     disallowed_drill_dimensions: [],
     preferred_chart_types: [],
@@ -126,8 +128,17 @@ function normalizeKpi(kpi: StrategyKpi): StrategyKpi {
     pillar_id: clean(kpi.pillar_id),
     owner: clean(kpi.owner),
     semantic_family: clean(kpi.semantic_family),
+    business_concepts: (kpi.business_concepts || []).map((item) => item.trim()).filter(Boolean),
     metric_aliases: (kpi.metric_aliases || []).map((item) => item.trim()).filter(Boolean),
     preferred_drill_path: (kpi.preferred_drill_path || []).map((item) => item.trim()).filter(Boolean),
+    mart_drill_overrides: Object.fromEntries(
+      Object.entries(kpi.mart_drill_overrides || {})
+        .map(([martId, path]) => [
+          martId.trim(),
+          (path || []).map((item) => item.trim()).filter(Boolean),
+        ])
+        .filter(([martId, path]) => Boolean(martId) && path.length > 0)
+    ),
     terminal_dimensions: (kpi.terminal_dimensions || []).map((item) => item.trim()).filter(Boolean),
     disallowed_drill_dimensions: (kpi.disallowed_drill_dimensions || []).map((item) => item.trim()).filter(Boolean),
     preferred_chart_types: (kpi.preferred_chart_types || []).filter(Boolean),

@@ -84,6 +84,17 @@ class SortSpec(BaseModel):
         return _validate_identifier(value, "sort field")
 
 
+class ChartSemanticContext(BaseModel):
+    matched_kpi_id: str | None = None
+    matched_kpi_label: str | None = None
+    semantic_family: str | None = None
+    preferred_drill_path: list[str] = Field(default_factory=list)
+    recommendation_source: str | None = None
+    mart_hierarchy: list[str] = Field(default_factory=list)
+    terminal_dimensions: list[str] = Field(default_factory=list)
+    chart_family: str | None = None
+
+
 class ChartSpecV1(BaseModel):
     version: Literal["v1"] = "v1"
     dataset_id: str | None = None
@@ -93,6 +104,7 @@ class ChartSpecV1(BaseModel):
     filters: list[FilterSpec] = Field(default_factory=list)
     sort: list[SortSpec] = Field(default_factory=list)
     limit: int = 20
+    semantic_context: ChartSemanticContext | None = None
 
     @field_validator("dataset_id")
     @classmethod

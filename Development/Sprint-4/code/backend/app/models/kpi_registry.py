@@ -31,8 +31,10 @@ class KPIRegistryEntry(BaseModel):
     owner: str | None = None
     display_name: str | None = None
     semantic_family: str | None = None
+    business_concepts: list[str] = Field(default_factory=list)
     metric_aliases: list[str] = Field(default_factory=list)
     preferred_drill_path: list[str] = Field(default_factory=list)
+    mart_drill_overrides: dict[str, list[str]] = Field(default_factory=dict)
     terminal_dimensions: list[str] = Field(default_factory=list)
     disallowed_drill_dimensions: list[str] = Field(default_factory=list)
     preferred_chart_types: list[str] = Field(default_factory=list)
@@ -56,7 +58,15 @@ class KPIRegistryEntry(BaseModel):
             raise ValueError(f"Unknown mart ids: {unknown_rendered}")
         return value
 
-    @field_validator("required_columns", "dimensions", "metric_aliases", "preferred_drill_path", "terminal_dimensions", "disallowed_drill_dimensions")
+    @field_validator(
+        "required_columns",
+        "dimensions",
+        "business_concepts",
+        "metric_aliases",
+        "preferred_drill_path",
+        "terminal_dimensions",
+        "disallowed_drill_dimensions",
+    )
     @classmethod
     def normalize_string_arrays(cls, value: list[str]) -> list[str]:
         output: list[str] = []
@@ -86,6 +96,17 @@ class KPIRegistryEntry(BaseModel):
             formula_trimmed = metric_formula.strip()
             if key_trimmed and formula_trimmed:
                 normalized[key_trimmed] = formula_trimmed
+        return normalized
+
+    @field_validator("mart_drill_overrides")
+    @classmethod
+    def normalize_mart_drill_overrides(cls, value: dict[str, list[str]]) -> dict[str, list[str]]:
+        normalized: dict[str, list[str]] = {}
+        for mart_id, path in value.items():
+            mart_key = mart_id.strip()
+            if not mart_key:
+                continue
+            normalized[mart_key] = cls.normalize_string_arrays(path)
         return normalized
 
     @field_validator("pillar_id", "owner", "display_name", "semantic_family")
