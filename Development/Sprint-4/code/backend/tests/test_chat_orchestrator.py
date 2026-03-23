@@ -160,3 +160,182 @@ def test_generate_plan_returns_actionable_schema_hint(monkeypatch: pytest.Monkey
     assert diagnostics["openai_error_hint"] is not None
     assert diagnostics["openai_error_hint"].startswith("Schema mismatch:")
     assert "chart_spec" in diagnostics["openai_error_hint"] or "encoding" in diagnostics["openai_error_hint"]
+
+
+def test_generate_plan_recovers_wrapped_chart_payload(monkeypatch: pytest.MonkeyPatch) -> None:
+    _install_openai_stub(
+        monkeypatch,
+        [
+            {
+                "result": {
+                    "responseType": "visualization",
+                    "data": {
+                        "chartSpec": {
+                            "chart": {"type": "column"},
+                            "groupBy": "region",
+                            "metrics": [{"measure": "net_sales", "agg": "sum", "label": "sales_metric"}],
+                            "filters": {"region": "North"},
+                            "sort": "sales_metric",
+                            "topN": "12",
+                        },
+                        "style": "brief",
+                    },
+                }
+            }
+        ],
+    )
+
+    plan, fallback_reason, diagnostics, exception_class = chat_orchestrator._generate_plan(
+        dataset_id="silkroute",
+        table="gold_sales_daily",
+        message="Show net sales by region",
+        mode="auto",
+        context=CONTEXT,
+        strategy_digest=STRATEGY_DIGEST,
+        strategy_notice=None,
+        state=ChatState(),
+        history=None,
+    )
+
+    assert fallback_reason is None
+    assert diagnostics is None
+    assert exception_class is None
+    assert plan is not None
+    assert plan.response_type == "chart"
+    assert plan.chart_spec.chart.type == "bar"
+    assert plan.chart_spec.encoding.x.field == "region"
+    assert plan.chart_spec.encoding.y[0].field == "net_sales"
+    assert plan.chart_spec.filters[0].field == "region"
+    assert plan.chart_spec.filters[0].value == "North"
+    assert plan.chart_spec.limit == 12
+    assert plan.narrative_style == "brief"
+
+
+def test_generate_plan_recovers_stringified_explain_payload(monkeypatch: pytest.MonkeyPatch) -> None:
+    _install_openai_stub(
+        monkeypatch,
+        [
+            {
+                "payload": "{\"type\":\"answer\",\"summary\":\"Net sales are strongest in North.\"}"
+            }
+        ],
+    )
+
+    plan, fallback_reason, diagnostics, exception_class = chat_orchestrator._generate_plan(
+        dataset_id="silkroute",
+        table="gold_sales_daily",
+        message="Explain the current sales pattern",
+        mode="auto",
+        context=CONTEXT,
+        strategy_digest=STRATEGY_DIGEST,
+        strategy_notice=None,
+        state=ChatState(),
+        history=None,
+    )
+
+    assert fallback_reason is None
+    assert diagnostics is None
+    assert exception_class is None
+    assert plan is not None
+    assert plan.response_type == "explain"
+    assert "North" in plan.message
+
+
+def test_generate_plan_recovers_clarify_choices(monkeypatch: pytest.MonkeyPatch) -> None:
+    _install_openai_stub(
+        monkeypatch,
+        [
+            {
+                "data": {
+                    "action": "question",
+                    "prompt": "Which time grain should I use?",
+                    "needs": "time_grain",
+                    "choices": ["day", "week", "month"],
+                }
+            }
+        ],
+    )
+
+    plan, fallback_reason, diagnostics, exception_class = chat_orchestrator._generate_plan(
+        dataset_id="silkroute",
+        table="gold_sales_daily",
+        message="Trend net sales over time",
+        mode="auto",
+        context=CONTEXT,
+        strategy_digest=STRATEGY_DIGEST,
+        strategy_notice=None,
+        state=ChatState(),
+        history=None,
+    )
+
+    assert fallback_reason is None
+    assert diagnostics is None
+    assert exception_class is None
+    assert plan is not None
+    assert plan.response_type == "clarify"
+    assert plan.missing == ["time_grain"]
+    assert plan.options.time_grains == ["day", "week", "month"]
+
+
+def test_generate_plan_normalizes_chart_patch_operations(monkeypatch: pytest.MonkeyPatch) -> None:
+    _install_openai_stub(
+        monkeypatch,
+        [
+            {
+                "response": {
+                    "type": "update_chart",
+                    "operations": [
+                        {"op": "set", "path": "chart.type", "value": "line"},
+                        {"op": "unset", "path": "filters"},
+                        {"op": "add", "path": "filters.0", "value": {"field": "region", "op": "=", "value": "North"}},
+                    ],
+                }
+            }
+        ],
+    )
+
+    plan, fallback_reason, diagnostics, exception_class = chat_orchestrator._generate_plan(
+        dataset_id="silkroute",
+        table="gold_sales_daily",
+        message="Turn this into a line chart",
+        mode="auto",
+        context=CONTEXT,
+        strategy_digest=STRATEGY_DIGEST,
+        strategy_notice=None,
+        state=ChatState(),
+        history=None,
+    )
+
+    assert fallback_reason is None
+    assert diagnostics is None
+    assert exception_class is None
+    assert plan is not None
+    assert plan.response_type == "chart_patch"
+    assert plan.patch.set["chart.type"] == "line"
+    assert plan.patch.unset == ["filters"]
+    assert plan.patch.add["filters.0"]["field"] == "region"
+
+
+def test_generate_plan_rejects_unrecoverable_payloads(monkeypatch: pytest.MonkeyPatch) -> None:
+    _install_openai_stub(
+        monkeypatch,
+        [[1, 2, 3]],
+    )
+
+    plan, fallback_reason, diagnostics, exception_class = chat_orchestrator._generate_plan(
+        dataset_id="silkroute",
+        table="gold_sales_daily",
+        message="Show something useful",
+        mode="auto",
+        context=CONTEXT,
+        strategy_digest=STRATEGY_DIGEST,
+        strategy_notice=None,
+        state=ChatState(),
+        history=None,
+    )
+
+    assert plan is None
+    assert fallback_reason == "openai_error"
+    assert diagnostics is not None
+    assert diagnostics["openai_error_hint"] is not None
+    assert "could not be recovered" in diagnostics["openai_error_hint"]

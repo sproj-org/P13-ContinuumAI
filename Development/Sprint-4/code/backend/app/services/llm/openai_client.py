@@ -27,7 +27,7 @@ class OpenAIClient:
         system_prompt: str,
         user_prompt: str,
         corrective_prompt: str | None = None,
-    ) -> dict[str, Any]:
+    ) -> Any:
         messages: list[dict[str, str]] = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
@@ -46,6 +46,4 @@ class OpenAIClient:
             payload = json.loads(raw_text)
         except json.JSONDecodeError as exc:
             raise OpenAIJSONError(f"Model output is not valid JSON: {raw_text[:200]}") from exc
-        if not isinstance(payload, dict):
-            raise OpenAIJSONError("Model output must be a JSON object.")
         return payload
