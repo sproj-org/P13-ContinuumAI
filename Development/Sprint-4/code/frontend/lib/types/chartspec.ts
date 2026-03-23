@@ -34,6 +34,14 @@ export interface SortSpec {
   direction: SortDirection;
 }
 
+export interface ChartSemanticContext {
+  matched_kpi_id?: string | null;
+  matched_kpi_label?: string | null;
+  semantic_family?: string | null;
+  preferred_drill_path?: string[];
+  chart_family?: string | null;
+}
+
 export interface ChartSpecV1 {
   version: ChartVersion;
   dataset_id?: string;
@@ -43,6 +51,7 @@ export interface ChartSpecV1 {
   filters?: FilterSpec[];
   sort?: SortSpec[];
   limit?: number;
+  semantic_context?: ChartSemanticContext;
 }
 
 export interface ChartsPreviewResponse {

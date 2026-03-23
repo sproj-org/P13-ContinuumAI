@@ -2,7 +2,7 @@
 
 import type { DatasetProfileAPI, StrategyKpi } from "@/lib/api-types";
 import type { RankedDrillCandidate } from "@/lib/mart-drill-utils";
-import type { ChartSpecV1, ChartType } from "@/lib/types/chartspec";
+import type { ChartSemanticContext, ChartSpecV1, ChartType } from "@/lib/types/chartspec";
 
 export type TitleStrategy = "comparison" | "trend" | "composition" | "distribution";
 export type AxisFormattingStrategy = "categorical" | "temporal" | "distribution";
@@ -201,6 +201,14 @@ function findBestMatchingKpi(chartSpec: ChartSpecV1, strategyKpis?: StrategyKpi[
     return null;
   }
 
+  const persistedKpiId = chartSpec.semantic_context?.matched_kpi_id?.trim();
+  if (persistedKpiId) {
+    const persistedMatch = strategyKpis.find((kpi) => kpi.id === persistedKpiId);
+    if (persistedMatch) {
+      return persistedMatch;
+    }
+  }
+
   const metric = chartSpec.encoding.y[0];
   const xField = chartSpec.encoding.x.field;
   const metricTokens = new Set(normalizeTokens(metric.field));
@@ -226,6 +234,48 @@ function findBestMatchingKpi(chartSpec: ChartSpecV1, strategyKpis?: StrategyKpi[
   }
 
   return best && best.score >= 8 ? best.kpi : null;
+}
+
+export function buildChartSemanticContext(
+  chartSpec: ChartSpecV1,
+  options: { strategyKpis?: StrategyKpi[] | null } = {},
+): ChartSemanticContext | null {
+  const matchedKpi = findBestMatchingKpi(chartSpec, options.strategyKpis);
+  const preferredDrillPath = matchedKpi?.preferred_drill_path?.length
+    ? matchedKpi.preferred_drill_path
+    : matchedKpi?.dimensions || [];
+
+  if (!matchedKpi && chartSpec.semantic_context) {
+    return chartSpec.semantic_context;
+  }
+
+  if (!matchedKpi) {
+    return {
+      chart_family: resolveTitleStrategy(chartSpec),
+    };
+  }
+
+  return {
+    matched_kpi_id: matchedKpi.id,
+    matched_kpi_label: matchedKpiLabel(matchedKpi),
+    semantic_family: matchedKpi.semantic_family?.trim() || null,
+    preferred_drill_path: preferredDrillPath,
+    chart_family: resolveTitleStrategy(chartSpec),
+  };
+}
+
+export function attachChartSemanticContext(
+  chartSpec: ChartSpecV1,
+  options: { strategyKpis?: StrategyKpi[] | null } = {},
+): ChartSpecV1 {
+  const semanticContext = buildChartSemanticContext(chartSpec, options);
+  if (!semanticContext) {
+    return chartSpec;
+  }
+  return {
+    ...chartSpec,
+    semantic_context: semanticContext,
+  };
 }
 
 function aggregationPrefix(aggregation: ChartSpecV1["encoding"]["y"][0]["aggregation"]): string {

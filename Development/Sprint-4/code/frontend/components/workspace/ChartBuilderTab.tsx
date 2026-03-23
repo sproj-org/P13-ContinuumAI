@@ -8,7 +8,7 @@ import {
   transformColumnProfile,
   type ColumnRole,
 } from "@/lib/transformers";
-import { humanizeFieldLabel, resolveChartTitle } from "@/lib/chart-display";
+import { attachChartSemanticContext, humanizeFieldLabel, resolveChartTitle } from "@/lib/chart-display";
 import { getMartDrillAdvisory } from "@/lib/mart-drill-utils";
 import type { ChartSpecV1, FilterOperator, FilterSpec } from "@/lib/types/chartspec";
 import { motion, AnimatePresence } from "framer-motion";
@@ -702,12 +702,15 @@ export default function ChartBuilderTab() {
     }
 
     const title = chartTitlePreview;
+    const chartSpecWithSemanticContext = attachChartSemanticContext(previewData.chart_spec, {
+      strategyKpis: strategyKpiLibrary?.kpis ?? [],
+    });
 
     for (const dashboardName of selectedDashboards) {
       saveChart({
         title,
         dashboardName,
-        chartSpec: previewData.chart_spec,
+        chartSpec: chartSpecWithSemanticContext,
         rows: previewData.rows,
         datasetId: selectedDatasetId,
         martId: selectedAggregation,

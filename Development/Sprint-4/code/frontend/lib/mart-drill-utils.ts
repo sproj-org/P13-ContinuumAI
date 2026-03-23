@@ -1,5 +1,6 @@
 import type { DatasetProfileAPI, StrategyKpi } from "@/lib/api-types";
 import type { AvailableMart } from "@/lib/store";
+import type { ChartSemanticContext } from "@/lib/types/chartspec";
 
 const PRODUCT_KEYWORDS = ["product", "sku", "item"];
 const DRILLABLE_ROLES = new Set(["dimension", "datetime", "temporal", "id", "text", "boolean"]);
@@ -73,6 +74,7 @@ export interface RankDrillCandidatesParams {
   chartTitle?: string | null;
   chartType?: string | null;
   strategyKpis?: StrategyKpi[] | null;
+  semanticContext?: ChartSemanticContext | null;
 }
 
 export interface DrillAnalysis {
@@ -374,14 +376,6 @@ function kpiLabel(kpi: StrategyKpi): string {
   return displayName || kpi.id;
 }
 
-function semanticFamilyLabel(family: string): string {
-  return family
-    .replace(/[_-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
 function matchStrategyKpis(params: {
   strategyKpis?: StrategyKpi[] | null;
   martId: string;
@@ -389,8 +383,9 @@ function matchStrategyKpis(params: {
   chartTitle?: string | null;
   currentDimension: string;
   availableColumns: Set<string>;
+  semanticContext?: ChartSemanticContext | null;
 }): MatchedKpi[] {
-  const { strategyKpis, martId, metricField, chartTitle, currentDimension, availableColumns } = params;
+  const { strategyKpis, martId, metricField, chartTitle, currentDimension, availableColumns, semanticContext } = params;
   if (!strategyKpis || strategyKpis.length === 0) {
     return [];
   }
@@ -409,13 +404,18 @@ function matchStrategyKpis(params: {
         ...metricAliases.flatMap((alias) => normalizeTokens(alias)),
         ...formulaColumns,
       ]);
-      const preferredPath = (kpi.preferred_drill_path || kpi.dimensions || []).filter((dimension) => availableColumns.has(dimension));
+      const persistedPath =
+        semanticContext?.matched_kpi_id === kpi.id && semanticContext.preferred_drill_path?.length
+          ? semanticContext.preferred_drill_path
+          : null;
+      const preferredPath = (persistedPath || kpi.preferred_drill_path || kpi.dimensions || []).filter((dimension) => availableColumns.has(dimension));
       let relevance = 0;
 
       if ((kpi.marts || []).includes(martId)) relevance += 4;
       if (metricField && (kpi.required_columns || []).includes(metricField)) relevance += 14;
       if (metricField && formulaColumns.includes(metricField)) relevance += 10;
       if (metricField && metricAliases.includes(metricField)) relevance += 8;
+      if (semanticContext?.matched_kpi_id === kpi.id) relevance += 20;
       if ((kpi.preferred_drill_path || []).includes(currentDimension)) relevance += 8;
       else if ((kpi.dimensions || []).includes(currentDimension)) relevance += 5;
       relevance += overlapCount(metricTokens, kpiTokens) * 2;
@@ -490,7 +490,14 @@ function resolveMetricFamily(params: {
   metricField?: string | null;
   chartTitle?: string | null;
   matches: MatchedKpi[];
+  semanticContext?: ChartSemanticContext | null;
 }): MetricFamilyRule | null {
+  if (params.semanticContext?.semantic_family) {
+    const persistedRule = METRIC_FAMILY_RULES.find((rule) => rule.id === params.semanticContext?.semantic_family);
+    if (persistedRule) {
+      return persistedRule;
+    }
+  }
   const matchedFamily = params.matches.find((item) => typeof item.kpi.semantic_family === "string" && item.kpi.semantic_family.trim());
   if (matchedFamily?.kpi.semantic_family) {
     return METRIC_FAMILY_RULES.find((rule) => rule.id === matchedFamily.kpi.semantic_family) ?? null;
@@ -692,6 +699,7 @@ export function analyzeDrilldown(params: RankDrillCandidatesParams): DrillAnalys
     chartTitle: params.chartTitle,
     currentDimension: params.currentDimension,
     availableColumns: availableColumnSet,
+    semanticContext: params.semanticContext,
   });
   const kpiAnalysis = buildKpiDimensionBoosts({
     matches: matchedKpis,
@@ -702,6 +710,7 @@ export function analyzeDrilldown(params: RankDrillCandidatesParams): DrillAnalys
     metricField: params.metricField,
     chartTitle: params.chartTitle,
     matches: matchedKpis,
+    semanticContext: params.semanticContext,
   });
   const semanticAnalysis = buildSemanticPolicyBoosts({
     familyRule,

@@ -34,7 +34,7 @@ import type {
 import { renderChart } from "@/components/workspace/renderChart";
 import MarkdownMessage from "@/components/common/MarkdownMessage";
 import { useSavedCharts, useStrategyKpis } from "@/lib/hooks";
-import { resolveChartTitle } from "@/lib/chart-display";
+import { attachChartSemanticContext, resolveChartTitle } from "@/lib/chart-display";
 import { createChartBuilderSeed } from "@/lib/chart-builder-seed";
 import { getMartDrillAdvisory } from "@/lib/mart-drill-utils";
 
@@ -616,10 +616,14 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
       return;
     }
     
+    const chartSpecWithSemanticContext = attachChartSemanticContext(currentChartPreview.chartSpec, {
+      strategyKpis: strategyKpiLibrary?.kpis ?? [],
+    });
+
     saveChart({
       title: currentChartPreviewTitle,
       dashboardName: resolvedDashboardName,
-      chartSpec: currentChartPreview.chartSpec,
+      chartSpec: chartSpecWithSemanticContext,
       rows: currentChartPreview.rows,
       datasetId: routeDatasetId,
       martId: selectedAggregation,

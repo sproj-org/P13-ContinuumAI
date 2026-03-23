@@ -154,8 +154,9 @@ export default function DrillDownChart({
       chartTitle,
       chartType: chartSpec.chart.type,
       strategyKpis: strategyKpiLibrary?.kpis ?? [],
+      semanticContext: chartSpec.semantic_context ?? null,
     });
-  }, [profile, chartSpec.table, currentDimension, usedDimensions, metricField, chartTitle, chartSpec.chart.type, strategyKpiLibrary?.kpis]);
+  }, [profile, chartSpec.table, chartSpec.semantic_context, currentDimension, usedDimensions, metricField, chartTitle, chartSpec.chart.type, strategyKpiLibrary?.kpis]);
 
   const rankedDrillCandidates = drillAnalysis.candidates;
   const configuredHierarchy = drillAnalysis.configuredHierarchy;
