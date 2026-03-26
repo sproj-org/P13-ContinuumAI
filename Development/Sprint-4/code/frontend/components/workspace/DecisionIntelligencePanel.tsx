@@ -11,21 +11,21 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import ContextualAssistant from "@/components/workspace/ContextualAssistant";
 import { ApiRequestError, apiClient } from "@/lib/api";
 import { mergeChartSemanticContext } from "@/lib/chart-display";
+import { buildAnalysisFocusContext, buildChartFocusContext, buildKpiFocusContext, contextualPromptSuggestions } from "@/lib/contextual-focus";
 import type {
   AnalysisContext,
   AnalysisRequest,
   AnalysisResponse,
   AnalysisSource,
-  AnalysisTaskType,
+  DecisionTaskType,
   PredictionSummary,
   SemanticContextSpec,
   StrategyContextSpec,
 } from "@/lib/types/analysis";
 import type { ChartSemanticContext, ChartSpecV1 } from "@/lib/types/chartspec";
-
-type PanelTask = "forecast" | "anomaly" | "segment" | "strategy_risk";
 
 interface DecisionIntelligencePanelProps {
   datasetId: string;
@@ -37,6 +37,7 @@ interface DecisionIntelligencePanelProps {
   analysisSource?: AnalysisSource;
   analysisContext?: AnalysisContext | null;
   onChartSpecChange?: (nextChartSpec: ChartSpecV1) => void;
+  taskRequest?: { task: DecisionTaskType; token: number } | null;
 }
 
 type TaskRunState = {
@@ -46,7 +47,7 @@ type TaskRunState = {
   error: string | null;
 };
 
-const TASK_CONFIG: Record<PanelTask, { label: string; description: string; icon: LucideIcon; accent: string }> = {
+const TASK_CONFIG: Record<DecisionTaskType, { label: string; description: string; icon: LucideIcon; accent: string }> = {
   forecast: {
     label: "Forecast",
     description: "Project the KPI or metric trend across the next horizon.",
@@ -73,7 +74,7 @@ const TASK_CONFIG: Record<PanelTask, { label: string; description: string; icon:
   },
 };
 
-function createTaskState(): Record<PanelTask, TaskRunState> {
+function createTaskState(): Record<DecisionTaskType, TaskRunState> {
   return {
     forecast: { runId: 0, isLoading: false, analysis: null, error: null },
     anomaly: { runId: 0, isLoading: false, analysis: null, error: null },
@@ -275,13 +276,18 @@ export default function DecisionIntelligencePanel({
   analysisSource = "api",
   analysisContext,
   onChartSpecChange,
+  taskRequest,
 }: DecisionIntelligencePanelProps) {
-  const [selectedTaskByContext, setSelectedTaskByContext] = useState<Record<string, PanelTask>>({});
-  const [taskStatesByContext, setTaskStatesByContext] = useState<Record<string, Record<PanelTask, TaskRunState>>>({});
+  const [selectedTask, setSelectedTask] = useState<DecisionTaskType>("forecast");
+  const [runningTask, setRunningTask] = useState<DecisionTaskType | null>(null);
+  const [lastCompletedTask, setLastCompletedTask] = useState<DecisionTaskType | null>(null);
+  const [taskStates, setTaskStates] = useState<Record<DecisionTaskType, TaskRunState>>(createTaskState);
   const [horizon, setHorizon] = useState(6);
   const [clusterCount, setClusterCount] = useState(4);
   const runIdRef = useRef(0);
   const autoRunSeedRef = useRef<string | null>(null);
+  const contextLifecycleRef = useRef<string>("");
+  const handledTaskRequestRef = useRef<number | null>(null);
 
   const resolvedTable = martId || chartSpec?.table || analysisContext?.table || chartSpec?.semantic_context?.analysis_context?.table || null;
   const resolvedKpiId =
@@ -290,6 +296,19 @@ export default function DecisionIntelligencePanel({
     chartSpec?.semantic_context?.analysis_context?.semantic?.matched_kpi_id ||
     chartSpec?.semantic_context?.matched_kpi_id ||
     null;
+  const stableKpiId = kpiId ?? analysisContext?.semantic?.matched_kpi_id ?? null;
+  const stableContextKey = useMemo(
+    () =>
+      [
+        analysisSource,
+        martId ?? chartSpec?.table ?? analysisContext?.table ?? "none",
+        stableKpiId ?? "none",
+        chartSpec?.encoding.x.field ?? "x",
+        chartSpec?.encoding.y[0]?.field ?? "metric",
+        chartTitle ?? "untitled",
+      ].join("|"),
+    [analysisContext?.table, analysisSource, chartSpec?.encoding.x.field, chartSpec?.encoding.y[0]?.field, chartSpec?.table, chartTitle, martId, stableKpiId],
+  );
 
   const resolvedAnalysisContext = useMemo<AnalysisContext>(() => {
     const persistedContext = chartSpec?.semantic_context?.analysis_context ?? null;
@@ -320,7 +339,7 @@ export default function DecisionIntelligencePanel({
     };
   }, [analysisContext, analysisSource, chartSpec, chartTitle, resolvedKpiId, resolvedTable]);
 
-  const disabledTasks = useMemo<Record<PanelTask, boolean>>(
+  const disabledTasks = useMemo<Record<DecisionTaskType, boolean>>(
     () => ({
       forecast: !Boolean(resolvedTable),
       anomaly: !Boolean(resolvedTable),
@@ -330,62 +349,66 @@ export default function DecisionIntelligencePanel({
     [resolvedKpiId, resolvedTable],
   );
 
-  const contextKey = useMemo(
-    () => [analysisSource, resolvedTable ?? "none", resolvedKpiId ?? "none", chartTitle ?? "untitled"].join("|"),
-    [analysisSource, chartTitle, resolvedKpiId, resolvedTable],
-  );
-  const defaultTask: PanelTask = analysisSource === "strategy" && resolvedKpiId ? "strategy_risk" : "forecast";
-  const selectedTask = selectedTaskByContext[contextKey] ?? defaultTask;
-  const taskStates = taskStatesByContext[contextKey] ?? createTaskState();
+  const defaultTask: DecisionTaskType = analysisSource === "strategy" && resolvedKpiId ? "strategy_risk" : "forecast";
   const activeTaskState = taskStates[selectedTask];
   const activeAnalysis = activeTaskState.analysis;
   const activePrediction = activeAnalysis?.prediction ?? null;
   const activeSegmentation = activeAnalysis?.segmentation ?? null;
   const activeStrategy = activeAnalysis?.strategy ?? null;
+  const baseSemanticContext = useMemo(
+    () => buildSemanticContext(chartSpec, chartTitle, resolvedTable, resolvedKpiId),
+    [chartSpec, chartTitle, resolvedKpiId, resolvedTable],
+  );
 
-  const runAnalysis = async (task: PanelTask) => {
+  useEffect(() => {
+    contextLifecycleRef.current = stableContextKey;
+    setSelectedTask(defaultTask);
+    setRunningTask(null);
+    setLastCompletedTask(null);
+    setTaskStates(createTaskState());
+    handledTaskRequestRef.current = null;
+  }, [defaultTask, stableContextKey]);
+
+  const runAnalysis = async (task: DecisionTaskType) => {
     const table = resolvedTable;
     if (!table && task !== "strategy_risk") {
-      setTaskStatesByContext((previous) => {
-        const previousTaskState = previous[contextKey] ?? createTaskState();
-        return {
-          ...previous,
-          [contextKey]: {
-            ...previousTaskState,
-            [task]: { ...previousTaskState[task], analysis: null, error: "Select a mart or chart before running advanced analysis." },
-          },
-        };
-      });
+      setTaskStates((previous) => ({
+        ...previous,
+        [task]: {
+          ...previous[task],
+          isLoading: false,
+          analysis: null,
+          error: "Select a mart or chart before running advanced analysis.",
+        },
+      }));
+      setRunningTask(null);
       return;
     }
     if (task === "strategy_risk" && !resolvedKpiId) {
-      setTaskStatesByContext((previous) => {
-        const previousTaskState = previous[contextKey] ?? createTaskState();
-        return {
-          ...previous,
-          [contextKey]: {
-            ...previousTaskState,
-            [task]: { ...previousTaskState[task], analysis: null, error: "A matched KPI is required for strategy risk analysis." },
-          },
-        };
-      });
+      setTaskStates((previous) => ({
+        ...previous,
+        [task]: {
+          ...previous[task],
+          isLoading: false,
+          analysis: null,
+          error: "A matched KPI is required for strategy risk analysis.",
+        },
+      }));
+      setRunningTask(null);
       return;
     }
 
     const runId = ++runIdRef.current;
-    setTaskStatesByContext((previous) => {
-      const previousTaskState = previous[contextKey] ?? createTaskState();
-      return {
-        ...previous,
-        [contextKey]: {
-          ...previousTaskState,
-          [task]: { runId, isLoading: true, analysis: null, error: null },
-        },
-      };
-    });
+    const requestContextKey = stableContextKey;
+    setSelectedTask(task);
+    setRunningTask(task);
+    setTaskStates((previous) => ({
+      ...previous,
+      [task]: { runId, isLoading: true, analysis: null, error: null },
+    }));
 
     const requestSemanticContext: SemanticContextSpec = {
-      ...buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId),
+      ...baseSemanticContext,
       ...(resolvedAnalysisContext.semantic ?? {}),
       matched_kpi_id: resolvedKpiId ?? resolvedAnalysisContext.semantic?.matched_kpi_id ?? null,
       matched_kpi_label:
@@ -393,37 +416,35 @@ export default function DecisionIntelligencePanel({
         chartSpec?.semantic_context?.matched_kpi_label ??
         chartTitle ??
         null,
-      marts: resolvedAnalysisContext.semantic?.marts ?? buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId).marts,
+      marts: resolvedAnalysisContext.semantic?.marts ?? baseSemanticContext.marts,
       required_columns:
-        resolvedAnalysisContext.semantic?.required_columns ?? buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId).required_columns,
-      dimensions: resolvedAnalysisContext.semantic?.dimensions ?? buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId).dimensions,
+        resolvedAnalysisContext.semantic?.required_columns ?? baseSemanticContext.required_columns,
+      dimensions: resolvedAnalysisContext.semantic?.dimensions ?? baseSemanticContext.dimensions,
       metric_aliases:
-        resolvedAnalysisContext.semantic?.metric_aliases ?? buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId).metric_aliases,
+        resolvedAnalysisContext.semantic?.metric_aliases ?? baseSemanticContext.metric_aliases,
       business_concepts:
-        resolvedAnalysisContext.semantic?.business_concepts ?? buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId).business_concepts,
+        resolvedAnalysisContext.semantic?.business_concepts ?? baseSemanticContext.business_concepts,
       preferred_drill_path:
-        resolvedAnalysisContext.semantic?.preferred_drill_path ?? buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId).preferred_drill_path,
+        resolvedAnalysisContext.semantic?.preferred_drill_path ?? baseSemanticContext.preferred_drill_path,
       mart_hierarchy:
-        resolvedAnalysisContext.semantic?.mart_hierarchy ?? buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId).mart_hierarchy,
+        resolvedAnalysisContext.semantic?.mart_hierarchy ?? baseSemanticContext.mart_hierarchy,
       terminal_dimensions:
-        resolvedAnalysisContext.semantic?.terminal_dimensions ?? buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId).terminal_dimensions,
+        resolvedAnalysisContext.semantic?.terminal_dimensions ?? baseSemanticContext.terminal_dimensions,
       disallowed_drill_dimensions:
-        resolvedAnalysisContext.semantic?.disallowed_drill_dimensions ??
-        buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId).disallowed_drill_dimensions,
+        resolvedAnalysisContext.semantic?.disallowed_drill_dimensions ?? baseSemanticContext.disallowed_drill_dimensions,
       preferred_chart_types:
-        resolvedAnalysisContext.semantic?.preferred_chart_types ??
-        buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId).preferred_chart_types,
-      default_grain: resolvedAnalysisContext.semantic?.default_grain ?? buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId).default_grain,
+        resolvedAnalysisContext.semantic?.preferred_chart_types ?? baseSemanticContext.preferred_chart_types,
+      default_grain: resolvedAnalysisContext.semantic?.default_grain ?? baseSemanticContext.default_grain,
       metric_field_hint:
-        resolvedAnalysisContext.semantic?.metric_field_hint ?? buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId).metric_field_hint,
+        resolvedAnalysisContext.semantic?.metric_field_hint ?? baseSemanticContext.metric_field_hint,
       entity_field_hint:
-        resolvedAnalysisContext.semantic?.entity_field_hint ?? buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId).entity_field_hint,
+        resolvedAnalysisContext.semantic?.entity_field_hint ?? baseSemanticContext.entity_field_hint,
       time_field_hint:
-        resolvedAnalysisContext.semantic?.time_field_hint ?? buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId).time_field_hint,
+        resolvedAnalysisContext.semantic?.time_field_hint ?? baseSemanticContext.time_field_hint,
     };
 
     const request: AnalysisRequest = {
-      task_type: task as AnalysisTaskType,
+      task_type: task,
       table,
       chart_spec: chartSpec ?? undefined,
       chart_rows: chartRows ?? [],
@@ -439,46 +460,39 @@ export default function DecisionIntelligencePanel({
 
     try {
       const response = await apiClient.postAnalysis(datasetId, request);
-      setTaskStatesByContext((previous) => {
-        const previousTaskState = previous[contextKey] ?? createTaskState();
-        if (previousTaskState[task].runId !== runId) {
+      setTaskStates((previous) => {
+        if (contextLifecycleRef.current !== requestContextKey || previous[task].runId !== runId) {
           return previous;
         }
-        return {
-          ...previous,
-          [contextKey]: {
-            ...previousTaskState,
-            [task]: { runId, isLoading: false, analysis: response, error: null },
-          },
-        };
+        return { ...previous, [task]: { runId, isLoading: false, analysis: response, error: null } };
       });
+      if (contextLifecycleRef.current === requestContextKey) {
+        setRunningTask((current) => (current === task ? null : current));
+        setLastCompletedTask(task);
+      }
 
       if (chartSpec && onChartSpecChange) {
         onChartSpecChange(mergeChartSemanticContext(chartSpec, buildSemanticPatch(response, request.analysis_context ?? {}, resolvedKpiId)));
       }
     } catch (requestError) {
       const message = formatError(requestError);
-      setTaskStatesByContext((previous) => {
-        const previousTaskState = previous[contextKey] ?? createTaskState();
-        if (previousTaskState[task].runId !== runId) {
+      setTaskStates((previous) => {
+        if (contextLifecycleRef.current !== requestContextKey || previous[task].runId !== runId) {
           return previous;
         }
-        return {
-          ...previous,
-          [contextKey]: {
-            ...previousTaskState,
-            [task]: { runId, isLoading: false, analysis: null, error: message },
-          },
-        };
+        return { ...previous, [task]: { runId, isLoading: false, analysis: null, error: message } };
       });
+      if (contextLifecycleRef.current === requestContextKey) {
+        setRunningTask((current) => (current === task ? null : current));
+      }
     }
   };
 
-  const handleTaskSelect = (task: PanelTask) => {
-    setSelectedTaskByContext((previous) => ({ ...previous, [contextKey]: task }));
+  const handleTaskSelect = (task: DecisionTaskType) => {
+    setSelectedTask(task);
     void runAnalysis(task);
   };
-  const runAnalysisEvent = useEffectEvent((task: PanelTask) => {
+  const runAnalysisEvent = useEffectEvent((task: DecisionTaskType) => {
     void runAnalysis(task);
   });
 
@@ -493,9 +507,64 @@ export default function DecisionIntelligencePanel({
     }
     autoRunSeedRef.current = seed;
     runAnalysisEvent("strategy_risk");
-  }, [analysisSource, chartTitle, resolvedKpiId, resolvedTable]);
+  }, [analysisSource, chartTitle, resolvedKpiId, resolvedTable, stableContextKey]);
+
+  useEffect(() => {
+    if (!taskRequest || handledTaskRequestRef.current === taskRequest.token) {
+      return;
+    }
+    handledTaskRequestRef.current = taskRequest.token;
+    runAnalysisEvent(taskRequest.task);
+  }, [taskRequest]);
 
   const selectedTaskConfig = TASK_CONFIG[selectedTask];
+  const assistantFocus = useMemo(() => {
+    if (activeAnalysis) {
+      return buildAnalysisFocusContext({
+        title: chartTitle || selectedTaskConfig.label,
+        table: resolvedTable,
+        kpiId: resolvedKpiId,
+        chartSpec,
+        chartRows,
+        analysisContext: resolvedAnalysisContext,
+        semanticContext: chartSpec?.semantic_context ?? null,
+        analysis: activeAnalysis,
+        task: selectedTask,
+        breadcrumbs: [selectedTaskConfig.label],
+      });
+    }
+    if (analysisSource === "strategy") {
+      return buildKpiFocusContext({
+        title: chartTitle || "Current KPI",
+        table: resolvedTable,
+        kpiId: resolvedKpiId,
+        analysisContext: resolvedAnalysisContext,
+        breadcrumbs: ["Strategy KPI"],
+      });
+    }
+    return buildChartFocusContext({
+      title: chartTitle || "Current chart",
+      table: resolvedTable,
+      kpiId: resolvedKpiId,
+      chartSpec,
+      chartRows,
+      analysisContext: resolvedAnalysisContext,
+      semanticContext: chartSpec?.semantic_context ?? null,
+      breadcrumbs: ["Current chart"],
+    });
+  }, [
+    activeAnalysis,
+    analysisSource,
+    chartRows,
+    chartSpec,
+    chartTitle,
+    resolvedAnalysisContext,
+    resolvedKpiId,
+    resolvedTable,
+    selectedTask,
+    selectedTaskConfig.label,
+  ]);
+  const assistantSuggestions = useMemo(() => contextualPromptSuggestions(assistantFocus), [assistantFocus]);
 
   return (
     <div className="rounded-2xl border border-indigo-200/60 bg-gradient-to-br from-white via-indigo-50/30 to-slate-50 p-4 shadow-sm">
@@ -508,7 +577,7 @@ export default function DecisionIntelligencePanel({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {(Object.keys(TASK_CONFIG) as PanelTask[]).map((task) => {
+          {(Object.keys(TASK_CONFIG) as DecisionTaskType[]).map((task) => {
             const Icon = TASK_CONFIG[task].icon;
             const disabled = disabledTasks[task];
             const state = taskStates[task];
@@ -558,6 +627,16 @@ export default function DecisionIntelligencePanel({
         <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-1 text-[11px] text-indigo-700">
           Selected task: {selectedTaskConfig.label}
         </span>
+        {runningTask ? (
+          <span className="rounded-full border border-indigo-200 bg-white px-2 py-1 text-[11px] text-indigo-700">
+            Running: {TASK_CONFIG[runningTask].label}
+          </span>
+        ) : null}
+        {lastCompletedTask ? (
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] text-slate-600">
+            Last completed: {TASK_CONFIG[lastCompletedTask].label}
+          </span>
+        ) : null}
         <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] text-slate-600">
           Source: {resolvedAnalysisContext.source ?? analysisSource}
         </span>
@@ -855,7 +934,7 @@ export default function DecisionIntelligencePanel({
                         action.action_type === "segment" ||
                         action.action_type === "strategy_risk"
                       ) {
-                        handleTaskSelect(action.action_type as PanelTask);
+                        handleTaskSelect(action.action_type);
                       }
                     }}
                     className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs text-slate-700 hover:border-indigo-300 hover:bg-indigo-50"
@@ -870,9 +949,26 @@ export default function DecisionIntelligencePanel({
         </div>
       ) : (
         <div className="mt-4 rounded-xl border border-dashed border-slate-300 bg-white/70 px-4 py-8 text-center text-sm text-slate-500">
-          Select a task above to run a fresh {selectedTaskConfig.label.toLowerCase()} analysis. 
+          Run {selectedTaskConfig.label.toLowerCase()} to generate a fresh, task-specific result from the current chart or KPI context.
         </div>
       )}
+
+      {activeAnalysis || analysisSource === "strategy" ? (
+        <div className="mt-4">
+          <ContextualAssistant
+            datasetId={datasetId}
+            focus={assistantFocus}
+            title={
+              activeAnalysis
+                ? `Ask about this ${selectedTaskConfig.label.toLowerCase()} result`
+                : "Ask about this KPI"
+            }
+            description="This assistant inherits the current artifact, semantic context, and latest analysis state."
+            suggestions={assistantSuggestions}
+            onChartSpecChange={onChartSpecChange}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

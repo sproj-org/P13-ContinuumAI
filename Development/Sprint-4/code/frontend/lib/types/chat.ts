@@ -1,5 +1,6 @@
-import type { ChartSpecV1 } from './chartspec';
+import type { ChartSemanticContext, ChartSpecV1 } from './chartspec';
 import type {
+  AnalysisContext,
   AnalysisResponse,
   MetricAggregation,
   PlanSpec,
@@ -40,12 +41,29 @@ export interface ChatStatePayload {
   original_user_intent?: string;
 }
 
+export type ChatFocusType = 'chart' | 'dashboard' | 'kpi' | 'analysis_result' | 'drill_state';
+
+export interface ChatFocusContext {
+  focus_type: ChatFocusType;
+  title?: string | null;
+  table?: string | null;
+  kpi_id?: string | null;
+  chart_spec?: ChartSpecV1 | null;
+  chart_rows?: Array<Record<string, unknown>>;
+  analysis_context?: AnalysisContext | null;
+  semantic_context?: ChartSemanticContext | null;
+  active_task?: string | null;
+  summary?: string | null;
+  breadcrumbs?: string[];
+}
+
 export interface ChatRequest {
   message: string;
-  table: string;
+  table?: string | null;
   mode?: ChatMode;
   state?: ChatStatePayload;
   history?: ChatHistoryTurn[];
+  focus?: ChatFocusContext | null;
   debug?: boolean;
 }
 

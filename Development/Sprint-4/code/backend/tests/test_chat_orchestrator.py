@@ -10,7 +10,9 @@ os.environ["DATABASE_URL"] = "sqlite:///./test_chat_orchestrator.db"
 os.environ["JWT_SECRET_KEY"] = "test-secret"
 
 from app.services.agents import chat_orchestrator
-from app.services.agents.chat_models import ChatState
+from app.services.agents.chat_models import ChatFocusContext, ChatState
+from app.services.charts.models import ChartSpecV1
+from app.services.intelligence.specs import AnalysisContextSpec, AnalysisResponse, InsightCard, PlanSpec
 
 
 CONTEXT = {
@@ -339,3 +341,110 @@ def test_generate_plan_rejects_unrecoverable_payloads(monkeypatch: pytest.Monkey
     assert diagnostics is not None
     assert diagnostics["openai_error_hint"] is not None
     assert "could not be recovered" in diagnostics["openai_error_hint"]
+
+
+def test_build_user_prompt_includes_focused_artifact_context() -> None:
+    prompt = chat_orchestrator._build_user_prompt(
+        dataset_id="silkroute",
+        table="gold_sales_daily",
+        message="Explain this chart",
+        mode="auto",
+        context=CONTEXT,
+        state=ChatState(),
+        history=None,
+        focus=ChatFocusContext(
+            focus_type="chart",
+            title="Revenue Trend",
+            table="gold_sales_daily",
+            kpi_id="total_sales",
+            active_task="forecast",
+            summary="Sales are accelerating.",
+            breadcrumbs=["Dashboard", "Revenue"],
+        ),
+    )
+
+    assert "Focused artifact context" in prompt
+    assert "Revenue Trend" in prompt
+    assert "forecast" in prompt
+
+
+def test_maybe_run_structured_analysis_uses_focus_context_for_insight(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, Any] = {}
+
+    def fake_create_plan(request, *, dataset_id):
+        captured["request"] = request
+        return (
+            PlanSpec(
+                dataset_id=dataset_id,
+                table="gold_sales_daily",
+                user_message=request.message or "Explain this chart",
+                primary_task="insight",
+                route_reason="Focused artifact insight",
+                tasks=[],
+                suggested_follow_ups=[],
+            ),
+            None,
+        )
+
+    def fake_run_analysis_request(*, dataset_id, request, db):
+        captured["analysis_request"] = request
+        return AnalysisResponse(
+            task_type="insight",
+            agent_role="insight_agent",
+            plan_spec=PlanSpec(
+                dataset_id=dataset_id,
+                table="gold_sales_daily",
+                user_message=request.message or "Explain this chart",
+                primary_task="insight",
+                route_reason="Focused artifact insight",
+                tasks=[],
+                suggested_follow_ups=[],
+            ),
+            insight_cards=[
+                InsightCard(
+                    title="Focused insight",
+                    summary="Uses the current artifact context for the explanation.",
+                    severity="info",
+                )
+            ],
+            suggested_actions=[],
+            meta={},
+        )
+
+    monkeypatch.setattr(chat_orchestrator, "create_analysis_plan", fake_create_plan)
+    monkeypatch.setattr(chat_orchestrator, "run_analysis_request", fake_run_analysis_request)
+
+    response = chat_orchestrator._maybe_run_structured_analysis(
+        dataset_id="silkroute",
+        table="gold_sales_daily",
+        message="Explain this chart",
+        state=ChatState(),
+        focus=ChatFocusContext(
+            focus_type="analysis_result",
+            title="Revenue Risk",
+            table="gold_sales_daily",
+            kpi_id="total_sales",
+            chart_spec=ChartSpecV1.model_validate(
+                {
+                    "version": "v1",
+                    "table": "gold_sales_daily",
+                    "chart": {"type": "line"},
+                    "encoding": {
+                        "x": {"field": "sales_date"},
+                        "y": [{"field": "net_sales", "aggregation": "sum"}],
+                    },
+                }
+            ),
+            analysis_context=AnalysisContextSpec(source="dashboard", table="gold_sales_daily"),
+            active_task="strategy_risk",
+            summary="Risk is trending higher.",
+        ),
+        db=SimpleNamespace(),
+    )
+
+    assert response is not None
+    assert response.response_type == "explain"
+    assert captured["request"].kpi_id == "total_sales"
+    assert captured["request"].chart_spec.table == "gold_sales_daily"
+    assert captured["request"].analysis_context is not None
+    assert captured["request"].analysis_context.source == "dashboard"

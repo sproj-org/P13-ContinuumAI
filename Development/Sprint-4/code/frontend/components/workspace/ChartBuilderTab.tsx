@@ -3,8 +3,10 @@
 import { startTransition, useState, useMemo, useEffect } from "react";
 import { useAppStore, ChartConfig } from "@/lib/store";
 import { useTableProfile, useChartsPreview, useDashboards, useStrategyKpis } from "@/lib/hooks";
+import ContextualAssistant from "@/components/workspace/ContextualAssistant";
 import DecisionIntelligencePanel from "@/components/workspace/DecisionIntelligencePanel";
 import DrillDownChart from "@/components/workspace/DrillDownChart";
+import { buildChartFocusContext, contextualPromptSuggestions } from "@/lib/contextual-focus";
 import {
   transformColumnProfile,
   type ColumnRole,
@@ -15,7 +17,9 @@ import {
   mergeChartSemanticContext,
   resolveChartTitle,
 } from "@/lib/chart-display";
+import { createChartBuilderSeed } from "@/lib/chart-builder-seed";
 import { getMartDrillAdvisory } from "@/lib/mart-drill-utils";
+import type { DecisionTaskType } from "@/lib/types/analysis";
 import type { ChartSemanticContext, ChartSpecV1, FilterOperator, FilterSpec } from "@/lib/types/chartspec";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/lib/toast-context";
@@ -228,6 +232,7 @@ export default function ChartBuilderTab() {
     setChartConfig,
     resetChartConfig,
     chartBuilderSeed,
+    setChartBuilderSeed,
     clearChartBuilderSeed,
     saveChart,
   } = useAppStore();
@@ -249,6 +254,7 @@ export default function ChartBuilderTab() {
   const [copiedTab, setCopiedTab] = useState<DebugTab | null>(null);
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState<boolean>(false);
   const [selectedDashboards, setSelectedDashboards] = useState<string[]>([]);
+  const [taskRequest, setTaskRequest] = useState<{ task: DecisionTaskType; token: number } | null>(null);
   const [analysisSemanticContext, setAnalysisSemanticContext] = useState<{
     signature: string;
     context: Partial<ChartSemanticContext> | null;
@@ -582,6 +588,43 @@ export default function ChartBuilderTab() {
       strategyKpis: strategyKpiLibrary?.kpis ?? [],
     });
   }, [previewChartSpec, strategyKpiLibrary?.kpis]);
+
+  const chartFocus = useMemo(
+    () =>
+      previewChartSpec
+        ? buildChartFocusContext({
+            title: chartTitlePreview,
+            table: selectedAggregation,
+            kpiId: previewChartSpec.semantic_context?.matched_kpi_id ?? null,
+            chartSpec: previewChartSpec,
+            chartRows: previewData?.rows ?? [],
+            analysisContext: previewChartSpec.semantic_context?.analysis_context ?? null,
+            semanticContext: previewChartSpec.semantic_context ?? null,
+            breadcrumbs: [selectedAggregation ?? "chart_builder"],
+          })
+        : null,
+    [chartTitlePreview, previewChartSpec, previewData?.rows, selectedAggregation],
+  );
+  const chartFocusSuggestions = useMemo(
+    () => (chartFocus ? contextualPromptSuggestions(chartFocus) : []),
+    [chartFocus],
+  );
+
+  const requestAnalysisTask = (task: DecisionTaskType) => {
+    setTaskRequest({ task, token: Date.now() + Math.random() });
+  };
+
+  const applyContextualChartSpec = (nextChartSpec: ChartSpecV1) => {
+    setSelectedAggregation(nextChartSpec.table);
+    setChartConfig({
+      chartType: nextChartSpec.chart.type,
+      xAxis: nextChartSpec.encoding.x.field,
+      yAxis: nextChartSpec.encoding.y[0]?.field ?? null,
+      colorBy: null,
+      aggregationFn: nextChartSpec.encoding.y[0]?.aggregation ?? "sum",
+    });
+    setChartBuilderSeed(createChartBuilderSeed(nextChartSpec));
+  };
 
   const previewIdentity = useMemo(
     () => (previewChartSpec ? JSON.stringify(previewChartSpec) : "preview-empty"),
@@ -920,6 +963,29 @@ export default function ChartBuilderTab() {
                     />
                   </div>
 
+                  {chartFocus ? (
+                    <ContextualAssistant
+                      datasetId={selectedDatasetId}
+                      focus={chartFocus}
+                      title="Ask about this chart"
+                      description="Use the current chart, semantic mapping, and mart context as the starting point."
+                      suggestions={[
+                        ...chartFocusSuggestions,
+                        "Break this down further",
+                        "Compare this with the previous period",
+                      ]}
+                      taskActions={[
+                        { task: "forecast", label: "Forecast this metric", onTrigger: () => requestAnalysisTask("forecast") },
+                        { task: "anomaly", label: "Find anomalies", onTrigger: () => requestAnalysisTask("anomaly") },
+                        { task: "segment", label: "Segment likely drivers", onTrigger: () => requestAnalysisTask("segment") },
+                        ...(chartFocus.kpi_id
+                          ? [{ task: "strategy_risk" as const, label: "Check KPI risk", onTrigger: () => requestAnalysisTask("strategy_risk") }]
+                          : []),
+                      ]}
+                      onChartSpecChange={applyContextualChartSpec}
+                    />
+                  ) : null}
+
                   {previewChartSpec ? (
                     <DecisionIntelligencePanel
                       key={`chart-builder-${previewIdentity}`}
@@ -929,6 +995,7 @@ export default function ChartBuilderTab() {
                       chartRows={previewData.rows}
                       chartTitle={chartTitlePreview}
                       analysisSource="chart_builder"
+                      taskRequest={taskRequest}
                       onChartSpecChange={(nextChartSpec) => {
                         setAnalysisSemanticContext({
                           signature: chartSpecSignature,

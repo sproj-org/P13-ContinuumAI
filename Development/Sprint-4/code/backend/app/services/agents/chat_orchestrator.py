@@ -17,6 +17,7 @@ from app.core.config import get_settings
 from app.services.agents.chat_models import (
     ChatChartResponse,
     ChatClarifyResponse,
+    ChatFocusContext,
     ChatExplainResponse,
     ChatHistoryTurn,
     ChatMode,
@@ -371,6 +372,58 @@ def _parse_state(raw_state: ChatState | dict[str, Any] | None) -> ChatState:
         return ChatState.model_validate(raw_state)
     except ValidationError:
         return ChatState()
+
+
+def _focus_table(focus: ChatFocusContext | None) -> str | None:
+    if focus is None:
+        return None
+    if focus.table:
+        return focus.table
+    if focus.chart_spec is not None:
+        return focus.chart_spec.table
+    if focus.analysis_context is not None:
+        return focus.analysis_context.table
+    return None
+
+
+def _focus_analysis_context(focus: ChatFocusContext | None) -> Any | None:
+    if focus is None:
+        return None
+    if focus.analysis_context is not None:
+        return focus.analysis_context
+    if focus.chart_spec and focus.chart_spec.semantic_context and focus.chart_spec.semantic_context.analysis_context:
+        try:
+            return focus.chart_spec.semantic_context.analysis_context
+        except ValidationError:
+            return None
+    return None
+
+
+def _focus_digest(focus: ChatFocusContext | None) -> dict[str, Any] | None:
+    if focus is None:
+        return None
+    digest: dict[str, Any] = {
+        "focus_type": focus.focus_type,
+        "title": focus.title,
+        "table": _focus_table(focus),
+        "kpi_id": focus.kpi_id,
+        "active_task": focus.active_task,
+        "summary": focus.summary,
+        "breadcrumbs": list(focus.breadcrumbs),
+    }
+    if focus.chart_spec is not None:
+        digest["chart"] = {
+            "type": focus.chart_spec.chart.type,
+            "x_field": focus.chart_spec.encoding.x.field,
+            "y_field": focus.chart_spec.encoding.y[0].field if focus.chart_spec.encoding.y else None,
+            "aggregation": focus.chart_spec.encoding.y[0].aggregation if focus.chart_spec.encoding.y else None,
+            "matched_kpi_id": focus.chart_spec.semantic_context.matched_kpi_id
+            if focus.chart_spec.semantic_context
+            else None,
+        }
+    if focus.analysis_context is not None:
+        digest["analysis_context"] = focus.analysis_context.model_dump(mode="json", exclude_none=True)
+    return {key: value for key, value in digest.items() if value not in (None, [], {})}
 
 
 def _sanitize_selections(context: dict[str, Any], selections: ChatSelections) -> ChatSelections:
@@ -1453,6 +1506,7 @@ def _maybe_run_structured_analysis(
     table: str,
     message: str,
     state: ChatState,
+    focus: ChatFocusContext | None,
     db: Session,
 ) -> ChatResponseUnion | None:
     chart_spec: ChartSpecV1 | None = None
@@ -1461,14 +1515,21 @@ def _maybe_run_structured_analysis(
             chart_spec = state.last_chart_spec if isinstance(state.last_chart_spec, ChartSpecV1) else ChartSpecV1.model_validate(state.last_chart_spec)
         except ValidationError:
             chart_spec = None
+    if chart_spec is None and focus and focus.chart_spec is not None:
+        chart_spec = focus.chart_spec
 
     analysis_request = AnalysisRequest(
         message=message,
-        table=table,
+        table=table or _focus_table(focus),
         chart_spec=chart_spec,
+        chart_rows=list(focus.chart_rows) if focus else [],
+        kpi_id=focus.kpi_id if focus and focus.kpi_id else None,
+        analysis_context=_focus_analysis_context(focus),
     )
     plan, _ = create_analysis_plan(analysis_request, dataset_id=dataset_id)
-    if plan.primary_task in {"query", "insight"}:
+    if plan.primary_task == "query":
+        return None
+    if plan.primary_task == "insight" and focus is None:
         return None
     analysis = run_analysis_request(dataset_id=dataset_id, request=analysis_request, db=db)
     return _analysis_to_chat_response(analysis)
@@ -1734,6 +1795,7 @@ def _build_user_prompt(
     context: dict[str, Any],
     state: ChatState,
     history: list[ChatHistoryTurn] | None,
+    focus: ChatFocusContext | None = None,
 ) -> str:
     compact_kpis = [
         {
@@ -1789,6 +1851,7 @@ def _build_user_prompt(
         }
         for item in (history or [])
     ][-8:]
+    focus_digest = _focus_digest(focus)
 
     return (
         f"User message:\n{message}\n\n"
@@ -1803,10 +1866,11 @@ def _build_user_prompt(
         f"KPI hints: {json.dumps(compact_kpis, ensure_ascii=True)}\n"
         f"Conversation state: {json.dumps(state.model_dump(mode='json', exclude_none=True), ensure_ascii=True)}\n\n"
         f"Recent chat history: {json.dumps(compact_history, ensure_ascii=True)}\n\n"
+        f"Focused artifact context: {json.dumps(focus_digest or {}, ensure_ascii=True)}\n\n"
         f"ChartSpec summary: {json.dumps(chartspec_summary, ensure_ascii=True)}\n"
         f"Allowed response schema: {json.dumps(response_schema, ensure_ascii=True)}\n\n"
         f"Additional explain instructions: {explain_instructions}\n\n"
-        "Instruction: choose best available fields from context, do not copy templates verbatim, and avoid unnecessary clarify."
+        "Instruction: choose best available fields from context, use the focused artifact when present, do not copy templates verbatim, and avoid unnecessary clarify."
     )
 
 
@@ -1821,6 +1885,7 @@ def _generate_plan(
     strategy_notice: str | None,
     state: ChatState,
     history: list[ChatHistoryTurn] | None,
+    focus: ChatFocusContext | None = None,
 ) -> tuple[
     ChatPlanUnion | None,
     Literal["missing_key", "openai_error"] | None,
@@ -1850,6 +1915,7 @@ def _generate_plan(
         context=context,
         state=state,
         history=history,
+        focus=focus,
     )
 
     corrective_prompt: str | None = None
@@ -2049,6 +2115,7 @@ def run_chat_orchestration(
     mode: ChatMode = "auto",
     state: ChatState | dict[str, Any] | None,
     history: list[ChatHistoryTurn] | None = None,
+    focus: ChatFocusContext | None = None,
     db: Session,
     debug: bool = False,
 ) -> dict[str, Any]:
@@ -2079,7 +2146,20 @@ def run_chat_orchestration(
             openai_error_hint=openai_error_hint,
         )
 
-    if not table:
+    parsed_state = _parse_state(state)
+    resolved_table = table or _focus_table(focus)
+    if not resolved_table and parsed_state.last_chart_spec:
+        try:
+            last_chart_spec = (
+                parsed_state.last_chart_spec
+                if isinstance(parsed_state.last_chart_spec, ChartSpecV1)
+                else ChartSpecV1.model_validate(parsed_state.last_chart_spec)
+            )
+            resolved_table = last_chart_spec.table
+        except ValidationError:
+            resolved_table = None
+
+    if not resolved_table:
         return finalize(
             ChatClarifyResponse(
                 response_type="clarify",
@@ -2091,15 +2171,14 @@ def run_chat_orchestration(
             ).model_dump(mode="json")
         )
 
-    parsed_state = _parse_state(state)
-    context = build_compact_mart_context(dataset_id=dataset_id, table=table)
+    context = build_compact_mart_context(dataset_id=dataset_id, table=resolved_table)
     intent_message = parsed_state.original_user_intent or message
 
-    state_plan = _state_driven_plan(table=table, mode=mode, context=context, state=parsed_state, message=message)
+    state_plan = _state_driven_plan(table=resolved_table, mode=mode, context=context, state=parsed_state, message=message)
     if isinstance(state_plan, ChatPlanChart):
         chart_response = _execute_chart(
             dataset_id=dataset_id,
-            table=table,
+            table=resolved_table,
             chart_spec=state_plan.chart_spec,
             db=db,
             context=context,
@@ -2136,9 +2215,10 @@ def run_chat_orchestration(
 
     structured_analysis_response = _maybe_run_structured_analysis(
         dataset_id=dataset_id,
-        table=table,
+        table=resolved_table,
         message=intent_message,
         state=parsed_state,
+        focus=focus,
         db=db,
     )
     if structured_analysis_response is not None:
@@ -2146,7 +2226,7 @@ def run_chat_orchestration(
 
     plan, generation_fallback_reason, generation_openai_diag, generation_exception_class = _generate_plan(
         dataset_id=dataset_id,
-        table=table,
+        table=resolved_table,
         message=message,
         mode=mode,
         context=context,
@@ -2154,6 +2234,7 @@ def run_chat_orchestration(
         strategy_notice=strategy_notice,
         state=parsed_state,
         history=history,
+        focus=focus,
     )
     if plan is None:
         used_fallback = True
@@ -2179,14 +2260,14 @@ def run_chat_orchestration(
                 fallback_reason=fallback_reason,
                 exception_class_name=generation_exception_class,
             )
-        plan = _fallback_plan_from_context(message=message, mode=mode, table=table, context=context)
+        plan = _fallback_plan_from_context(message=message, mode=mode, table=resolved_table, context=context)
 
-    plan = _enforce_mode(plan=plan, mode=mode, context=context, table=table, message=message)
+    plan = _enforce_mode(plan=plan, mode=mode, context=context, table=resolved_table, message=message)
 
     if isinstance(plan, ChatPlanChart):
         chart_response = _execute_chart(
             dataset_id=dataset_id,
-            table=table,
+            table=resolved_table,
             chart_spec=plan.chart_spec,
             db=db,
             context=context,
@@ -2222,7 +2303,7 @@ def run_chat_orchestration(
 
         chart_response = _execute_chart(
             dataset_id=dataset_id,
-            table=table,
+            table=resolved_table,
             chart_spec=patched,
             db=db,
             context=context,
@@ -2236,7 +2317,7 @@ def run_chat_orchestration(
         if plan.optional_chart_spec:
             chart_response = _execute_chart(
                 dataset_id=dataset_id,
-                table=table,
+                table=resolved_table,
                 chart_spec=plan.optional_chart_spec,
                 db=db,
                 context=context,
@@ -2258,13 +2339,13 @@ def run_chat_orchestration(
                     ).model_dump(mode="json")
                 )
 
-        explain_message = plan.message.strip() or _context_explain_message(context=context, table=table, user_message=message)
+        explain_message = plan.message.strip() or _context_explain_message(context=context, table=resolved_table, user_message=message)
         explain_message = _ensure_strategy_alignment_text(explain_message, strategy_digest)
         return finalize(
             ChatExplainResponse(
                 response_type="explain",
                 message=explain_message,
-                citations=[f"profile:{table}"],
+                citations=[f"profile:{resolved_table}"],
                 meta={},
             ).model_dump(mode="json")
         )

@@ -10,6 +10,8 @@ export type AnalysisTaskType =
   | "segment"
   | "strategy_risk";
 
+export type DecisionTaskType = "forecast" | "anomaly" | "segment" | "strategy_risk";
+
 export type AgentRole =
   | "viz_agent"
   | "profiling_agent"

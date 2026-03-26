@@ -3,8 +3,10 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useAppStore } from "@/lib/store";
 import type { SavedChart } from "@/lib/store";
+import ContextualAssistant from "@/components/workspace/ContextualAssistant";
 import DecisionIntelligencePanel from "@/components/workspace/DecisionIntelligencePanel";
 import DrillDownChart from "@/components/workspace/DrillDownChart";
+import { buildChartFocusContext, contextualPromptSuggestions } from "@/lib/contextual-focus";
 import { LayoutGrid, Trash2, Calendar, Database, Edit2, Wrench, Eye, X, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -20,6 +22,7 @@ import {
 } from "@/lib/hooks";
 import { humanizeChartType, humanizeMartLabel, resolveChartTitle } from "@/lib/chart-display";
 import { createChartBuilderSeed } from "@/lib/chart-builder-seed";
+import type { DecisionTaskType } from "@/lib/types/analysis";
 
 export default function DashboardTab() {
   const {
@@ -36,6 +39,7 @@ export default function DashboardTab() {
   const [editingChartId, setEditingChartId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
   const [previewChart, setPreviewChart] = useState<typeof savedCharts[0] | null>(null);
+  const [previewTaskRequest, setPreviewTaskRequest] = useState<{ task: DecisionTaskType; token: number } | null>(null);
   const [selectedDashboardName, setSelectedDashboardName] = useState<string | null>(null);
   const [newDashboardName, setNewDashboardName] = useState("");
   const [isCreateDashboardOpen, setIsCreateDashboardOpen] = useState(false);
@@ -316,6 +320,26 @@ export default function DashboardTab() {
   );
 
   const previewChartTitle = previewChart ? getDisplayTitle(previewChart) : "";
+  const previewFocus = useMemo(
+    () =>
+      previewChart
+        ? buildChartFocusContext({
+            title: previewChartTitle,
+            table: previewChart.martId,
+            kpiId: previewChart.chartSpec.semantic_context?.matched_kpi_id ?? null,
+            chartSpec: previewChart.chartSpec,
+            chartRows: previewChart.rows,
+            analysisContext: previewChart.chartSpec.semantic_context?.analysis_context ?? null,
+            semanticContext: previewChart.chartSpec.semantic_context ?? null,
+            breadcrumbs: [selectedDashboardLabel, previewChart.dashboardName || "Default"],
+          })
+        : null,
+    [previewChart, previewChartTitle, selectedDashboardLabel],
+  );
+  const previewSuggestions = useMemo(
+    () => (previewFocus ? contextualPromptSuggestions(previewFocus) : []),
+    [previewFocus],
+  );
 
   return (
     <div className="h-full flex bg-gradient-to-br from-slate-50 via-indigo-50/20 to-violet-50/20">
@@ -737,6 +761,26 @@ export default function DashboardTab() {
                       />
                     </div>
                   </div>
+                  {previewFocus ? (
+                    <ContextualAssistant
+                      datasetId={selectedDatasetId}
+                      focus={previewFocus}
+                      title="Ask about this chart"
+                      description="Use the saved chart, dashboard context, and KPI linkage as the starting point."
+                      suggestions={[...previewSuggestions, "Break this down further", "Compare this with another chart"]}
+                      taskActions={[
+                        { task: "forecast", label: "Forecast this metric", onTrigger: () => setPreviewTaskRequest({ task: "forecast", token: Date.now() + Math.random() }) },
+                        { task: "anomaly", label: "Find anomalies", onTrigger: () => setPreviewTaskRequest({ task: "anomaly", token: Date.now() + Math.random() }) },
+                        { task: "segment", label: "Segment likely drivers", onTrigger: () => setPreviewTaskRequest({ task: "segment", token: Date.now() + Math.random() }) },
+                        ...(previewFocus.kpi_id
+                          ? [{ task: "strategy_risk" as const, label: "Check KPI risk", onTrigger: () => setPreviewTaskRequest({ task: "strategy_risk", token: Date.now() + Math.random() }) }]
+                          : []),
+                      ]}
+                      onChartSpecChange={(nextChartSpec) => {
+                        setPreviewChart((current) => (current ? { ...current, chartSpec: nextChartSpec } : current));
+                      }}
+                    />
+                  ) : null}
                   <DecisionIntelligencePanel
                     key={`dashboard-${previewChart.backendId ?? previewChart.id}-${previewChart.chartSpec.table}-${previewChart.chartSpec.encoding.x.field}-${previewChart.chartSpec.encoding.y[0]?.field ?? "metric"}`}
                     datasetId={selectedDatasetId}
@@ -746,6 +790,7 @@ export default function DashboardTab() {
                     chartTitle={previewChartTitle}
                     kpiId={previewChart.chartSpec.semantic_context?.matched_kpi_id ?? null}
                     analysisSource="dashboard"
+                    taskRequest={previewTaskRequest}
                     onChartSpecChange={(nextChartSpec) => {
                       setPreviewChart((current) => (current ? { ...current, chartSpec: nextChartSpec } : current));
                     }}

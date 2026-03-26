@@ -21,17 +21,20 @@ import {
 import { useAppStore } from "@/lib/store";
 import { useToast } from "@/lib/toast-context";
 import { apiClient } from "@/lib/api";
+import { applyChartSpecPatch } from "@/lib/chart-spec-patch";
 import type {
   ChatRequest,
   ChatResponse,
   ChatClarifyResponse,
   ChatChartResponse,
+  ChatFocusContext,
   ChatHintsResponse,
   ChatHistoryTurn,
   QuerySpec,
   ChatStatePayload,
 } from "@/lib/types/chat";
 import DecisionIntelligencePanel from "@/components/workspace/DecisionIntelligencePanel";
+import { buildAnalysisFocusContext, buildChartFocusContext, contextualPromptSuggestions } from "@/lib/contextual-focus";
 import { renderChart } from "@/components/workspace/renderChart";
 import MarkdownMessage from "@/components/common/MarkdownMessage";
 import { useSavedCharts, useStrategyKpis } from "@/lib/hooks";
@@ -220,6 +223,57 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
         : "",
     [currentChartPreview, strategyKpiLibrary?.kpis],
   );
+  const activeFocus = useMemo<ChatFocusContext | null>(() => {
+    const analysisTask = currentChartPreview?.analysis?.task_type;
+    const isDecisionTask =
+      analysisTask === "forecast" ||
+      analysisTask === "anomaly" ||
+      analysisTask === "segment" ||
+      analysisTask === "strategy_risk";
+    if (currentChartPreview?.analysis && isDecisionTask) {
+      return buildAnalysisFocusContext({
+        title: currentChartPreviewTitle || currentChartPreview.title,
+        table: currentChartPreview.chartSpec.table,
+        kpiId: currentChartPreview.chartSpec.semantic_context?.matched_kpi_id ?? null,
+        chartSpec: currentChartPreview.chartSpec,
+        chartRows: currentChartPreview.rows,
+        analysisContext: currentChartPreview.chartSpec.semantic_context?.analysis_context ?? null,
+        semanticContext: currentChartPreview.chartSpec.semantic_context ?? null,
+        analysis: currentChartPreview.analysis,
+        task: analysisTask,
+        breadcrumbs: ["VizAgent", selectedAggregation ?? "mart"],
+      });
+    }
+    if (currentChartPreview) {
+      return buildChartFocusContext({
+        title: currentChartPreviewTitle || currentChartPreview.title,
+        table: currentChartPreview.chartSpec.table,
+        kpiId: currentChartPreview.chartSpec.semantic_context?.matched_kpi_id ?? null,
+        chartSpec: currentChartPreview.chartSpec,
+        chartRows: currentChartPreview.rows,
+        analysisContext: currentChartPreview.chartSpec.semantic_context?.analysis_context ?? null,
+        semanticContext: currentChartPreview.chartSpec.semantic_context ?? null,
+        breadcrumbs: ["VizAgent", selectedAggregation ?? "mart"],
+      });
+    }
+    if (lastChartSpec) {
+      return buildChartFocusContext({
+        title: "Current VizAgent chart",
+        table: lastChartSpec.table,
+        kpiId: lastChartSpec.semantic_context?.matched_kpi_id ?? null,
+        chartSpec: lastChartSpec,
+        chartRows: [],
+        analysisContext: lastChartSpec.semantic_context?.analysis_context ?? null,
+        semanticContext: lastChartSpec.semantic_context ?? null,
+        breadcrumbs: ["VizAgent", selectedAggregation ?? "mart"],
+      });
+    }
+    return null;
+  }, [currentChartPreview, currentChartPreviewTitle, lastChartSpec, selectedAggregation]);
+  const focusSuggestions = useMemo(
+    () => (activeFocus ? contextualPromptSuggestions(activeFocus) : []),
+    [activeFocus],
+  );
   const selectedMart = useMemo(
     () => availableMarts.find((mart) => mart.id === selectedAggregation) ?? null,
     [availableMarts, selectedAggregation]
@@ -405,6 +459,9 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
     if (!selectedAggregation) {
       return "Select a mart to start...";
     }
+    if (activeFocus) {
+      return `Ask about ${activeFocus.title || "the current artifact"}...`;
+    }
     if (chatMode === "chart") {
       return "Request a chart...";
     }
@@ -412,7 +469,7 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
       return "Ask for an explanation...";
     }
     return "Ask a business question...";
-  }, [chatMode, selectedAggregation]);
+  }, [activeFocus, chatMode, selectedAggregation]);
 
   const guidance = useMemo(() => {
     if (!selectedAggregation) {
@@ -498,6 +555,7 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
         mode: chatMode,
         state,
         history: buildHistory(turns, requestMessage),
+        focus: activeFocus,
       };
       const response = await apiClient.postChat(routeDatasetId, request);
       appendChatTurn(chatKey, {
@@ -516,6 +574,22 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
           title: response.narrative || requestMessage,
           analysis: response.analysis ?? null,
         });
+      } else if (response.response_type === "chart_patch" && activeFocus?.chart_spec) {
+        const patchedChartSpec = applyChartSpecPatch(activeFocus.chart_spec, response.patch);
+        setLastChartSpec(chatKey, patchedChartSpec);
+        setCurrentChartPreview((current) =>
+          current
+            ? {
+                ...current,
+                chartSpec: patchedChartSpec,
+              }
+            : {
+                chartSpec: patchedChartSpec,
+                rows: [],
+                title: requestMessage,
+                analysis: response.analysis ?? null,
+              },
+        );
       }
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Chat request failed");
@@ -922,6 +996,29 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
             ) : (
               <p className="mt-2 text-[10px] text-slate-500">No structured query yet. Ask a chart question to build one.</p>
             )}
+            {activeFocus ? (
+              <div className="mt-3 rounded-lg border border-white/80 bg-white px-2 py-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Focused artifact</p>
+                <p className="mt-1 text-[11px] text-slate-800">
+                  {activeFocus.title || "Current artifact"}
+                  {activeFocus.active_task ? ` • ${activeFocus.active_task.replace("_", " ")}` : ""}
+                </p>
+                {focusSuggestions.length > 0 ? (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {focusSuggestions.slice(0, 3).map((suggestion) => (
+                      <button
+                        key={suggestion}
+                        type="button"
+                        onClick={() => setMessage(suggestion)}
+                        className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] text-slate-700 hover:bg-slate-100"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         ) : null}
       </div>
@@ -1109,6 +1206,24 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
                   className="px-2 py-0.5 text-[10px] rounded-full border border-slate-300 text-slate-700 hover:bg-slate-100"
                 >
                   {example}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {activeFocus && focusSuggestions.length > 0 ? (
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-2">
+            <p className="text-[10px] text-slate-900 font-medium mb-1">Ask about the focused artifact</p>
+            <div className="flex flex-wrap gap-1.5">
+              {focusSuggestions.slice(0, 3).map((suggestion) => (
+                <button
+                  key={suggestion}
+                  type="button"
+                  onClick={() => setMessage(suggestion)}
+                  className="px-2 py-0.5 text-[10px] rounded-full border border-slate-300 text-slate-700 hover:bg-white"
+                >
+                  {suggestion}
                 </button>
               ))}
             </div>

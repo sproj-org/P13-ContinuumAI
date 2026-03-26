@@ -8,7 +8,13 @@ from typing import Annotated, Any, Literal, Union
 from pydantic import BaseModel, Field, field_validator
 
 from app.services.charts.models import ChartSpecV1
-from app.services.intelligence.specs import AnalysisResponse, PlanSpec, QuerySpec, SpecFilter as QuerySpecFilter
+from app.services.intelligence.specs import (
+    AnalysisContextSpec,
+    AnalysisResponse,
+    PlanSpec,
+    QuerySpec,
+    SpecFilter as QuerySpecFilter,
+)
 
 ChatMode = Literal["auto", "chart", "explain"]
 TimeGrain = Literal["day", "week", "month", "quarter", "year"]
@@ -18,6 +24,7 @@ ChatRole = Literal["user", "assistant"]
 ChatResponseType = Literal["chart", "chart_patch", "explain", "clarify", "refuse"]
 ChatFallbackReason = Literal["missing_key", "openai_error"]
 ChartType = Literal["bar", "line", "pie", "histogram", "kpi"]
+ChatFocusType = Literal["chart", "dashboard", "kpi", "analysis_result", "drill_state"]
 
 
 def create_clarify_id() -> str:
@@ -81,12 +88,42 @@ class ChatHistoryTurn(BaseModel):
         return trimmed
 
 
+class ChatFocusContext(BaseModel):
+    focus_type: ChatFocusType
+    title: str | None = None
+    table: str | None = None
+    kpi_id: str | None = None
+    chart_spec: ChartSpecV1 | None = None
+    chart_rows: list[dict[str, Any]] = Field(default_factory=list)
+    analysis_context: AnalysisContextSpec | None = None
+    semantic_context: dict[str, Any] | None = None
+    active_task: str | None = None
+    summary: str | None = None
+    breadcrumbs: list[str] = Field(default_factory=list)
+
+    @field_validator("title", "table", "kpi_id", "active_task", "summary")
+    @classmethod
+    def trim_optional_strings(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        trimmed = value.strip()
+        return trimmed or None
+
+    @field_validator("breadcrumbs", mode="before")
+    @classmethod
+    def normalize_breadcrumbs(cls, value: Any) -> list[str]:
+        if not isinstance(value, list):
+            return []
+        return [item.strip() for item in value if isinstance(item, str) and item.strip()]
+
+
 class ChatRequest(BaseModel):
     message: str
     table: str | None = None
     mode: ChatMode = "auto"
     state: ChatState | None = None
     history: list[ChatHistoryTurn] | None = None
+    focus: ChatFocusContext | None = None
     debug: bool = False
 
     @field_validator("message")
