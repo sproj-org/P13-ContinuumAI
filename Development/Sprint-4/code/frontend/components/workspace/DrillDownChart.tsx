@@ -300,6 +300,11 @@ export default function DrillDownChart({
       setPendingClick(nextSelection);
       setSelectedNextDimension(topCandidate);
 
+      if (!quickDrillEnabled) {
+        setIsDimensionPickerOpen(true);
+        return;
+      }
+
       if (canAutoDrill && topCandidate) {
         void executeDrill(topCandidate, nextSelection);
         return;
@@ -307,7 +312,7 @@ export default function DrillDownChart({
 
       setIsDimensionPickerOpen(true);
     },
-    [supportsDrill, currentDimension, topRecommendation?.name, drillCandidates, canAutoDrill, executeDrill],
+    [supportsDrill, currentDimension, topRecommendation?.name, drillCandidates, quickDrillEnabled, canAutoDrill, executeDrill],
   );
 
   const confirmDrill = useCallback(() => {
