@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-import pandas as pd
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
@@ -14,10 +13,8 @@ from app.models.strategy_bundle import StrategyBundle
 from app.services.charts.models import ChartSpecV1
 from app.services.charts.spec_resolver import execute_chart_preview
 from app.services.intelligence.data_access import (
-    aggregate_time_series,
     column_profiles,
     dimension_columns,
-    fetch_frame,
     load_mart_profile,
     measure_columns,
     resolve_entity_field,
@@ -34,7 +31,6 @@ from app.services.intelligence.insights import (
 from app.services.intelligence.predictive import (
     build_strategy_risk_summary,
     run_prediction_analysis,
-    summarize_prediction_from_series,
 )
 from app.services.intelligence.segmentation import run_segmentation
 from app.services.intelligence.specs import (
@@ -57,7 +53,7 @@ from app.services.intelligence.specs import (
     StrategySpec,
     TaskType,
 )
-from app.services.strategy.evaluator import evaluate_kpi_formula, parse_formula
+from app.services.strategy.evaluator import evaluate_kpi_formula
 from app.services.strategy.storage import load_current_artifacts
 
 PREDICTION_TOKENS = ("forecast", "predict", "projection", "projected", "outlook", "future", "next")
@@ -360,6 +356,12 @@ def _build_prediction_spec(
     profile = load_mart_profile(dataset_id, table)
     available_measures = measure_columns(profile)
     semantic = analysis_context.semantic if analysis_context else None
+    strategy_context = analysis_context.strategy if analysis_context else None
+    formula = (
+        request.prediction_spec.formula
+        if request.prediction_spec and request.prediction_spec.formula
+        else (matched_kpi.formula if matched_kpi else None)
+    )
     metric_candidates = [
         request.metric,
         request.prediction_spec.metric if request.prediction_spec else None,
@@ -371,7 +373,7 @@ def _build_prediction_spec(
     metric = next((candidate for candidate in metric_candidates if candidate and candidate in available_measures), None)
     if metric is None and available_measures:
         metric = available_measures[0]
-    if not metric:
+    if not metric and not formula:
         raise HTTPException(status_code=422, detail="A metric is required for predictive analysis")
 
     time_field_candidates = [
@@ -394,16 +396,23 @@ def _build_prediction_spec(
         raise HTTPException(status_code=422, detail="A temporal field is required for predictive analysis")
 
     target = strategy_bundle.targets.get(matched_kpi.id) if matched_kpi else None
-    strategy_context = analysis_context.strategy if analysis_context else None
     display_label = (
         request.prediction_spec.display_label if request.prediction_spec else None
     ) or (semantic.matched_kpi_label if semantic else None) or (matched_kpi.display_name if matched_kpi else None) or metric
+    metric_source = "formula" if formula else (request.prediction_spec.metric_source if request.prediction_spec is not None else "field")
+    supporting_fields = _merge_unique(
+        request.prediction_spec.supporting_fields if request.prediction_spec else [],
+        semantic.required_columns if semantic else [],
+        matched_kpi.required_columns if matched_kpi else [],
+    )
     return PredictionSpec(
         mode=mode,  # type: ignore[arg-type]
         dataset_id=dataset_id,
         table=table,
-        metric=metric,
+        metric=(matched_kpi.id if formula and matched_kpi else (metric or (matched_kpi.id if matched_kpi else "metric_value"))),
         display_label=display_label,
+        metric_source=metric_source,  # type: ignore[arg-type]
+        formula=formula,
         aggregation=(request.prediction_spec.aggregation if request.prediction_spec else None) or (
             base_query.aggregation if base_query else None
         ) or "sum",
@@ -414,6 +423,7 @@ def _build_prediction_spec(
         filters=request.filters or (request.prediction_spec.filters if request.prediction_spec else None) or (
             base_query.filters if base_query else None
         ) or _filters_from_chart_spec(request.chart_spec),
+        supporting_fields=supporting_fields,
         horizon=request.horizon or (request.prediction_spec.horizon if request.prediction_spec else None) or 6,
         kpi_id=matched_kpi.id if matched_kpi else None,
         target_value=(
@@ -547,74 +557,89 @@ def create_plan(request: AnalysisRequest, *, dataset_id: str) -> tuple[PlanSpec,
             query_spec = QuerySpec(dataset_id=dataset_id, table=table, analysis_context=analysis_context)
         elif query_spec is not None:
             query_spec = query_spec.model_copy(update={"analysis_context": query_spec.analysis_context or analysis_context})
-        tasks.append(
-            AgentTaskSpec(
-                task_type="query" if task_type == "query" else "insight",
-                agent_role="viz_agent",
-                title="Build descriptive view",
-                query_spec=query_spec,
-                insight_spec=InsightSpec(source_task=task_type),
-            )
+        primary_task = AgentTaskSpec(
+            task_type="query" if task_type == "query" else "insight",
+            agent_role="viz_agent",
+            title="Build descriptive view",
+            query_spec=query_spec,
+            insight_spec=InsightSpec(source_task=task_type),
         )
+        tasks.append(primary_task)
     elif task_type == "profile":
-        tasks.append(
-            AgentTaskSpec(
-                task_type="profile",
-                agent_role="profiling_agent",
-                title="Profile mart capabilities",
-                insight_spec=InsightSpec(source_task="profile"),
-            )
+        primary_task = AgentTaskSpec(
+            task_type="profile",
+            agent_role="profiling_agent",
+            title="Profile mart capabilities",
+            insight_spec=InsightSpec(source_task="profile"),
         )
+        tasks.append(primary_task)
     elif task_type in {"forecast", "anomaly"}:
-        tasks.append(
-            AgentTaskSpec(
-                task_type=task_type,
-                agent_role="ml_agent",
-                title="Run predictive analysis",
-                prediction_spec=_build_prediction_spec(
-                    request,
-                    dataset_id=dataset_id,
-                    table=table or "",
-                    matched_kpi=matched_kpi,
-                    strategy_bundle=strategy_bundle,
-                    mode=task_type,
-                ),
-            )
+        primary_task = AgentTaskSpec(
+            task_type=task_type,
+            agent_role="ml_agent",
+            title="Run predictive analysis",
+            prediction_spec=_build_prediction_spec(
+                request,
+                dataset_id=dataset_id,
+                table=table or "",
+                matched_kpi=matched_kpi,
+                strategy_bundle=strategy_bundle,
+                mode=task_type,
+            ),
         )
+        tasks.append(primary_task)
     elif task_type == "segment":
-        tasks.append(
-            AgentTaskSpec(
-                task_type="segment",
-                agent_role="ml_agent",
-                title="Run segmentation analysis",
-                segment_spec=_build_segment_spec(request, dataset_id=dataset_id, table=table or "", matched_kpi=matched_kpi),
-                insight_spec=InsightSpec(source_task="segment"),
-            )
+        primary_task = AgentTaskSpec(
+            task_type="segment",
+            agent_role="ml_agent",
+            title="Run segmentation analysis",
+            segment_spec=_build_segment_spec(request, dataset_id=dataset_id, table=table or "", matched_kpi=matched_kpi),
+            insight_spec=InsightSpec(source_task="segment"),
         )
+        tasks.append(primary_task)
     elif task_type == "strategy_risk":
         if matched_kpi is None:
             raise HTTPException(status_code=422, detail="A matched KPI is required for strategy risk analysis")
-        tasks.append(
-            AgentTaskSpec(
+        risk_prediction_task: AgentTaskSpec | None = None
+        if table:
+            risk_prediction_task = AgentTaskSpec(
                 task_type="strategy_risk",
-                agent_role="strategy_agent",
-                title="Estimate KPI target risk",
-                strategy_spec=_build_strategy_spec(
-                    request=request,
+                agent_role="ml_agent",
+                title="Project KPI trend",
+                prediction_spec=_build_prediction_spec(
+                    request,
                     dataset_id=dataset_id,
                     table=table,
                     matched_kpi=matched_kpi,
                     strategy_bundle=strategy_bundle,
+                    mode="risk",
                 ),
-                insight_spec=InsightSpec(source_task="strategy_risk", kpi_id=matched_kpi.id),
             )
+            tasks.append(risk_prediction_task)
+        primary_task = AgentTaskSpec(
+            task_type="strategy_risk",
+            agent_role="strategy_agent",
+            title="Estimate KPI target risk",
+            depends_on_task_ids=[risk_prediction_task.task_id] if risk_prediction_task else [],
+            strategy_spec=_build_strategy_spec(
+                request=request,
+                dataset_id=dataset_id,
+                table=table,
+                matched_kpi=matched_kpi,
+                strategy_bundle=strategy_bundle,
+            ),
+            insight_spec=InsightSpec(source_task="strategy_risk", kpi_id=matched_kpi.id),
         )
+        tasks.append(primary_task)
+    else:
+        primary_task = None
 
     tasks.append(
         AgentTaskSpec(
             task_type="insight",
             agent_role="insight_agent",
             title="Synthesize next-step insights",
+            depends_on_task_ids=[primary_task.task_id] if primary_task else [],
             insight_spec=InsightSpec(source_task=task_type, kpi_id=matched_kpi.id if matched_kpi else None),
         )
     )
@@ -717,22 +742,27 @@ class MLAgent:
                     task.prediction_spec.metric: point.actual if point.actual is not None else point.forecast,
                     "actual_value": point.actual,
                     "forecast_value": point.forecast,
+                    "lower_bound": point.lower,
+                    "upper_bound": point.upper,
+                    "target_value": point.target_value,
                     "is_forecast": point.is_forecast,
                     "anomaly_flag": point.anomaly_flag,
                 }
                 for point in prediction.points
             ]
-            chart_spec = ChartSpecV1(
-                dataset_id=dataset_id,
-                table=task.prediction_spec.table,
-                chart={"type": "line"},
-                encoding={
-                    "x": {"field": task.prediction_spec.time_field},
-                    "y": [{"field": task.prediction_spec.metric, "aggregation": task.prediction_spec.aggregation}],
-                },
-                filters=[item.model_dump(mode="python") for item in task.prediction_spec.filters],
-                limit=max(len(observed_rows), 20),
-            )
+            chart_spec = None
+            if task.prediction_spec.metric_source == "field" and not task.prediction_spec.formula:
+                chart_spec = ChartSpecV1(
+                    dataset_id=dataset_id,
+                    table=task.prediction_spec.table,
+                    chart={"type": "line"},
+                    encoding={
+                        "x": {"field": task.prediction_spec.time_field},
+                        "y": [{"field": task.prediction_spec.metric, "aggregation": task.prediction_spec.aggregation}],
+                    },
+                    filters=[item.model_dump(mode="python") for item in task.prediction_spec.filters],
+                    limit=max(len(observed_rows), 20),
+                )
             return AgentExecution(
                 query_spec=QuerySpec(
                     dataset_id=dataset_id,
@@ -754,6 +784,9 @@ class MLAgent:
                         task.prediction_spec.metric,
                         "actual_value",
                         "forecast_value",
+                        "lower_bound",
+                        "upper_bound",
+                        "target_value",
                         "is_forecast",
                         "anomaly_flag",
                     ],
@@ -800,7 +833,16 @@ class MLAgent:
 class StrategyAgent:
     role: AgentRole = "strategy_agent"
 
-    def execute(self, task: AgentTaskSpec, _: AnalysisRequest, db: Session, dataset_id: str, table: str | None) -> AgentExecution:
+    def execute(
+        self,
+        task: AgentTaskSpec,
+        _: AnalysisRequest,
+        db: Session,
+        dataset_id: str,
+        table: str | None,
+        *,
+        prediction: Any | None = None,
+    ) -> AgentExecution:
         strategy_bundle, kpis = _load_strategy_runtime()
         strategy_spec = task.strategy_spec
         if strategy_spec is None:
@@ -817,7 +859,7 @@ class StrategyAgent:
         )
         current_value = current_payload.get("value")
         target = strategy_bundle.targets.get(kpi.id)
-        prediction = self._predict_kpi_trend(
+        resolved_prediction = prediction if prediction is not None else self._predict_kpi_trend(
             dataset_id=dataset_id,
             kpi=kpi,
             strategy_spec=strategy_spec,
@@ -825,12 +867,19 @@ class StrategyAgent:
             target_value=strategy_spec.target_value if strategy_spec.target_value is not None else (target.target if target else None),
             target_direction=strategy_spec.direction if strategy_spec.direction is not None else (target.direction if target else None),
         )
+        if not isinstance(current_value, (float, int)) and resolved_prediction is not None:
+            observed_values = [
+                point.actual
+                for point in resolved_prediction.points
+                if not point.is_forecast and point.actual is not None
+            ]
+            current_value = observed_values[-1] if observed_values else None
         strategy = build_strategy_risk_summary(
             kpi_id=kpi.id,
             kpi_label=strategy_spec.kpi_label or kpi.display_name or kpi.id,
             target_value=strategy_spec.target_value if strategy_spec.target_value is not None else (target.target if target else None),
             current_value=current_value if isinstance(current_value, (float, int)) else None,
-            prediction=prediction,
+            prediction=resolved_prediction,
             direction=strategy_spec.direction if strategy_spec.direction is not None else (target.direction if target else None),
             target_horizon=strategy_spec.target_horizon if strategy_spec.target_horizon is not None else (target.horizon if target else None),
             recommended_actions=[
@@ -840,12 +889,12 @@ class StrategyAgent:
                     else []
                 ),
                 "Inspect the KPI in analytics and compare the weakest business slices."
-                if prediction is not None
+                if resolved_prediction is not None
                 else "Review KPI coverage and historical trend inputs before relying on risk estimates.",
             ],
             supporting_details=[
                 f"Primary mart: {strategy_spec.table}" if strategy_spec.table else "",
-                f"Forecast basis: {prediction.observed_points} observed periods." if prediction is not None else "",
+                f"Forecast basis: {resolved_prediction.observed_points} observed periods." if resolved_prediction is not None else "",
                 *(
                     strategy_spec.analysis_context.strategy.triggered_rules
                     if strategy_spec.analysis_context and strategy_spec.analysis_context.strategy
@@ -855,11 +904,11 @@ class StrategyAgent:
         )
 
         primary_view = None
-        if prediction is not None:
+        if resolved_prediction is not None:
             primary_view = NormalizedDataView(
                 chart_spec=None,
                 columns=[
-                    prediction.time_field,
+                    resolved_prediction.time_field,
                     "metric_value",
                     "actual_value",
                     "forecast_value",
@@ -870,7 +919,7 @@ class StrategyAgent:
                 ],
                 rows=[
                     {
-                        prediction.time_field: point.label,
+                        resolved_prediction.time_field: point.label,
                         "metric_value": point.actual if point.actual is not None else point.forecast,
                         "actual_value": point.actual,
                         "forecast_value": point.forecast,
@@ -879,11 +928,11 @@ class StrategyAgent:
                         "is_forecast": point.is_forecast,
                         "target_value": point.target_value,
                     }
-                    for point in prediction.points
+                    for point in resolved_prediction.points
                 ],
                 summary=strategy.explanation,
             )
-        return AgentExecution(strategy=strategy, prediction=prediction, primary_view=primary_view)
+        return AgentExecution(strategy=strategy, prediction=resolved_prediction, primary_view=primary_view)
 
     def _predict_kpi_trend(
         self,
@@ -895,11 +944,6 @@ class StrategyAgent:
         target_value: float | None,
         target_direction: str | None,
     ):
-        try:
-            formula_plan = parse_formula(kpi.formula)
-        except ValueError:
-            return None
-
         mart = strategy_spec.table or (kpi.marts[0] if kpi.marts else None)
         if mart is None:
             return None
@@ -907,77 +951,65 @@ class StrategyAgent:
         time_field = resolve_time_field(profile)
         if not time_field:
             return None
-
-        columns = [time_field, formula_plan.numerator.column]
-        if formula_plan.denominator is not None:
-            columns.append(formula_plan.denominator.column)
-        frame = fetch_frame(
-            dataset_id=dataset_id,
-            table=mart,
-            columns=columns,
-            filters=strategy_spec.filters,
-            db=db,
-            limit=20000,
+        available_measures = set(measure_columns(profile))
+        fallback_metric = next(
+            (
+                candidate
+                for candidate in (
+                    strategy_spec.analysis_context.semantic.metric_field_hint
+                    if strategy_spec.analysis_context and strategy_spec.analysis_context.semantic
+                    else None,
+                    *(kpi.required_columns or []),
+                )
+                if candidate and candidate in available_measures
+            ),
+            None,
         )
-        if frame.empty:
-            return None
-
-        numerator = aggregate_time_series(
-            frame,
-            time_field=time_field,
-            metric=formula_plan.numerator.column,
-            aggregation=formula_plan.numerator.fn,
-            grain=strategy_spec.time_grain,
-        )
-        if numerator.empty:
-            return None
-
-        if formula_plan.denominator is None:
-            series_frame = numerator
-        else:
-            denominator = aggregate_time_series(
-                frame,
+        candidate_specs = [
+            PredictionSpec(
+                mode="risk",
+                dataset_id=dataset_id,
+                table=mart,
+                metric=kpi.id,
+                display_label=kpi.display_name or kpi.id,
+                metric_source="formula",
+                formula=kpi.formula,
+                aggregation="sum",
                 time_field=time_field,
-                metric=formula_plan.denominator.column,
-                aggregation=formula_plan.denominator.fn,
-                grain=strategy_spec.time_grain,
+                time_grain=strategy_spec.time_grain,
+                supporting_fields=kpi.required_columns,
+                horizon=strategy_spec.horizon,
+                kpi_id=kpi.id,
+                target_value=target_value,
+                target_direction=target_direction if target_direction in {"up", "down"} else None,
+                analysis_context=strategy_spec.analysis_context,
             )
-            merged = numerator.merge(
-                denominator[["period_start", "value"]].rename(columns={"value": "denominator_value"}),
-                on="period_start",
-                how="left",
+        ]
+        if fallback_metric:
+            candidate_specs.append(
+                PredictionSpec(
+                    mode="risk",
+                    dataset_id=dataset_id,
+                    table=mart,
+                    metric=fallback_metric,
+                    display_label=kpi.display_name or kpi.id,
+                    metric_source="field",
+                    aggregation="sum",
+                    time_field=time_field,
+                    time_grain=strategy_spec.time_grain,
+                    horizon=strategy_spec.horizon,
+                    kpi_id=kpi.id,
+                    target_value=target_value,
+                    target_direction=target_direction if target_direction in {"up", "down"} else None,
+                    analysis_context=strategy_spec.analysis_context,
+                )
             )
-            merged["value"] = merged.apply(
-                lambda row: float(row["value"]) / float(row["denominator_value"])
-                if row.get("denominator_value") not in (None, 0, 0.0)
-                else None,
-                axis=1,
-            )
-            series_frame = merged.dropna(subset=["value"])
-        if series_frame.empty:
-            return None
-
-        prediction_spec = PredictionSpec(
-            mode="risk",
-            dataset_id=dataset_id,
-            table=mart,
-            metric=kpi.id,
-            display_label=kpi.display_name or kpi.id,
-            aggregation="sum",
-            time_field=time_field,
-            time_grain=strategy_spec.time_grain,
-            horizon=strategy_spec.horizon,
-            kpi_id=kpi.id,
-            target_value=target_value,
-            target_direction=target_direction if target_direction in {"up", "down"} else None,
-            analysis_context=strategy_spec.analysis_context,
-        )
-        return summarize_prediction_from_series(
-            labels=[str(item) for item in series_frame["period_label"].tolist()],
-            values=[float(item) for item in series_frame["value"].tolist()],
-            spec=prediction_spec,
-            last_period=pd.Timestamp(series_frame["period_start"].iloc[-1]),
-        )
+        for candidate in candidate_specs:
+            try:
+                return run_prediction_analysis(candidate, db)
+            except HTTPException:
+                continue
+        return None
 
 
 class InsightAgent:
@@ -1020,18 +1052,60 @@ def run_analysis_request(*, dataset_id: str, request: AnalysisRequest, db: Sessi
     prediction = None
     segmentation = None
     strategy = None
-    meta: dict[str, Any] = {"analysis_source": plan.analysis_context.source if plan.analysis_context else "api"}
+    completed_task_ids: set[str] = set()
+    execution_trace: list[dict[str, Any]] = []
+    meta: dict[str, Any] = {
+        "analysis_source": plan.analysis_context.source if plan.analysis_context else "api",
+        "execution_trace": execution_trace,
+    }
 
     for task in plan.tasks:
+        unmet_dependencies = [task_id for task_id in task.depends_on_task_ids if task_id not in completed_task_ids]
+        if unmet_dependencies:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Analysis plan dependency failure for task '{task.title}': {', '.join(unmet_dependencies)}",
+            )
         if task.agent_role == "viz_agent":
             result = viz_agent.execute(task, request, db, dataset_id, plan.table)
         elif task.agent_role == "profiling_agent":
             result = profiling_agent.execute(task, request, db, dataset_id, plan.table)
         elif task.agent_role == "ml_agent":
-            result = ml_agent.execute(task, request, db, dataset_id, plan.table)
+            try:
+                result = ml_agent.execute(task, request, db, dataset_id, plan.table)
+            except HTTPException as exc:
+                if task.task_type != "strategy_risk":
+                    raise
+                warning_key = f"{task.task_id}_warning"
+                meta[warning_key] = exc.detail
+                execution_trace.append(
+                    {
+                        "task_id": task.task_id,
+                        "task_type": task.task_type,
+                        "agent_role": task.agent_role,
+                        "title": task.title,
+                        "depends_on_task_ids": task.depends_on_task_ids,
+                        "status": "skipped",
+                        "detail": exc.detail,
+                    }
+                )
+                completed_task_ids.add(task.task_id)
+                continue
         elif task.agent_role == "strategy_agent":
-            result = strategy_agent.execute(task, request, db, dataset_id, plan.table)
+            result = strategy_agent.execute(task, request, db, dataset_id, plan.table, prediction=prediction)
         else:
+            if task.agent_role == "insight_agent":
+                execution_trace.append(
+                    {
+                        "task_id": task.task_id,
+                        "task_type": task.task_type,
+                        "agent_role": task.agent_role,
+                        "title": task.title,
+                        "depends_on_task_ids": task.depends_on_task_ids,
+                        "status": "completed",
+                    }
+                )
+                completed_task_ids.add(task.task_id)
             continue
 
         query_spec = result.query_spec or query_spec
@@ -1040,6 +1114,17 @@ def run_analysis_request(*, dataset_id: str, request: AnalysisRequest, db: Sessi
         segmentation = result.segmentation or segmentation
         strategy = result.strategy or strategy
         meta.update(result.meta)
+        execution_trace.append(
+            {
+                "task_id": task.task_id,
+                "task_type": task.task_type,
+                "agent_role": task.agent_role,
+                "title": task.title,
+                "depends_on_task_ids": task.depends_on_task_ids,
+                "status": "completed",
+            }
+        )
+        completed_task_ids.add(task.task_id)
 
     insight_cards = insight_agent.synthesize(
         plan=plan,

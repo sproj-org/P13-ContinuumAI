@@ -675,6 +675,7 @@ kpis:
     marts:
       - gold_sales_daily
       - gold_store_360
+      - gold_product_360
     required_columns:
       - net_sales
     dimensions:
@@ -682,6 +683,10 @@ kpis:
       - city
       - store_type
       - store_id
+      - category
+      - brand
+      - product_id
+      - sku_id
       - sales_date
     default_grain: month
     pillar_id: profitability
@@ -691,6 +696,8 @@ kpis:
     business_concepts:
       - revenue
       - store
+      - product
+      - brand
       - geography
       - time
     metric_aliases:
@@ -715,8 +722,14 @@ kpis:
         - city
         - store_type
         - store_id
+      gold_product_360:
+        - category
+        - brand
+        - product_id
+        - sku_id
     terminal_dimensions:
       - store_id
+      - sku_id
       - sales_date
     disallowed_drill_dimensions:
       - first_date
@@ -732,6 +745,7 @@ kpis:
     marts:
       - gold_sales_daily
       - gold_store_360
+      - gold_product_360
     required_columns:
       - orders
     dimensions:
@@ -739,6 +753,10 @@ kpis:
       - region
       - city
       - store_id
+      - category
+      - brand
+      - product_id
+      - sku_id
       - sales_date
     default_grain: day
     pillar_id: transaction_efficiency
@@ -748,6 +766,8 @@ kpis:
     business_concepts:
       - transactions
       - store
+      - product
+      - brand
       - geography
       - channel
     metric_aliases:
@@ -771,8 +791,14 @@ kpis:
         - region
         - city
         - store_id
+      gold_product_360:
+        - category
+        - brand
+        - product_id
+        - sku_id
     terminal_dimensions:
       - store_id
+      - sku_id
       - sales_date
     disallowed_drill_dimensions: []
     preferred_chart_types:
@@ -786,6 +812,7 @@ kpis:
     marts:
       - gold_sales_daily
       - gold_store_360
+      - gold_product_360
     required_columns:
       - net_sales
       - orders
@@ -794,6 +821,10 @@ kpis:
       - region
       - city
       - store_id
+      - category
+      - brand
+      - product_id
+      - sku_id
       - sales_date
     default_grain: month
     pillar_id: customer_experience
@@ -804,6 +835,8 @@ kpis:
       - basket
       - pricing
       - store
+      - product
+      - brand
       - channel
     metric_aliases:
       - average_basket_size
@@ -826,8 +859,14 @@ kpis:
         - region
         - city
         - store_id
+      gold_product_360:
+        - category
+        - brand
+        - product_id
+        - sku_id
     terminal_dimensions:
       - store_id
+      - sku_id
       - sales_date
     disallowed_drill_dimensions: []
     preferred_chart_types:

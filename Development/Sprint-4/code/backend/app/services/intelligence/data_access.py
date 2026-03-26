@@ -28,6 +28,14 @@ TIME_GRAIN_TO_PERIOD = {
 }
 
 
+def _unique_columns(columns: list[str]) -> list[str]:
+    output: list[str] = []
+    for column in columns:
+        if column not in output:
+            output.append(column)
+    return output
+
+
 def load_mart_profile(dataset_id: str, table: str) -> dict[str, Any]:
     mart = get_mart(dataset_id, table)
     profile_path = OUT_DIR / str(mart["profile_file"])
@@ -167,7 +175,7 @@ def fetch_frame(
     mart = get_mart(dataset_id, table)
     profile = load_mart_profile(dataset_id, table)
     valid_columns = set(column_profiles(profile).keys())
-    selected_columns = [column for column in columns if column in valid_columns]
+    selected_columns = _unique_columns([column for column in columns if column in valid_columns])
     if not selected_columns:
         return pd.DataFrame()
 
@@ -188,6 +196,24 @@ def fetch_frame(
     return pd.DataFrame(rows, columns=selected_columns)
 
 
+def resolve_metric_series(frame: pd.DataFrame, metric: str) -> pd.Series | None:
+    if frame.empty or not metric or metric not in frame.columns:
+        return None
+
+    selection = frame.loc[:, frame.columns == metric]
+    if isinstance(selection, pd.Series):
+        return selection
+    if selection.empty:
+        return None
+
+    # Duplicate columns typically come from repeated SELECTs of the same physical field.
+    # Prefer the first populated series and backfill from later duplicates if needed.
+    series = selection.iloc[:, 0].copy()
+    for index in range(1, selection.shape[1]):
+        series = series.combine_first(selection.iloc[:, index])
+    return series
+
+
 def aggregate_time_series(
     frame: pd.DataFrame,
     *,
@@ -205,17 +231,24 @@ def aggregate_time_series(
     working = working.dropna(subset=[time_field])
     if working.empty:
         return pd.DataFrame(columns=["period_start", "period_label", "value"])
+    working[time_field] = working[time_field].dt.tz_localize(None)
 
+    metric_series = resolve_metric_series(working, metric)
     if aggregation == "count":
+        if metric_series is not None:
+            working["__metric_source__"] = metric_series
+            working = working.dropna(subset=["__metric_source__"])
         working["__metric__"] = 1.0
     else:
-        working["__metric__"] = pd.to_numeric(working.get(metric), errors="coerce")
+        if metric_series is None:
+            return pd.DataFrame(columns=["period_start", "period_label", "value"])
+        working["__metric__"] = pd.to_numeric(metric_series, errors="coerce")
         working = working.dropna(subset=["__metric__"])
     if working.empty:
         return pd.DataFrame(columns=["period_start", "period_label", "value"])
 
     period_code = TIME_GRAIN_TO_PERIOD[grain]
-    working["period_start"] = working[time_field].dt.to_period(period_code).dt.start_time.dt.tz_localize(None)
+    working["period_start"] = working[time_field].dt.to_period(period_code).dt.start_time
     group_columns = ["period_start", *(group_by or [])]
 
     if aggregation == "avg":

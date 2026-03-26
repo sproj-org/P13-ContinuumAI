@@ -36,7 +36,7 @@ def build_prediction_insights(prediction: PredictionSummary, *, kpi_label: str |
         cards.append(
             InsightCard(
                 title=f"Strongest anomaly at {top.label}",
-                summary=f"Observed value {top.value:.2f} deviated by {top.deviation:.2f} standard deviations.",
+                summary=top.explanation or f"Observed value {top.value:.2f} deviated by {top.deviation:.2f} standard deviations.",
                 severity="critical" if top.severity == "high" else "warn",
                 recommended_action="Inspect channel, region, and product mixes around the anomaly period to isolate the driver.",
             )
@@ -51,6 +51,17 @@ def build_prediction_insights(prediction: PredictionSummary, *, kpi_label: str |
                 ),
                 severity="critical" if prediction.risk_band == "high" else "warn" if prediction.risk_band == "medium" else "info",
                 recommended_action="Review the forecast together with targets and escalate corrective action if the trend persists.",
+            )
+        )
+    if prediction.confidence_score is not None and prediction.confidence_score < 0.45:
+        cards.append(
+            InsightCard(
+                title="Predictive confidence is limited",
+                summary=(
+                    f"Confidence is {prediction.confidence_score * 100:.0f}% because the available history is either short or volatile."
+                ),
+                severity="warn",
+                recommended_action="Validate the recent time window and compare the result against a drilldown before acting on the forecast alone.",
             )
         )
     return cards
@@ -107,7 +118,11 @@ def build_strategy_risk_insights(strategy: StrategyRiskSummary) -> list[InsightC
         InsightCard(
             title=f"KPI risk for {strategy.kpi_label or strategy.kpi_id}",
             summary=(
-                strategy.explanation
+                (
+                    f"{strategy.explanation} Confidence is {strategy.confidence_score * 100:.0f}%."
+                    if strategy.explanation and strategy.confidence_score is not None
+                    else strategy.explanation
+                )
                 or "Compare current KPI performance with the projected terminal value and configured target."
             ),
             severity=severity,  # type: ignore[arg-type]

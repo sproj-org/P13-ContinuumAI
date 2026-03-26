@@ -20,6 +20,7 @@ export type AnalysisSource = "strategy" | "chart_builder" | "dashboard" | "viz_a
 
 export type TimeGrain = "day" | "week" | "month" | "quarter" | "year";
 export type MetricAggregation = "sum" | "avg" | "count" | "min" | "max";
+export type MetricSource = "field" | "formula" | "derived";
 export type RiskBand = "low" | "medium" | "high" | "unknown";
 
 export interface SpecFilter {
@@ -93,10 +94,13 @@ export interface PredictionSpec {
   table: string;
   metric: string;
   display_label?: string | null;
+  metric_source?: MetricSource;
+  formula?: string | null;
   aggregation?: MetricAggregation;
   time_field: string;
   time_grain?: TimeGrain;
   filters?: SpecFilter[];
+  supporting_fields?: string[];
   horizon?: number;
   kpi_id?: string | null;
   target_value?: number | null;
@@ -136,6 +140,7 @@ export interface AgentTaskSpec {
   agent_role: AgentRole;
   title: string;
   priority: number;
+  depends_on_task_ids: string[];
   query_spec?: QuerySpec | null;
   prediction_spec?: PredictionSpec | null;
   segment_spec?: SegmentSpec | null;
@@ -181,13 +186,18 @@ export interface PredictionAnomaly {
   label: string;
   value: number;
   deviation: number;
+  expected_value?: number | null;
+  severity_score?: number | null;
   severity: "low" | "medium" | "high";
+  explanation?: string | null;
 }
 
 export interface PredictionSummary {
   mode: "forecast" | "anomaly" | "risk";
   metric: string;
   display_label?: string | null;
+  metric_source?: MetricSource;
+  formula?: string | null;
   time_field: string;
   time_grain: TimeGrain;
   horizon: number;
@@ -200,6 +210,7 @@ export interface PredictionSummary {
   risk_band?: RiskBand | null;
   target_value?: number | null;
   target_direction?: "up" | "down" | null;
+  confidence_score?: number | null;
   explanation?: string | null;
 }
 
@@ -239,6 +250,7 @@ export interface StrategyRiskSummary {
   variance_to_target?: number | null;
   direction?: "up" | "down" | null;
   risk_band: RiskBand;
+  confidence_score?: number | null;
   explanation?: string | null;
   target_horizon?: string | null;
   forecast_basis?: string | null;

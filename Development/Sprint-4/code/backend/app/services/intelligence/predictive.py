@@ -15,6 +15,7 @@ from app.services.intelligence.data_access import (
     load_mart_profile,
     resolve_time_field,
 )
+from app.services.intelligence.formula_engine import build_formula_time_series, required_formula_columns
 from app.services.intelligence.specs import (
     PredictionAnomaly,
     PredictionPoint,
@@ -118,7 +119,12 @@ def detect_series_anomalies(
                 label=labels[index],
                 value=float(series[index]),
                 deviation=float(score),
+                expected_value=mean,
+                severity_score=round(abs(float(score)), 2),
                 severity=severity,
+                explanation=(
+                    f"Observed {series[index]:.2f} against a rolling expectation of {mean:.2f} over the prior {rolling_window} periods."
+                ),
             )
         )
     return anomalies
@@ -149,6 +155,19 @@ def estimate_risk_band(
     return "high", variance
 
 
+def estimate_prediction_confidence(values: list[float]) -> float | None:
+    if not values:
+        return None
+    observed_factor = min(len(values) / 8.0, 1.0)
+    if len(values) == 1:
+        return round(0.35 + (0.4 * observed_factor), 2)
+    series = np.asarray(values, dtype=float)
+    mean_abs = max(float(np.mean(np.abs(series))), 1.0)
+    volatility = float(np.std(series)) / mean_abs
+    stability_factor = 1.0 / (1.0 + max(volatility, 0.0))
+    return round(min(max(0.15 + (0.8 * observed_factor * stability_factor), 0.15), 0.95), 2)
+
+
 def summarize_prediction_from_series(
     *,
     labels: list[str],
@@ -172,6 +191,7 @@ def summarize_prediction_from_series(
     lower_bounds: list[float] = []
     upper_bounds: list[float] = []
     projected_change_pct: float | None = None
+    confidence_score = estimate_prediction_confidence(values)
     if spec.mode in {"forecast", "risk"}:
         forecast_values, lower_bounds, upper_bounds, projected_change_pct = build_forecast(values, horizon=spec.horizon)
         if last_period is not None or labels:
@@ -215,6 +235,8 @@ def summarize_prediction_from_series(
         mode=spec.mode,
         metric=spec.metric,
         display_label=display_label,
+        metric_source=spec.metric_source,
+        formula=spec.formula,
         time_field=spec.time_field,
         time_grain=spec.time_grain,
         horizon=spec.horizon,
@@ -227,6 +249,7 @@ def summarize_prediction_from_series(
         risk_band=risk_band,
         target_value=spec.target_value,
         target_direction=spec.target_direction,
+        confidence_score=confidence_score,
         explanation=explanation,
     )
 
@@ -237,22 +260,38 @@ def run_prediction_analysis(spec: PredictionSpec, db: Session) -> PredictionSumm
     if not time_field:
         raise HTTPException(status_code=422, detail="No temporal field is available for predictive analysis")
 
+    try:
+        formula_columns = required_formula_columns(spec.formula) if spec.formula else []
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     frame = fetch_frame(
         dataset_id=spec.dataset_id or "silkroute",
         table=spec.table,
-        columns=[time_field, spec.metric, *spec.group_by],
+        columns=[time_field, spec.metric, *spec.group_by, *spec.supporting_fields, *formula_columns],
         filters=spec.filters,
         db=db,
         limit=20000,
     )
-    series_frame = aggregate_time_series(
-        frame,
-        time_field=time_field,
-        metric=spec.metric,
-        aggregation=spec.aggregation,
-        grain=spec.time_grain,
-        group_by=[],
-    )
+    if spec.formula:
+        try:
+            series_frame = build_formula_time_series(
+                frame,
+                time_field=time_field,
+                formula=spec.formula,
+                grain=spec.time_grain,
+                group_by=[],
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+    else:
+        series_frame = aggregate_time_series(
+            frame,
+            time_field=time_field,
+            metric=spec.metric,
+            aggregation=spec.aggregation,
+            grain=spec.time_grain,
+            group_by=[],
+        )
     if series_frame.empty:
         raise HTTPException(status_code=404, detail="No rows are available for predictive analysis")
 
@@ -297,6 +336,7 @@ def build_strategy_risk_summary(
         variance_to_target=variance_to_target,
         direction=direction if direction in {"up", "down"} else None,
         risk_band=risk_band,
+        confidence_score=prediction.confidence_score if prediction is not None else None,
         explanation=(
             f"Projected terminal value is {projected_value:.2f} against target {target_value:.2f}."
             if projected_value is not None and target_value is not None

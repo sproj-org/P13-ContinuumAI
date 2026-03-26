@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   BarChart3,
@@ -276,11 +276,12 @@ export default function DecisionIntelligencePanel({
   analysisContext,
   onChartSpecChange,
 }: DecisionIntelligencePanelProps) {
-  const [selectedTask, setSelectedTask] = useState<PanelTask>("forecast");
-  const [taskStates, setTaskStates] = useState<Record<PanelTask, TaskRunState>>(() => createTaskState());
+  const [selectedTaskByContext, setSelectedTaskByContext] = useState<Record<string, PanelTask>>({});
+  const [taskStatesByContext, setTaskStatesByContext] = useState<Record<string, Record<PanelTask, TaskRunState>>>({});
   const [horizon, setHorizon] = useState(6);
   const [clusterCount, setClusterCount] = useState(4);
   const runIdRef = useRef(0);
+  const autoRunSeedRef = useRef<string | null>(null);
 
   const resolvedTable = martId || chartSpec?.table || analysisContext?.table || chartSpec?.semantic_context?.analysis_context?.table || null;
   const resolvedKpiId =
@@ -329,6 +330,13 @@ export default function DecisionIntelligencePanel({
     [resolvedKpiId, resolvedTable],
   );
 
+  const contextKey = useMemo(
+    () => [analysisSource, resolvedTable ?? "none", resolvedKpiId ?? "none", chartTitle ?? "untitled"].join("|"),
+    [analysisSource, chartTitle, resolvedKpiId, resolvedTable],
+  );
+  const defaultTask: PanelTask = analysisSource === "strategy" && resolvedKpiId ? "strategy_risk" : "forecast";
+  const selectedTask = selectedTaskByContext[contextKey] ?? defaultTask;
+  const taskStates = taskStatesByContext[contextKey] ?? createTaskState();
   const activeTaskState = taskStates[selectedTask];
   const activeAnalysis = activeTaskState.analysis;
   const activePrediction = activeAnalysis?.prediction ?? null;
@@ -338,25 +346,43 @@ export default function DecisionIntelligencePanel({
   const runAnalysis = async (task: PanelTask) => {
     const table = resolvedTable;
     if (!table && task !== "strategy_risk") {
-      setTaskStates((previous) => ({
-        ...previous,
-        [task]: { ...previous[task], analysis: null, error: "Select a mart or chart before running advanced analysis." },
-      }));
+      setTaskStatesByContext((previous) => {
+        const previousTaskState = previous[contextKey] ?? createTaskState();
+        return {
+          ...previous,
+          [contextKey]: {
+            ...previousTaskState,
+            [task]: { ...previousTaskState[task], analysis: null, error: "Select a mart or chart before running advanced analysis." },
+          },
+        };
+      });
       return;
     }
     if (task === "strategy_risk" && !resolvedKpiId) {
-      setTaskStates((previous) => ({
-        ...previous,
-        [task]: { ...previous[task], analysis: null, error: "A matched KPI is required for strategy risk analysis." },
-      }));
+      setTaskStatesByContext((previous) => {
+        const previousTaskState = previous[contextKey] ?? createTaskState();
+        return {
+          ...previous,
+          [contextKey]: {
+            ...previousTaskState,
+            [task]: { ...previousTaskState[task], analysis: null, error: "A matched KPI is required for strategy risk analysis." },
+          },
+        };
+      });
       return;
     }
 
     const runId = ++runIdRef.current;
-    setTaskStates((previous) => ({
-      ...previous,
-      [task]: { runId, isLoading: true, analysis: null, error: null },
-    }));
+    setTaskStatesByContext((previous) => {
+      const previousTaskState = previous[contextKey] ?? createTaskState();
+      return {
+        ...previous,
+        [contextKey]: {
+          ...previousTaskState,
+          [task]: { runId, isLoading: true, analysis: null, error: null },
+        },
+      };
+    });
 
     const requestSemanticContext: SemanticContextSpec = {
       ...buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId),
@@ -413,13 +439,17 @@ export default function DecisionIntelligencePanel({
 
     try {
       const response = await apiClient.postAnalysis(datasetId, request);
-      setTaskStates((previous) => {
-        if (previous[task].runId !== runId) {
+      setTaskStatesByContext((previous) => {
+        const previousTaskState = previous[contextKey] ?? createTaskState();
+        if (previousTaskState[task].runId !== runId) {
           return previous;
         }
         return {
           ...previous,
-          [task]: { runId, isLoading: false, analysis: response, error: null },
+          [contextKey]: {
+            ...previousTaskState,
+            [task]: { runId, isLoading: false, analysis: response, error: null },
+          },
         };
       });
 
@@ -428,22 +458,42 @@ export default function DecisionIntelligencePanel({
       }
     } catch (requestError) {
       const message = formatError(requestError);
-      setTaskStates((previous) => {
-        if (previous[task].runId !== runId) {
+      setTaskStatesByContext((previous) => {
+        const previousTaskState = previous[contextKey] ?? createTaskState();
+        if (previousTaskState[task].runId !== runId) {
           return previous;
         }
         return {
           ...previous,
-          [task]: { runId, isLoading: false, analysis: null, error: message },
+          [contextKey]: {
+            ...previousTaskState,
+            [task]: { runId, isLoading: false, analysis: null, error: message },
+          },
         };
       });
     }
   };
 
   const handleTaskSelect = (task: PanelTask) => {
-    setSelectedTask(task);
+    setSelectedTaskByContext((previous) => ({ ...previous, [contextKey]: task }));
     void runAnalysis(task);
   };
+  const runAnalysisEvent = useEffectEvent((task: PanelTask) => {
+    void runAnalysis(task);
+  });
+
+  useEffect(() => {
+    if (analysisSource !== "strategy" || !resolvedKpiId) {
+      autoRunSeedRef.current = null;
+      return;
+    }
+    const seed = [analysisSource, resolvedTable ?? "none", resolvedKpiId, chartTitle ?? "kpi"].join("|");
+    if (autoRunSeedRef.current === seed) {
+      return;
+    }
+    autoRunSeedRef.current = seed;
+    runAnalysisEvent("strategy_risk");
+  }, [analysisSource, chartTitle, resolvedKpiId, resolvedTable]);
 
   const selectedTaskConfig = TASK_CONFIG[selectedTask];
 
@@ -528,10 +578,21 @@ export default function DecisionIntelligencePanel({
           <span className={`rounded-full bg-slate-100 px-2 py-0.5 text-[10px] uppercase tracking-wide ${selectedTaskConfig.accent}`}>
             {selectedTaskConfig.label}
           </span>
+          <span className="text-sm font-semibold text-slate-900">{selectedTaskConfig.label} Results</span>
           <span className="text-xs text-slate-500">{selectedTaskConfig.description}</span>
         </div>
         {activeAnalysis?.plan_spec.route_reason ? (
           <p className="mt-2 text-sm text-slate-700">{activeAnalysis.plan_spec.route_reason}</p>
+        ) : null}
+        {activeAnalysis?.plan_spec.tasks?.length ? (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {activeAnalysis.plan_spec.tasks.map((task) => (
+              <span key={task.task_id} className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] text-slate-600">
+                {task.title}
+                {task.depends_on_task_ids.length > 0 ? " -> dependent" : ""}
+              </span>
+            ))}
+          </div>
         ) : null}
       </div>
 
@@ -577,6 +638,16 @@ export default function DecisionIntelligencePanel({
                 {activePrediction.risk_band ? (
                   <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs text-amber-700">
                     Risk: {activePrediction.risk_band}
+                  </span>
+                ) : null}
+                {typeof activePrediction.confidence_score === "number" ? (
+                  <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs text-slate-600">
+                    Confidence: {Math.round(activePrediction.confidence_score * 100)}%
+                  </span>
+                ) : null}
+                {activePrediction.metric_source && activePrediction.metric_source !== "field" ? (
+                  <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700">
+                    Source: {activePrediction.metric_source}
                   </span>
                 ) : null}
               </div>
@@ -640,11 +711,15 @@ export default function DecisionIntelligencePanel({
               ) : null}
 
               {activePrediction.anomalies.length > 0 ? (
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-3 grid gap-2 md:grid-cols-2">
                   {activePrediction.anomalies.slice(0, 4).map((item) => (
-                    <span key={`${item.label}-${item.value}`} className="rounded-full border border-red-200 bg-red-50 px-2 py-1 text-[11px] text-red-700">
-                      {item.label}: {item.severity}
-                    </span>
+                    <div key={`${item.label}-${item.value}`} className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[11px] text-red-700">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium">{item.label}</span>
+                        <span>{item.severity} {item.severity_score != null ? `(${item.severity_score})` : ""}</span>
+                      </div>
+                      {item.explanation ? <p className="mt-1 text-red-800">{item.explanation}</p> : null}
+                    </div>
                   ))}
                 </div>
               ) : null}
@@ -734,7 +809,7 @@ export default function DecisionIntelligencePanel({
                 </div>
               </div>
 
-              <div className="mt-3 grid gap-3 md:grid-cols-2">
+              <div className="mt-3 grid gap-3 md:grid-cols-3">
                 <div className="rounded-lg bg-slate-50 p-3">
                   <p className="text-[11px] uppercase tracking-wide text-slate-500">Target horizon</p>
                   <p className="mt-1 text-sm font-semibold text-slate-900">{activeStrategy.target_horizon || "n/a"}</p>
@@ -742,6 +817,12 @@ export default function DecisionIntelligencePanel({
                 <div className="rounded-lg bg-slate-50 p-3">
                   <p className="text-[11px] uppercase tracking-wide text-slate-500">Variance to target</p>
                   <p className="mt-1 text-sm font-semibold text-slate-900">{formatMetric(activeStrategy.variance_to_target)}</p>
+                </div>
+                <div className="rounded-lg bg-slate-50 p-3">
+                  <p className="text-[11px] uppercase tracking-wide text-slate-500">Confidence</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
+                    {typeof activeStrategy.confidence_score === "number" ? `${Math.round(activeStrategy.confidence_score * 100)}%` : "n/a"}
+                  </p>
                 </div>
               </div>
 

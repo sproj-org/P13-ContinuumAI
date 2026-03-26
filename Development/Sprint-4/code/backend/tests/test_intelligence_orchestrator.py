@@ -86,7 +86,9 @@ def test_create_plan_routes_forecast_to_ml_agent(monkeypatch: pytest.MonkeyPatch
     assert plan.primary_task == "forecast"
     assert plan.tasks[0].agent_role == "ml_agent"
     assert plan.tasks[0].prediction_spec is not None
-    assert plan.tasks[0].prediction_spec.metric == "net_sales"
+    assert plan.tasks[0].prediction_spec.metric == "total_sales"
+    assert plan.tasks[0].prediction_spec.metric_source == "formula"
+    assert plan.tasks[0].prediction_spec.formula == "sum(net_sales)"
     assert plan.tasks[0].prediction_spec.time_field == "sales_date"
 
 
@@ -134,7 +136,8 @@ def test_create_plan_uses_strategy_analysis_context_for_prediction_defaults(monk
     assert plan.analysis_context is not None
     assert plan.analysis_context.source == "strategy"
     assert plan.tasks[0].prediction_spec is not None
-    assert plan.tasks[0].prediction_spec.metric == "net_sales"
+    assert plan.tasks[0].prediction_spec.metric == "total_sales"
+    assert plan.tasks[0].prediction_spec.metric_source == "formula"
     assert plan.tasks[0].prediction_spec.display_label == "Total Sales"
     assert plan.tasks[0].prediction_spec.target_value == 1200.0
 
@@ -183,8 +186,7 @@ def test_run_analysis_request_returns_normalized_forecast_payload(monkeypatch: p
     assert response.agent_role == "ml_agent"
     assert response.prediction is not None
     assert response.primary_view is not None
-    assert response.primary_view.chart_spec is not None
-    assert response.primary_view.chart_spec.chart.type == "line"
+    assert response.primary_view.chart_spec is None
     assert response.insight_cards
     assert any(action.action_type == "segment" for action in response.suggested_actions)
 
@@ -216,11 +218,13 @@ def test_run_analysis_request_strategy_risk_handles_human_kpi_label_without_char
     monkeypatch.setattr(orchestrator, "_load_strategy_runtime", lambda: (bundle, [growth_kpi]))
     monkeypatch.setattr(orchestrator, "evaluate_kpi_formula", lambda **kwargs: {"value": 14.0})
 
-    def fake_predict_kpi_trend(self, **kwargs):
+    def fake_prediction(spec, db):
         return PredictionSummary(
             mode="risk",
             metric="net_sales_growth",
             display_label="Net Sales Growth",
+            metric_source="formula",
+            formula="sum(net_sales)",
             time_field="sales_date",
             time_grain="month",
             horizon=2,
@@ -238,10 +242,11 @@ def test_run_analysis_request_strategy_risk_handles_human_kpi_label_without_char
             risk_band="medium",
             target_value=25.0,
             target_direction="up",
+            confidence_score=0.62,
             explanation="Projected growth remains below the FY26 target.",
         )
 
-    monkeypatch.setattr(orchestrator.StrategyAgent, "_predict_kpi_trend", fake_predict_kpi_trend)
+    monkeypatch.setattr(orchestrator, "run_prediction_analysis", fake_prediction)
 
     response = orchestrator.run_analysis_request(
         dataset_id="silkroute",
@@ -275,3 +280,78 @@ def test_run_analysis_request_strategy_risk_handles_human_kpi_label_without_char
     assert response.strategy.forecast_basis is not None
     assert response.plan_spec.analysis_context is not None
     assert response.plan_spec.analysis_context.source == "strategy"
+
+
+def test_create_plan_strategy_risk_builds_multistep_dependency_chain(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(orchestrator, "_load_strategy_runtime", lambda: (_strategy_bundle(), [_sales_kpi()]))
+    monkeypatch.setattr(orchestrator, "load_mart_profile", lambda dataset_id, table: _profile_with_fields())
+    monkeypatch.setattr(orchestrator, "resolve_time_field", lambda profile, preferred=None: "sales_date")
+
+    plan, matched_kpi = orchestrator.create_plan(
+        AnalysisRequest(
+            task_type="strategy_risk",
+            kpi_id="total_sales",
+            analysis_context=AnalysisContextSpec(
+                source="strategy",
+                table="gold_sales_daily",
+                semantic=SemanticContextSpec(
+                    matched_kpi_id="total_sales",
+                    matched_kpi_label="Total Sales",
+                    required_columns=["net_sales"],
+                    metric_field_hint="net_sales",
+                    time_field_hint="sales_date",
+                ),
+                strategy=StrategyContextSpec(target_value=1000.0, target_direction="up"),
+            ),
+        ),
+        dataset_id="silkroute",
+    )
+
+    assert matched_kpi is not None
+    assert plan.primary_task == "strategy_risk"
+    assert [task.agent_role for task in plan.tasks] == ["ml_agent", "strategy_agent", "insight_agent"]
+    assert plan.tasks[1].depends_on_task_ids == [plan.tasks[0].task_id]
+    assert plan.tasks[2].depends_on_task_ids == [plan.tasks[1].task_id]
+    assert plan.tasks[0].prediction_spec is not None
+    assert plan.tasks[0].prediction_spec.metric_source == "formula"
+    assert plan.tasks[0].prediction_spec.formula == "sum(net_sales)"
+
+
+def test_run_analysis_request_strategy_risk_keeps_working_without_prediction(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(orchestrator, "_load_strategy_runtime", lambda: (_strategy_bundle(), [_sales_kpi()]))
+    monkeypatch.setattr(orchestrator, "load_mart_profile", lambda dataset_id, table: _profile_with_fields())
+    monkeypatch.setattr(orchestrator, "resolve_time_field", lambda profile, preferred=None: "sales_date")
+    monkeypatch.setattr(orchestrator, "evaluate_kpi_formula", lambda **kwargs: {"value": 820.0})
+
+    def fail_prediction(spec, db):
+        raise orchestrator.HTTPException(status_code=404, detail="No rows are available for predictive analysis")
+
+    monkeypatch.setattr(orchestrator, "run_prediction_analysis", fail_prediction)
+
+    response = orchestrator.run_analysis_request(
+        dataset_id="silkroute",
+        request=AnalysisRequest(
+            task_type="strategy_risk",
+            kpi_id="total_sales",
+            analysis_context=AnalysisContextSpec(
+                source="strategy",
+                table="gold_sales_daily",
+                semantic=SemanticContextSpec(
+                    matched_kpi_id="total_sales",
+                    matched_kpi_label="Total Sales",
+                    required_columns=["net_sales"],
+                    metric_field_hint="net_sales",
+                    time_field_hint="sales_date",
+                ),
+                strategy=StrategyContextSpec(target_value=1000.0, target_direction="up", target_horizon="FY26"),
+            ),
+        ),
+        db=SimpleNamespace(),
+    )
+
+    assert response.strategy is not None
+    assert response.strategy.current_value == 820.0
+    assert response.strategy.projected_value is None
+    assert response.strategy.risk_band == "unknown"
+    assert response.primary_view is None
+    assert isinstance(response.meta.get("execution_trace"), list)

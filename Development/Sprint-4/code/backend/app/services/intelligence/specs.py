@@ -11,6 +11,7 @@ from app.services.charts.models import ChartSpecV1
 
 ChartType = Literal["bar", "line", "pie", "histogram", "kpi"]
 MetricAggregation = Literal["sum", "avg", "count", "min", "max"]
+MetricSource = Literal["field", "formula", "derived"]
 TimeGrain = Literal["day", "week", "month", "quarter", "year"]
 TaskType = Literal["query", "insight", "profile", "forecast", "anomaly", "segment", "strategy_risk"]
 AgentRole = Literal["viz_agent", "profiling_agent", "strategy_agent", "insight_agent", "ml_agent"]
@@ -227,11 +228,14 @@ class PredictionSpec(BaseModel):
     table: str
     metric: str
     display_label: str | None = None
+    metric_source: MetricSource = "field"
+    formula: str | None = None
     aggregation: MetricAggregation = "sum"
     time_field: str
     time_grain: TimeGrain = "month"
     filters: list[SpecFilter] = Field(default_factory=list)
     group_by: list[str] = Field(default_factory=list)
+    supporting_fields: list[str] = Field(default_factory=list)
     horizon: int = 6
     kpi_id: str | None = None
     target_value: float | None = None
@@ -239,12 +243,12 @@ class PredictionSpec(BaseModel):
     sensitivity: float = 2.5
     analysis_context: AnalysisContextSpec | None = None
 
-    @field_validator("dataset_id", "table", "metric", "display_label", "time_field", "kpi_id")
+    @field_validator("dataset_id", "table", "metric", "display_label", "formula", "time_field", "kpi_id")
     @classmethod
     def trim_required_strings(cls, value: str | None) -> str | None:
         return _clean_optional(value)
 
-    @field_validator("group_by")
+    @field_validator("group_by", "supporting_fields")
     @classmethod
     def normalize_group_by(cls, value: list[str]) -> list[str]:
         output: list[str] = []
@@ -327,6 +331,7 @@ class AgentTaskSpec(BaseModel):
     agent_role: AgentRole
     title: str
     priority: int = 1
+    depends_on_task_ids: list[str] = Field(default_factory=list)
     query_spec: QuerySpec | None = None
     insight_spec: InsightSpec | None = None
     prediction_spec: PredictionSpec | None = None
@@ -340,6 +345,16 @@ class AgentTaskSpec(BaseModel):
         if not trimmed:
             raise ValueError("title is required")
         return trimmed
+
+    @field_validator("depends_on_task_ids")
+    @classmethod
+    def normalize_dependencies(cls, value: list[str]) -> list[str]:
+        output: list[str] = []
+        for item in value:
+            trimmed = item.strip()
+            if trimmed and trimmed not in output:
+                output.append(trimmed)
+        return output
 
     @model_validator(mode="after")
     def validate_payload(self) -> "AgentTaskSpec":
@@ -394,13 +409,18 @@ class PredictionAnomaly(BaseModel):
     label: str
     value: float
     deviation: float
+    expected_value: float | None = None
+    severity_score: float | None = None
     severity: Literal["low", "medium", "high"] = "medium"
+    explanation: str | None = None
 
 
 class PredictionSummary(BaseModel):
     mode: Literal["forecast", "anomaly", "risk"]
     metric: str
     display_label: str | None = None
+    metric_source: MetricSource = "field"
+    formula: str | None = None
     time_field: str
     time_grain: TimeGrain
     horizon: int
@@ -413,6 +433,7 @@ class PredictionSummary(BaseModel):
     risk_band: RiskBand | None = None
     target_value: float | None = None
     target_direction: Literal["up", "down"] | None = None
+    confidence_score: float | None = None
     explanation: str | None = None
 
 
@@ -452,6 +473,7 @@ class StrategyRiskSummary(BaseModel):
     variance_to_target: float | None = None
     direction: Literal["up", "down"] | None = None
     risk_band: RiskBand = "unknown"
+    confidence_score: float | None = None
     explanation: str | None = None
     target_horizon: str | None = None
     forecast_basis: str | None = None
