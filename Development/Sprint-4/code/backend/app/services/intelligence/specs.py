@@ -15,6 +15,7 @@ TimeGrain = Literal["day", "week", "month", "quarter", "year"]
 TaskType = Literal["query", "insight", "profile", "forecast", "anomaly", "segment", "strategy_risk"]
 AgentRole = Literal["viz_agent", "profiling_agent", "strategy_agent", "insight_agent", "ml_agent"]
 RiskBand = Literal["low", "medium", "high", "unknown"]
+AnalysisSource = Literal["strategy", "chart_builder", "dashboard", "viz_agent", "chat", "api"]
 
 _FILTER_OP_ALIASES = {
     "=": "=",
@@ -81,6 +82,7 @@ class QuerySpec(BaseModel):
     semantic_family: str | None = None
     drill_dimensions: list[str] = Field(default_factory=list)
     recommendation_source: str | None = None
+    analysis_context: "AnalysisContextSpec | None" = None
 
     @field_validator("dataset_id", "table", "time_field", "kpi_id", "semantic_family", "recommendation_source")
     @classmethod
@@ -117,11 +119,114 @@ class InsightSpec(BaseModel):
         return _clean_optional(value)
 
 
+class SemanticContextSpec(BaseModel):
+    matched_kpi_id: str | None = None
+    matched_kpi_label: str | None = None
+    semantic_family: str | None = None
+    marts: list[str] = Field(default_factory=list)
+    required_columns: list[str] = Field(default_factory=list)
+    dimensions: list[str] = Field(default_factory=list)
+    metric_aliases: list[str] = Field(default_factory=list)
+    business_concepts: list[str] = Field(default_factory=list)
+    preferred_drill_path: list[str] = Field(default_factory=list)
+    mart_hierarchy: list[str] = Field(default_factory=list)
+    terminal_dimensions: list[str] = Field(default_factory=list)
+    disallowed_drill_dimensions: list[str] = Field(default_factory=list)
+    preferred_chart_types: list[ChartType] = Field(default_factory=list)
+    default_grain: TimeGrain | None = None
+    metric_field_hint: str | None = None
+    entity_field_hint: str | None = None
+    time_field_hint: str | None = None
+
+    @field_validator(
+        "matched_kpi_id",
+        "matched_kpi_label",
+        "semantic_family",
+        "metric_field_hint",
+        "entity_field_hint",
+        "time_field_hint",
+    )
+    @classmethod
+    def trim_optional_text(cls, value: str | None) -> str | None:
+        return _clean_optional(value)
+
+    @field_validator(
+        "marts",
+        "required_columns",
+        "dimensions",
+        "metric_aliases",
+        "business_concepts",
+        "preferred_drill_path",
+        "mart_hierarchy",
+        "terminal_dimensions",
+        "disallowed_drill_dimensions",
+    )
+    @classmethod
+    def normalize_strings(cls, value: list[str]) -> list[str]:
+        output: list[str] = []
+        for item in value:
+            trimmed = item.strip()
+            if trimmed and trimmed not in output:
+                output.append(trimmed)
+        return output
+
+    @field_validator("preferred_chart_types")
+    @classmethod
+    def normalize_chart_types(cls, value: list[ChartType]) -> list[ChartType]:
+        output: list[ChartType] = []
+        for item in value:
+            if item not in output:
+                output.append(item)
+        return output
+
+
+class StrategyContextSpec(BaseModel):
+    target_value: float | None = None
+    target_direction: Literal["up", "down"] | None = None
+    target_horizon: str | None = None
+    current_value: float | None = None
+    variance: float | None = None
+    status: str | None = None
+    triggered_rules: list[str] = Field(default_factory=list)
+    triggered_rule_actions: list[str] = Field(default_factory=list)
+    provenance: dict[str, Any] = Field(default_factory=dict)
+
+    @field_validator("target_horizon", "status")
+    @classmethod
+    def trim_text(cls, value: str | None) -> str | None:
+        return _clean_optional(value)
+
+    @field_validator("triggered_rules", "triggered_rule_actions")
+    @classmethod
+    def normalize_rule_lists(cls, value: list[str]) -> list[str]:
+        output: list[str] = []
+        for item in value:
+            trimmed = item.strip()
+            if trimmed and trimmed not in output:
+                output.append(trimmed)
+        return output
+
+
+class AnalysisContextSpec(BaseModel):
+    source: AnalysisSource = "api"
+    chart_title: str | None = None
+    chart_family: str | None = None
+    table: str | None = None
+    semantic: SemanticContextSpec | None = None
+    strategy: StrategyContextSpec | None = None
+
+    @field_validator("chart_title", "chart_family", "table")
+    @classmethod
+    def trim_text(cls, value: str | None) -> str | None:
+        return _clean_optional(value)
+
+
 class PredictionSpec(BaseModel):
     mode: Literal["forecast", "anomaly", "risk"] = "forecast"
     dataset_id: str | None = None
     table: str
     metric: str
+    display_label: str | None = None
     aggregation: MetricAggregation = "sum"
     time_field: str
     time_grain: TimeGrain = "month"
@@ -132,8 +237,9 @@ class PredictionSpec(BaseModel):
     target_value: float | None = None
     target_direction: Literal["up", "down"] | None = None
     sensitivity: float = 2.5
+    analysis_context: AnalysisContextSpec | None = None
 
-    @field_validator("dataset_id", "table", "metric", "time_field", "kpi_id")
+    @field_validator("dataset_id", "table", "metric", "display_label", "time_field", "kpi_id")
     @classmethod
     def trim_required_strings(cls, value: str | None) -> str | None:
         return _clean_optional(value)
@@ -163,12 +269,14 @@ class SegmentSpec(BaseModel):
     dataset_id: str | None = None
     table: str
     entity_field: str
+    entity_label: str | None = None
     features: list[str] = Field(default_factory=list)
     filters: list[SpecFilter] = Field(default_factory=list)
     cluster_count: int = 4
     metric_focus: str | None = None
+    analysis_context: AnalysisContextSpec | None = None
 
-    @field_validator("dataset_id", "table", "entity_field", "metric_focus")
+    @field_validator("dataset_id", "table", "entity_field", "entity_label", "metric_focus")
     @classmethod
     def trim_strings(cls, value: str | None) -> str | None:
         return _clean_optional(value)
@@ -192,14 +300,17 @@ class SegmentSpec(BaseModel):
 class StrategySpec(BaseModel):
     dataset_id: str | None = None
     kpi_id: str
+    kpi_label: str | None = None
     table: str | None = None
     target_value: float | None = None
     direction: Literal["up", "down"] | None = None
+    target_horizon: str | None = None
     time_grain: TimeGrain = "month"
     horizon: int = 6
     filters: list[SpecFilter] = Field(default_factory=list)
+    analysis_context: AnalysisContextSpec | None = None
 
-    @field_validator("dataset_id", "kpi_id", "table")
+    @field_validator("dataset_id", "kpi_id", "kpi_label", "table", "target_horizon")
     @classmethod
     def trim_strings(cls, value: str | None) -> str | None:
         return _clean_optional(value)
@@ -253,6 +364,7 @@ class PlanSpec(BaseModel):
     route_reason: str
     matched_kpi_id: str | None = None
     matched_kpi_label: str | None = None
+    analysis_context: AnalysisContextSpec | None = None
     tasks: list[AgentTaskSpec] = Field(default_factory=list)
     suggested_follow_ups: list[str] = Field(default_factory=list)
 
@@ -288,11 +400,15 @@ class PredictionAnomaly(BaseModel):
 class PredictionSummary(BaseModel):
     mode: Literal["forecast", "anomaly", "risk"]
     metric: str
+    display_label: str | None = None
     time_field: str
     time_grain: TimeGrain
     horizon: int
     points: list[PredictionPoint] = Field(default_factory=list)
     anomalies: list[PredictionAnomaly] = Field(default_factory=list)
+    observed_points: int = 0
+    historical_start: str | None = None
+    historical_end: str | None = None
     projected_change_pct: float | None = None
     risk_band: RiskBand | None = None
     target_value: float | None = None
@@ -318,15 +434,18 @@ class SegmentProfile(BaseModel):
 
 class SegmentSummary(BaseModel):
     entity_field: str
+    entity_label: str | None = None
     cluster_count: int
     features: list[str] = Field(default_factory=list)
     assignments: list[SegmentAssignment] = Field(default_factory=list)
     profiles: list[SegmentProfile] = Field(default_factory=list)
     silhouette_hint: float | None = None
+    comparison_highlights: list[str] = Field(default_factory=list)
 
 
 class StrategyRiskSummary(BaseModel):
     kpi_id: str
+    kpi_label: str | None = None
     target_value: float | None = None
     current_value: float | None = None
     projected_value: float | None = None
@@ -334,6 +453,10 @@ class StrategyRiskSummary(BaseModel):
     direction: Literal["up", "down"] | None = None
     risk_band: RiskBand = "unknown"
     explanation: str | None = None
+    target_horizon: str | None = None
+    forecast_basis: str | None = None
+    recommended_actions: list[str] = Field(default_factory=list)
+    supporting_details: list[str] = Field(default_factory=list)
 
 
 class SuggestedAction(BaseModel):
@@ -369,6 +492,7 @@ class AnalysisRequest(BaseModel):
     features: list[str] = Field(default_factory=list)
     filters: list[SpecFilter] = Field(default_factory=list)
     cluster_count: int | None = None
+    analysis_context: AnalysisContextSpec | None = None
 
 
 class AnalysisResponse(BaseModel):

@@ -68,11 +68,20 @@ def temporal_columns(profile: dict[str, Any]) -> list[str]:
     return [name for name, column in column_profiles(profile).items() if _column_role(column) in TEMPORAL_ROLES]
 
 
+def _looks_temporal_name(value: str) -> bool:
+    normalized = value.lower()
+    return any(token in normalized for token in ("date", "day", "week", "month", "quarter", "year"))
+
+
 def resolve_time_field(profile: dict[str, Any], preferred: str | None = None) -> str | None:
     columns = column_profiles(profile)
     if preferred and preferred in columns:
-        return preferred
+        preferred_column = columns[preferred]
+        if _column_role(preferred_column) in TEMPORAL_ROLES or _looks_temporal_name(preferred):
+            return preferred
     temporal = temporal_columns(profile)
+    if preferred and preferred in temporal:
+        return preferred
     if temporal:
         return temporal[0]
     for candidate in ("sales_date", "snapshot_date", "first_tx_date", "last_tx_date", "first_date", "last_date"):

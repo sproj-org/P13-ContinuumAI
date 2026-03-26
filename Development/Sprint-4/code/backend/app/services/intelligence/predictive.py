@@ -201,20 +201,28 @@ def summarize_prediction_from_series(
             direction=spec.target_direction,
         )
 
-    explanation = (
-        f"Based on {len(values)} observed {spec.time_grain} periods for {spec.metric}, "
-        f"the projected change is {projected_change_pct * 100:.1f}%."
-        if projected_change_pct is not None
-        else f"Detected {len(anomalies)} anomaly signal(s) across {len(values)} observed periods."
-    )
+    display_label = spec.display_label or spec.metric
+    if projected_change_pct is not None:
+        explanation = (
+            f"Based on {len(values)} observed {spec.time_grain} periods for {display_label}, "
+            f"the projected terminal change is {projected_change_pct * 100:.1f}% over the next {spec.horizon} periods."
+        )
+    elif anomalies:
+        explanation = f"Detected {len(anomalies)} anomaly signal(s) across {len(values)} observed periods for {display_label}."
+    else:
+        explanation = f"Observed {len(values)} {spec.time_grain} periods for {display_label} without a strong directional break."
     return PredictionSummary(
         mode=spec.mode,
         metric=spec.metric,
+        display_label=display_label,
         time_field=spec.time_field,
         time_grain=spec.time_grain,
         horizon=spec.horizon,
         points=points,
         anomalies=anomalies,
+        observed_points=len(values),
+        historical_start=labels[0] if labels else None,
+        historical_end=labels[-1] if labels else None,
         projected_change_pct=projected_change_pct,
         risk_band=risk_band,
         target_value=spec.target_value,
@@ -262,10 +270,14 @@ def run_prediction_analysis(spec: PredictionSpec, db: Session) -> PredictionSumm
 def build_strategy_risk_summary(
     *,
     kpi_id: str,
+    kpi_label: str | None,
     target_value: float | None,
     current_value: float | None,
     prediction: PredictionSummary | None,
     direction: str | None,
+    target_horizon: str | None = None,
+    recommended_actions: list[str] | None = None,
+    supporting_details: list[str] | None = None,
 ) -> StrategyRiskSummary:
     projected_value = None
     if prediction and prediction.points:
@@ -278,6 +290,7 @@ def build_strategy_risk_summary(
     )
     return StrategyRiskSummary(
         kpi_id=kpi_id,
+        kpi_label=kpi_label,
         target_value=target_value,
         current_value=current_value,
         projected_value=projected_value,
@@ -287,6 +300,10 @@ def build_strategy_risk_summary(
         explanation=(
             f"Projected terminal value is {projected_value:.2f} against target {target_value:.2f}."
             if projected_value is not None and target_value is not None
-            else "Insufficient target or forecast data to estimate risk."
+            else "Insufficient target or forecast data to estimate risk with confidence."
         ),
+        target_horizon=target_horizon,
+        forecast_basis=prediction.explanation if prediction is not None else None,
+        recommended_actions=[item for item in (recommended_actions or []) if item],
+        supporting_details=[item for item in (supporting_details or []) if item],
     )

@@ -26,6 +26,10 @@ DEFAULT_FEATURE_HINTS: dict[str, list[str]] = {
 }
 
 
+def _entity_label(field: str) -> str:
+    return " ".join(field.replace("_", " ").split()).title()
+
+
 def _standardize(values: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     means = values.mean(axis=0)
     stds = values.std(axis=0)
@@ -178,11 +182,25 @@ def run_segmentation(spec: SegmentSpec, db: Session) -> SegmentSummary:
 
     profiles.sort(key=lambda item: item.cluster_id)
     assignments.sort(key=lambda item: (item.cluster_id, item.entity_id))
+    comparison_highlights: list[str] = []
+    focus_metric = spec.metric_focus if spec.metric_focus in feature_names else (feature_names[0] if feature_names else None)
+    if focus_metric and profiles:
+        ordered_profiles = sorted(profiles, key=lambda item: item.centroid.get(focus_metric, 0.0), reverse=True)
+        top_profile = ordered_profiles[0]
+        bottom_profile = ordered_profiles[-1]
+        if top_profile.cluster_id != bottom_profile.cluster_id:
+            comparison_highlights.append(
+                f"Cluster {top_profile.cluster_id} leads on {focus_metric} while Cluster {bottom_profile.cluster_id} trails."
+            )
+    if silhouette_hint is not None:
+        comparison_highlights.append(f"Cluster cohesion hint is {silhouette_hint:.3f}.")
     return SegmentSummary(
         entity_field=entity_field,
+        entity_label=spec.entity_label or _entity_label(entity_field),
         cluster_count=actual_cluster_count,
         features=feature_names,
         assignments=assignments,
         profiles=profiles,
         silhouette_hint=silhouette_hint,
+        comparison_highlights=comparison_highlights,
     )

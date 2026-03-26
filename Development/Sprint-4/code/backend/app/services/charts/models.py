@@ -94,6 +94,7 @@ class ChartSemanticContext(BaseModel):
     terminal_dimensions: list[str] = Field(default_factory=list)
     prediction_context: dict[str, Any] | None = None
     segmentation_context: dict[str, Any] | None = None
+    analysis_context: dict[str, Any] | None = None
     chart_family: str | None = None
 
 

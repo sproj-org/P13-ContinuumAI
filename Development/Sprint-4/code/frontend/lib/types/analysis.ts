@@ -1,4 +1,4 @@
-import type { ChartSpecV1 } from "./chartspec";
+import type { ChartSpecV1, ChartType } from "./chartspec";
 
 export type AnalysisTaskType =
   | "auto"
@@ -16,6 +16,7 @@ export type AgentRole =
   | "strategy_agent"
   | "insight_agent"
   | "ml_agent";
+export type AnalysisSource = "strategy" | "chart_builder" | "dashboard" | "viz_agent" | "chat" | "api";
 
 export type TimeGrain = "day" | "week" | "month" | "quarter" | "year";
 export type MetricAggregation = "sum" | "avg" | "count" | "min" | "max";
@@ -25,6 +26,47 @@ export interface SpecFilter {
   field: string;
   op: "=" | "!=" | "in" | "between" | ">" | ">=" | "<" | "<=";
   value?: unknown;
+}
+
+export interface SemanticContextSpec {
+  matched_kpi_id?: string | null;
+  matched_kpi_label?: string | null;
+  semantic_family?: string | null;
+  marts: string[];
+  required_columns: string[];
+  dimensions: string[];
+  metric_aliases: string[];
+  business_concepts: string[];
+  preferred_drill_path: string[];
+  mart_hierarchy: string[];
+  terminal_dimensions: string[];
+  disallowed_drill_dimensions: string[];
+  preferred_chart_types: ChartType[];
+  default_grain?: TimeGrain | null;
+  metric_field_hint?: string | null;
+  entity_field_hint?: string | null;
+  time_field_hint?: string | null;
+}
+
+export interface StrategyContextSpec {
+  target_value?: number | null;
+  target_direction?: "up" | "down" | null;
+  target_horizon?: string | null;
+  current_value?: number | null;
+  variance?: number | null;
+  status?: string | null;
+  triggered_rules: string[];
+  triggered_rule_actions: string[];
+  provenance?: Record<string, unknown>;
+}
+
+export interface AnalysisContext {
+  source?: AnalysisSource;
+  chart_title?: string | null;
+  chart_family?: string | null;
+  table?: string | null;
+  semantic?: SemanticContextSpec | null;
+  strategy?: StrategyContextSpec | null;
 }
 
 export interface QuerySpec {
@@ -42,6 +84,7 @@ export interface QuerySpec {
   semantic_family?: string | null;
   drill_dimensions?: string[];
   recommendation_source?: string | null;
+  analysis_context?: AnalysisContext | null;
 }
 
 export interface PredictionSpec {
@@ -49,6 +92,7 @@ export interface PredictionSpec {
   dataset_id?: string | null;
   table: string;
   metric: string;
+  display_label?: string | null;
   aggregation?: MetricAggregation;
   time_field: string;
   time_grain?: TimeGrain;
@@ -57,27 +101,33 @@ export interface PredictionSpec {
   kpi_id?: string | null;
   target_value?: number | null;
   target_direction?: "up" | "down" | null;
+  analysis_context?: AnalysisContext | null;
 }
 
 export interface SegmentSpec {
   dataset_id?: string | null;
   table: string;
   entity_field: string;
+  entity_label?: string | null;
   features?: string[];
   filters?: SpecFilter[];
   cluster_count?: number;
   metric_focus?: string | null;
+  analysis_context?: AnalysisContext | null;
 }
 
 export interface StrategySpec {
   dataset_id?: string | null;
   kpi_id: string;
+  kpi_label?: string | null;
   table?: string | null;
   target_value?: number | null;
   direction?: "up" | "down" | null;
+  target_horizon?: string | null;
   time_grain?: TimeGrain;
   horizon?: number;
   filters?: SpecFilter[];
+  analysis_context?: AnalysisContext | null;
 }
 
 export interface AgentTaskSpec {
@@ -101,6 +151,7 @@ export interface PlanSpec {
   route_reason: string;
   matched_kpi_id?: string | null;
   matched_kpi_label?: string | null;
+  analysis_context?: AnalysisContext | null;
   tasks: AgentTaskSpec[];
   suggested_follow_ups: string[];
 }
@@ -136,11 +187,15 @@ export interface PredictionAnomaly {
 export interface PredictionSummary {
   mode: "forecast" | "anomaly" | "risk";
   metric: string;
+  display_label?: string | null;
   time_field: string;
   time_grain: TimeGrain;
   horizon: number;
   points: PredictionPoint[];
   anomalies: PredictionAnomaly[];
+  observed_points: number;
+  historical_start?: string | null;
+  historical_end?: string | null;
   projected_change_pct?: number | null;
   risk_band?: RiskBand | null;
   target_value?: number | null;
@@ -166,15 +221,18 @@ export interface SegmentProfile {
 
 export interface SegmentSummary {
   entity_field: string;
+  entity_label?: string | null;
   cluster_count: number;
   features: string[];
   assignments: SegmentAssignment[];
   profiles: SegmentProfile[];
   silhouette_hint?: number | null;
+  comparison_highlights: string[];
 }
 
 export interface StrategyRiskSummary {
   kpi_id: string;
+  kpi_label?: string | null;
   target_value?: number | null;
   current_value?: number | null;
   projected_value?: number | null;
@@ -182,6 +240,10 @@ export interface StrategyRiskSummary {
   direction?: "up" | "down" | null;
   risk_band: RiskBand;
   explanation?: string | null;
+  target_horizon?: string | null;
+  forecast_basis?: string | null;
+  recommended_actions: string[];
+  supporting_details: string[];
 }
 
 export interface SuggestedAction {
@@ -217,6 +279,7 @@ export interface AnalysisRequest {
   features?: string[];
   filters?: SpecFilter[];
   cluster_count?: number | null;
+  analysis_context?: AnalysisContext | null;
 }
 
 export interface AnalysisResponse {

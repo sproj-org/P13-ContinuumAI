@@ -17,7 +17,14 @@ from app.models.strategy_bundle import (  # noqa: E402
     TargetThreshold,
 )
 from app.services.intelligence import orchestrator  # noqa: E402
-from app.services.intelligence.specs import AnalysisRequest, PredictionPoint, PredictionSummary  # noqa: E402
+from app.services.intelligence.specs import (  # noqa: E402
+    AnalysisContextSpec,
+    AnalysisRequest,
+    PredictionPoint,
+    PredictionSummary,
+    SemanticContextSpec,
+    StrategyContextSpec,
+)
 
 
 def _strategy_bundle() -> StrategyBundle:
@@ -99,6 +106,39 @@ def test_create_plan_routes_segmentation_to_ml_agent(monkeypatch: pytest.MonkeyP
     assert plan.tasks[0].segment_spec.entity_field == "store_id"
 
 
+def test_create_plan_uses_strategy_analysis_context_for_prediction_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(orchestrator, "_load_strategy_runtime", lambda: (_strategy_bundle(), [_sales_kpi()]))
+    monkeypatch.setattr(orchestrator, "load_mart_profile", lambda dataset_id, table: _profile_with_fields())
+    monkeypatch.setattr(orchestrator, "resolve_time_field", lambda profile, preferred=None: "sales_date")
+
+    plan, matched_kpi = orchestrator.create_plan(
+        AnalysisRequest(
+            task_type="forecast",
+            analysis_context=AnalysisContextSpec(
+                source="strategy",
+                table="gold_sales_daily",
+                semantic=SemanticContextSpec(
+                    matched_kpi_id="total_sales",
+                    matched_kpi_label="Total Sales",
+                    required_columns=["net_sales"],
+                    metric_field_hint="net_sales",
+                    time_field_hint="sales_date",
+                ),
+                strategy=StrategyContextSpec(target_value=1200.0, target_direction="up"),
+            ),
+        ),
+        dataset_id="silkroute",
+    )
+
+    assert matched_kpi is not None
+    assert plan.analysis_context is not None
+    assert plan.analysis_context.source == "strategy"
+    assert plan.tasks[0].prediction_spec is not None
+    assert plan.tasks[0].prediction_spec.metric == "net_sales"
+    assert plan.tasks[0].prediction_spec.display_label == "Total Sales"
+    assert plan.tasks[0].prediction_spec.target_value == 1200.0
+
+
 def test_run_analysis_request_returns_normalized_forecast_payload(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(orchestrator, "_load_strategy_runtime", lambda: (_strategy_bundle(), [_sales_kpi()]))
     monkeypatch.setattr(orchestrator, "load_mart_profile", lambda dataset_id, table: _profile_with_fields())
@@ -147,3 +187,91 @@ def test_run_analysis_request_returns_normalized_forecast_payload(monkeypatch: p
     assert response.primary_view.chart_spec.chart.type == "line"
     assert response.insight_cards
     assert any(action.action_type == "segment" for action in response.suggested_actions)
+
+
+def test_run_analysis_request_strategy_risk_handles_human_kpi_label_without_chart_spec(monkeypatch: pytest.MonkeyPatch) -> None:
+    growth_kpi = KPIRegistryEntry(
+        id="net_sales_growth",
+        display_name="Net Sales Growth",
+        description="Net sales growth",
+        formula="sum(net_sales)",
+        marts=["gold_sales_daily"],
+        required_columns=["net_sales"],
+        dimensions=["region", "sales_date"],
+        semantic_family="revenue",
+        business_concepts=["revenue", "growth"],
+        metric_aliases=["net sales growth"],
+        preferred_drill_path=["region", "store_id"],
+        terminal_dimensions=["store_id"],
+    )
+    bundle = StrategyBundle(
+        version="test",
+        strategic_context=_strategy_bundle().strategic_context,
+        pillars=[],
+        swot=None,
+        targets={"net_sales_growth": TargetThreshold(target=25.0, direction="up", horizon="FY26")},
+        decision_rules=[],
+        scoring_model=StrategyScoringModel(weights=StrategyScoringWeights()),
+    )
+    monkeypatch.setattr(orchestrator, "_load_strategy_runtime", lambda: (bundle, [growth_kpi]))
+    monkeypatch.setattr(orchestrator, "evaluate_kpi_formula", lambda **kwargs: {"value": 14.0})
+
+    def fake_predict_kpi_trend(self, **kwargs):
+        return PredictionSummary(
+            mode="risk",
+            metric="net_sales_growth",
+            display_label="Net Sales Growth",
+            time_field="sales_date",
+            time_grain="month",
+            horizon=2,
+            points=[
+                PredictionPoint(label="2024-01", actual=10.0, anomaly_flag=False, is_forecast=False),
+                PredictionPoint(label="2024-02", actual=14.0, anomaly_flag=False, is_forecast=False),
+                PredictionPoint(label="2024-03", forecast=18.0, lower=16.0, upper=20.0, anomaly_flag=False, is_forecast=True),
+                PredictionPoint(label="2024-04", forecast=22.0, lower=20.0, upper=24.0, anomaly_flag=False, is_forecast=True),
+            ],
+            anomalies=[],
+            observed_points=2,
+            historical_start="2024-01",
+            historical_end="2024-02",
+            projected_change_pct=0.57,
+            risk_band="medium",
+            target_value=25.0,
+            target_direction="up",
+            explanation="Projected growth remains below the FY26 target.",
+        )
+
+    monkeypatch.setattr(orchestrator.StrategyAgent, "_predict_kpi_trend", fake_predict_kpi_trend)
+
+    response = orchestrator.run_analysis_request(
+        dataset_id="silkroute",
+        request=AnalysisRequest(
+            task_type="strategy_risk",
+            kpi_id="net_sales_growth",
+            analysis_context=AnalysisContextSpec(
+                source="strategy",
+                semantic=SemanticContextSpec(
+                    matched_kpi_id="net_sales_growth",
+                    matched_kpi_label="Net Sales Growth",
+                ),
+                strategy=StrategyContextSpec(
+                    target_value=25.0,
+                    target_direction="up",
+                    target_horizon="FY26",
+                    triggered_rules=["Escalate if growth stays below plan."],
+                    triggered_rule_actions=["Review underperforming regions"],
+                ),
+            ),
+        ),
+        db=SimpleNamespace(),
+    )
+
+    assert response.task_type == "strategy_risk"
+    assert response.strategy is not None
+    assert response.strategy.kpi_label == "Net Sales Growth"
+    assert response.strategy.target_horizon == "FY26"
+    assert response.primary_view is not None
+    assert response.primary_view.chart_spec is None
+    assert response.strategy.forecast_basis is not None
+    assert response.plan_spec.analysis_context is not None
+    assert response.plan_spec.analysis_context.source == "strategy"

@@ -744,6 +744,7 @@ export default function DashboardTab() {
                     chartRows={previewChart.rows}
                     chartTitle={previewChartTitle}
                     kpiId={previewChart.chartSpec.semantic_context?.matched_kpi_id ?? null}
+                    analysisSource="dashboard"
                     onChartSpecChange={(nextChartSpec) => {
                       setPreviewChart((current) => (current ? { ...current, chartSpec: nextChartSpec } : current));
                     }}

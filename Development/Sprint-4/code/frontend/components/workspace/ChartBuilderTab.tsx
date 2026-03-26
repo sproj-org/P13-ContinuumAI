@@ -253,6 +253,7 @@ export default function ChartBuilderTab() {
     signature: string;
     context: Partial<ChartSemanticContext> | null;
   } | null>(null);
+  const [seededSemanticContext, setSeededSemanticContext] = useState<Partial<ChartSemanticContext> | null>(null);
 
   const { data: profile, isLoading } = useTableProfile(selectedDatasetId, selectedAggregation);
   const { data: dashboardsData } = useDashboards(selectedDatasetId);
@@ -460,6 +461,7 @@ export default function ChartBuilderTab() {
       setCustomEndDate("");
       setValidationMessage(null);
       setAnalysisSemanticContext(null);
+      setSeededSemanticContext(chartBuilderSeed.semanticContext ?? null);
       clearChartBuilderSeed();
     });
   }, [chartBuilderSeed, clearChartBuilderSeed]);
@@ -567,8 +569,9 @@ export default function ChartBuilderTab() {
     const baseChartSpec = attachChartSemanticContext(chartSpec, {
       strategyKpis: strategyKpiLibrary?.kpis ?? [],
     });
-    return activeAnalysisSemanticContext ? mergeChartSemanticContext(baseChartSpec, activeAnalysisSemanticContext) : baseChartSpec;
-  }, [activeAnalysisSemanticContext, chartSpec, strategyKpiLibrary?.kpis]);
+    const withSeededContext = seededSemanticContext ? mergeChartSemanticContext(baseChartSpec, seededSemanticContext) : baseChartSpec;
+    return activeAnalysisSemanticContext ? mergeChartSemanticContext(withSeededContext, activeAnalysisSemanticContext) : withSeededContext;
+  }, [activeAnalysisSemanticContext, chartSpec, seededSemanticContext, strategyKpiLibrary?.kpis]);
 
   const chartTitlePreview = useMemo(() => {
     if (!previewChartSpec) {
@@ -712,6 +715,7 @@ export default function ChartBuilderTab() {
     setCustomEndDate("");
     setValidationMessage(null);
     setAnalysisSemanticContext(null);
+    setSeededSemanticContext(null);
   };
 
   const openSaveDialog = () => {
@@ -923,6 +927,7 @@ export default function ChartBuilderTab() {
                       chartSpec={previewChartSpec}
                       chartRows={previewData.rows}
                       chartTitle={chartTitlePreview}
+                      analysisSource="chart_builder"
                       onChartSpecChange={(nextChartSpec) => {
                         setAnalysisSemanticContext({
                           signature: chartSpecSignature,

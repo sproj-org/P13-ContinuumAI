@@ -1,3 +1,5 @@
+import type { AnalysisContext } from "./analysis";
+
 export type ChartVersion = "v1";
 export type ChartType = "bar" | "line" | "pie" | "histogram" | "kpi";
 export type MetricAggregation = "sum" | "avg" | "count" | "min" | "max";
@@ -44,6 +46,7 @@ export interface ChartSemanticContext {
   terminal_dimensions?: string[];
   prediction_context?: Record<string, unknown> | null;
   segmentation_context?: Record<string, unknown> | null;
+  analysis_context?: AnalysisContext | null;
   chart_family?: string | null;
 }
 

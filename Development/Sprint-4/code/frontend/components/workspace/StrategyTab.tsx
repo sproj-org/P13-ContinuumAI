@@ -6,6 +6,8 @@ import { AlertTriangle, BarChart3, Plus, RefreshCw, Save, Trash2, X } from "luci
 
 import { ApiRequestError, apiClient } from "@/lib/api";
 import DecisionIntelligencePanel from "@/components/workspace/DecisionIntelligencePanel";
+import type { AnalysisContext } from "@/lib/types/analysis";
+import type { ChartSemanticContext } from "@/lib/types/chartspec";
 import type {
   CoverageGap,
   DecisionStateResponse,
@@ -245,6 +247,14 @@ function looksTemporal(column: string): boolean {
 }
 
 type AnalyticsLaunchInput = Pick<StrategyKpi, "id" | "display_name" | "formula" | "marts" | "required_columns" | "dimensions">;
+type StrategyAnalysisInput = {
+  id: string;
+  display_name?: string | null;
+  formula?: string | null;
+  marts?: string[];
+  required_columns?: string[];
+  dimensions?: string[];
+} & Partial<StrategyEvaluationKpiResult>;
 type AnalyticsLaunchConfig = {
   martId: string;
   chartType: "bar" | "line" | "histogram";
@@ -440,7 +450,7 @@ export default function StrategyTab() {
   const params = useParams<{ datasetId: string }>();
   const datasetId = params?.datasetId ?? "silkroute";
   const { user } = useAuth();
-  const { setActiveTab, setSelectedAggregation, setChartConfig } = useAppStore();
+  const { setActiveTab, setSelectedAggregation, setChartConfig, setChartBuilderSeed } = useAppStore();
 
   const [section, setSection] = useState<Section>("overview");
   const [loading, setLoading] = useState(true);
@@ -547,29 +557,6 @@ export default function StrategyTab() {
   const martColumns = kpiLibrary?.mart_columns ?? {};
   const targets = targetsState?.targets ?? [];
 
-  const openInAnalytics = useCallback(
-    (item: AnalyticsLaunchInput) => {
-      const config = buildAnalyticsLaunchConfig(item, martColumns);
-      if (!config) {
-        setError(`No compatible analytics mapping was found for KPI '${item.id}'.`);
-        return;
-      }
-
-      setSelectedAggregation(config.martId);
-      setChartConfig({
-        chartType: config.chartType,
-        xAxis: config.xAxis,
-        yAxis: config.yAxis,
-        colorBy: null,
-        aggregationFn: config.aggregationFn,
-      });
-      setActiveTab("chart-builder");
-      setSection("kpi_library");
-      setSuccess(`Loaded ${config.title} into Chart Builder using mart '${config.martId}'.`);
-    },
-    [martColumns, setActiveTab, setChartConfig, setSelectedAggregation],
-  );
-
   const targetByKpiId = useMemo(() => {
     const map = new Map<string, StrategyTarget>();
     for (const item of targets) {
@@ -579,6 +566,13 @@ export default function StrategyTab() {
   }, [targets]);
   const rules = rulesState?.rules ?? [];
   const knownRuleKpis = useMemo(() => new Set(rulesState?.available_kpis || []), [rulesState]);
+  const kpiById = useMemo(() => {
+    const map = new Map<string, StrategyKpi>();
+    for (const item of kpis) {
+      map.set(item.id, item);
+    }
+    return map;
+  }, [kpis]);
   const evaluationByKpiId = useMemo(() => {
     const map = new Map<string, StrategyEvaluationKpiResult>();
     for (const item of evaluationState?.kpis || []) {
@@ -586,6 +580,109 @@ export default function StrategyTab() {
     }
     return map;
   }, [evaluationState]);
+  const buildStrategyAnalysisContext = useCallback(
+    (
+      item: StrategyAnalysisInput,
+      analyticsConfig?: AnalyticsLaunchConfig | null,
+    ): AnalysisContext => {
+      const libraryKpi = kpiById.get(item.id);
+      const evaluationKpi = evaluationByKpiId.get(item.id) || (item as StrategyEvaluationKpiResult);
+      const target = targetByKpiId.get(item.id);
+      const triggeredRules = (evaluationState?.triggered_rules || []).filter((rule) => (rule.affected_kpis || []).includes(item.id));
+      const matchedLabel = libraryKpi?.display_name || item.display_name || item.id;
+      const matchedMarts = libraryKpi?.marts || item.marts || [];
+      const preferredMart = analyticsConfig?.martId || matchedMarts[0] || null;
+      const preferredDrillPath =
+        (preferredMart && libraryKpi?.mart_drill_overrides?.[preferredMart]) ||
+        libraryKpi?.preferred_drill_path ||
+        item.dimensions ||
+        [];
+
+      return {
+        source: "strategy",
+        chart_title: matchedLabel,
+        chart_family: analyticsConfig?.chartType || "bar",
+        table: preferredMart,
+        semantic: {
+          matched_kpi_id: item.id,
+          matched_kpi_label: matchedLabel,
+          semantic_family: libraryKpi?.semantic_family || null,
+          marts: matchedMarts,
+          required_columns: libraryKpi?.required_columns || item.required_columns || [],
+          dimensions: libraryKpi?.dimensions || item.dimensions || [],
+          metric_aliases: libraryKpi?.metric_aliases || [],
+          business_concepts: libraryKpi?.business_concepts || [],
+          preferred_drill_path: preferredDrillPath,
+          mart_hierarchy: preferredDrillPath,
+          terminal_dimensions: libraryKpi?.terminal_dimensions || [],
+          disallowed_drill_dimensions: libraryKpi?.disallowed_drill_dimensions || [],
+          preferred_chart_types: libraryKpi?.preferred_chart_types || [],
+          default_grain:
+            (libraryKpi?.default_grain as "day" | "week" | "month" | "quarter" | "year" | null | undefined) || null,
+          metric_field_hint: analyticsConfig?.yAxis || libraryKpi?.required_columns?.[0] || null,
+          entity_field_hint: libraryKpi?.terminal_dimensions?.[0] || null,
+          time_field_hint: analyticsConfig?.chartType === "line" ? analyticsConfig.xAxis : null,
+        },
+        strategy: {
+          target_value: evaluationKpi?.target ?? target?.target_value ?? null,
+          target_direction: target?.direction ?? null,
+          target_horizon: target?.horizon ?? null,
+          current_value: evaluationKpi?.value ?? null,
+          variance: evaluationKpi?.variance ?? null,
+          status: evaluationKpi?.status ?? null,
+          triggered_rules: triggeredRules.map((rule) => `${rule.id}: ${rule.action}`),
+          triggered_rule_actions: triggeredRules.map((rule) => rule.action),
+          provenance: evaluationKpi?.provenance || {},
+        },
+      };
+    },
+    [evaluationByKpiId, evaluationState?.triggered_rules, kpiById, targetByKpiId],
+  );
+  const selectedKpiAnalysisContext = useMemo(
+    () => (selectedEvaluationKpi ? buildStrategyAnalysisContext(selectedEvaluationKpi) : null),
+    [buildStrategyAnalysisContext, selectedEvaluationKpi],
+  );
+  const openInAnalytics = useCallback(
+    (item: AnalyticsLaunchInput) => {
+      const config = buildAnalyticsLaunchConfig(item, martColumns);
+      if (!config) {
+        setError(`No compatible analytics mapping was found for KPI '${item.id}'.`);
+        return;
+      }
+
+      const analysisContext = buildStrategyAnalysisContext(item, config);
+      const semanticContext: Partial<ChartSemanticContext> = {
+        matched_kpi_id: analysisContext.semantic?.matched_kpi_id ?? null,
+        matched_kpi_label: analysisContext.semantic?.matched_kpi_label ?? null,
+        semantic_family: analysisContext.semantic?.semantic_family ?? null,
+        preferred_drill_path: analysisContext.semantic?.preferred_drill_path ?? [],
+        mart_hierarchy: analysisContext.semantic?.mart_hierarchy ?? [],
+        terminal_dimensions: analysisContext.semantic?.terminal_dimensions ?? [],
+        analysis_context: analysisContext,
+        chart_family: config.chartType,
+      };
+
+      setSelectedAggregation(config.martId);
+      setChartConfig({
+        chartType: config.chartType,
+        xAxis: config.xAxis,
+        yAxis: config.yAxis,
+        colorBy: null,
+        aggregationFn: config.aggregationFn,
+      });
+      setChartBuilderSeed({
+        filters: [],
+        sortTarget: config.xAxis ? "x" : "metric",
+        sortDirection: config.chartType === "line" ? "asc" : "desc",
+        resultLimit: 20,
+        semanticContext,
+      });
+      setActiveTab("chart-builder");
+      setSection("kpi_library");
+      setSuccess(`Loaded ${config.title} into Chart Builder using mart '${config.martId}'.`);
+    },
+    [buildStrategyAnalysisContext, martColumns, setActiveTab, setChartBuilderSeed, setChartConfig, setSelectedAggregation],
+  );
   const evaluationSummary = useMemo(() => {
     if (!evaluationState) return null;
     const rows = evaluationState.kpis || [];
@@ -2618,6 +2715,8 @@ export default function StrategyTab() {
                 martId={selectedEvaluationKpi.marts?.[0] ?? null}
                 chartTitle={selectedEvaluationKpi.display_name || selectedEvaluationKpi.id}
                 kpiId={selectedEvaluationKpi.id}
+                analysisSource="strategy"
+                analysisContext={selectedKpiAnalysisContext}
               />
             </div>
             <div className="mt-4 flex items-center justify-end">

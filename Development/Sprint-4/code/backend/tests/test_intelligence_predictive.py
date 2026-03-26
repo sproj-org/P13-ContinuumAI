@@ -49,6 +49,8 @@ def test_summarize_prediction_from_series_adds_forecast_points_and_risk() -> Non
     assert summary.points[-1].is_forecast is True
     assert summary.projected_change_pct is not None
     assert summary.risk_band == "low"
+    assert summary.observed_points == 5
+    assert summary.display_label == "net_sales"
 
 
 def test_build_strategy_risk_summary_uses_prediction_terminal_value() -> None:
@@ -72,13 +74,20 @@ def test_build_strategy_risk_summary_uses_prediction_terminal_value() -> None:
 
     summary = build_strategy_risk_summary(
         kpi_id="total_sales",
+        kpi_label="Total Sales",
         target_value=25.0,
         current_value=14.0,
         prediction=prediction,
         direction="up",
+        target_horizon="FY26",
+        recommended_actions=["Inspect weak regions"],
+        supporting_details=["4 observed periods"],
     )
 
     assert summary.kpi_id == "total_sales"
+    assert summary.kpi_label == "Total Sales"
     assert summary.projected_value is not None
     assert summary.projected_value > summary.current_value
     assert summary.risk_band in {"medium", "high"}
+    assert summary.target_horizon == "FY26"
+    assert summary.recommended_actions == ["Inspect weak regions"]

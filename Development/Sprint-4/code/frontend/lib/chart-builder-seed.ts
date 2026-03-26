@@ -1,6 +1,6 @@
 "use client";
 
-import type { ChartSpecV1, FilterOperator, SortDirection } from "@/lib/types/chartspec";
+import type { ChartSemanticContext, ChartSpecV1, FilterOperator, SortDirection } from "@/lib/types/chartspec";
 
 export interface ChartBuilderSeedFilter {
   field: string;
@@ -13,6 +13,7 @@ export interface ChartBuilderSeed {
   sortTarget: "x" | "metric";
   sortDirection: SortDirection;
   resultLimit: number;
+  semanticContext?: Partial<ChartSemanticContext> | null;
 }
 
 function filterValueToString(op: FilterOperator, value: unknown): string {
@@ -36,5 +37,6 @@ export function createChartBuilderSeed(chartSpec: ChartSpecV1): ChartBuilderSeed
     sortTarget: primarySort?.field === chartSpec.encoding.x.field ? "x" : "metric",
     sortDirection: primarySort?.direction ?? "desc",
     resultLimit: chartSpec.limit ?? 20,
+    semanticContext: chartSpec.semantic_context ?? null,
   };
 }

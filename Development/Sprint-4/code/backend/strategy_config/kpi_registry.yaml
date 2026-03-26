@@ -168,6 +168,7 @@ kpis:
       - active_months
     dimensions:
       - segment
+      - churn_risk_bucket
       - region
       - city
       - top_category
@@ -188,6 +189,7 @@ kpis:
       - retention_activity
     preferred_drill_path:
       - segment
+      - churn_risk_bucket
       - region
       - city
       - top_category
@@ -195,6 +197,7 @@ kpis:
     mart_drill_overrides:
       gold_customer_360:
         - segment
+        - churn_risk_bucket
         - region
         - city
         - top_category

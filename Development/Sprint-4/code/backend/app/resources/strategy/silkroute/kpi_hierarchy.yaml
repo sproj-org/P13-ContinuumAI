@@ -178,7 +178,9 @@ hierarchy:
     customer:
       - segment
       - churn_risk_bucket
+      - region
       - city
+      - top_category
       - customer_id
     inventory:
       - stockout_risk_flag
@@ -195,6 +197,9 @@ hierarchy:
       - quarter
       - month
       - sales_date
+      - snapshot_date
+      - first_purchase_date
+      - first_tx_date
 
   mart_overrides:
     gold_sales_daily:
@@ -216,8 +221,8 @@ hierarchy:
         - sku_id
     gold_customer_360:
       default_paths:
+        - [segment, churn_risk_bucket, region, city, top_category, customer_id]
         - [segment, region, city, top_category, customer_id]
-        - [segment, churn_risk_bucket, city, customer_id]
       terminal_dimensions:
         - customer_id
     gold_inventory_health_daily:

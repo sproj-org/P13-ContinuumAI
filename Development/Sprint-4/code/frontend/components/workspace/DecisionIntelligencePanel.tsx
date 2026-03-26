@@ -1,11 +1,28 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { AlertTriangle, BarChart3, BrainCircuit, Loader2, Radar, TrendingUp } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  AlertTriangle,
+  BarChart3,
+  BrainCircuit,
+  Loader2,
+  Radar,
+  TrendingUp,
+  type LucideIcon,
+} from "lucide-react";
 
-import { apiClient } from "@/lib/api";
+import { ApiRequestError, apiClient } from "@/lib/api";
 import { mergeChartSemanticContext } from "@/lib/chart-display";
-import type { AnalysisRequest, AnalysisResponse, AnalysisTaskType } from "@/lib/types/analysis";
+import type {
+  AnalysisContext,
+  AnalysisRequest,
+  AnalysisResponse,
+  AnalysisSource,
+  AnalysisTaskType,
+  PredictionSummary,
+  SemanticContextSpec,
+  StrategyContextSpec,
+} from "@/lib/types/analysis";
 import type { ChartSemanticContext, ChartSpecV1 } from "@/lib/types/chartspec";
 
 type PanelTask = "forecast" | "anomaly" | "segment" | "strategy_risk";
@@ -17,21 +34,235 @@ interface DecisionIntelligencePanelProps {
   chartRows?: Array<Record<string, unknown>> | null;
   chartTitle?: string | null;
   kpiId?: string | null;
+  analysisSource?: AnalysisSource;
+  analysisContext?: AnalysisContext | null;
   onChartSpecChange?: (nextChartSpec: ChartSpecV1) => void;
 }
 
-const TASK_CONFIG: Record<PanelTask, { label: string; icon: typeof TrendingUp }> = {
-  forecast: { label: "Forecast", icon: TrendingUp },
-  anomaly: { label: "Anomalies", icon: AlertTriangle },
-  segment: { label: "Segments", icon: BrainCircuit },
-  strategy_risk: { label: "KPI Risk", icon: Radar },
+type TaskRunState = {
+  runId: number;
+  isLoading: boolean;
+  analysis: AnalysisResponse | null;
+  error: string | null;
 };
+
+const TASK_CONFIG: Record<PanelTask, { label: string; description: string; icon: LucideIcon; accent: string }> = {
+  forecast: {
+    label: "Forecast",
+    description: "Project the KPI or metric trend across the next horizon.",
+    icon: TrendingUp,
+    accent: "text-indigo-700",
+  },
+  anomaly: {
+    label: "Anomalies",
+    description: "Surface spikes, dips, and unusual breaks in the current metric.",
+    icon: AlertTriangle,
+    accent: "text-rose-700",
+  },
+  segment: {
+    label: "Segments",
+    description: "Cluster the most relevant entities into explainable cohorts.",
+    icon: BrainCircuit,
+    accent: "text-violet-700",
+  },
+  strategy_risk: {
+    label: "KPI Risk",
+    description: "Estimate target-attainment risk with strategy and forecast context.",
+    icon: Radar,
+    accent: "text-amber-700",
+  },
+};
+
+function createTaskState(): Record<PanelTask, TaskRunState> {
+  return {
+    forecast: { runId: 0, isLoading: false, analysis: null, error: null },
+    anomaly: { runId: 0, isLoading: false, analysis: null, error: null },
+    segment: { runId: 0, isLoading: false, analysis: null, error: null },
+    strategy_risk: { runId: 0, isLoading: false, analysis: null, error: null },
+  };
+}
+
+function mergeUnique(values: Array<string[] | undefined | null>): string[] {
+  const output: string[] = [];
+  for (const list of values) {
+    for (const item of list ?? []) {
+      const trimmed = item.trim();
+      if (trimmed && !output.includes(trimmed)) {
+        output.push(trimmed);
+      }
+    }
+  }
+  return output;
+}
 
 function formatMetric(value: unknown): string {
   if (typeof value !== "number" || Number.isNaN(value)) {
     return "n/a";
   }
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(value);
+}
+
+function formatPercent(value: number | null | undefined): string {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return "n/a";
+  }
+  return `${value.toFixed(1)}%`;
+}
+
+function buildSemanticContext(
+  chartSpec: ChartSpecV1 | null | undefined,
+  chartTitle: string | null | undefined,
+  table: string | null,
+  kpiId: string | null,
+): SemanticContextSpec {
+  const semantic = chartSpec?.semantic_context;
+  const chartMetric = chartSpec?.encoding.y[0]?.field ?? null;
+  const chartDimension = chartSpec?.encoding.x.field ?? null;
+  return {
+    matched_kpi_id: kpiId ?? semantic?.matched_kpi_id ?? null,
+    matched_kpi_label: semantic?.matched_kpi_label ?? chartTitle ?? null,
+    semantic_family: semantic?.semantic_family ?? null,
+    marts: mergeUnique([[table ?? ""], semantic?.analysis_context?.semantic?.marts, [chartSpec?.table ?? ""]]),
+    required_columns: mergeUnique([
+      semantic?.analysis_context?.semantic?.required_columns,
+      chartMetric ? [chartMetric] : [],
+    ]),
+    dimensions: mergeUnique([
+      semantic?.analysis_context?.semantic?.dimensions,
+      chartDimension ? [chartDimension] : [],
+      semantic?.preferred_drill_path,
+    ]),
+    metric_aliases: mergeUnique([semantic?.analysis_context?.semantic?.metric_aliases]),
+    business_concepts: mergeUnique([semantic?.analysis_context?.semantic?.business_concepts]),
+    preferred_drill_path: mergeUnique([
+      semantic?.analysis_context?.semantic?.preferred_drill_path,
+      semantic?.preferred_drill_path,
+    ]),
+    mart_hierarchy: mergeUnique([
+      semantic?.analysis_context?.semantic?.mart_hierarchy,
+      semantic?.mart_hierarchy,
+    ]),
+    terminal_dimensions: mergeUnique([
+      semantic?.analysis_context?.semantic?.terminal_dimensions,
+      semantic?.terminal_dimensions,
+    ]),
+    disallowed_drill_dimensions: mergeUnique([semantic?.analysis_context?.semantic?.disallowed_drill_dimensions]),
+    preferred_chart_types: mergeUnique([
+      semantic?.analysis_context?.semantic?.preferred_chart_types as string[] | undefined,
+      chartSpec?.chart.type ? [chartSpec.chart.type] : [],
+    ]) as SemanticContextSpec["preferred_chart_types"],
+    default_grain: semantic?.analysis_context?.semantic?.default_grain ?? null,
+    metric_field_hint: semantic?.analysis_context?.semantic?.metric_field_hint ?? chartMetric,
+    entity_field_hint: semantic?.analysis_context?.semantic?.entity_field_hint ?? null,
+    time_field_hint:
+      semantic?.analysis_context?.semantic?.time_field_hint ??
+      (chartSpec?.chart.type === "line" ? chartDimension : null),
+  };
+}
+
+function mergeStrategyContext(
+  base: StrategyContextSpec | null | undefined,
+  override: StrategyContextSpec | null | undefined,
+): StrategyContextSpec | null {
+  if (!base && !override) {
+    return null;
+  }
+  return {
+    target_value: override?.target_value ?? base?.target_value ?? null,
+    target_direction: override?.target_direction ?? base?.target_direction ?? null,
+    target_horizon: override?.target_horizon ?? base?.target_horizon ?? null,
+    current_value: override?.current_value ?? base?.current_value ?? null,
+    variance: override?.variance ?? base?.variance ?? null,
+    status: override?.status ?? base?.status ?? null,
+    triggered_rules: mergeUnique([base?.triggered_rules, override?.triggered_rules]),
+    triggered_rule_actions: mergeUnique([base?.triggered_rule_actions, override?.triggered_rule_actions]),
+    provenance: { ...(base?.provenance ?? {}), ...(override?.provenance ?? {}) },
+  };
+}
+
+function formatError(error: unknown): string {
+  if (error instanceof ApiRequestError) {
+    return error.hint ? `${error.message} ${error.hint}` : error.message;
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return "Analysis request failed.";
+}
+
+function buildSemanticPatch(
+  response: AnalysisResponse,
+  resolvedContext: AnalysisContext,
+  resolvedKpiId: string | null,
+): Partial<ChartSemanticContext> {
+  const semanticContext = response.plan_spec.analysis_context?.semantic ?? resolvedContext.semantic ?? null;
+  const patch: Partial<ChartSemanticContext> = {
+    matched_kpi_id: response.plan_spec.matched_kpi_id ?? resolvedKpiId ?? semanticContext?.matched_kpi_id ?? null,
+    matched_kpi_label: response.plan_spec.matched_kpi_label ?? semanticContext?.matched_kpi_label ?? null,
+    semantic_family: semanticContext?.semantic_family ?? null,
+    preferred_drill_path: semanticContext?.preferred_drill_path ?? [],
+    mart_hierarchy: semanticContext?.mart_hierarchy ?? [],
+    terminal_dimensions: semanticContext?.terminal_dimensions ?? [],
+    analysis_context: response.plan_spec.analysis_context ?? resolvedContext,
+  };
+
+  if (response.prediction) {
+    patch.prediction_context = {
+      mode: response.prediction.mode,
+      metric: response.prediction.metric,
+      display_label: response.prediction.display_label ?? null,
+      time_field: response.prediction.time_field,
+      time_grain: response.prediction.time_grain,
+      horizon: response.prediction.horizon,
+      risk_band: response.prediction.risk_band ?? null,
+      kpi_id: resolvedKpiId,
+    };
+  }
+  if (response.segmentation) {
+    patch.segmentation_context = {
+      entity_field: response.segmentation.entity_field,
+      entity_label: response.segmentation.entity_label ?? null,
+      features: response.segmentation.features,
+      cluster_count: response.segmentation.cluster_count,
+    };
+  }
+  return patch;
+}
+
+function PredictionBars({ prediction }: { prediction: PredictionSummary }) {
+  const values = prediction.points
+    .slice(-8)
+    .map((point) => point.forecast ?? point.actual)
+    .filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+
+  if (values.length === 0) {
+    return null;
+  }
+
+  const maxValue = Math.max(...values, 1);
+  return (
+    <div className="mt-3 flex h-16 items-end gap-1 rounded-xl bg-slate-50 px-3 py-2">
+      {prediction.points.slice(-8).map((point) => {
+        const value = point.forecast ?? point.actual;
+        const height = typeof value === "number" ? Math.max((value / maxValue) * 100, 8) : 8;
+        return (
+          <div key={`${point.label}-${point.forecast ?? point.actual ?? "empty"}`} className="flex flex-1 flex-col items-center gap-1">
+            <div
+              className={`w-full rounded-t-md ${
+                point.anomaly_flag
+                  ? "bg-rose-400"
+                  : point.is_forecast
+                    ? "bg-indigo-400"
+                    : "bg-slate-400"
+              }`}
+              style={{ height: `${height}%` }}
+            />
+            <span className="text-[10px] text-slate-500">{point.label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 export default function DecisionIntelligencePanel({
@@ -41,82 +272,198 @@ export default function DecisionIntelligencePanel({
   chartRows,
   chartTitle,
   kpiId,
+  analysisSource = "api",
+  analysisContext,
   onChartSpecChange,
 }: DecisionIntelligencePanelProps) {
-  const [activeTask, setActiveTask] = useState<PanelTask>("forecast");
-  const [analysis, setAnalysis] = useState<AnalysisResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [selectedTask, setSelectedTask] = useState<PanelTask>("forecast");
+  const [taskStates, setTaskStates] = useState<Record<PanelTask, TaskRunState>>(() => createTaskState());
   const [horizon, setHorizon] = useState(6);
   const [clusterCount, setClusterCount] = useState(4);
+  const runIdRef = useRef(0);
 
-  const resolvedKpiId = kpiId || chartSpec?.semantic_context?.matched_kpi_id || null;
+  const resolvedTable = martId || chartSpec?.table || analysisContext?.table || chartSpec?.semantic_context?.analysis_context?.table || null;
+  const resolvedKpiId =
+    kpiId ||
+    analysisContext?.semantic?.matched_kpi_id ||
+    chartSpec?.semantic_context?.analysis_context?.semantic?.matched_kpi_id ||
+    chartSpec?.semantic_context?.matched_kpi_id ||
+    null;
+
+  const resolvedAnalysisContext = useMemo<AnalysisContext>(() => {
+    const persistedContext = chartSpec?.semantic_context?.analysis_context ?? null;
+    const mergedSemantic = buildSemanticContext(chartSpec, chartTitle, resolvedTable, resolvedKpiId);
+    return {
+      source: analysisContext?.source ?? persistedContext?.source ?? analysisSource,
+      chart_title: analysisContext?.chart_title ?? persistedContext?.chart_title ?? chartTitle ?? null,
+      chart_family:
+        analysisContext?.chart_family ??
+        persistedContext?.chart_family ??
+        chartSpec?.semantic_context?.chart_family ??
+        chartSpec?.chart.type ??
+        null,
+      table: analysisContext?.table ?? persistedContext?.table ?? resolvedTable,
+      semantic: {
+        ...mergedSemantic,
+        ...(persistedContext?.semantic ?? {}),
+        ...(analysisContext?.semantic ?? {}),
+        matched_kpi_id: resolvedKpiId ?? mergedSemantic.matched_kpi_id ?? null,
+        matched_kpi_label:
+          analysisContext?.semantic?.matched_kpi_label ??
+          persistedContext?.semantic?.matched_kpi_label ??
+          chartSpec?.semantic_context?.matched_kpi_label ??
+          chartTitle ??
+          null,
+      },
+      strategy: mergeStrategyContext(persistedContext?.strategy ?? null, analysisContext?.strategy ?? null),
+    };
+  }, [analysisContext, analysisSource, chartSpec, chartTitle, resolvedKpiId, resolvedTable]);
+
   const disabledTasks = useMemo<Record<PanelTask, boolean>>(
     () => ({
-      forecast: !Boolean(martId || chartSpec?.table),
-      anomaly: !Boolean(martId || chartSpec?.table),
-      segment: !Boolean(martId || chartSpec?.table),
+      forecast: !Boolean(resolvedTable),
+      anomaly: !Boolean(resolvedTable),
+      segment: !Boolean(resolvedTable),
       strategy_risk: !Boolean(resolvedKpiId),
     }),
-    [chartSpec?.table, martId, resolvedKpiId],
+    [resolvedKpiId, resolvedTable],
   );
 
+  const activeTaskState = taskStates[selectedTask];
+  const activeAnalysis = activeTaskState.analysis;
+  const activePrediction = activeAnalysis?.prediction ?? null;
+  const activeSegmentation = activeAnalysis?.segmentation ?? null;
+  const activeStrategy = activeAnalysis?.strategy ?? null;
+  const contextSignature = useMemo(
+    () =>
+      JSON.stringify({
+        datasetId,
+        table: resolvedTable,
+        kpiId: resolvedKpiId,
+        chartTitle,
+        chartType: chartSpec?.chart.type ?? null,
+        xField: chartSpec?.encoding.x.field ?? null,
+        yField: chartSpec?.encoding.y[0]?.field ?? null,
+      }),
+    [chartSpec?.chart.type, chartSpec?.encoding.x.field, chartSpec?.encoding.y[0]?.field, chartTitle, datasetId, resolvedKpiId, resolvedTable],
+  );
+
+  useEffect(() => {
+    setTaskStates(createTaskState());
+    setSelectedTask("forecast");
+  }, [contextSignature]);
+
   const runAnalysis = async (task: PanelTask) => {
-    const table = martId || chartSpec?.table || null;
+    const table = resolvedTable;
     if (!table && task !== "strategy_risk") {
-      setError("Select a mart or chart before running advanced analysis.");
+      setTaskStates((previous) => ({
+        ...previous,
+        [task]: { ...previous[task], analysis: null, error: "Select a mart or chart before running advanced analysis." },
+      }));
       return;
     }
     if (task === "strategy_risk" && !resolvedKpiId) {
-      setError("A matched KPI is required for strategy risk analysis.");
+      setTaskStates((previous) => ({
+        ...previous,
+        [task]: { ...previous[task], analysis: null, error: "A matched KPI is required for strategy risk analysis." },
+      }));
       return;
     }
 
-    setIsLoading(true);
-    setError(null);
-    try {
-      const request: AnalysisRequest = {
-        task_type: task as AnalysisTaskType,
+    const runId = ++runIdRef.current;
+    setTaskStates((previous) => ({
+      ...previous,
+      [task]: { runId, isLoading: true, analysis: null, error: null },
+    }));
+
+    const requestSemanticContext: SemanticContextSpec = {
+      ...buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId),
+      ...(resolvedAnalysisContext.semantic ?? {}),
+      matched_kpi_id: resolvedKpiId ?? resolvedAnalysisContext.semantic?.matched_kpi_id ?? null,
+      matched_kpi_label:
+        resolvedAnalysisContext.semantic?.matched_kpi_label ??
+        chartSpec?.semantic_context?.matched_kpi_label ??
+        chartTitle ??
+        null,
+      marts: resolvedAnalysisContext.semantic?.marts ?? buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId).marts,
+      required_columns:
+        resolvedAnalysisContext.semantic?.required_columns ?? buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId).required_columns,
+      dimensions: resolvedAnalysisContext.semantic?.dimensions ?? buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId).dimensions,
+      metric_aliases:
+        resolvedAnalysisContext.semantic?.metric_aliases ?? buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId).metric_aliases,
+      business_concepts:
+        resolvedAnalysisContext.semantic?.business_concepts ?? buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId).business_concepts,
+      preferred_drill_path:
+        resolvedAnalysisContext.semantic?.preferred_drill_path ?? buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId).preferred_drill_path,
+      mart_hierarchy:
+        resolvedAnalysisContext.semantic?.mart_hierarchy ?? buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId).mart_hierarchy,
+      terminal_dimensions:
+        resolvedAnalysisContext.semantic?.terminal_dimensions ?? buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId).terminal_dimensions,
+      disallowed_drill_dimensions:
+        resolvedAnalysisContext.semantic?.disallowed_drill_dimensions ??
+        buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId).disallowed_drill_dimensions,
+      preferred_chart_types:
+        resolvedAnalysisContext.semantic?.preferred_chart_types ??
+        buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId).preferred_chart_types,
+      default_grain: resolvedAnalysisContext.semantic?.default_grain ?? buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId).default_grain,
+      metric_field_hint:
+        resolvedAnalysisContext.semantic?.metric_field_hint ?? buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId).metric_field_hint,
+      entity_field_hint:
+        resolvedAnalysisContext.semantic?.entity_field_hint ?? buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId).entity_field_hint,
+      time_field_hint:
+        resolvedAnalysisContext.semantic?.time_field_hint ?? buildSemanticContext(chartSpec, chartTitle, table, resolvedKpiId).time_field_hint,
+    };
+
+    const request: AnalysisRequest = {
+      task_type: task as AnalysisTaskType,
+      table,
+      chart_spec: chartSpec ?? undefined,
+      chart_rows: chartRows ?? [],
+      kpi_id: resolvedKpiId ?? undefined,
+      horizon,
+      cluster_count: clusterCount,
+      analysis_context: {
+        ...resolvedAnalysisContext,
         table,
-        chart_spec: chartSpec ?? undefined,
-        chart_rows: chartRows ?? [],
-        kpi_id: resolvedKpiId ?? undefined,
-        horizon,
-        cluster_count: clusterCount,
-      };
+        semantic: requestSemanticContext,
+      },
+    };
+
+    try {
       const response = await apiClient.postAnalysis(datasetId, request);
-      setAnalysis(response);
+      setTaskStates((previous) => {
+        if (previous[task].runId !== runId) {
+          return previous;
+        }
+        return {
+          ...previous,
+          [task]: { runId, isLoading: false, analysis: response, error: null },
+        };
+      });
 
       if (chartSpec && onChartSpecChange) {
-        const semanticPatch: Partial<ChartSemanticContext> = {};
-        if (response.prediction) {
-          semanticPatch.prediction_context = {
-            mode: response.prediction.mode,
-            metric: response.prediction.metric,
-            time_field: response.prediction.time_field,
-            time_grain: response.prediction.time_grain,
-            horizon: response.prediction.horizon,
-            risk_band: response.prediction.risk_band ?? null,
-            kpi_id: resolvedKpiId,
-          };
-        }
-        if (response.segmentation) {
-          semanticPatch.segmentation_context = {
-            entity_field: response.segmentation.entity_field,
-            features: response.segmentation.features,
-            cluster_count: response.segmentation.cluster_count,
-          };
-        }
-        if (Object.keys(semanticPatch).length > 0) {
-          onChartSpecChange(mergeChartSemanticContext(chartSpec, semanticPatch));
-        }
+        onChartSpecChange(mergeChartSemanticContext(chartSpec, buildSemanticPatch(response, request.analysis_context ?? {}, resolvedKpiId)));
       }
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Analysis request failed.");
-    } finally {
-      setIsLoading(false);
+      const message = formatError(requestError);
+      setTaskStates((previous) => {
+        if (previous[task].runId !== runId) {
+          return previous;
+        }
+        return {
+          ...previous,
+          [task]: { runId, isLoading: false, analysis: null, error: message },
+        };
+      });
     }
   };
+
+  const handleTaskSelect = (task: PanelTask) => {
+    setSelectedTask(task);
+    void runAnalysis(task);
+  };
+
+  const selectedTaskConfig = TASK_CONFIG[selectedTask];
 
   return (
     <div className="rounded-2xl border border-indigo-200/60 bg-gradient-to-br from-white via-indigo-50/30 to-slate-50 p-4 shadow-sm">
@@ -125,29 +472,27 @@ export default function DecisionIntelligencePanel({
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-indigo-700">Decision Intelligence</p>
           <h4 className="mt-1 text-lg font-semibold text-slate-900">{chartTitle || "Structured analysis"}</h4>
           <p className="mt-1 text-sm text-slate-600">
-            Run forecasting, anomaly detection, clustering, and strategy-linked KPI risk from the current chart context.
+            Run forecasting, anomaly detection, clustering, and strategy-linked KPI risk from the current chart or KPI context.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           {(Object.keys(TASK_CONFIG) as PanelTask[]).map((task) => {
             const Icon = TASK_CONFIG[task].icon;
             const disabled = disabledTasks[task];
+            const state = taskStates[task];
             return (
               <button
                 key={task}
                 type="button"
-                disabled={disabled || isLoading}
-                onClick={() => {
-                  setActiveTask(task);
-                  void runAnalysis(task);
-                }}
+                disabled={disabled}
+                onClick={() => handleTaskSelect(task)}
                 className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                  activeTask === task
+                  selectedTask === task
                     ? "border-indigo-500 bg-indigo-600 text-white"
                     : "border-slate-300 bg-white text-slate-700 hover:border-indigo-300 hover:bg-indigo-50"
                 } disabled:cursor-not-allowed disabled:opacity-50`}
               >
-                <Icon className="h-3.5 w-3.5" />
+                {state.isLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Icon className="h-3.5 w-3.5" />}
                 <span>{TASK_CONFIG[task].label}</span>
               </button>
             );
@@ -178,48 +523,51 @@ export default function DecisionIntelligencePanel({
             className="ml-2 w-16 rounded-md border border-slate-300 px-2 py-1 text-xs"
           />
         </label>
+        <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-1 text-[11px] text-indigo-700">
+          Selected task: {selectedTaskConfig.label}
+        </span>
+        <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] text-slate-600">
+          Source: {resolvedAnalysisContext.source ?? analysisSource}
+        </span>
         {resolvedKpiId ? (
           <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] text-emerald-700">
             KPI linked: {resolvedKpiId}
           </span>
         ) : null}
-        {analysis ? (
+        {activeAnalysis ? (
           <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] text-slate-600">
-            Routed via {analysis.agent_role}
-          </span>
-        ) : null}
-        {analysis?.plan_spec.matched_kpi_label ? (
-          <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-1 text-[11px] text-indigo-700">
-            Matched KPI: {analysis.plan_spec.matched_kpi_label}
+            Routed via {activeAnalysis.agent_role}
           </span>
         ) : null}
       </div>
 
-      {error ? (
-        <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
-      ) : null}
+      <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className={`rounded-full bg-slate-100 px-2 py-0.5 text-[10px] uppercase tracking-wide ${selectedTaskConfig.accent}`}>
+            {selectedTaskConfig.label}
+          </span>
+          <span className="text-xs text-slate-500">{selectedTaskConfig.description}</span>
+        </div>
+        {activeAnalysis?.plan_spec.route_reason ? (
+          <p className="mt-2 text-sm text-slate-700">{activeAnalysis.plan_spec.route_reason}</p>
+        ) : null}
+      </div>
 
-      {isLoading ? (
+      {activeTaskState.isLoading ? (
         <div className="mt-4 flex items-center justify-center rounded-xl border border-slate-200 bg-white/80 py-10 text-slate-600">
           <Loader2 className="mr-2 h-5 w-5 animate-spin text-indigo-600" />
-          Running structured analysis...
+          Running {selectedTaskConfig.label.toLowerCase()} analysis...
         </div>
-      ) : analysis ? (
+      ) : activeTaskState.error ? (
+        <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-3 text-sm text-red-700">
+          <p className="font-medium">{selectedTaskConfig.label} could not be completed.</p>
+          <p className="mt-1">{activeTaskState.error}</p>
+        </div>
+      ) : activeAnalysis ? (
         <div className="mt-4 space-y-4">
-          <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] uppercase tracking-wide text-slate-600">
-                {analysis.plan_spec.primary_task.replace("_", " ")}
-              </span>
-              <span className="text-xs text-slate-500">{analysis.plan_spec.route_reason}</span>
-            </div>
-            {analysis.primary_view?.summary ? (
-              <p className="mt-2 text-sm text-slate-700">{analysis.primary_view.summary}</p>
-            ) : null}
-          </div>
-          {analysis.insight_cards.length > 0 ? (
+          {activeAnalysis.insight_cards.length > 0 ? (
             <div className="grid gap-3 md:grid-cols-2">
-              {analysis.insight_cards.map((card) => (
+              {activeAnalysis.insight_cards.map((card) => (
                 <div key={`${card.title}-${card.summary}`} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm font-semibold text-slate-900">{card.title}</p>
@@ -228,30 +576,54 @@ export default function DecisionIntelligencePanel({
                     </span>
                   </div>
                   <p className="mt-2 text-sm text-slate-700">{card.summary}</p>
-                  {card.recommended_action ? (
-                    <p className="mt-2 text-xs text-indigo-700">Next: {card.recommended_action}</p>
-                  ) : null}
+                  {card.recommended_action ? <p className="mt-2 text-xs text-indigo-700">Next: {card.recommended_action}</p> : null}
                 </div>
               ))}
             </div>
           ) : null}
 
-          {analysis.prediction ? (
+          {activePrediction ? (
             <div className="rounded-xl border border-slate-200 bg-white p-4">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-xs text-indigo-700">
                   <TrendingUp className="h-3.5 w-3.5" />
-                  {analysis.prediction.mode}
+                  {activePrediction.mode}
                 </span>
                 <span className="text-xs text-slate-500">
-                  {analysis.prediction.metric} over {analysis.prediction.time_grain}
+                  {(activePrediction.display_label || activePrediction.metric) ?? "Metric"} over {activePrediction.time_grain}
                 </span>
-                {analysis.prediction.risk_band ? (
+                {activePrediction.risk_band ? (
                   <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs text-amber-700">
-                    Risk: {analysis.prediction.risk_band}
+                    Risk: {activePrediction.risk_band}
                   </span>
                 ) : null}
               </div>
+
+              <div className="mt-3 grid gap-3 md:grid-cols-3">
+                <div className="rounded-lg bg-slate-50 p-3">
+                  <p className="text-[11px] uppercase tracking-wide text-slate-500">Observed window</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
+                    {activePrediction.historical_start ?? "n/a"} to {activePrediction.historical_end ?? "n/a"}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-slate-50 p-3">
+                  <p className="text-[11px] uppercase tracking-wide text-slate-500">Observed periods</p>
+                  <p className="mt-1 text-lg font-semibold text-slate-900">{activePrediction.observed_points}</p>
+                </div>
+                <div className="rounded-lg bg-slate-50 p-3">
+                  <p className="text-[11px] uppercase tracking-wide text-slate-500">Projected change</p>
+                  <p className="mt-1 text-lg font-semibold text-slate-900">
+                    {formatPercent(
+                      typeof activePrediction.projected_change_pct === "number"
+                        ? activePrediction.projected_change_pct * 100
+                        : null,
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              <PredictionBars prediction={activePrediction} />
+
               <div className="mt-3 overflow-x-auto">
                 <table className="min-w-full text-left text-xs">
                   <thead className="text-slate-500">
@@ -259,24 +631,35 @@ export default function DecisionIntelligencePanel({
                       <th className="pb-2 pr-4 font-medium">Period</th>
                       <th className="pb-2 pr-4 font-medium">Actual</th>
                       <th className="pb-2 pr-4 font-medium">Forecast</th>
-                      <th className="pb-2 font-medium">Anomaly</th>
+                      <th className="pb-2 pr-4 font-medium">Range</th>
+                      <th className="pb-2 font-medium">Signal</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {analysis.prediction.points.slice(-8).map((point) => (
+                    {activePrediction.points.slice(-8).map((point) => (
                       <tr key={`${point.label}-${point.forecast ?? point.actual ?? 0}`} className="border-t border-slate-100">
                         <td className="py-2 pr-4 text-slate-700">{point.label}</td>
                         <td className="py-2 pr-4 text-slate-900">{formatMetric(point.actual)}</td>
                         <td className="py-2 pr-4 text-slate-900">{formatMetric(point.forecast)}</td>
-                        <td className="py-2 text-slate-700">{point.anomaly_flag ? "Flagged" : "-"}</td>
+                        <td className="py-2 pr-4 text-slate-700">
+                          {point.lower != null || point.upper != null
+                            ? `${formatMetric(point.lower)} to ${formatMetric(point.upper)}`
+                            : "-"}
+                        </td>
+                        <td className="py-2 text-slate-700">{point.anomaly_flag ? "Flagged" : point.is_forecast ? "Forecast" : "Observed"}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              {analysis.prediction.anomalies.length > 0 ? (
+
+              {activePrediction.explanation ? (
+                <p className="mt-3 text-sm text-slate-700">{activePrediction.explanation}</p>
+              ) : null}
+
+              {activePrediction.anomalies.length > 0 ? (
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {analysis.prediction.anomalies.slice(0, 4).map((item) => (
+                  {activePrediction.anomalies.slice(0, 4).map((item) => (
                     <span key={`${item.label}-${item.value}`} className="rounded-full border border-red-200 bg-red-50 px-2 py-1 text-[11px] text-red-700">
                       {item.label}: {item.severity}
                     </span>
@@ -286,85 +669,130 @@ export default function DecisionIntelligencePanel({
             </div>
           ) : null}
 
-          {analysis.segmentation ? (
+          {activeSegmentation ? (
             <div className="rounded-xl border border-slate-200 bg-white p-4">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-xs text-violet-700">
                   <BrainCircuit className="h-3.5 w-3.5" />
-                  {analysis.segmentation.cluster_count} clusters
+                  {activeSegmentation.cluster_count} clusters
                 </span>
                 <span className="text-xs text-slate-500">
-                  Entity: {analysis.segmentation.entity_field}
+                  Entity: {activeSegmentation.entity_label || activeSegmentation.entity_field}
                 </span>
-                {analysis.segmentation.silhouette_hint != null ? (
+                {activeSegmentation.silhouette_hint != null ? (
                   <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs text-slate-600">
-                    Cohesion: {analysis.segmentation.silhouette_hint}
+                    Cohesion: {activeSegmentation.silhouette_hint}
                   </span>
                 ) : null}
               </div>
+
+              {activeSegmentation.comparison_highlights.length > 0 ? (
+                <div className="mt-3 rounded-xl border border-violet-100 bg-violet-50 px-3 py-2 text-sm text-violet-800">
+                  {activeSegmentation.comparison_highlights[0]}
+                </div>
+              ) : null}
+
               <div className="mt-3 grid gap-3 md:grid-cols-2">
-                {analysis.segmentation.profiles.map((profile) => (
-                  <div key={profile.cluster_id} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold text-slate-900">Cluster {profile.cluster_id}</p>
-                      <span className="rounded-full bg-white px-2 py-0.5 text-[10px] text-slate-600">
-                        {profile.entity_count} entities
-                      </span>
+                {activeSegmentation.profiles.map((profile) => {
+                  const share =
+                    activeSegmentation.assignments.length > 0
+                      ? Math.round((profile.entity_count / activeSegmentation.assignments.length) * 100)
+                      : 0;
+                  return (
+                    <div key={profile.cluster_id} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-sm font-semibold text-slate-900">Cluster {profile.cluster_id}</p>
+                        <span className="rounded-full bg-white px-2 py-0.5 text-[10px] text-slate-600">
+                          {profile.entity_count} entities
+                        </span>
+                      </div>
+                      <p className="mt-1 text-sm text-slate-700">{profile.label}</p>
+                      <div className="mt-2 h-2 rounded-full bg-white">
+                        <div className="h-2 rounded-full bg-violet-400" style={{ width: `${share}%` }} />
+                      </div>
+                      <p className="mt-1 text-[11px] text-slate-500">{share}% of clustered entities</p>
+                      {profile.metric_highlights.length > 0 ? (
+                        <ul className="mt-2 space-y-1 text-xs text-slate-600">
+                          {profile.metric_highlights.map((item) => (
+                            <li key={item}>- {item}</li>
+                          ))}
+                        </ul>
+                      ) : null}
                     </div>
-                    <p className="mt-1 text-sm text-slate-700">{profile.label}</p>
-                    {profile.metric_highlights.length > 0 ? (
-                      <ul className="mt-2 space-y-1 text-xs text-slate-600">
-                        {profile.metric_highlights.map((item) => (
-                          <li key={item}>• {item}</li>
-                        ))}
-                      </ul>
-                    ) : null}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ) : null}
 
-          {analysis.strategy ? (
+          {activeStrategy ? (
             <div className="rounded-xl border border-slate-200 bg-white p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-slate-900">KPI Risk Outlook</p>
-                  <p className="text-xs text-slate-500">{analysis.strategy.kpi_id}</p>
+                  <p className="text-xs text-slate-500">{activeStrategy.kpi_label || activeStrategy.kpi_id}</p>
                 </div>
                 <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs text-amber-700">
-                  {analysis.strategy.risk_band}
+                  {activeStrategy.risk_band}
                 </span>
               </div>
+
               <div className="mt-3 grid gap-3 md:grid-cols-3">
                 <div className="rounded-lg bg-slate-50 p-3">
                   <p className="text-[11px] uppercase tracking-wide text-slate-500">Current</p>
-                  <p className="mt-1 text-lg font-semibold text-slate-900">{formatMetric(analysis.strategy.current_value)}</p>
+                  <p className="mt-1 text-lg font-semibold text-slate-900">{formatMetric(activeStrategy.current_value)}</p>
                 </div>
                 <div className="rounded-lg bg-slate-50 p-3">
                   <p className="text-[11px] uppercase tracking-wide text-slate-500">Projected</p>
-                  <p className="mt-1 text-lg font-semibold text-slate-900">{formatMetric(analysis.strategy.projected_value)}</p>
+                  <p className="mt-1 text-lg font-semibold text-slate-900">{formatMetric(activeStrategy.projected_value)}</p>
                 </div>
                 <div className="rounded-lg bg-slate-50 p-3">
                   <p className="text-[11px] uppercase tracking-wide text-slate-500">Target</p>
-                  <p className="mt-1 text-lg font-semibold text-slate-900">{formatMetric(analysis.strategy.target_value)}</p>
+                  <p className="mt-1 text-lg font-semibold text-slate-900">{formatMetric(activeStrategy.target_value)}</p>
                 </div>
               </div>
+
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <div className="rounded-lg bg-slate-50 p-3">
+                  <p className="text-[11px] uppercase tracking-wide text-slate-500">Target horizon</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">{activeStrategy.target_horizon || "n/a"}</p>
+                </div>
+                <div className="rounded-lg bg-slate-50 p-3">
+                  <p className="text-[11px] uppercase tracking-wide text-slate-500">Variance to target</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">{formatMetric(activeStrategy.variance_to_target)}</p>
+                </div>
+              </div>
+
+              {activeStrategy.explanation ? <p className="mt-3 text-sm text-slate-700">{activeStrategy.explanation}</p> : null}
+              {activeStrategy.forecast_basis ? (
+                <p className="mt-2 text-xs text-slate-500">Forecast basis: {activeStrategy.forecast_basis}</p>
+              ) : null}
+              {activeStrategy.supporting_details.length > 0 ? (
+                <ul className="mt-3 space-y-1 text-xs text-slate-600">
+                  {activeStrategy.supporting_details.map((item) => (
+                    <li key={item}>- {item}</li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
           ) : null}
 
-          {analysis.suggested_actions.length > 0 ? (
+          {activeAnalysis.suggested_actions.length > 0 ? (
             <div className="rounded-xl border border-slate-200 bg-white p-4">
               <p className="text-sm font-semibold text-slate-900">Suggested Next Steps</p>
               <div className="mt-3 flex flex-wrap gap-2">
-                {analysis.suggested_actions.map((action) => (
+                {activeAnalysis.suggested_actions.map((action) => (
                   <button
                     key={`${action.action_type}-${action.label}`}
                     type="button"
                     onClick={() => {
-                      if (action.action_type === "forecast" || action.action_type === "anomaly" || action.action_type === "segment" || action.action_type === "strategy_risk") {
-                        setActiveTask(action.action_type as PanelTask);
-                        void runAnalysis(action.action_type as PanelTask);
+                      if (
+                        action.action_type === "forecast" ||
+                        action.action_type === "anomaly" ||
+                        action.action_type === "segment" ||
+                        action.action_type === "strategy_risk"
+                      ) {
+                        handleTaskSelect(action.action_type as PanelTask);
                       }
                     }}
                     className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs text-slate-700 hover:border-indigo-300 hover:bg-indigo-50"
@@ -379,7 +807,7 @@ export default function DecisionIntelligencePanel({
         </div>
       ) : (
         <div className="mt-4 rounded-xl border border-dashed border-slate-300 bg-white/70 px-4 py-8 text-center text-sm text-slate-500">
-          Select an analysis mode above to run the first structured decision-intelligence pass.
+          Select a task above to run a fresh {selectedTaskConfig.label.toLowerCase()} analysis. Results are tracked per task, so switching modes does not leave stale output on screen.
         </div>
       )}
     </div>

@@ -16,13 +16,16 @@ from app.services.intelligence.specs import (
 
 def build_prediction_insights(prediction: PredictionSummary, *, kpi_label: str | None = None) -> list[InsightCard]:
     cards: list[InsightCard] = []
-    label = kpi_label or prediction.metric
+    label = kpi_label or prediction.display_label or prediction.metric
     if prediction.projected_change_pct is not None:
         direction = "up" if prediction.projected_change_pct >= 0 else "down"
         cards.append(
             InsightCard(
                 title=f"{label} is trending {direction}",
-                summary=f"Projected terminal movement is {prediction.projected_change_pct * 100:.1f}% over the forecast horizon.",
+                summary=(
+                    f"Projected terminal movement is {prediction.projected_change_pct * 100:.1f}% over the next {prediction.horizon} "
+                    f"{prediction.time_grain} periods, based on {prediction.observed_points} observed periods."
+                ),
                 severity="warn" if direction == "down" else "info",
                 recommended_action="Compare the strongest and weakest business slices, then validate whether the trend is broad-based.",
                 evidence=[prediction.explanation or ""],
@@ -42,7 +45,10 @@ def build_prediction_insights(prediction: PredictionSummary, *, kpi_label: str |
         cards.append(
             InsightCard(
                 title=f"Target risk is {prediction.risk_band}",
-                summary=f"Projected attainment risk is currently assessed as {prediction.risk_band}.",
+                summary=(
+                    f"Projected attainment risk is currently assessed as {prediction.risk_band}"
+                    f"{f' for {label}' if label else ''}."
+                ),
                 severity="critical" if prediction.risk_band == "high" else "warn" if prediction.risk_band == "medium" else "info",
                 recommended_action="Review the forecast together with targets and escalate corrective action if the trend persists.",
             )
@@ -83,6 +89,15 @@ def build_segment_insights(segmentation: SegmentSummary, *, metric_focus: str | 
                 recommended_action="Run drilldowns on the top and bottom clusters to identify the operational drivers.",
             )
         )
+    if segmentation.comparison_highlights:
+        cards.append(
+            InsightCard(
+                title="Cluster comparison signal",
+                summary=segmentation.comparison_highlights[0],
+                severity="info",
+                recommended_action="Compare the cluster profiles before moving to a single action plan.",
+            )
+        )
     return cards
 
 
@@ -90,13 +105,18 @@ def build_strategy_risk_insights(strategy: StrategyRiskSummary) -> list[InsightC
     severity = "critical" if strategy.risk_band == "high" else "warn" if strategy.risk_band == "medium" else "info"
     return [
         InsightCard(
-            title=f"KPI risk for {strategy.kpi_id}",
+            title=f"KPI risk for {strategy.kpi_label or strategy.kpi_id}",
             summary=(
                 strategy.explanation
                 or "Compare current KPI performance with the projected terminal value and configured target."
             ),
             severity=severity,  # type: ignore[arg-type]
-            recommended_action="Inspect the KPI in analytics, then forecast or segment the most relevant mart to explain the risk.",
+            recommended_action=(
+                strategy.recommended_actions[0]
+                if strategy.recommended_actions
+                else "Inspect the KPI in analytics, then forecast or segment the most relevant mart to explain the risk."
+            ),
+            evidence=strategy.supporting_details,
         )
     ]
 
@@ -134,8 +154,8 @@ def build_suggested_actions(
         actions.append(
             SuggestedAction(
                 action_type="segment",
-                label="Segment this mart",
-                description="Find structural cohorts behind the trend or risk signal.",
+                label="Segment the likely drivers",
+                description="Find structural cohorts behind the trend, anomaly, or risk signal.",
                 payload={"table": table, "entity_field": entity_field},
             )
         )

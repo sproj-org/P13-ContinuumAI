@@ -711,6 +711,7 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
                       chartRows={currentChartPreview.rows}
                       chartTitle={currentChartPreviewTitle}
                       kpiId={currentChartPreview.chartSpec.semantic_context?.matched_kpi_id ?? null}
+                      analysisSource="viz_agent"
                       onChartSpecChange={(nextChartSpec) => {
                         setCurrentChartPreview((current) =>
                           current ? { ...current, chartSpec: nextChartSpec } : current,
