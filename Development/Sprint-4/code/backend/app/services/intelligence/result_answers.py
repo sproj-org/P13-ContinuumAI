@@ -45,7 +45,12 @@ def _segment_primary_metric(profiles: list[SegmentProfile]) -> str | None:
     return best_metric
 
 
-def _answer_segment_question(message: str, analysis: AnalysisResponse, artifact_action: str | None) -> str | None:
+def _answer_segment_question(
+    message: str,
+    analysis: AnalysisResponse,
+    artifact_action: str | None,
+    answer_mode: str | None,
+) -> str | None:
     segmentation = analysis.segmentation
     if segmentation is None or not segmentation.profiles:
         return None
@@ -63,7 +68,11 @@ def _answer_segment_question(message: str, analysis: AnalysisResponse, artifact_
     weakest = min(profiles, key=lambda item: item.centroid.get(primary_metric or "", 0.0))
     text = _normalize_text(message)
 
-    if artifact_action == "segment_compare_extremes" or _contains_any(text, ("strongest", "weakest", "strongest cluster", "weakest cluster")):
+    if (
+        answer_mode == "segment_comparison"
+        or artifact_action == "segment_compare_extremes"
+        or _contains_any(text, ("strongest", "weakest", "strongest cluster", "weakest cluster"))
+    ):
         strongest_metric = strongest.metric_highlights[0] if strongest.metric_highlights else "its leading metrics"
         weakest_metric = weakest.metric_highlights[0] if weakest.metric_highlights else "its weakest metrics"
         metric_text = f" on {primary_metric}" if primary_metric else ""
@@ -72,7 +81,11 @@ def _answer_segment_question(message: str, analysis: AnalysisResponse, artifact_
             f"Use Cluster {largest.cluster_id} as the operating baseline if you also need a broad-volume reference. Compare {strongest_metric} against {weakest_metric} first."
         )
 
-    if artifact_action == "segment_differentiators" or _contains_any(text, ("differentiate", "differentiates", "difference", "different")):
+    if (
+        answer_mode == "segment_differentiation"
+        or artifact_action == "segment_differentiators"
+        or _contains_any(text, ("differentiate", "differentiates", "difference", "different"))
+    ):
         differentiators = most_distinctive.metric_highlights[:3]
         highlight_text = ", ".join(differentiators) if differentiators else "its centroid metrics"
         return (
@@ -80,7 +93,11 @@ def _answer_segment_question(message: str, analysis: AnalysisResponse, artifact_
             f"{segmentation.comparison_highlights[0] if segmentation.comparison_highlights else 'Use those feature gaps to compare clusters side by side.'}"
         )
 
-    if artifact_action == "segment_drill_priority" or _contains_any(text, ("drill", "inspect first", "start with")):
+    if (
+        answer_mode in {"drill_priority", "next_best_action"}
+        or artifact_action == "segment_drill_priority"
+        or _contains_any(text, ("drill", "inspect first", "start with"))
+    ):
         priority = most_distinctive
         return (
             f"Start with Cluster {priority.cluster_id}. It is the most behaviorally distinct segment, which makes it the fastest place to find a concrete driver. "
@@ -93,13 +110,38 @@ def _answer_segment_question(message: str, analysis: AnalysisResponse, artifact_
     )
 
 
-def _answer_forecast_question(message: str, analysis: AnalysisResponse, artifact_action: str | None) -> str | None:
+def _answer_forecast_question(
+    message: str,
+    analysis: AnalysisResponse,
+    artifact_action: str | None,
+    answer_mode: str | None,
+) -> str | None:
     prediction = analysis.prediction
     if prediction is None:
         return None
     text = _normalize_text(message)
+    observed_points = [point for point in prediction.points if point.actual is not None]
 
-    if artifact_action == "forecast_drivers" or _contains_any(text, ("driving", "driver", "why", "projected change")):
+    if answer_mode == "what_happened" and observed_points:
+        start = observed_points[0]
+        end = observed_points[-1]
+        delta = (end.actual or 0.0) - (start.actual or 0.0)
+        pct = None
+        if start.actual not in (None, 0.0, -0.0):
+            pct = delta / abs(start.actual)
+        direction = "rose" if delta >= 0 else "fell"
+        pct_text = f" ({pct * 100:.1f}%)" if pct is not None else ""
+        return (
+            f"The clearest movement in the observed window is that {prediction.display_label or prediction.metric} "
+            f"{direction} from {_format_number(start.actual)} at {start.label} to {_format_number(end.actual)} at {end.label}{pct_text}. "
+            f"{prediction.explanation or 'The forecast then extends that recent pattern forward.'}"
+        )
+
+    if (
+        answer_mode == "forecast_interpretation"
+        or artifact_action == "forecast_drivers"
+        or _contains_any(text, ("driving", "driver", "why", "projected change"))
+    ):
         anomaly_text = ""
         if prediction.anomalies:
             anomaly = sorted(prediction.anomalies, key=lambda item: abs(item.deviation), reverse=True)[0]
@@ -127,12 +169,23 @@ def _answer_forecast_question(message: str, analysis: AnalysisResponse, artifact
     return prediction.explanation or "The forecast extends the recent trend using the available historical window."
 
 
-def _answer_anomaly_question(message: str, analysis: AnalysisResponse, artifact_action: str | None) -> str | None:
+def _answer_anomaly_question(
+    message: str,
+    analysis: AnalysisResponse,
+    artifact_action: str | None,
+    answer_mode: str | None,
+) -> str | None:
     prediction = analysis.prediction
     if prediction is None or not prediction.anomalies:
         return None
     text = _normalize_text(message)
     strongest = sorted(prediction.anomalies, key=lambda item: abs(item.deviation), reverse=True)[0]
+
+    if answer_mode == "what_happened":
+        return (
+            f"The most meaningful break happened at {strongest.label}. "
+            f"{strongest.explanation or f'Observed value {_format_number(strongest.value)} deviated by {strongest.deviation:.2f} standard deviations.'}"
+        )
 
     if artifact_action == "anomaly_driver" or _contains_any(text, ("driving", "driver", "most anomalous", "why")):
         return (
@@ -150,12 +203,24 @@ def _answer_anomaly_question(message: str, analysis: AnalysisResponse, artifact_
     return strongest.explanation or "The strongest anomaly materially deviated from the recent baseline."
 
 
-def _answer_risk_question(message: str, analysis: AnalysisResponse, artifact_action: str | None) -> str | None:
+def _answer_risk_question(
+    message: str,
+    analysis: AnalysisResponse,
+    artifact_action: str | None,
+    answer_mode: str | None,
+) -> str | None:
     strategy = analysis.strategy
     prediction = analysis.prediction
     if strategy is None:
         return None
     text = _normalize_text(message)
+
+    if answer_mode == "strategy_alignment":
+        return (
+            f"{strategy.kpi_label or strategy.kpi_id} matters strategically because it is tracking {_format_number(strategy.current_value)} "
+            f"toward {_format_number(strategy.projected_value)} against a target of {_format_number(strategy.target_value)}. "
+            f"That keeps the KPI in a {strategy.risk_band} risk band and should shape the next investigation and corrective action."
+        )
 
     if artifact_action == "risk_driver" or _contains_any(text, ("why", "driving", "driver", "at risk")):
         return (
@@ -173,7 +238,7 @@ def _answer_risk_question(message: str, analysis: AnalysisResponse, artifact_act
             )
         return "Start with the first drill dimension on the linked KPI and compare the weakest business slice against the strongest."
 
-    if artifact_action == "risk_next_step" or _contains_any(text, ("next", "what should", "investigate")):
+    if answer_mode == "next_best_action" or artifact_action == "risk_next_step" or _contains_any(text, ("next", "what should", "investigate")):
         recommended = strategy.recommended_actions[0] if strategy.recommended_actions else None
         if recommended:
             return recommended
@@ -189,21 +254,22 @@ def answer_analysis_question(
     message: str,
     analysis: AnalysisResponse,
     artifact_action: str | None = None,
+    answer_mode: str | None = None,
 ) -> str | None:
     if analysis.segmentation is not None:
-        answer = _answer_segment_question(message, analysis, artifact_action)
+        answer = _answer_segment_question(message, analysis, artifact_action, answer_mode)
         if answer:
             return answer
     if analysis.strategy is not None:
-        answer = _answer_risk_question(message, analysis, artifact_action)
+        answer = _answer_risk_question(message, analysis, artifact_action, answer_mode)
         if answer:
             return answer
     if analysis.prediction is not None and analysis.prediction.mode == "forecast":
-        answer = _answer_forecast_question(message, analysis, artifact_action)
+        answer = _answer_forecast_question(message, analysis, artifact_action, answer_mode)
         if answer:
             return answer
     if analysis.prediction is not None and analysis.prediction.mode == "anomaly":
-        answer = _answer_anomaly_question(message, analysis, artifact_action)
+        answer = _answer_anomaly_question(message, analysis, artifact_action, answer_mode)
         if answer:
             return answer
     return None

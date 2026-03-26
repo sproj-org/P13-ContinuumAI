@@ -1618,6 +1618,13 @@ def _focus_chart_metric(focus: ChatFocusContext | None) -> str | None:
     return focus.chart_spec.encoding.y[0].field
 
 
+def _focus_chart_metric_label(focus: ChatFocusContext | None) -> str | None:
+    if focus is None or focus.chart_spec is None or not focus.chart_spec.encoding.y:
+        return None
+    metric = focus.chart_spec.encoding.y[0]
+    return metric.alias or metric.field
+
+
 def _next_focus_drill_dimension(focus: ChatFocusContext | None) -> str | None:
     if focus is None:
         return None
@@ -1641,6 +1648,119 @@ def _next_focus_drill_dimension(focus: ChatFocusContext | None) -> str | None:
 
 def _normalize_prompt_text(value: str | None) -> str:
     return " ".join((value or "").lower().replace("_", " ").split())
+
+
+def _coerce_float(value: Any) -> float | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        candidate = float(value)
+        return candidate if candidate == candidate else None
+    if isinstance(value, str):
+        trimmed = value.strip().replace(",", "")
+        if not trimmed:
+            return None
+        try:
+            candidate = float(trimmed)
+        except ValueError:
+            return None
+        return candidate if candidate == candidate else None
+    return None
+
+
+def _looks_temporal_identifier(value: str | None) -> bool:
+    normalized = _normalize_prompt_text(value)
+    return any(token in normalized for token in ("date", "day", "week", "month", "quarter", "year", "time"))
+
+
+def _focus_chart_evidence(focus: ChatFocusContext | None) -> dict[str, Any]:
+    if focus is None or focus.chart_spec is None or not focus.chart_rows:
+        return {}
+
+    x_field = focus.chart_spec.encoding.x.field
+    metric_spec = focus.chart_spec.encoding.y[0] if focus.chart_spec.encoding.y else None
+    metric_label = _focus_chart_metric_label(focus)
+    metric_candidates = [
+        metric_spec.alias if metric_spec is not None else None,
+        metric_spec.field if metric_spec is not None else None,
+        "metric_value",
+        "agg_value",
+    ]
+
+    points: list[dict[str, Any]] = []
+    for raw_row in focus.chart_rows[:200]:
+        if not isinstance(raw_row, dict):
+            continue
+        label = raw_row.get(x_field)
+        value: float | None = None
+        for candidate in metric_candidates:
+            if isinstance(candidate, str) and candidate in raw_row:
+                value = _coerce_float(raw_row.get(candidate))
+                if value is not None:
+                    break
+        if value is None:
+            for key, raw_value in raw_row.items():
+                if key == x_field:
+                    continue
+                value = _coerce_float(raw_value)
+                if value is not None:
+                    break
+        if label is None or value is None:
+            continue
+        points.append({"label": str(label), "value": value})
+
+    evidence: dict[str, Any] = {
+        "x_field": x_field,
+        "metric": metric_label,
+        "row_count": len(focus.chart_rows),
+    }
+    if not points:
+        return evidence
+
+    ranked_points = sorted(points, key=lambda item: item["value"], reverse=True)
+    evidence["top_points"] = ranked_points[:3]
+    evidence["bottom_points"] = list(reversed(ranked_points[-2:])) if len(ranked_points) > 1 else []
+
+    is_temporal_view = focus.chart_spec.chart.type == "line" or _looks_temporal_identifier(x_field)
+    if is_temporal_view and len(points) >= 2:
+        first_point = points[0]
+        last_point = points[-1]
+        delta = last_point["value"] - first_point["value"]
+        pct_change = None
+        if first_point["value"] not in (0.0, -0.0):
+            pct_change = delta / abs(first_point["value"])
+        step_from, step_to = max(
+            zip(points, points[1:]),
+            key=lambda pair: abs(pair[1]["value"] - pair[0]["value"]),
+        )
+        step_delta = step_to["value"] - step_from["value"]
+        step_pct = None
+        if step_from["value"] not in (0.0, -0.0):
+            step_pct = step_delta / abs(step_from["value"])
+        evidence["trend"] = {
+            "start": first_point,
+            "end": last_point,
+            "delta": delta,
+            "pct_change": pct_change,
+            "peak": max(points, key=lambda item: item["value"]),
+            "trough": min(points, key=lambda item: item["value"]),
+            "largest_change": {
+                "from": step_from,
+                "to": step_to,
+                "delta": step_delta,
+                "pct_change": step_pct,
+            },
+        }
+        return evidence
+
+    leader = ranked_points[0]
+    runner_up = ranked_points[1] if len(ranked_points) > 1 else None
+    evidence["ranking"] = {
+        "leader": leader,
+        "runner_up": runner_up,
+        "leader_gap": leader["value"] - runner_up["value"] if runner_up is not None else None,
+    }
+    return evidence
 
 
 def _compact_strategy_answer_digest(strategy_digest: dict[str, Any]) -> dict[str, Any]:
@@ -1671,6 +1791,56 @@ def _compact_answer_context(context: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _focus_semantic_answer_digest(focus: ChatFocusContext | None) -> dict[str, Any]:
+    semantic = _focus_semantic_digest(focus)
+    if not semantic:
+        return {}
+    preferred_drill_path = semantic.get("preferred_drill_path")
+    business_concepts = semantic.get("business_concepts")
+    terminal_dimensions = semantic.get("terminal_dimensions")
+    return {
+        "matched_kpi_id": semantic.get("matched_kpi_id"),
+        "matched_kpi_label": semantic.get("matched_kpi_label"),
+        "semantic_family": semantic.get("semantic_family"),
+        "business_concepts": business_concepts[:6] if isinstance(business_concepts, list) else [],
+        "preferred_drill_path": preferred_drill_path[:6] if isinstance(preferred_drill_path, list) else [],
+        "terminal_dimensions": terminal_dimensions[:4] if isinstance(terminal_dimensions, list) else [],
+        "next_drill_dimension": _next_focus_drill_dimension(focus),
+    }
+
+
+def _focus_strategy_answer_context(focus: ChatFocusContext | None, strategy_digest: dict[str, Any]) -> dict[str, Any]:
+    strategy_runtime = _compact_strategy_answer_digest(strategy_digest)
+    local_strategy: dict[str, Any] = {}
+    analysis_context = _focus_analysis_context(focus)
+    if analysis_context is not None and getattr(analysis_context, "strategy", None) is not None:
+        local_strategy = analysis_context.strategy.model_dump(mode="json", exclude_none=True)
+    semantic = _focus_semantic_answer_digest(focus)
+    return {
+        "north_star": strategy_runtime.get("north_star"),
+        "pillars": strategy_runtime.get("pillars", [])[:4],
+        "matched_kpi_label": semantic.get("matched_kpi_label"),
+        "target_status": local_strategy,
+    }
+
+
+def _build_answering_context(
+    *,
+    focus: ChatFocusContext,
+    quick_prompt: ChatQuickPrompt | None,
+    context: dict[str, Any],
+    strategy_digest: dict[str, Any],
+) -> dict[str, Any]:
+    return {
+        "artifact": _focus_digest(focus) or {},
+        "chart_evidence": _focus_chart_evidence(focus),
+        "semantic": _focus_semantic_answer_digest(focus),
+        "strategy": _focus_strategy_answer_context(focus, strategy_digest),
+        "mart": _compact_answer_context(context),
+        "quick_prompt": quick_prompt.model_dump(mode="json", exclude_none=True) if quick_prompt is not None else {},
+    }
+
+
 def _artifact_answer_mode(
     *,
     message: str,
@@ -1681,34 +1851,73 @@ def _artifact_answer_mode(
         if quick_prompt.answer_mode:
             return quick_prompt.answer_mode
         artifact_action = quick_prompt.artifact_action or ""
+        if artifact_action == "chart_change":
+            return "what_happened"
+        if artifact_action in {"strategy_alignment", "kpi_strategy_relationship"}:
+            return artifact_action
+        if artifact_action in {"segment_differentiators", "segment_compare_extremes", "segment_drill_priority"}:
+            return {
+                "segment_differentiators": "segment_differentiation",
+                "segment_compare_extremes": "segment_comparison",
+                "segment_drill_priority": "drill_priority",
+            }[artifact_action]
+        if artifact_action in {"forecast_drivers", "forecast_target_gap"}:
+            return "forecast_interpretation"
+        if artifact_action in {"risk_driver", "risk_slice", "risk_next_step"}:
+            return "risk_explanation" if artifact_action != "risk_next_step" else "next_best_action"
         if quick_prompt.preferred_route == "guidance":
-            return artifact_action or "recommend"
+            return "next_best_action"
         if quick_prompt.preferred_route == "explain":
-            return artifact_action or "explain"
+            return "explain"
         if quick_prompt.prompt_kind == "compare":
-            return artifact_action or "compare"
+            return "segment_comparison"
         if quick_prompt.prompt_kind == "drill":
-            return artifact_action or "drill_priority"
+            return "drill_priority"
 
     if focus is None:
         return None
 
     text = _normalize_prompt_text(message)
+    if any(token in text for token in ("what happened", "what changed", "changed here", "after this drill", "spike", "drop", "dip", "jump")):
+        return "what_happened"
+    if any(
+        token in text
+        for token in ("strategy", "north star", "pillar", "objective", "alignment", "align", "supports the strategy", "matters strategically")
+    ):
+        return "kpi_strategy_relationship" if focus.focus_type == "kpi" or focus.kpi_id else "strategy_alignment"
     if focus.analysis_result is not None:
-        if any(token in text for token in ("differentiate", "compare", "strongest", "weakest")):
-            return "compare"
-        if any(token in text for token in ("drill", "inspect first", "look at next", "what should")):
-            return "recommend"
-        if any(token in text for token in ("why", "driver", "driving", "risk", "forecast", "anomaly", "cluster")):
+        if any(token in text for token in ("differentiate", "differentiates", "difference")):
+            return "segment_differentiation"
+        if any(token in text for token in ("compare", "strongest", "weakest")):
+            return "segment_comparison"
+        if any(token in text for token in ("drill", "inspect first", "drill into first")):
+            return "drill_priority"
+        if any(token in text for token in ("look at next", "what should", "next step", "inspect next")):
+            return "next_best_action"
+        if focus.active_task == "strategy_risk" or any(token in text for token in ("risk", "off target", "target")):
+            return "risk_explanation"
+        if focus.active_task == "forecast" or any(token in text for token in ("forecast", "projected", "confidence", "uncertainty")):
+            return "forecast_interpretation"
+        if focus.active_task == "anomaly" or any(token in text for token in ("anomaly", "most anomalous")):
+            return "what_happened"
+        if any(token in text for token in ("why", "driver", "driving", "cluster")):
             return "diagnose"
         return "explain"
-    if focus.focus_type == "kpi" and any(token in text for token in ("kpi", "target", "risk", "off target", "next")):
-        return "recommend" if "next" in text else "explain"
+    if focus.focus_type == "kpi":
+        if any(token in text for token in ("next", "analysis should i run", "look at next")):
+            return "next_best_action"
+        if any(token in text for token in ("target", "risk", "off target")):
+            return "risk_explanation"
+        return "explain"
     if focus.focus_type in {"chart", "drill_state"} and any(
         token in text
-        for token in ("this chart", "current chart", "this view", "what changed", "look at next", "drill", "driver", "explain")
+        for token in ("this chart", "current chart", "this view", "look at next", "drill", "driver", "explain")
     ):
-        return "recommend" if any(token in text for token in ("next", "drill")) else "explain"
+        if any(token in text for token in ("drill", "drill into")):
+            return "drill_priority"
+        if any(token in text for token in ("next", "look at next")):
+            return "next_best_action"
+        return "diagnose" if any(token in text for token in ("driver", "driving")) else "explain"
     return None
 
 
@@ -1718,6 +1927,11 @@ def _artifact_answer_requirements(answer_mode: str) -> list[str]:
         "explain": [
             "Describe what the current artifact is showing in plain business terms.",
             "Anchor the explanation to the visible metric, grouping, and strongest signal.",
+        ],
+        "what_happened": [
+            "Identify the most important change, anomaly, or movement in the current artifact.",
+            "Compare it against the clearest available baseline, previous period, or neighboring group.",
+            "Explain why that change matters in business terms rather than only describing the chart.",
         ],
         "diagnose": [
             "Explain the most likely driver or change using the structured evidence in the artifact.",
@@ -1729,6 +1943,7 @@ def _artifact_answer_requirements(answer_mode: str) -> list[str]:
         "next_best_action": [
             "Recommend one or two next actions only.",
             "Prefer the next drill, comparison, or analysis that best explains the current signal.",
+            "Use the preferred drill path or strongest follow-up analysis if it is available in context.",
         ],
         "drill_priority": [
             "Name the one dimension, cluster, or slice to inspect first and explain why it should come first.",
@@ -1747,6 +1962,14 @@ def _artifact_answer_requirements(answer_mode: str) -> list[str]:
         "risk_explanation": [
             "Explicitly reference current, projected, and target values when they are available.",
             "Connect the risk explanation back to the KPI and the most relevant next investigation step.",
+        ],
+        "strategy_alignment": [
+            "Explain how the current chart or result affects the KPI, north star, or strategic pillar context that is provided.",
+            "State why the signal matters strategically and what decision or investigation it should trigger next.",
+        ],
+        "kpi_strategy_relationship": [
+            "Explain what the KPI measures and how it supports the current strategic objective or pillar context.",
+            "Reference semantic family, business concepts, target status, or triggered rules when that information is available.",
         ],
     }
     return [*base, *mapping.get(answer_mode, [])]
@@ -1775,23 +1998,26 @@ def _build_artifact_answer_user_prompt(
     context: dict[str, Any],
     strategy_digest: dict[str, Any],
 ) -> str:
-    focus_digest = _focus_digest(focus) or {}
-    quick_prompt_digest = quick_prompt.model_dump(mode="json", exclude_none=True) if quick_prompt is not None else {}
+    answering_context = _build_answering_context(
+        focus=focus,
+        quick_prompt=quick_prompt,
+        context=context,
+        strategy_digest=strategy_digest,
+    )
     answer_requirements = "\n".join(f"- {item}" for item in _artifact_answer_requirements(answer_mode))
     return (
         f"Dataset: {dataset_id}\n"
         f"User question: {question}\n"
         f"Answer mode: {answer_mode}\n\n"
-        f"Quick prompt metadata: {json.dumps(quick_prompt_digest, ensure_ascii=True)}\n\n"
-        f"Focused artifact context: {json.dumps(focus_digest, ensure_ascii=True)}\n\n"
-        f"Mart context: {json.dumps(_compact_answer_context(context), ensure_ascii=True)}\n\n"
-        f"Strategy context: {json.dumps(_compact_strategy_answer_digest(strategy_digest), ensure_ascii=True)}\n\n"
+        f"Structured answering context: {json.dumps(answering_context, ensure_ascii=True)}\n\n"
         "Answer requirements:\n"
         "- Answer the exact question, not a generic summary.\n"
-        "- Mention the current KPI/metric/cluster/period labels when available.\n"
+        "- Mention the current KPI, metric, cluster, period, or drill labels when available.\n"
         "- If the question is about next steps, recommend one or two grounded next actions only.\n"
         "- If the question is about risk, explicitly reference current/projected/target values when available.\n"
         "- If the question is about segmentation, explain the cluster differences or drill priority using the supplied profiles.\n"
+        "- If the question is about what happened, use chart evidence or analysis evidence to explain the strongest change rather than summarizing the whole artifact.\n"
+        "- If the question is about strategy, connect the answer back to the KPI, north star, pillars, or target context when available.\n"
         "- If the question is about forecast or anomalies, mention the strongest signal and any confidence caveat when present.\n"
         f"{answer_requirements}\n"
         'Return JSON only in the form {"message": "..."}'
@@ -1841,8 +2067,13 @@ def _generate_artifact_answer(
     return message or None
 
 
+def _focus_primary_kpi_label(focus: ChatFocusContext | None) -> str | None:
+    semantic = _focus_semantic_answer_digest(focus)
+    return semantic.get("matched_kpi_label") or (focus.kpi_id if focus is not None else None)
+
+
 def _focus_explain_message(focus: ChatFocusContext) -> str:
-    metric = _focus_chart_metric(focus)
+    metric = _focus_chart_metric_label(focus)
     x_field = focus.chart_spec.encoding.x.field if focus.chart_spec is not None else None
     row_count = len(focus.chart_rows)
     if focus.focus_type == "kpi":
@@ -1855,6 +2086,7 @@ def _focus_explain_message(focus: ChatFocusContext) -> str:
             message="Explain this result",
             analysis=focus.analysis_result,
             artifact_action=focus.active_task == "strategy_risk" and "risk_driver" or None,
+            answer_mode="explain",
         ) or (focus.summary or "This result is grounded in the current analysis context.")
     return (
         f"{focus.title or 'This chart'} is currently showing "
@@ -1864,23 +2096,161 @@ def _focus_explain_message(focus: ChatFocusContext) -> str:
     )
 
 
-def _focus_guidance_message(focus: ChatFocusContext) -> str:
+def _focus_what_happened_message(focus: ChatFocusContext) -> str:
+    if focus.analysis_result is not None:
+        answer = answer_analysis_question(
+            message="What happened here?",
+            analysis=focus.analysis_result,
+            artifact_action=focus.active_task == "strategy_risk" and "risk_driver" or None,
+            answer_mode="what_happened",
+        )
+        if answer:
+            return answer
+
+    evidence = _focus_chart_evidence(focus)
+    metric = evidence.get("metric") or _focus_chart_metric_label(focus) or "the current metric"
+    trend = evidence.get("trend")
+    if isinstance(trend, dict):
+        largest_change = trend.get("largest_change") if isinstance(trend.get("largest_change"), dict) else None
+        if largest_change:
+            from_point = largest_change.get("from") or {}
+            to_point = largest_change.get("to") or {}
+            delta = largest_change.get("delta")
+            pct_change = largest_change.get("pct_change")
+            direction = "rose" if isinstance(delta, (int, float)) and delta >= 0 else "fell"
+            pct_text = f" ({pct_change * 100:.1f}%)" if isinstance(pct_change, (int, float)) else ""
+            return (
+                f"The sharpest movement happened between {from_point.get('label')} and {to_point.get('label')}, "
+                f"when {metric} {direction} from {_format_metric_value(from_point.get('value'))} to {_format_metric_value(to_point.get('value'))}{pct_text}. "
+                f"The view ends at {trend.get('end', {}).get('label')} with {_format_metric_value(trend.get('end', {}).get('value'))}."
+            )
+        delta = trend.get("delta")
+        pct_change = trend.get("pct_change")
+        direction = "up" if isinstance(delta, (int, float)) and delta >= 0 else "down"
+        pct_text = f" ({pct_change * 100:.1f}%)" if isinstance(pct_change, (int, float)) else ""
+        return (
+            f"The main shift is that {metric} moved {direction} from "
+            f"{_format_metric_value(trend.get('start', {}).get('value'))} at {trend.get('start', {}).get('label')} "
+            f"to {_format_metric_value(trend.get('end', {}).get('value'))} at {trend.get('end', {}).get('label')}{pct_text}."
+        )
+
+    ranking = evidence.get("ranking")
+    if isinstance(ranking, dict):
+        leader = ranking.get("leader") or {}
+        runner_up = ranking.get("runner_up") or {}
+        gap = ranking.get("leader_gap")
+        gap_text = f", ahead by {_format_metric_value(gap)}" if isinstance(gap, (int, float)) else ""
+        if leader:
+            runner_up_text = f" versus {runner_up.get('label')}" if runner_up else ""
+            return (
+                f"The clearest signal in this view is that {leader.get('label')} leads on {metric} at "
+                f"{_format_metric_value(leader.get('value'))}{runner_up_text}{gap_text}."
+            )
+
+    return _focus_explain_message(focus)
+
+
+def _focus_strategy_alignment_message(focus: ChatFocusContext, strategy_digest: dict[str, Any]) -> str:
+    strategy_context = _focus_strategy_answer_context(focus, strategy_digest)
+    north_star = strategy_context.get("north_star") or "the current strategy"
+    pillars = strategy_context.get("pillars") or []
+    pillar_names = ", ".join(
+        pillar.get("name")
+        for pillar in pillars
+        if isinstance(pillar, dict) and isinstance(pillar.get("name"), str) and pillar.get("name")
+    )
+    target_status = strategy_context.get("target_status") if isinstance(strategy_context.get("target_status"), dict) else {}
+    kpi_label = strategy_context.get("matched_kpi_label") or _focus_primary_kpi_label(focus) or focus.title or "this KPI"
+    next_drill = _next_focus_drill_dimension(focus)
+
+    parts = [f"{kpi_label} matters because it rolls up into {north_star}."]
+    if target_status:
+        status = target_status.get("status")
+        target_value = target_status.get("target_value")
+        current_value = target_status.get("current_value")
+        variance = target_status.get("variance")
+        if status:
+            parts.append(f"Current strategic status is {status}.")
+        if target_value is not None or current_value is not None:
+            parts.append(
+                f"Current versus target is {_format_metric_value(current_value)} against {_format_metric_value(target_value)}."
+            )
+        if variance is not None:
+            parts.append(f"Variance to target is {_format_metric_value(variance)}.")
+    if pillar_names:
+        parts.append(f"The strongest linked pillars here are {pillar_names}.")
+    if next_drill:
+        parts.append(f"Inspect {next_drill} next to find which operating slice is helping or hurting that strategy path.")
+    return " ".join(parts)
+
+
+def _focus_kpi_strategy_message(focus: ChatFocusContext, strategy_digest: dict[str, Any]) -> str:
+    semantic = _focus_semantic_answer_digest(focus)
+    strategy_context = _focus_strategy_answer_context(focus, strategy_digest)
+    kpi_label = semantic.get("matched_kpi_label") or focus.title or focus.kpi_id or "This KPI"
+    semantic_family = semantic.get("semantic_family")
+    business_concepts = semantic.get("business_concepts") or []
+    concept_text = ", ".join(concept for concept in business_concepts[:3] if isinstance(concept, str) and concept)
+    north_star = strategy_context.get("north_star") or "the current strategy"
+    pillars = strategy_context.get("pillars") or []
+    pillar_names = ", ".join(
+        pillar.get("name")
+        for pillar in pillars
+        if isinstance(pillar, dict) and isinstance(pillar.get("name"), str) and pillar.get("name")
+    )
+    next_drill = semantic.get("next_drill_dimension")
+
+    parts = [f"{kpi_label} supports {north_star}."]
+    if semantic_family:
+        parts.append(f"It is treated as a {semantic_family} KPI.")
+    if concept_text:
+        parts.append(f"It reflects business concepts such as {concept_text}.")
+    if pillar_names:
+        parts.append(f"It is most relevant to {pillar_names}.")
+    if next_drill:
+        parts.append(f"If the KPI moves unexpectedly, break it down by {next_drill} first.")
+    return " ".join(parts)
+
+
+def _focus_guidance_message(focus: ChatFocusContext, strategy_digest: dict[str, Any]) -> str:
     if focus.analysis_result is not None:
         answer = answer_analysis_question(
             message="What should I look at next?",
             analysis=focus.analysis_result,
             artifact_action="risk_next_step" if focus.active_task == "strategy_risk" else None,
+            answer_mode="next_best_action",
         )
         if answer:
             return answer
     next_drill = _next_focus_drill_dimension(focus)
+    matched_kpi_label = _focus_primary_kpi_label(focus)
     if next_drill:
-        return f"Next, break the current view down by {next_drill} to isolate where the signal is concentrated."
+        scope = f" for {matched_kpi_label}" if matched_kpi_label else ""
+        return f"Next, break the current view down by {next_drill}{scope} to isolate where the signal is concentrated."
     if focus.focus_type == "kpi":
-        return "Start with KPI Risk or Forecast, then compare the weakest business slice against the strongest."
+        return f"Start with KPI Risk or Forecast for {focus.title or matched_kpi_label or 'this KPI'}, then compare the weakest business slice against the strongest."
     if _focus_chart_metric(focus):
-        return "Explain the current chart first, then forecast the metric or compare the weakest business slice if the pattern looks uneven."
-    return "Start with the most prominent metric, then drill into the next business slice or launch a forecast if the question is time-based."
+        return (
+            f"Start by explaining the current signal, then compare the weakest and strongest slices for "
+            f"{matched_kpi_label or _focus_chart_metric_label(focus) or 'the metric'}."
+        )
+    north_star = _focus_strategy_answer_context(focus, strategy_digest).get("north_star")
+    return (
+        f"Start with the most prominent metric, then drill into the next business slice or launch a forecast if the question is time-based."
+        f"{f' Keep the next step aligned to {north_star}.' if north_star else ''}"
+    )
+
+
+def _focus_fallback_message(focus: ChatFocusContext, answer_mode: str, strategy_digest: dict[str, Any]) -> str:
+    if answer_mode in {"recommend", "next_best_action", "drill_priority"}:
+        return _focus_guidance_message(focus, strategy_digest)
+    if answer_mode == "what_happened":
+        return _focus_what_happened_message(focus)
+    if answer_mode == "strategy_alignment":
+        return _focus_strategy_alignment_message(focus, strategy_digest)
+    if answer_mode == "kpi_strategy_relationship":
+        return _focus_kpi_strategy_message(focus, strategy_digest)
+    return _focus_explain_message(focus)
 
 
 def _drill_patch_response(focus: ChatFocusContext) -> ChatPatchResponse | None:
@@ -1998,6 +2368,7 @@ def _maybe_handle_focus_prompt(
             message=effective_message,
             analysis=focus.analysis_result,
             artifact_action=artifact_action,
+            answer_mode=answer_mode,
         )
         if answer:
             return ChatExplainResponse(
@@ -2018,7 +2389,7 @@ def _maybe_handle_focus_prompt(
     if focus is not None and answer_mode is not None:
         return ChatExplainResponse(
             response_type="explain",
-            message=_focus_guidance_message(focus) if answer_mode == "recommend" else _focus_explain_message(focus),
+            message=_focus_fallback_message(focus, answer_mode, strategy_digest),
             citations=[],
             meta={
                 "from_focus": True,
@@ -2034,7 +2405,7 @@ def _maybe_handle_focus_prompt(
     if quick_prompt is not None and focus is not None and quick_prompt.preferred_route == "explain":
         return ChatExplainResponse(
             response_type="explain",
-            message=_focus_explain_message(focus),
+            message=_focus_fallback_message(focus, "explain", strategy_digest),
             citations=[],
             meta={"from_focus": True, "artifact_action": artifact_action, "answer_source": "focus_fallback"},
         )
@@ -2042,7 +2413,7 @@ def _maybe_handle_focus_prompt(
     if quick_prompt is not None and focus is not None and quick_prompt.preferred_route == "guidance":
         return ChatExplainResponse(
             response_type="explain",
-            message=_focus_guidance_message(focus),
+            message=_focus_fallback_message(focus, "next_best_action", strategy_digest),
             citations=[],
             meta={"from_focus_guidance": True, "artifact_action": artifact_action, "answer_source": "focus_fallback"},
         )

@@ -29,6 +29,7 @@ ChatPromptKind = Literal["ask", "task", "chart_edit", "follow_up", "compare", "d
 ChatPromptRoute = Literal["explain", "analysis", "chart", "chart_patch", "guidance"]
 ChatPromptAnswerMode = Literal[
     "explain",
+    "what_happened",
     "diagnose",
     "recommend",
     "next_best_action",
@@ -37,6 +38,8 @@ ChatPromptAnswerMode = Literal[
     "segment_comparison",
     "forecast_interpretation",
     "risk_explanation",
+    "strategy_alignment",
+    "kpi_strategy_relationship",
 ]
 ChatPromptArtifactAction = Literal[
     "explain_chart",
@@ -54,6 +57,8 @@ ChatPromptArtifactAction = Literal[
     "risk_driver",
     "risk_slice",
     "risk_next_step",
+    "strategy_alignment",
+    "kpi_strategy_relationship",
 ]
 
 

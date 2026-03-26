@@ -19,6 +19,7 @@ export type ChatPromptKind = 'ask' | 'task' | 'chart_edit' | 'follow_up' | 'comp
 export type ChatPromptRoute = 'explain' | 'analysis' | 'chart' | 'chart_patch' | 'guidance';
 export type ChatPromptAnswerMode =
   | 'explain'
+  | 'what_happened'
   | 'diagnose'
   | 'recommend'
   | 'next_best_action'
@@ -26,7 +27,9 @@ export type ChatPromptAnswerMode =
   | 'segment_differentiation'
   | 'segment_comparison'
   | 'forecast_interpretation'
-  | 'risk_explanation';
+  | 'risk_explanation'
+  | 'strategy_alignment'
+  | 'kpi_strategy_relationship';
 export type ChatPromptArtifactAction =
   | 'explain_chart'
   | 'explain_kpi'
@@ -42,7 +45,9 @@ export type ChatPromptArtifactAction =
   | 'segment_drill_priority'
   | 'risk_driver'
   | 'risk_slice'
-  | 'risk_next_step';
+  | 'risk_next_step'
+  | 'strategy_alignment'
+  | 'kpi_strategy_relationship';
 
 export interface ChatDebugMetadata {
   used_fallback?: boolean;

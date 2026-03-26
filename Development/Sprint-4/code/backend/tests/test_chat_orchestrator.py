@@ -17,8 +17,10 @@ from app.services.intelligence.specs import (
     AnalysisResponse,
     InsightCard,
     PlanSpec,
+    SemanticContextSpec,
     SegmentProfile,
     SegmentSummary,
+    StrategyContextSpec,
 )
 
 
@@ -696,6 +698,193 @@ def test_artifact_answer_mode_prefers_typed_prompt_answer_mode() -> None:
     )
 
     assert answer_mode == "next_best_action"
+
+
+def test_artifact_answer_mode_detects_what_happened_for_chart_prompt() -> None:
+    answer_mode = chat_orchestrator._artifact_answer_mode(
+        message="What happened here?",
+        focus=ChatFocusContext(
+            focus_type="chart",
+            title="Revenue trend",
+            table="gold_sales_daily",
+        ),
+        quick_prompt=None,
+    )
+
+    assert answer_mode == "what_happened"
+
+
+def test_build_artifact_answer_user_prompt_includes_chart_evidence_and_strategy_context() -> None:
+    prompt = chat_orchestrator._build_artifact_answer_user_prompt(
+        dataset_id="silkroute",
+        question="What happened here?",
+        answer_mode="what_happened",
+        focus=ChatFocusContext(
+            focus_type="chart",
+            title="Revenue trend",
+            table="gold_sales_daily",
+            kpi_id="net_sales_growth",
+            chart_spec=ChartSpecV1.model_validate(
+                {
+                    "version": "v1",
+                    "table": "gold_sales_daily",
+                    "chart": {"type": "line"},
+                    "encoding": {
+                        "x": {"field": "sales_date"},
+                        "y": [{"field": "net_sales", "aggregation": "sum", "alias": "net_sales"}],
+                    },
+                }
+            ),
+            chart_rows=[
+                {"sales_date": "2025-01", "net_sales": 100.0},
+                {"sales_date": "2025-02", "net_sales": 145.0},
+            ],
+            analysis_context=AnalysisContextSpec(
+                source="strategy",
+                table="gold_sales_daily",
+                semantic=SemanticContextSpec(
+                    matched_kpi_id="net_sales_growth",
+                    matched_kpi_label="Net Sales Growth",
+                    semantic_family="revenue",
+                    preferred_drill_path=["region", "city", "store_id"],
+                ),
+                strategy=StrategyContextSpec(
+                    target_value=125.0,
+                    current_value=145.0,
+                    status="ahead",
+                ),
+            ),
+            summary="Revenue accelerated in the latest period.",
+        ),
+        quick_prompt=ChatQuickPrompt(
+            label="What happened here?",
+            prompt_text="What happened here?",
+            prompt_kind="follow_up",
+            preferred_route="explain",
+            answer_mode="what_happened",
+            focus_type="chart",
+            artifact_action="chart_change",
+        ),
+        context=CONTEXT,
+        strategy_digest=STRATEGY_DIGEST,
+    )
+
+    assert "Structured answering context" in prompt
+    assert "\"chart_evidence\"" in prompt
+    assert "\"matched_kpi_label\": \"Net Sales Growth\"" in prompt
+    assert "\"north_star\": \"Revenue Growth\"" in prompt
+
+
+def test_maybe_handle_focus_prompt_what_happened_fallback_uses_chart_evidence(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        chat_orchestrator,
+        "get_settings",
+        lambda: SimpleNamespace(OPENAI_API_KEY="", OPENAI_MODEL="gpt-4o-mini"),
+    )
+
+    response = chat_orchestrator._maybe_handle_focus_prompt(
+        dataset_id="silkroute",
+        table="gold_sales_daily",
+        message="What happened here?",
+        state=ChatState(),
+        focus=ChatFocusContext(
+            focus_type="chart",
+            title="Revenue trend",
+            table="gold_sales_daily",
+            chart_spec=ChartSpecV1.model_validate(
+                {
+                    "version": "v1",
+                    "table": "gold_sales_daily",
+                    "chart": {"type": "line"},
+                    "encoding": {
+                        "x": {"field": "sales_date"},
+                        "y": [{"field": "net_sales", "aggregation": "sum"}],
+                    },
+                }
+            ),
+            chart_rows=[
+                {"sales_date": "2025-01", "net_sales": 100.0},
+                {"sales_date": "2025-02", "net_sales": 155.0},
+                {"sales_date": "2025-03", "net_sales": 120.0},
+            ],
+            summary="Sales jumped and then cooled.",
+        ),
+        quick_prompt=ChatQuickPrompt(
+            label="What happened here?",
+            prompt_text="What happened here?",
+            prompt_kind="follow_up",
+            preferred_route="explain",
+            answer_mode="what_happened",
+            focus_type="chart",
+            artifact_action="chart_change",
+        ),
+        context=CONTEXT,
+        strategy_digest=STRATEGY_DIGEST,
+        db=SimpleNamespace(),
+    )
+
+    assert response is not None
+    assert response.response_type == "explain"
+    assert "2025-01" in response.message or "2025-02" in response.message
+    assert "net_sales" in response.message
+
+
+def test_maybe_handle_focus_prompt_kpi_strategy_relationship_fallback_uses_strategy_context(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        chat_orchestrator,
+        "get_settings",
+        lambda: SimpleNamespace(OPENAI_API_KEY="", OPENAI_MODEL="gpt-4o-mini"),
+    )
+
+    response = chat_orchestrator._maybe_handle_focus_prompt(
+        dataset_id="silkroute",
+        table="gold_sales_daily",
+        message="How does this KPI support the strategy?",
+        state=ChatState(),
+        focus=ChatFocusContext(
+            focus_type="kpi",
+            title="Net Sales Growth",
+            table="gold_sales_daily",
+            kpi_id="net_sales_growth",
+            analysis_context=AnalysisContextSpec(
+                source="strategy",
+                table="gold_sales_daily",
+                semantic=SemanticContextSpec(
+                    matched_kpi_id="net_sales_growth",
+                    matched_kpi_label="Net Sales Growth",
+                    semantic_family="revenue",
+                    business_concepts=["revenue", "growth"],
+                    preferred_drill_path=["region", "city", "store_id"],
+                ),
+                strategy=StrategyContextSpec(
+                    target_value=25.0,
+                    current_value=18.0,
+                    status="watch",
+                    triggered_rules=["Escalate if growth stays below plan."],
+                ),
+            ),
+            summary="Growth is below the current target path.",
+        ),
+        quick_prompt=ChatQuickPrompt(
+            label="How does this KPI support the strategy?",
+            prompt_text="How does this KPI support the current strategy?",
+            prompt_kind="follow_up",
+            preferred_route="explain",
+            answer_mode="kpi_strategy_relationship",
+            focus_type="kpi",
+            artifact_action="kpi_strategy_relationship",
+        ),
+        context=CONTEXT,
+        strategy_digest=STRATEGY_DIGEST,
+        db=SimpleNamespace(),
+    )
+
+    assert response is not None
+    assert response.response_type == "explain"
+    assert "Net Sales Growth" in response.message
+    assert "Revenue Growth" in response.message
 
 
 def test_maybe_handle_focus_prompt_routes_task_prompt_to_direct_analysis(monkeypatch: pytest.MonkeyPatch) -> None:

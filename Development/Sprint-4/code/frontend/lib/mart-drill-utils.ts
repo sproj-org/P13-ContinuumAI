@@ -171,6 +171,34 @@ const MART_DRILL_RULES: MartDrillRule[] = [
     terminalDimensions: ["customer_id"],
   },
   {
+    id: "mart-sales",
+    patterns: [/mart_sales/i],
+    explicitPaths: [
+      ["store_region", "store_city", "store_type", "store_id", "subcategory", "brand", "product_id", "sku_id", "sales_date"],
+      ["customer_segment", "customer_region", "customer_city", "subcategory", "brand", "product_id", "customer_id"],
+      ["subcategory", "brand", "product_id", "sku_id", "sales_date"],
+    ],
+    fallbackConcepts: ["region", "city", "store_type", "store", "segment", "category", "brand", "product", "sku", "date"],
+    terminalDimensions: ["customer_id", "sku_id", "sales_date"],
+  },
+  {
+    id: "mart-customers",
+    patterns: [/mart_customers/i],
+    explicitPaths: [
+      ["segment", "region", "city", "preferred_subcategory", "preferred_brand", "customer_id"],
+      ["region", "city", "preferred_subcategory", "preferred_brand", "customer_id"],
+    ],
+    fallbackConcepts: ["segment", "region", "city", "category", "brand", "customer"],
+    terminalDimensions: ["customer_id"],
+  },
+  {
+    id: "mart-stores",
+    patterns: [/mart_stores/i],
+    explicitPaths: [["region", "city", "store_type", "store_id"]],
+    fallbackConcepts: ["region", "city", "store_type", "store"],
+    terminalDimensions: ["store_id"],
+  },
+  {
     id: "employee-360",
     patterns: [/gold_employee_360/i],
     explicitPaths: [["role", "home_store_id", "salesperson_id"]],
@@ -686,6 +714,7 @@ function keywordScore(name: string, current: string): number {
   let score = 0;
 
   if (lower.includes("category")) score += 10;
+  if (lower.includes("subcategory")) score += 11;
   if (lower.includes("brand")) score += 12;
   if (lower.includes("product_id")) score += 14;
   if (lower.includes("sku_id")) score += 15;
@@ -694,12 +723,15 @@ function keywordScore(name: string, current: string): number {
   if (lower.includes("date") || lower.includes("day") || lower.includes("month")) score -= 1;
 
   if (currentLower.includes("category") && lower.includes("brand")) score += 12;
+  if (currentLower.includes("category") && lower.includes("subcategory")) score += 11;
+  if (currentLower.includes("subcategory") && lower.includes("brand")) score += 11;
   if (currentLower.includes("brand") && lower.includes("product_id")) score += 12;
   if (currentLower.includes("product_id") && lower.includes("sku_id")) score += 14;
   if (currentLower.includes("region") && lower.includes("city")) score += 10;
   if (currentLower.includes("city") && lower.includes("store")) score += 10;
   if (currentLower.includes("segment") && lower.includes("customer_id")) score += 12;
   if (currentLower.includes("store") && lower.includes("category")) score += 8;
+  if (currentLower.includes("store") && lower.includes("subcategory")) score += 9;
   if (currentLower.includes("store") && lower.includes("brand")) score += 8;
   if (currentLower.includes("store") && (lower.includes("product") || lower.includes("sku"))) score += 6;
 

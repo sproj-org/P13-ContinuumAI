@@ -225,6 +225,10 @@ export function contextualPromptSuggestions(focus: ChatFocusContext): ChatQuickP
           answer_mode: "next_best_action",
           artifact_action: "risk_next_step",
         }),
+        prompt("How does this risk affect the strategy?", "How does this KPI risk affect the strategy?", "follow_up", "explain", focus, {
+          answer_mode: "strategy_alignment",
+          artifact_action: "strategy_alignment",
+        }),
         prompt("Which business slice is driving the risk?", "Which business slice is most likely driving the risk?", "follow_up", "explain", focus, {
           answer_mode: "diagnose",
           artifact_action: "risk_slice",
@@ -239,6 +243,10 @@ export function contextualPromptSuggestions(focus: ChatFocusContext): ChatQuickP
         answer_mode: "explain",
         artifact_action: "explain_kpi",
       }),
+      prompt("How does this KPI support the strategy?", "How does this KPI support the current strategy?", "follow_up", "explain", focus, {
+        answer_mode: "kpi_strategy_relationship",
+        artifact_action: "kpi_strategy_relationship",
+      }),
       prompt("Why might this KPI move off target?", "Why might this KPI move off target?", "follow_up", "guidance", focus, {
         answer_mode: "risk_explanation",
         artifact_action: "risk_driver",
@@ -252,8 +260,8 @@ export function contextualPromptSuggestions(focus: ChatFocusContext): ChatQuickP
 
   if (focus.focus_type === "drill_state") {
     return [
-      prompt("What changed after this drill?", "What changed after this drill?", "follow_up", "explain", focus, {
-        answer_mode: "diagnose",
+      prompt("What happened after this drill?", "What happened after this drill?", "follow_up", "explain", focus, {
+        answer_mode: "what_happened",
         artifact_action: "chart_change",
       }),
       prompt("Which categories are driving this view?", "Which categories are driving this view?", "follow_up", "explain", focus, {
@@ -272,8 +280,8 @@ export function contextualPromptSuggestions(focus: ChatFocusContext): ChatQuickP
       answer_mode: "explain",
       artifact_action: "explain_chart",
     }),
-    prompt("What changed here?", "What changed here?", "follow_up", "explain", focus, {
-      answer_mode: "diagnose",
+    prompt("What happened here?", "What happened here?", "follow_up", "explain", focus, {
+      answer_mode: "what_happened",
       artifact_action: "chart_change",
     }),
     prompt("What should I look at next?", "What should I look at next?", "follow_up", "guidance", focus, {

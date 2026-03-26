@@ -200,6 +200,7 @@ hierarchy:
       - store_id
     product:
       - category
+      - subcategory
       - brand
       - product_id
       - sku_id
@@ -255,6 +256,26 @@ hierarchy:
         - [segment, region, city, top_category, customer_id]
       terminal_dimensions:
         - customer_id
+    mart_sales:
+      default_paths:
+        - [store_region, store_city, store_type, store_id, subcategory, brand, product_id, sku_id, sales_date]
+        - [customer_segment, customer_region, customer_city, subcategory, brand, product_id, customer_id]
+        - [subcategory, brand, product_id, sku_id, sales_date]
+      terminal_dimensions:
+        - customer_id
+        - sku_id
+        - sales_date
+    mart_customers:
+      default_paths:
+        - [segment, region, city, preferred_subcategory, preferred_brand, customer_id]
+        - [region, city, preferred_subcategory, preferred_brand, customer_id]
+      terminal_dimensions:
+        - customer_id
+    mart_stores:
+      default_paths:
+        - [region, city, store_type, store_id]
+      terminal_dimensions:
+        - store_id
     gold_inventory_health_daily:
       default_paths:
         - [stockout_risk_flag, store_id, sku_id, snapshot_date]
