@@ -122,12 +122,13 @@ const MART_DRILL_RULES: MartDrillRule[] = [
     id: "sales-daily",
     patterns: [/gold_sales_daily/i],
     explicitPaths: [
-      ["channel_type", "region", "city", "store_type", "store_id", "sales_date"],
-      ["region", "city", "store_type", "store_id", "sales_date"],
-      ["store_type", "store_id", "sales_date"],
+      ["channel_type", "region", "city", "store_type", "store_id", "category", "brand", "product_id", "sku_id", "sales_date"],
+      ["region", "city", "store_type", "store_id", "category", "brand", "product_id", "sku_id", "sales_date"],
+      ["store_type", "store_id", "category", "brand", "product_id", "sku_id", "sales_date"],
+      ["category", "brand", "product_id", "sku_id", "sales_date"],
     ],
-    fallbackConcepts: ["channel", "region", "city", "store_type", "store", "date"],
-    terminalDimensions: ["store_id", "sales_date"],
+    fallbackConcepts: ["channel", "region", "city", "store_type", "store", "category", "brand", "product", "sku", "date"],
+    terminalDimensions: ["store_id", "sku_id", "sales_date"],
   },
   {
     id: "store-sku-daily",
@@ -161,6 +162,7 @@ const MART_DRILL_RULES: MartDrillRule[] = [
     id: "customer-360",
     patterns: [/gold_customer_360/i],
     explicitPaths: [
+      ["segment", "churn_risk_bucket", "region", "city", "top_category", "customer_id"],
       ["segment", "region", "city", "top_category", "customer_id"],
       ["segment", "churn_risk_bucket", "city", "customer_id"],
       ["region", "city", "customer_id"],
@@ -217,8 +219,8 @@ const METRIC_FAMILY_RULES: MetricFamilyRule[] = [
     id: "transactions",
     label: "Transactions",
     patterns: ["transaction", "order", "orders", "count", "volume"],
-    preferredConcepts: ["channel", "region", "city", "store_type", "store", "date"],
-    terminalConcepts: ["store", "date"],
+    preferredConcepts: ["channel", "region", "city", "store_type", "store", "category", "brand", "product", "sku", "date"],
+    terminalConcepts: ["store", "sku", "date"],
     discouragedConcepts: ["customer_risk"],
   },
   {
@@ -697,6 +699,8 @@ function keywordScore(name: string, current: string): number {
   if (currentLower.includes("region") && lower.includes("city")) score += 10;
   if (currentLower.includes("city") && lower.includes("store")) score += 10;
   if (currentLower.includes("segment") && lower.includes("customer_id")) score += 12;
+  if (currentLower.includes("store") && lower.includes("category")) score += 8;
+  if (currentLower.includes("store") && lower.includes("brand")) score += 8;
   if (currentLower.includes("store") && (lower.includes("product") || lower.includes("sku"))) score += 6;
 
   return score;

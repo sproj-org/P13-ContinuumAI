@@ -27,6 +27,17 @@ ChartType = Literal["bar", "line", "pie", "histogram", "kpi"]
 ChatFocusType = Literal["chart", "dashboard", "kpi", "analysis_result", "drill_state"]
 ChatPromptKind = Literal["ask", "task", "chart_edit", "follow_up", "compare", "drill"]
 ChatPromptRoute = Literal["explain", "analysis", "chart", "chart_patch", "guidance"]
+ChatPromptAnswerMode = Literal[
+    "explain",
+    "diagnose",
+    "recommend",
+    "next_best_action",
+    "drill_priority",
+    "segment_differentiation",
+    "segment_comparison",
+    "forecast_interpretation",
+    "risk_explanation",
+]
 ChatPromptArtifactAction = Literal[
     "explain_chart",
     "explain_kpi",
@@ -161,6 +172,7 @@ class ChatQuickPrompt(BaseModel):
     prompt_text: str
     prompt_kind: ChatPromptKind
     preferred_route: ChatPromptRoute
+    answer_mode: ChatPromptAnswerMode | None = None
     focus_type: ChatFocusType | None = None
     analysis_result_type: str | None = None
     artifact_action: ChatPromptArtifactAction | None = None

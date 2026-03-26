@@ -89,15 +89,26 @@ export default function DrillDownChart({
   const [error, setError] = useState<string | null>(null);
   const [drillNotice, setDrillNotice] = useState<DrillNotice | null>(null);
 
-  const baselineFingerprintRef = useRef<string>("");
-  const baselineFingerprint = useMemo(
-    () => JSON.stringify({ chartSpec, rows: initialRows, defaultAutoDrill }),
-    [chartSpec, initialRows, defaultAutoDrill],
+  const sourceFingerprintRef = useRef<string>("");
+  const sourceFingerprint = useMemo(
+    () =>
+      JSON.stringify({
+        datasetId,
+        table: chartSpec.table,
+        chartType: chartSpec.chart.type,
+        xField: chartSpec.encoding.x.field,
+        yFields: chartSpec.encoding.y.map((item) => `${item.field}:${item.aggregation ?? "sum"}`),
+        filters: chartSpec.filters ?? [],
+        sort: chartSpec.sort ?? [],
+        limit: chartSpec.limit ?? null,
+        defaultAutoDrill,
+      }),
+    [chartSpec.chart.type, chartSpec.encoding.x.field, chartSpec.encoding.y, chartSpec.filters, chartSpec.limit, chartSpec.sort, chartSpec.table, datasetId, defaultAutoDrill],
   );
 
   useEffect(() => {
-    if (baselineFingerprintRef.current !== baselineFingerprint) {
-      baselineFingerprintRef.current = baselineFingerprint;
+    if (sourceFingerprintRef.current !== sourceFingerprint) {
+      sourceFingerprintRef.current = sourceFingerprint;
       setDrillStack([]);
       setCurrentRows(initialRows);
       setPendingClick(null);
@@ -107,7 +118,13 @@ export default function DrillDownChart({
       setError(null);
       setDrillNotice(null);
     }
-  }, [baselineFingerprint, defaultAutoDrill, initialRows]);
+  }, [defaultAutoDrill, initialRows, sourceFingerprint]);
+
+  useEffect(() => {
+    if (drillStack.length === 0) {
+      setCurrentRows(initialRows);
+    }
+  }, [drillStack.length, initialRows]);
 
   const startDimension = chartSpec.encoding.x.field;
   const currentDimension = drillStack.length > 0 ? drillStack[drillStack.length - 1].nextDimension : startDimension;
@@ -505,9 +522,11 @@ export default function DrillDownChart({
           {supportsDrill ? (
             <div className="ml-auto flex items-center gap-2">
               <span className="text-slate-400 italic">
-                {canAutoDrill && topRecommendationLabel
-                  ? `Quick drill targets ${topRecommendationLabel}`
-                  : "Click to choose the next drill dimension"}
+                {!quickDrillEnabled
+                  ? "Quick drill is off, so clicks open the dimension picker first."
+                  : canAutoDrill && topRecommendationLabel
+                    ? `Quick drill targets ${topRecommendationLabel}`
+                    : "Click to choose the next drill dimension"}
               </span>
               {displayPolicy.allowQuickDrill ? (
                 <button
@@ -535,9 +554,11 @@ export default function DrillDownChart({
         <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 bg-indigo-50/50 border-b border-indigo-100/50 rounded-t-xl text-xs flex-shrink-0">
           <span className="text-indigo-500 font-medium">
             {supportsDrill
-              ? canAutoDrill && topRecommendationLabel
-                ? `Click a ${chartType === "pie" ? "slice" : chartType === "line" ? "point" : "bar"} to quick-drill into ${topRecommendationLabel}`
-                : `Click a ${chartType === "pie" ? "slice" : chartType === "line" ? "point" : "bar"} to choose the next drill dimension`
+              ? !quickDrillEnabled
+                ? `Quick drill is off. Click a ${chartType === "pie" ? "slice" : chartType === "line" ? "point" : "bar"} to open the drill picker first`
+                : canAutoDrill && topRecommendationLabel
+                  ? `Click a ${chartType === "pie" ? "slice" : chartType === "line" ? "point" : "bar"} to quick-drill into ${topRecommendationLabel}`
+                  : `Click a ${chartType === "pie" ? "slice" : chartType === "line" ? "point" : "bar"} to choose the next drill dimension`
               : effectiveDisabledReason}
           </span>
           <div className="flex items-center gap-2">

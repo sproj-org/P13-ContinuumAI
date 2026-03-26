@@ -17,6 +17,16 @@ export type ChatResponseType = 'chart' | 'chart_patch' | 'explain' | 'clarify' |
 export type ChatFallbackReason = 'missing_key' | 'openai_error';
 export type ChatPromptKind = 'ask' | 'task' | 'chart_edit' | 'follow_up' | 'compare' | 'drill';
 export type ChatPromptRoute = 'explain' | 'analysis' | 'chart' | 'chart_patch' | 'guidance';
+export type ChatPromptAnswerMode =
+  | 'explain'
+  | 'diagnose'
+  | 'recommend'
+  | 'next_best_action'
+  | 'drill_priority'
+  | 'segment_differentiation'
+  | 'segment_comparison'
+  | 'forecast_interpretation'
+  | 'risk_explanation';
 export type ChatPromptArtifactAction =
   | 'explain_chart'
   | 'explain_kpi'
@@ -81,6 +91,7 @@ export interface ChatQuickPrompt {
   prompt_text: string;
   prompt_kind: ChatPromptKind;
   preferred_route: ChatPromptRoute;
+  answer_mode?: ChatPromptAnswerMode | null;
   focus_type?: ChatFocusType | null;
   analysis_result_type?: string | null;
   artifact_action?: ChatPromptArtifactAction | null;

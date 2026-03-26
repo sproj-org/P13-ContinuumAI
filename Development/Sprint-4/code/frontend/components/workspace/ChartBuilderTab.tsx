@@ -620,11 +620,6 @@ export default function ChartBuilderTab() {
     setChartBuilderSeed(createChartBuilderSeed(nextChartSpec));
   };
 
-  const previewIdentity = useMemo(
-    () => (previewChartSpec ? JSON.stringify(previewChartSpec) : "preview-empty"),
-    [previewChartSpec],
-  );
-
   const executionDebug = useMemo(() => {
     if (!previewData || typeof previewData.meta !== "object" || previewData.meta === null) {
       return null;
@@ -932,7 +927,7 @@ export default function ChartBuilderTab() {
                 </motion.div>
               ) : previewData && chartSpec ? (
                 <motion.div
-                  key={previewIdentity}
+                  key={chartSpecSignature}
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}

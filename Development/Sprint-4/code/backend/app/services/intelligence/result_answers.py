@@ -30,6 +30,21 @@ def _segment_divergence(profile: SegmentProfile, comparison_means: dict[str, flo
     return score
 
 
+def _segment_primary_metric(profiles: list[SegmentProfile]) -> str | None:
+    centroid_keys = {key for profile in profiles for key in profile.centroid}
+    if not centroid_keys:
+        return None
+    best_metric: str | None = None
+    best_span = -1.0
+    for metric in centroid_keys:
+        values = [profile.centroid.get(metric, 0.0) for profile in profiles]
+        span = max(values) - min(values)
+        if span > best_span:
+            best_metric = metric
+            best_span = span
+    return best_metric
+
+
 def _answer_segment_question(message: str, analysis: AnalysisResponse, artifact_action: str | None) -> str | None:
     segmentation = analysis.segmentation
     if segmentation is None or not segmentation.profiles:
@@ -43,14 +58,18 @@ def _answer_segment_question(message: str, analysis: AnalysisResponse, artifact_
     for key in centroid_keys:
         centroid_means[key] = mean(profile.centroid.get(key, 0.0) for profile in profiles)
     most_distinctive = max(profiles, key=lambda item: _segment_divergence(item, centroid_means))
+    primary_metric = _segment_primary_metric(profiles)
+    strongest = max(profiles, key=lambda item: item.centroid.get(primary_metric or "", 0.0))
+    weakest = min(profiles, key=lambda item: item.centroid.get(primary_metric or "", 0.0))
     text = _normalize_text(message)
 
     if artifact_action == "segment_compare_extremes" or _contains_any(text, ("strongest", "weakest", "strongest cluster", "weakest cluster")):
-        strongest_metric = profiles[0].metric_highlights[0] if profiles[0].metric_highlights else "its leading metrics"
-        weakest_metric = profiles[-1].metric_highlights[0] if profiles[-1].metric_highlights else "its weakest metrics"
+        strongest_metric = strongest.metric_highlights[0] if strongest.metric_highlights else "its leading metrics"
+        weakest_metric = weakest.metric_highlights[0] if weakest.metric_highlights else "its weakest metrics"
+        metric_text = f" on {primary_metric}" if primary_metric else ""
         return (
-            f"Cluster {largest.cluster_id} is the broadest segment with {largest.entity_count} entities and is useful as the operating baseline, "
-            f"while Cluster {smallest.cluster_id} is the smallest and most niche. Compare {strongest_metric} against {weakest_metric} first."
+            f"Cluster {strongest.cluster_id} is strongest{metric_text}, while Cluster {weakest.cluster_id} trails most clearly{metric_text}. "
+            f"Use Cluster {largest.cluster_id} as the operating baseline if you also need a broad-volume reference. Compare {strongest_metric} against {weakest_metric} first."
         )
 
     if artifact_action == "segment_differentiators" or _contains_any(text, ("differentiate", "differentiates", "difference", "different")):

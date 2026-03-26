@@ -1678,6 +1678,8 @@ def _artifact_answer_mode(
     quick_prompt: ChatQuickPrompt | None,
 ) -> str | None:
     if quick_prompt is not None:
+        if quick_prompt.answer_mode:
+            return quick_prompt.answer_mode
         artifact_action = quick_prompt.artifact_action or ""
         if quick_prompt.preferred_route == "guidance":
             return artifact_action or "recommend"
@@ -1710,6 +1712,46 @@ def _artifact_answer_mode(
     return None
 
 
+def _artifact_answer_requirements(answer_mode: str) -> list[str]:
+    base = ["Use the supplied artifact/result context directly and avoid generic product language."]
+    mapping = {
+        "explain": [
+            "Describe what the current artifact is showing in plain business terms.",
+            "Anchor the explanation to the visible metric, grouping, and strongest signal.",
+        ],
+        "diagnose": [
+            "Explain the most likely driver or change using the structured evidence in the artifact.",
+            "If the evidence is incomplete, name the missing slice rather than inventing a cause.",
+        ],
+        "recommend": [
+            "Recommend the smallest grounded next analysis step or drill path.",
+        ],
+        "next_best_action": [
+            "Recommend one or two next actions only.",
+            "Prefer the next drill, comparison, or analysis that best explains the current signal.",
+        ],
+        "drill_priority": [
+            "Name the one dimension, cluster, or slice to inspect first and explain why it should come first.",
+        ],
+        "segment_differentiation": [
+            "Contrast the clusters using the strongest differentiators in the supplied profiles.",
+            "Mention the most important feature gaps or profile highlights explicitly.",
+        ],
+        "segment_comparison": [
+            "Compare the strongest cluster against the weakest relevant cluster using the supplied profiles.",
+            "State the business implication of that contrast without inventing unsupported causes.",
+        ],
+        "forecast_interpretation": [
+            "Explain the forecast basis, recent direction, and any confidence or target caveat.",
+        ],
+        "risk_explanation": [
+            "Explicitly reference current, projected, and target values when they are available.",
+            "Connect the risk explanation back to the KPI and the most relevant next investigation step.",
+        ],
+    }
+    return [*base, *mapping.get(answer_mode, [])]
+
+
 def _build_artifact_answer_system_prompt() -> str:
     return (
         "You are ContinuumAI's contextual decision-intelligence assistant. "
@@ -1735,6 +1777,7 @@ def _build_artifact_answer_user_prompt(
 ) -> str:
     focus_digest = _focus_digest(focus) or {}
     quick_prompt_digest = quick_prompt.model_dump(mode="json", exclude_none=True) if quick_prompt is not None else {}
+    answer_requirements = "\n".join(f"- {item}" for item in _artifact_answer_requirements(answer_mode))
     return (
         f"Dataset: {dataset_id}\n"
         f"User question: {question}\n"
@@ -1750,6 +1793,7 @@ def _build_artifact_answer_user_prompt(
         "- If the question is about risk, explicitly reference current/projected/target values when available.\n"
         "- If the question is about segmentation, explain the cluster differences or drill priority using the supplied profiles.\n"
         "- If the question is about forecast or anomalies, mention the strongest signal and any confidence caveat when present.\n"
+        f"{answer_requirements}\n"
         'Return JSON only in the form {"message": "..."}'
     )
 

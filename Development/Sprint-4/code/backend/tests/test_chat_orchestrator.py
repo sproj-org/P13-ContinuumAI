@@ -680,6 +680,24 @@ def test_maybe_handle_focus_prompt_prefers_grounded_llm_answer_when_available(mo
     assert "Cluster 0" in response.message
 
 
+def test_artifact_answer_mode_prefers_typed_prompt_answer_mode() -> None:
+    answer_mode = chat_orchestrator._artifact_answer_mode(
+        message="What should I look at next?",
+        focus=None,
+        quick_prompt=ChatQuickPrompt(
+            label="What should I look at next?",
+            prompt_text="What should I look at next?",
+            prompt_kind="follow_up",
+            preferred_route="guidance",
+            answer_mode="next_best_action",
+            focus_type="chart",
+            artifact_action="next_step",
+        ),
+    )
+
+    assert answer_mode == "next_best_action"
+
+
 def test_maybe_handle_focus_prompt_routes_task_prompt_to_direct_analysis(monkeypatch: pytest.MonkeyPatch) -> None:
     captured: dict[str, Any] = {}
 

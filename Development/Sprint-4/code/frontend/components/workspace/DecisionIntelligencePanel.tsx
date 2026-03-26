@@ -547,10 +547,16 @@ export default function DecisionIntelligencePanel({
         if (!current || current.tasks[task].runId !== runId) {
           return previous;
         }
+        const shouldOwnDisplay =
+          current.displayedTask === task ||
+          current.selectedTask === task ||
+          current.lastCompletedTask === null;
         return {
           ...previous,
           [requestContextKey]: {
             ...current,
+            selectedTask: shouldOwnDisplay ? task : current.selectedTask,
+            displayedTask: shouldOwnDisplay ? task : current.displayedTask,
             runningTask: current.runningTask === task ? null : current.runningTask,
             lastCompletedTask: task,
             tasks: {
@@ -571,10 +577,16 @@ export default function DecisionIntelligencePanel({
         if (!current || current.tasks[task].runId !== runId) {
           return previous;
         }
+        const shouldOwnDisplay =
+          current.displayedTask === task ||
+          current.selectedTask === task ||
+          current.lastCompletedTask === null;
         return {
           ...previous,
           [requestContextKey]: {
             ...current,
+            selectedTask: shouldOwnDisplay ? task : current.selectedTask,
+            displayedTask: shouldOwnDisplay ? task : current.displayedTask,
             runningTask: current.runningTask === task ? null : current.runningTask,
             tasks: {
               ...current.tasks,

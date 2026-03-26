@@ -65,6 +65,10 @@ kpis:
       - city
       - store_type
       - store_id
+      - category
+      - brand
+      - product_id
+      - sku_id
       - sales_date
     default_grain: day
     pillar_id: growth
@@ -88,6 +92,10 @@ kpis:
       - city
       - store_type
       - store_id
+      - category
+      - brand
+      - product_id
+      - sku_id
       - sales_date
     mart_drill_overrides:
       gold_sales_daily:
@@ -96,9 +104,14 @@ kpis:
         - city
         - store_type
         - store_id
+        - category
+        - brand
+        - product_id
+        - sku_id
         - sales_date
     terminal_dimensions:
       - store_id
+      - sku_id
       - sales_date
     disallowed_drill_dimensions: []
     preferred_chart_types:
@@ -119,6 +132,10 @@ kpis:
       - city
       - store_type
       - store_id
+      - category
+      - brand
+      - product_id
+      - sku_id
       - sales_date
     default_grain: day
     pillar_id: growth
@@ -130,6 +147,8 @@ kpis:
       - pricing
       - store
       - channel
+      - product
+      - brand
     metric_aliases:
       - aov
       - avg_basket_value
@@ -141,6 +160,10 @@ kpis:
       - city
       - store_type
       - store_id
+      - category
+      - brand
+      - product_id
+      - sku_id
       - sales_date
     mart_drill_overrides:
       gold_sales_daily:
@@ -149,9 +172,14 @@ kpis:
         - city
         - store_type
         - store_id
+        - category
+        - brand
+        - product_id
+        - sku_id
         - sales_date
     terminal_dimensions:
       - store_id
+      - sku_id
       - sales_date
     disallowed_drill_dimensions: []
     preferred_chart_types:
@@ -228,6 +256,10 @@ kpis:
       - city
       - store_type
       - store_id
+      - category
+      - brand
+      - product_id
+      - sku_id
       - sales_date
     default_grain: day
     pillar_id: margin
@@ -239,6 +271,8 @@ kpis:
       - store
       - channel
       - geography
+      - product
+      - brand
     metric_aliases:
       - gross_margin
       - margin_rate
@@ -249,6 +283,10 @@ kpis:
       - city
       - store_type
       - store_id
+      - category
+      - brand
+      - product_id
+      - sku_id
       - sales_date
     mart_drill_overrides:
       gold_sales_daily:
@@ -257,9 +295,14 @@ kpis:
         - city
         - store_type
         - store_id
+        - category
+        - brand
+        - product_id
+        - sku_id
         - sales_date
     terminal_dimensions:
       - store_id
+      - sku_id
       - sales_date
     disallowed_drill_dimensions: []
     preferred_chart_types:
@@ -282,6 +325,10 @@ kpis:
       - city
       - store_type
       - store_id
+      - category
+      - brand
+      - product_id
+      - sku_id
       - sales_date
     default_grain: day
     pillar_id: margin
@@ -293,6 +340,8 @@ kpis:
       - markdown
       - store
       - channel
+      - product
+      - brand
     metric_aliases:
       - discount_ratio
       - markdown_rate
@@ -303,6 +352,10 @@ kpis:
       - city
       - store_type
       - store_id
+      - category
+      - brand
+      - product_id
+      - sku_id
       - sales_date
     mart_drill_overrides:
       gold_sales_daily:
@@ -311,9 +364,14 @@ kpis:
         - city
         - store_type
         - store_id
+        - category
+        - brand
+        - product_id
+        - sku_id
         - sales_date
     terminal_dimensions:
       - store_id
+      - sku_id
       - sales_date
     disallowed_drill_dimensions: []
     preferred_chart_types:
@@ -476,6 +534,10 @@ kpis:
       - city
       - store_type
       - store_id
+      - category
+      - brand
+      - product_id
+      - sku_id
       - sales_date
     default_grain: day
     pillar_id: retention
@@ -487,6 +549,8 @@ kpis:
       - store
       - channel
       - geography
+      - product
+      - brand
     metric_aliases:
       - returns_rate
       - refund_rate
@@ -497,6 +561,10 @@ kpis:
       - city
       - store_type
       - store_id
+      - category
+      - brand
+      - product_id
+      - sku_id
       - sales_date
     mart_drill_overrides:
       gold_sales_daily:
@@ -505,9 +573,14 @@ kpis:
         - city
         - store_type
         - store_id
+        - category
+        - brand
+        - product_id
+        - sku_id
         - sales_date
     terminal_dimensions:
       - store_id
+      - sku_id
       - sales_date
     disallowed_drill_dimensions: []
     preferred_chart_types:
@@ -529,6 +602,10 @@ kpis:
       - city
       - store_type
       - store_id
+      - category
+      - brand
+      - product_id
+      - sku_id
       - sales_date
     default_grain: day
     pillar_id: growth
@@ -540,6 +617,8 @@ kpis:
       - units
       - store
       - channel
+      - product
+      - brand
     metric_aliases:
       - upt
       - units_per_order
@@ -550,6 +629,10 @@ kpis:
       - city
       - store_type
       - store_id
+      - category
+      - brand
+      - product_id
+      - sku_id
       - sales_date
     mart_drill_overrides:
       gold_sales_daily:
@@ -558,9 +641,14 @@ kpis:
         - city
         - store_type
         - store_id
+        - category
+        - brand
+        - product_id
+        - sku_id
         - sales_date
     terminal_dimensions:
       - store_id
+      - sku_id
       - sales_date
     disallowed_drill_dimensions: []
     preferred_chart_types:
@@ -709,6 +797,10 @@ kpis:
       - city
       - store_type
       - store_id
+      - category
+      - brand
+      - product_id
+      - sku_id
       - sales_date
     mart_drill_overrides:
       gold_sales_daily:
@@ -716,6 +808,10 @@ kpis:
         - city
         - store_type
         - store_id
+        - category
+        - brand
+        - product_id
+        - sku_id
         - sales_date
       gold_store_360:
         - region
@@ -779,6 +875,10 @@ kpis:
       - region
       - city
       - store_id
+      - category
+      - brand
+      - product_id
+      - sku_id
       - sales_date
     mart_drill_overrides:
       gold_sales_daily:
@@ -786,6 +886,10 @@ kpis:
         - region
         - city
         - store_id
+        - category
+        - brand
+        - product_id
+        - sku_id
         - sales_date
       gold_store_360:
         - region
@@ -847,6 +951,10 @@ kpis:
       - region
       - city
       - store_id
+      - category
+      - brand
+      - product_id
+      - sku_id
       - sales_date
     mart_drill_overrides:
       gold_sales_daily:
@@ -854,6 +962,10 @@ kpis:
         - region
         - city
         - store_id
+        - category
+        - brand
+        - product_id
+        - sku_id
         - sales_date
       gold_store_360:
         - region

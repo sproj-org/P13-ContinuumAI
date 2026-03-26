@@ -94,10 +94,12 @@ def build_segment_insights(segmentation: SegmentSummary, *, metric_focus: str | 
                 title=f"{metric_focus} separates clusters clearly",
                 summary=(
                     f"Cluster {top.cluster_id} leads on {metric_focus} while cluster {bottom.cluster_id} lags, "
-                    "suggesting targeted playbooks rather than one-size-fits-all actions."
+                    "so these segments should be investigated separately before applying one action plan."
                 ),
                 severity="warn",
-                recommended_action="Run drilldowns on the top and bottom clusters to identify the operational drivers.",
+                recommended_action=(
+                    f"Compare Cluster {top.cluster_id} with Cluster {bottom.cluster_id} to confirm which dimensions are driving the {metric_focus} gap."
+                ),
             )
         )
     if segmentation.comparison_highlights:

@@ -150,13 +150,14 @@ function prompt(
   promptKind: ChatQuickPrompt["prompt_kind"],
   preferredRoute: ChatQuickPrompt["preferred_route"],
   focus: ChatFocusContext,
-  options?: Partial<Pick<ChatQuickPrompt, "artifact_action" | "analysis_result_type" | "task_type">>,
+  options?: Partial<Pick<ChatQuickPrompt, "answer_mode" | "artifact_action" | "analysis_result_type" | "task_type">>,
 ): ChatQuickPrompt {
   return {
     label,
     prompt_text: promptText,
     prompt_kind: promptKind,
     preferred_route: preferredRoute,
+    answer_mode: options?.answer_mode ?? null,
     focus_type: focus.focus_type,
     analysis_result_type: focus.active_task ?? null,
     artifact_action: options?.artifact_action ?? null,
@@ -169,12 +170,15 @@ export function contextualPromptSuggestions(focus: ChatFocusContext): ChatQuickP
     if (focus.active_task === "forecast") {
       return [
         prompt("Explain this forecast", "Explain this forecast", "ask", "explain", focus, {
+          answer_mode: "forecast_interpretation",
           artifact_action: "forecast_drivers",
         }),
         prompt("What is driving the projected change?", "What is driving the projected change?", "follow_up", "explain", focus, {
+          answer_mode: "forecast_interpretation",
           artifact_action: "forecast_drivers",
         }),
         prompt("What should I inspect next?", "Which slice should I inspect next?", "follow_up", "guidance", focus, {
+          answer_mode: "next_best_action",
           artifact_action: "next_step",
         }),
       ];
@@ -182,12 +186,15 @@ export function contextualPromptSuggestions(focus: ChatFocusContext): ChatQuickP
     if (focus.active_task === "anomaly") {
       return [
         prompt("What is driving this anomaly?", "What is driving this anomaly?", "follow_up", "explain", focus, {
+          answer_mode: "diagnose",
           artifact_action: "anomaly_driver",
         }),
         prompt("Which entities should I compare next?", "Which entities should I compare next?", "follow_up", "guidance", focus, {
+          answer_mode: "next_best_action",
           artifact_action: "next_step",
         }),
         prompt("Is this anomaly broad-based or isolated?", "Is this anomaly broad-based or isolated?", "follow_up", "explain", focus, {
+          answer_mode: "diagnose",
           artifact_action: "anomaly_scope",
         }),
       ];
@@ -195,12 +202,15 @@ export function contextualPromptSuggestions(focus: ChatFocusContext): ChatQuickP
     if (focus.active_task === "segment") {
       return [
         prompt("Compare strongest vs weakest cluster", "Compare the strongest cluster to the weakest", "compare", "explain", focus, {
+          answer_mode: "segment_comparison",
           artifact_action: "segment_compare_extremes",
         }),
         prompt("What differentiates these clusters?", "What differentiates these clusters?", "compare", "explain", focus, {
+          answer_mode: "segment_differentiation",
           artifact_action: "segment_differentiators",
         }),
         prompt("Which cluster should I drill into first?", "Which cluster should I drill into first?", "drill", "guidance", focus, {
+          answer_mode: "drill_priority",
           artifact_action: "segment_drill_priority",
         }),
       ];
@@ -208,12 +218,15 @@ export function contextualPromptSuggestions(focus: ChatFocusContext): ChatQuickP
     if (focus.active_task === "strategy_risk") {
       return [
         prompt("Why is this KPI at risk?", "Why is this KPI at risk?", "follow_up", "explain", focus, {
+          answer_mode: "risk_explanation",
           artifact_action: "risk_driver",
         }),
         prompt("What should I look at next?", "What should I look at next?", "follow_up", "guidance", focus, {
+          answer_mode: "next_best_action",
           artifact_action: "risk_next_step",
         }),
         prompt("Which business slice is driving the risk?", "Which business slice is most likely driving the risk?", "follow_up", "explain", focus, {
+          answer_mode: "diagnose",
           artifact_action: "risk_slice",
         }),
       ];
@@ -223,12 +236,15 @@ export function contextualPromptSuggestions(focus: ChatFocusContext): ChatQuickP
   if (focus.focus_type === "kpi") {
     return [
       prompt("Explain this KPI", "Explain this KPI in business terms", "ask", "explain", focus, {
+        answer_mode: "explain",
         artifact_action: "explain_kpi",
       }),
       prompt("Why might this KPI move off target?", "Why might this KPI move off target?", "follow_up", "guidance", focus, {
+        answer_mode: "risk_explanation",
         artifact_action: "risk_driver",
       }),
       prompt("What analysis should I run next?", "What analysis should I run next?", "follow_up", "guidance", focus, {
+        answer_mode: "next_best_action",
         artifact_action: "next_step",
       }),
     ];
@@ -237,12 +253,15 @@ export function contextualPromptSuggestions(focus: ChatFocusContext): ChatQuickP
   if (focus.focus_type === "drill_state") {
     return [
       prompt("What changed after this drill?", "What changed after this drill?", "follow_up", "explain", focus, {
+        answer_mode: "diagnose",
         artifact_action: "chart_change",
       }),
       prompt("Which categories are driving this view?", "Which categories are driving this view?", "follow_up", "explain", focus, {
+        answer_mode: "diagnose",
         artifact_action: "chart_change",
       }),
       prompt("What should I drill into next?", "What should I drill into next?", "drill", "guidance", focus, {
+        answer_mode: "drill_priority",
         artifact_action: "drill_next",
       }),
     ];
@@ -250,12 +269,15 @@ export function contextualPromptSuggestions(focus: ChatFocusContext): ChatQuickP
 
   return [
     prompt("Explain this chart", "Explain this chart", "ask", "explain", focus, {
+      answer_mode: "explain",
       artifact_action: "explain_chart",
     }),
     prompt("What changed here?", "What changed here?", "follow_up", "explain", focus, {
+      answer_mode: "diagnose",
       artifact_action: "chart_change",
     }),
     prompt("What should I look at next?", "What should I look at next?", "follow_up", "guidance", focus, {
+      answer_mode: "next_best_action",
       artifact_action: "next_step",
     }),
   ];
