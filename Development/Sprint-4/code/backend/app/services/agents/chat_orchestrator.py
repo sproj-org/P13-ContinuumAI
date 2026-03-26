@@ -402,6 +402,101 @@ def _focus_analysis_context(focus: ChatFocusContext | None) -> Any | None:
     return None
 
 
+def _analysis_digest(analysis: AnalysisResponse | None) -> dict[str, Any] | None:
+    if analysis is None:
+        return None
+
+    digest: dict[str, Any] = {
+        "task_type": analysis.task_type,
+        "agent_role": analysis.agent_role,
+        "route_reason": analysis.plan_spec.route_reason,
+        "matched_kpi_label": analysis.plan_spec.matched_kpi_label,
+        "insight_cards": [
+            {
+                "title": card.title,
+                "summary": card.summary,
+                "severity": card.severity,
+                "recommended_action": card.recommended_action,
+            }
+            for card in analysis.insight_cards[:4]
+        ],
+        "suggested_actions": [
+            {
+                "action_type": action.action_type,
+                "label": action.label,
+                "description": action.description,
+            }
+            for action in analysis.suggested_actions[:4]
+        ],
+    }
+    if analysis.primary_view is not None:
+        digest["primary_view"] = {
+            "summary": analysis.primary_view.summary,
+            "columns": analysis.primary_view.columns[:8],
+            "rows": analysis.primary_view.rows[:5],
+        }
+    if analysis.prediction is not None:
+        prediction = analysis.prediction
+        digest["prediction"] = {
+            "mode": prediction.mode,
+            "metric": prediction.metric,
+            "display_label": prediction.display_label,
+            "time_grain": prediction.time_grain,
+            "horizon": prediction.horizon,
+            "observed_points": prediction.observed_points,
+            "projected_change_pct": prediction.projected_change_pct,
+            "risk_band": prediction.risk_band,
+            "confidence_score": prediction.confidence_score,
+            "explanation": prediction.explanation,
+            "anomalies": [
+                {
+                    "label": item.label,
+                    "severity": item.severity,
+                    "value": item.value,
+                    "deviation": item.deviation,
+                    "explanation": item.explanation,
+                }
+                for item in prediction.anomalies[:4]
+            ],
+        }
+    if analysis.segmentation is not None:
+        segmentation = analysis.segmentation
+        digest["segmentation"] = {
+            "entity_field": segmentation.entity_field,
+            "entity_label": segmentation.entity_label,
+            "cluster_count": segmentation.cluster_count,
+            "comparison_highlights": segmentation.comparison_highlights[:4],
+            "profiles": [
+                {
+                    "cluster_id": profile.cluster_id,
+                    "label": profile.label,
+                    "entity_count": profile.entity_count,
+                    "metric_highlights": profile.metric_highlights[:4],
+                    "centroid": profile.centroid,
+                }
+                for profile in segmentation.profiles[:6]
+            ],
+        }
+    if analysis.strategy is not None:
+        strategy = analysis.strategy
+        digest["strategy"] = {
+            "kpi_id": strategy.kpi_id,
+            "kpi_label": strategy.kpi_label,
+            "current_value": strategy.current_value,
+            "projected_value": strategy.projected_value,
+            "target_value": strategy.target_value,
+            "variance_to_target": strategy.variance_to_target,
+            "risk_band": strategy.risk_band,
+            "confidence_score": strategy.confidence_score,
+            "target_horizon": strategy.target_horizon,
+            "forecast_basis": strategy.forecast_basis,
+            "explanation": strategy.explanation,
+            "supporting_details": strategy.supporting_details[:5],
+            "recommended_actions": strategy.recommended_actions[:4],
+        }
+    return {key: value for key, value in digest.items() if value not in (None, [], {})}
+
+
 def _focus_digest(focus: ChatFocusContext | None) -> dict[str, Any] | None:
     if focus is None:
         return None
@@ -426,6 +521,8 @@ def _focus_digest(focus: ChatFocusContext | None) -> dict[str, Any] | None:
         }
     if focus.analysis_context is not None:
         digest["analysis_context"] = focus.analysis_context.model_dump(mode="json", exclude_none=True)
+    if focus.analysis_result is not None:
+        digest["analysis_result"] = _analysis_digest(focus.analysis_result)
     return {key: value for key, value in digest.items() if value not in (None, [], {})}
 
 
@@ -1542,6 +1639,164 @@ def _next_focus_drill_dimension(focus: ChatFocusContext | None) -> str | None:
     return None
 
 
+def _normalize_prompt_text(value: str | None) -> str:
+    return " ".join((value or "").lower().replace("_", " ").split())
+
+
+def _compact_strategy_answer_digest(strategy_digest: dict[str, Any]) -> dict[str, Any]:
+    north_star = strategy_digest.get("north_star") if isinstance(strategy_digest, dict) else {}
+    pillars = strategy_digest.get("pillars") if isinstance(strategy_digest, dict) else []
+    return {
+        "north_star": north_star.get("name") if isinstance(north_star, dict) else None,
+        "pillars": [
+            {
+                "id": pillar.get("id"),
+                "name": pillar.get("name"),
+            }
+            for pillar in pillars[:6]
+            if isinstance(pillar, dict)
+        ],
+    }
+
+
+def _compact_answer_context(context: dict[str, Any]) -> dict[str, Any]:
+    measures, dimensions, temporals = _extract_fields(context)
+    return {
+        "description": context.get("description"),
+        "good_for": context.get("good_for", [])[:4],
+        "limitations": context.get("limitations", [])[:3],
+        "measures": measures[:10],
+        "dimensions": dimensions[:10],
+        "temporals": temporals[:6],
+    }
+
+
+def _artifact_answer_mode(
+    *,
+    message: str,
+    focus: ChatFocusContext | None,
+    quick_prompt: ChatQuickPrompt | None,
+) -> str | None:
+    if quick_prompt is not None:
+        artifact_action = quick_prompt.artifact_action or ""
+        if quick_prompt.preferred_route == "guidance":
+            return artifact_action or "recommend"
+        if quick_prompt.preferred_route == "explain":
+            return artifact_action or "explain"
+        if quick_prompt.prompt_kind == "compare":
+            return artifact_action or "compare"
+        if quick_prompt.prompt_kind == "drill":
+            return artifact_action or "drill_priority"
+
+    if focus is None:
+        return None
+
+    text = _normalize_prompt_text(message)
+    if focus.analysis_result is not None:
+        if any(token in text for token in ("differentiate", "compare", "strongest", "weakest")):
+            return "compare"
+        if any(token in text for token in ("drill", "inspect first", "look at next", "what should")):
+            return "recommend"
+        if any(token in text for token in ("why", "driver", "driving", "risk", "forecast", "anomaly", "cluster")):
+            return "diagnose"
+        return "explain"
+    if focus.focus_type == "kpi" and any(token in text for token in ("kpi", "target", "risk", "off target", "next")):
+        return "recommend" if "next" in text else "explain"
+    if focus.focus_type in {"chart", "drill_state"} and any(
+        token in text
+        for token in ("this chart", "current chart", "this view", "what changed", "look at next", "drill", "driver", "explain")
+    ):
+        return "recommend" if any(token in text for token in ("next", "drill")) else "explain"
+    return None
+
+
+def _build_artifact_answer_system_prompt() -> str:
+    return (
+        "You are ContinuumAI's contextual decision-intelligence assistant. "
+        "Answer the user's specific question about the current artifact using only the supplied structured context. "
+        "Ground the answer in the current chart, KPI, forecast, anomaly, segmentation, or KPI-risk result. "
+        "Keep the answer business-facing, concise, and specific. "
+        "Do not invent metrics, fields, targets, clusters, or causal claims that are not supported by the provided context. "
+        "If information is incomplete, say what is missing and recommend the smallest next analysis step. "
+        "If the prompt asks for explanation or guidance, do not create a new chart or launch a new task in the answer. "
+        'Return one JSON object only: {"message": "..."}'
+    )
+
+
+def _build_artifact_answer_user_prompt(
+    *,
+    dataset_id: str,
+    question: str,
+    answer_mode: str,
+    focus: ChatFocusContext,
+    quick_prompt: ChatQuickPrompt | None,
+    context: dict[str, Any],
+    strategy_digest: dict[str, Any],
+) -> str:
+    focus_digest = _focus_digest(focus) or {}
+    quick_prompt_digest = quick_prompt.model_dump(mode="json", exclude_none=True) if quick_prompt is not None else {}
+    return (
+        f"Dataset: {dataset_id}\n"
+        f"User question: {question}\n"
+        f"Answer mode: {answer_mode}\n\n"
+        f"Quick prompt metadata: {json.dumps(quick_prompt_digest, ensure_ascii=True)}\n\n"
+        f"Focused artifact context: {json.dumps(focus_digest, ensure_ascii=True)}\n\n"
+        f"Mart context: {json.dumps(_compact_answer_context(context), ensure_ascii=True)}\n\n"
+        f"Strategy context: {json.dumps(_compact_strategy_answer_digest(strategy_digest), ensure_ascii=True)}\n\n"
+        "Answer requirements:\n"
+        "- Answer the exact question, not a generic summary.\n"
+        "- Mention the current KPI/metric/cluster/period labels when available.\n"
+        "- If the question is about next steps, recommend one or two grounded next actions only.\n"
+        "- If the question is about risk, explicitly reference current/projected/target values when available.\n"
+        "- If the question is about segmentation, explain the cluster differences or drill priority using the supplied profiles.\n"
+        "- If the question is about forecast or anomalies, mention the strongest signal and any confidence caveat when present.\n"
+        'Return JSON only in the form {"message": "..."}'
+    )
+
+
+def _generate_artifact_answer(
+    *,
+    dataset_id: str,
+    question: str,
+    answer_mode: str,
+    focus: ChatFocusContext,
+    quick_prompt: ChatQuickPrompt | None,
+    context: dict[str, Any],
+    strategy_digest: dict[str, Any],
+) -> str | None:
+    settings = get_settings()
+    openai_key = (settings.OPENAI_API_KEY or "").strip()
+    if not openai_key:
+        return None
+
+    try:
+        client = OpenAIClient(
+            api_key=openai_key,
+            model=settings.OPENAI_MODEL,
+            temperature=0.2,
+        )
+        payload = client.generate_json(
+            system_prompt=_build_artifact_answer_system_prompt(),
+            user_prompt=_build_artifact_answer_user_prompt(
+                dataset_id=dataset_id,
+                question=question,
+                answer_mode=answer_mode,
+                focus=focus,
+                quick_prompt=quick_prompt,
+                context=context,
+                strategy_digest=strategy_digest,
+            ),
+        )
+    except Exception:
+        return None
+
+    candidate = payload.get("message") if isinstance(payload, dict) else None
+    if not isinstance(candidate, str):
+        return None
+    message = " ".join(candidate.split())
+    return message or None
+
+
 def _focus_explain_message(focus: ChatFocusContext) -> str:
     metric = _focus_chart_metric(focus)
     x_field = focus.chart_spec.encoding.x.field if focus.chart_spec is not None else None
@@ -1639,6 +1894,8 @@ def _maybe_handle_focus_prompt(
     state: ChatState,
     focus: ChatFocusContext | None,
     quick_prompt: ChatQuickPrompt | None,
+    context: dict[str, Any],
+    strategy_digest: dict[str, Any],
     db: Session,
 ) -> ChatResponseUnion | None:
     artifact_action = quick_prompt.artifact_action if quick_prompt is not None else None
@@ -1654,7 +1911,45 @@ def _maybe_handle_focus_prompt(
             db=db,
         )
 
-    if focus and focus.analysis_result is not None:
+    if quick_prompt is None or focus is None:
+        answer_mode = _artifact_answer_mode(message=effective_message, focus=focus, quick_prompt=quick_prompt)
+        if focus is None or answer_mode is None:
+            return None
+    else:
+        answer_mode = _artifact_answer_mode(message=effective_message, focus=focus, quick_prompt=quick_prompt)
+
+    if quick_prompt is not None and quick_prompt.artifact_action == "drill_next" and quick_prompt.preferred_route in {"guidance", "chart_patch"}:
+        patched = _drill_patch_response(focus)
+        if patched is not None:
+            return patched
+
+    if focus is not None and answer_mode is not None:
+        generated_answer = _generate_artifact_answer(
+            dataset_id=dataset_id,
+            question=effective_message,
+            answer_mode=answer_mode,
+            focus=focus,
+            quick_prompt=quick_prompt,
+            context=context,
+            strategy_digest=strategy_digest,
+        )
+        if generated_answer:
+            return ChatExplainResponse(
+                response_type="explain",
+                message=generated_answer,
+                citations=[],
+                meta={
+                    "from_focus": True,
+                    "artifact_action": artifact_action,
+                    "answer_mode": answer_mode,
+                    "answer_source": "artifact_llm",
+                },
+                query_spec=focus.analysis_result.query_spec if focus.analysis_result is not None else None,
+                plan_spec=focus.analysis_result.plan_spec if focus.analysis_result is not None else None,
+                analysis=focus.analysis_result,
+            )
+
+    if focus is not None and focus.analysis_result is not None:
         answer = answer_analysis_question(
             message=effective_message,
             analysis=focus.analysis_result,
@@ -1665,34 +1960,47 @@ def _maybe_handle_focus_prompt(
                 response_type="explain",
                 message=answer,
                 citations=[],
-                meta={"from_analysis_focus": True, "artifact_action": artifact_action},
+                meta={
+                    "from_analysis_focus": True,
+                    "artifact_action": artifact_action,
+                    "answer_mode": answer_mode,
+                    "answer_source": "deterministic_fallback",
+                },
                 query_spec=focus.analysis_result.query_spec,
                 plan_spec=focus.analysis_result.plan_spec,
                 analysis=focus.analysis_result,
             )
 
-    if quick_prompt is None or focus is None:
-        return None
+    if focus is not None and answer_mode is not None:
+        return ChatExplainResponse(
+            response_type="explain",
+            message=_focus_guidance_message(focus) if answer_mode == "recommend" else _focus_explain_message(focus),
+            citations=[],
+            meta={
+                "from_focus": True,
+                "artifact_action": artifact_action,
+                "answer_mode": answer_mode,
+                "answer_source": "focus_fallback",
+            },
+            query_spec=focus.analysis_result.query_spec if focus.analysis_result is not None else None,
+            plan_spec=focus.analysis_result.plan_spec if focus.analysis_result is not None else None,
+            analysis=focus.analysis_result,
+        )
 
-    if quick_prompt.artifact_action == "drill_next" and quick_prompt.preferred_route in {"guidance", "chart_patch"}:
-        patched = _drill_patch_response(focus)
-        if patched is not None:
-            return patched
-
-    if quick_prompt.preferred_route == "explain":
+    if quick_prompt is not None and focus is not None and quick_prompt.preferred_route == "explain":
         return ChatExplainResponse(
             response_type="explain",
             message=_focus_explain_message(focus),
             citations=[],
-            meta={"from_focus": True, "artifact_action": artifact_action},
+            meta={"from_focus": True, "artifact_action": artifact_action, "answer_source": "focus_fallback"},
         )
 
-    if quick_prompt.preferred_route == "guidance":
+    if quick_prompt is not None and focus is not None and quick_prompt.preferred_route == "guidance":
         return ChatExplainResponse(
             response_type="explain",
             message=_focus_guidance_message(focus),
             citations=[],
-            meta={"from_focus_guidance": True, "artifact_action": artifact_action},
+            meta={"from_focus_guidance": True, "artifact_action": artifact_action, "answer_source": "focus_fallback"},
         )
 
     return None
@@ -2385,6 +2693,8 @@ def run_chat_orchestration(
         state=parsed_state,
         focus=focus,
         quick_prompt=quick_prompt,
+        context=context,
+        strategy_digest=strategy_digest,
         db=db,
     )
     if focused_prompt_response is not None:

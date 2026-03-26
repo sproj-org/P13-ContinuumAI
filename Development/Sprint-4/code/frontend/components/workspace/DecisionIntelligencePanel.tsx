@@ -54,6 +54,15 @@ type TaskPanelState = {
   tasks: Record<DecisionTaskType, TaskRunState>;
 };
 
+type AnalysisControlsState = {
+  horizon: number;
+  clusterCount: number;
+};
+
+type RunAnalysisOptions = {
+  origin?: "manual" | "auto";
+};
+
 const TASK_CONFIG: Record<DecisionTaskType, { label: string; description: string; icon: LucideIcon; accent: string }> = {
   forecast: {
     label: "Forecast",
@@ -97,6 +106,13 @@ function createPanelState(defaultTask: DecisionTaskType): TaskPanelState {
     runningTask: null,
     lastCompletedTask: null,
     tasks: createTaskState(),
+  };
+}
+
+function createAnalysisControls(): AnalysisControlsState {
+  return {
+    horizon: 6,
+    clusterCount: 4,
   };
 }
 
@@ -295,10 +311,11 @@ export default function DecisionIntelligencePanel({
   onChartSpecChange,
 }: DecisionIntelligencePanelProps) {
   const [panelStateByContext, setPanelStateByContext] = useState<Record<string, TaskPanelState>>({});
-  const [horizon, setHorizon] = useState(6);
-  const [clusterCount, setClusterCount] = useState(4);
+  const [analysisControlsByContext, setAnalysisControlsByContext] = useState<Record<string, AnalysisControlsState>>({});
   const runIdRef = useRef(0);
   const autoRunSeedRef = useRef<string | null>(null);
+  const manualSelectionRef = useRef<Record<string, true>>({});
+  const panelStateRef = useRef<Record<string, TaskPanelState>>({});
 
   const resolvedTable = martId || chartSpec?.table || analysisContext?.table || chartSpec?.semantic_context?.analysis_context?.table || null;
   const resolvedKpiId =
@@ -318,9 +335,8 @@ export default function DecisionIntelligencePanel({
         stableKpiId ?? "none",
         stableXAxisField,
         stableMetricField,
-        chartTitle ?? "untitled",
       ].join("|"),
-    [analysisContext?.table, analysisSource, chartSpec?.table, chartTitle, martId, stableKpiId, stableMetricField, stableXAxisField],
+    [analysisContext?.table, analysisSource, chartSpec?.table, martId, stableKpiId, stableMetricField, stableXAxisField],
   );
 
   const resolvedAnalysisContext = useMemo<AnalysisContext>(() => {
@@ -363,7 +379,11 @@ export default function DecisionIntelligencePanel({
   );
 
   const defaultTask: DecisionTaskType = analysisSource === "strategy" && resolvedKpiId ? "strategy_risk" : "forecast";
+  const hasPersistedPanelState = panelStateByContext[stableContextKey] != null;
   const currentPanelState = panelStateByContext[stableContextKey] ?? createPanelState(defaultTask);
+  const currentControls = analysisControlsByContext[stableContextKey] ?? createAnalysisControls();
+  const horizon = currentControls.horizon;
+  const clusterCount = currentControls.clusterCount;
   const selectedTask = currentPanelState.selectedTask;
   const displayedTask = currentPanelState.displayedTask;
   const runningTask = currentPanelState.runningTask;
@@ -379,7 +399,27 @@ export default function DecisionIntelligencePanel({
     [chartSpec, chartTitle, resolvedKpiId, resolvedTable],
   );
 
-  const runAnalysis = async (task: DecisionTaskType) => {
+  useEffect(() => {
+    panelStateRef.current = panelStateByContext;
+  }, [panelStateByContext]);
+
+  const updateControls = (patch: Partial<AnalysisControlsState>) => {
+    setAnalysisControlsByContext((previous) => {
+      const current = previous[stableContextKey] ?? createAnalysisControls();
+      return {
+        ...previous,
+        [stableContextKey]: {
+          ...current,
+          ...patch,
+        },
+      };
+    });
+  };
+
+  const runAnalysis = async (task: DecisionTaskType, options?: RunAnalysisOptions) => {
+    if (options?.origin === "auto" && (panelStateRef.current[stableContextKey] || manualSelectionRef.current[stableContextKey])) {
+      return;
+    }
     const table = resolvedTable;
     if (!table && task !== "strategy_risk") {
       setPanelStateByContext((previous) => {
@@ -547,6 +587,7 @@ export default function DecisionIntelligencePanel({
   };
 
   const handleTaskSelect = (task: DecisionTaskType) => {
+    manualSelectionRef.current[stableContextKey] = true;
     setPanelStateByContext((previous) => {
       const current = previous[stableContextKey] ?? createPanelState(defaultTask);
       return {
@@ -558,10 +599,10 @@ export default function DecisionIntelligencePanel({
         },
       };
     });
-    void runAnalysis(task);
+    void runAnalysis(task, { origin: "manual" });
   };
-  const runAnalysisEvent = useEffectEvent((task: DecisionTaskType) => {
-    void runAnalysis(task);
+  const runAnalysisEvent = useEffectEvent((task: DecisionTaskType, options?: RunAnalysisOptions) => {
+    void runAnalysis(task, options);
   });
 
   useEffect(() => {
@@ -569,13 +610,17 @@ export default function DecisionIntelligencePanel({
       autoRunSeedRef.current = null;
       return;
     }
-    const seed = [analysisSource, resolvedTable ?? "none", resolvedKpiId, chartTitle ?? "kpi"].join("|");
+    const seed = [analysisSource, resolvedTable ?? "none", resolvedKpiId].join("|");
+    if (hasPersistedPanelState) {
+      autoRunSeedRef.current = seed;
+      return;
+    }
     if (autoRunSeedRef.current === seed) {
       return;
     }
     autoRunSeedRef.current = seed;
-    runAnalysisEvent("strategy_risk");
-  }, [analysisSource, chartTitle, resolvedKpiId, resolvedTable, stableContextKey]);
+    runAnalysisEvent("strategy_risk", { origin: "auto" });
+  }, [analysisSource, hasPersistedPanelState, resolvedKpiId, resolvedTable]);
 
   const selectedTaskConfig = TASK_CONFIG[displayedTask];
   const assistantFocus = useMemo(() => {
@@ -669,7 +714,7 @@ export default function DecisionIntelligencePanel({
             min={1}
             max={24}
             value={horizon}
-            onChange={(event) => setHorizon(Math.max(1, Math.min(24, Number(event.target.value) || 6)))}
+            onChange={(event) => updateControls({ horizon: Math.max(1, Math.min(24, Number(event.target.value) || 6)) })}
             className="ml-2 w-16 rounded-md border border-slate-300 px-2 py-1 text-xs"
           />
         </label>
@@ -680,7 +725,7 @@ export default function DecisionIntelligencePanel({
             min={2}
             max={8}
             value={clusterCount}
-            onChange={(event) => setClusterCount(Math.max(2, Math.min(8, Number(event.target.value) || 4)))}
+            onChange={(event) => updateControls({ clusterCount: Math.max(2, Math.min(8, Number(event.target.value) || 4)) })}
             className="ml-2 w-16 rounded-md border border-slate-300 px-2 py-1 text-xs"
           />
         </label>

@@ -159,6 +159,15 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
         : "",
     [currentChartPreview, strategyKpiLibrary?.kpis],
   );
+  const latestAssistantResponse = useMemo(() => {
+    for (let index = turns.length - 1; index >= 0; index -= 1) {
+      const turn = turns[index];
+      if (turn.role === "assistant" && turn.response) {
+        return turn.response;
+      }
+    }
+    return null;
+  }, [turns]);
   const activeFocus = useMemo<ChatFocusContext | null>(() => {
     const analysisTask = currentChartPreview?.analysis?.task_type;
     const isDecisionTask =
@@ -192,6 +201,41 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
         breadcrumbs: ["VizAgent", selectedAggregation ?? "mart"],
       });
     }
+    const assistantAnalysisTask = latestAssistantResponse?.analysis?.task_type;
+    const isAssistantDecisionTask =
+      assistantAnalysisTask === "forecast" ||
+      assistantAnalysisTask === "anomaly" ||
+      assistantAnalysisTask === "segment" ||
+      assistantAnalysisTask === "strategy_risk";
+    if (latestAssistantResponse?.analysis && isAssistantDecisionTask) {
+      const assistantDecisionTask = latestAssistantResponse.analysis.task_type as "forecast" | "anomaly" | "segment" | "strategy_risk";
+      const assistantChartSpec = latestAssistantResponse.response_type === "chart" ? latestAssistantResponse.chart_spec : lastChartSpec;
+      const assistantRows = latestAssistantResponse.response_type === "chart" ? latestAssistantResponse.rows : [];
+      return buildAnalysisFocusContext({
+        title:
+          latestAssistantResponse.analysis.plan_spec.matched_kpi_label ||
+          latestAssistantResponse.analysis.task_type.replace("_", " "),
+        table:
+          latestAssistantResponse.analysis.query_spec?.table ||
+          assistantChartSpec?.table ||
+          selectedAggregation ||
+          undefined,
+        kpiId:
+          latestAssistantResponse.analysis.plan_spec.matched_kpi_id ||
+          assistantChartSpec?.semantic_context?.matched_kpi_id ||
+          null,
+        chartSpec: assistantChartSpec,
+        chartRows: assistantRows,
+        analysisContext:
+          latestAssistantResponse.analysis.plan_spec.analysis_context ||
+          assistantChartSpec?.semantic_context?.analysis_context ||
+          null,
+        semanticContext: assistantChartSpec?.semantic_context ?? null,
+        analysis: latestAssistantResponse.analysis,
+        task: assistantDecisionTask,
+        breadcrumbs: ["VizAgent", selectedAggregation ?? "mart"],
+      });
+    }
     if (lastChartSpec) {
       return buildChartFocusContext({
         title: "Current VizAgent chart",
@@ -205,7 +249,7 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
       });
     }
     return null;
-  }, [currentChartPreview, currentChartPreviewTitle, lastChartSpec, selectedAggregation]);
+  }, [currentChartPreview, currentChartPreviewTitle, lastChartSpec, latestAssistantResponse, selectedAggregation]);
   const focusSuggestions = useMemo(
     () => (activeFocus ? contextualPromptSuggestions(activeFocus) : []),
     [activeFocus],
@@ -240,15 +284,6 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
     () => turns.find((turn) => turn.role === "user")?.message ?? null,
     [turns]
   );
-  const latestAssistantResponse = useMemo(() => {
-    for (let index = turns.length - 1; index >= 0; index -= 1) {
-      const turn = turns[index];
-      if (turn.role === "assistant" && turn.response) {
-        return turn.response;
-      }
-    }
-    return null;
-  }, [turns]);
   const latestQuerySpec = useMemo(
     () => latestAssistantResponse?.query_spec ?? null,
     [latestAssistantResponse],
@@ -924,29 +959,14 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
             ) : showContextDetails ? (
               <p className="mt-2 text-[10px] text-slate-500">No structured query yet. Ask a chart question to build one.</p>
             ) : null}
-            {showContextDetails && activeFocus?.summary ? (
-              <p className="mt-1 text-[11px] text-slate-700">{activeFocus.summary}</p>
-            ) : showContextDetails && activeFocus ? (
+            {showContextDetails && activeFocus ? (
               <div className="mt-3 rounded-lg border border-white/80 bg-white px-2 py-2">
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Focused artifact</p>
                 <p className="mt-1 text-[11px] text-slate-800">
                   {activeFocus.title || "Current artifact"}
                   {activeFocus.active_task ? ` • ${activeFocus.active_task.replace("_", " ")}` : ""}
                 </p>
-                {focusSuggestions.length > 0 ? (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {focusSuggestions.slice(0, 3).map((suggestion) => (
-                      <button
-                        key={`${suggestion.prompt_kind}-${suggestion.label}`}
-                        type="button"
-                        onClick={() => void submitQuickPrompt(suggestion)}
-                        className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] text-slate-700 hover:bg-slate-100"
-                      >
-                        {suggestion.label}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
+                {activeFocus.summary ? <p className="mt-1 text-[11px] text-slate-700">{activeFocus.summary}</p> : null}
               </div>
             ) : null}
           </div>
@@ -1127,7 +1147,7 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
         {(focusSuggestions.length > 0 || (selectedAggregation && guidance.examples.length > 0)) ? (
           <div className="rounded-lg border border-indigo-200 bg-indigo-50/50 p-2">
             <p className="text-[10px] text-indigo-900 font-medium mb-1">
-              {focusSuggestions.length > 0 ? "Focused prompts" : guidance.title}
+              {focusSuggestions.length > 0 ? "Focused follow-ups" : guidance.title}
             </p>
             <div className="flex flex-wrap gap-1.5">
               {focusSuggestions.length > 0

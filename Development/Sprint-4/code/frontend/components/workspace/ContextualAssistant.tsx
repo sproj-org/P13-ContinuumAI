@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUpRight, BrainCircuit, Loader2, MessageSquareText, Send, Sparkles } from "lucide-react";
 
 import MarkdownMessage from "@/components/common/MarkdownMessage";
@@ -13,7 +13,9 @@ import type { ChatFocusContext, ChatQuickPrompt, ChatResponse } from "@/lib/type
 
 type LocalPreview = {
   promptLabel: string;
+  requestMessage: string;
   response: ChatResponse;
+  syncedToVizAgent: boolean;
 };
 
 interface ContextualAssistantProps {
@@ -51,7 +53,7 @@ export default function ContextualAssistant({
   focus,
   title,
   description,
-  placeholder = "Ask VizAgent about this artifact...",
+  placeholder = "Ask about this artifact...",
   suggestions = [],
   onChartSpecChange,
 }: ContextualAssistantProps) {
@@ -59,10 +61,9 @@ export default function ContextualAssistant({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastPreview, setLastPreview] = useState<LocalPreview | null>(null);
+  const requestIdRef = useRef(0);
 
   const {
-    chatTurnsByKey,
-    lastChartSpecByKey,
     appendChatTurn,
     patchChatState,
     setLastChartSpec,
@@ -72,37 +73,106 @@ export default function ContextualAssistant({
 
   const table = focus.table ?? focus.chart_spec?.table ?? focus.analysis_context?.table ?? null;
   const chatKey = table ? `${datasetId}:${table}` : null;
-  const turns = chatKey ? chatTurnsByKey[chatKey] ?? [] : [];
-  const lastChartSpec = chatKey ? lastChartSpecByKey[chatKey] ?? focus.chart_spec ?? null : focus.chart_spec ?? null;
-  const canSend = !isLoading && Boolean(chatKey);
+  const canSend = !isLoading && Boolean(table);
+  const focusXAxisField = focus.chart_spec?.encoding.x.field ?? "x";
+  const focusMetricField = focus.chart_spec?.encoding.y[0]?.field ?? "metric";
+  const focusKey = useMemo(
+    () =>
+      [
+        focus.focus_type,
+        table ?? "none",
+        focus.kpi_id ?? "none",
+        focus.active_task ?? "none",
+        focusXAxisField,
+        focusMetricField,
+      ].join("|"),
+    [focus.active_task, focus.focus_type, focus.kpi_id, focusMetricField, focusXAxisField, table],
+  );
+  const previewChartSpec = useMemo(() => {
+    if (lastPreview?.response.response_type === "chart" && lastPreview.response.chart_spec) {
+      return lastPreview.response.chart_spec;
+    }
+    if (lastPreview?.response.response_type === "chart_patch" && focus.chart_spec) {
+      return applyChartSpecPatch(focus.chart_spec, lastPreview.response.patch);
+    }
+    return focus.chart_spec ?? null;
+  }, [focus.chart_spec, lastPreview]);
+  const localTurns = useMemo(
+    () =>
+      lastPreview
+        ? [
+            { role: "user" as const, message: lastPreview.requestMessage },
+            { role: "assistant" as const, message: assistantText(lastPreview.response), response: lastPreview.response },
+          ]
+        : [],
+    [lastPreview],
+  );
+
+  useEffect(() => {
+    requestIdRef.current += 1;
+    setMessage("");
+    setError(null);
+    setIsLoading(false);
+    setLastPreview(null);
+  }, [focusKey]);
+
+  const openInVizAgent = () => {
+    if (!table || !chatKey) {
+      setVizAgentOpen(true);
+      return;
+    }
+    setSelectedAggregation(table);
+    if (previewChartSpec) {
+      setLastChartSpec(chatKey, previewChartSpec);
+    }
+    if (lastPreview && !lastPreview.syncedToVizAgent) {
+      patchChatState(chatKey, {
+        clarify_id: null,
+        selections: EMPTY_CHAT_SELECTIONS,
+        original_user_intent: lastPreview.requestMessage,
+      });
+      appendChatTurn(chatKey, {
+        role: "user",
+        message: lastPreview.promptLabel,
+        createdAt: new Date().toISOString(),
+      });
+      appendChatTurn(chatKey, {
+        role: "assistant",
+        message: assistantText(lastPreview.response),
+        response: lastPreview.response,
+        createdAt: new Date().toISOString(),
+      });
+      applyChatResponseState(lastPreview.response, lastPreview.requestMessage, {
+        chatKey,
+        setLastChartSpec,
+        patchChatState,
+      });
+      setLastPreview((current) => (current ? { ...current, syncedToVizAgent: true } : current));
+    } else if (!lastPreview) {
+      patchChatState(chatKey, {
+        clarify_id: null,
+        selections: EMPTY_CHAT_SELECTIONS,
+        original_user_intent: focus.summary ?? focus.title ?? null,
+      });
+    }
+    setVizAgentOpen(true);
+  };
 
   const sendPrompt = async (promptText: string, quickPrompt?: ChatQuickPrompt | null) => {
     const trimmed = promptText.trim();
-    if (!trimmed || !chatKey || !table) {
+    if (!trimmed || !table) {
       return;
     }
 
     const originalIntent = quickPrompt?.prompt_text.trim() || trimmed;
     const userVisibleMessage = quickPrompt?.label || trimmed;
+    const requestId = ++requestIdRef.current;
 
-    setSelectedAggregation(table);
-    setVizAgentOpen(true);
     setMessage("");
     setError(null);
     setIsLoading(true);
 
-    patchChatState(chatKey, {
-      clarify_id: null,
-      selections: EMPTY_CHAT_SELECTIONS,
-      original_user_intent: originalIntent,
-    });
-    appendChatTurn(chatKey, {
-      role: "user",
-      message: userVisibleMessage,
-      createdAt: new Date().toISOString(),
-    });
-
-    const requestState = toRequestState(lastChartSpec, {
+    const requestState = toRequestState(previewChartSpec, {
       clarify_id: null,
       original_user_intent: originalIntent,
       selections: EMPTY_CHAT_SELECTIONS,
@@ -114,21 +184,13 @@ export default function ContextualAssistant({
         table,
         mode: promptMode(quickPrompt),
         state: requestState,
-        history: buildChatHistory(turns, originalIntent),
+        history: buildChatHistory(localTurns, originalIntent),
         focus,
         quick_prompt: quickPrompt ?? undefined,
       });
-      appendChatTurn(chatKey, {
-        role: "assistant",
-        message: assistantText(response),
-        response,
-        createdAt: new Date().toISOString(),
-      });
-      applyChatResponseState(response, originalIntent, {
-        chatKey,
-        setLastChartSpec,
-        patchChatState,
-      });
+      if (requestId !== requestIdRef.current) {
+        return;
+      }
       if (response.response_type === "chart" && response.chart_spec && onChartSpecChange) {
         onChartSpecChange(response.chart_spec);
       }
@@ -137,12 +199,18 @@ export default function ContextualAssistant({
       }
       setLastPreview({
         promptLabel: userVisibleMessage,
+        requestMessage: originalIntent,
         response,
+        syncedToVizAgent: false,
       });
     } catch (requestError) {
-      setError(formatChatError(requestError));
+      if (requestId === requestIdRef.current) {
+        setError(formatChatError(requestError));
+      }
     } finally {
-      setIsLoading(false);
+      if (requestId === requestIdRef.current) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -167,11 +235,11 @@ export default function ContextualAssistant({
         </div>
         <button
           type="button"
-          onClick={() => setVizAgentOpen(true)}
+          onClick={openInVizAgent}
           className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs text-slate-700 hover:border-indigo-300 hover:bg-indigo-50"
         >
           <ArrowUpRight className="h-3.5 w-3.5" />
-          <span>Open VizAgent</span>
+          <span>{lastPreview ? "Continue in VizAgent" : "Open in VizAgent"}</span>
         </button>
       </div>
 
@@ -221,16 +289,16 @@ export default function ContextualAssistant({
         <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Sent to VizAgent</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Local answer</p>
               <p className="mt-1 text-sm font-semibold text-slate-900">{lastPreview.promptLabel}</p>
             </div>
             <button
               type="button"
-              onClick={() => setVizAgentOpen(true)}
+              onClick={openInVizAgent}
               className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-1 text-[11px] text-slate-700 hover:bg-slate-100"
             >
               <ArrowUpRight className="h-3 w-3" />
-              Continue there
+              {lastPreview.syncedToVizAgent ? "Open in VizAgent" : "Continue in VizAgent"}
             </button>
           </div>
           <div className="mt-2 text-sm text-slate-800">
@@ -257,7 +325,7 @@ export default function ContextualAssistant({
 
       {!canSend ? (
         <div className="mt-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-3 text-xs text-slate-500">
-          Select a mart or chart context before handing this conversation to VizAgent.
+          Select a mart or chart context before asking about this artifact.
         </div>
       ) : null}
 
@@ -281,7 +349,7 @@ export default function ContextualAssistant({
       {isLoading ? (
         <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
           <BrainCircuit className="h-3.5 w-3.5 text-indigo-600" />
-          <span>Sending the current artifact context into the shared VizAgent thread.</span>
+          <span>Answering from the current artifact context.</span>
         </div>
       ) : null}
     </div>
