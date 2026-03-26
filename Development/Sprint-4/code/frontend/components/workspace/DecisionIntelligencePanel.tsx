@@ -870,7 +870,7 @@ export default function DecisionIntelligencePanel({
         </div>
       ) : (
         <div className="mt-4 rounded-xl border border-dashed border-slate-300 bg-white/70 px-4 py-8 text-center text-sm text-slate-500">
-          Select a task above to run a fresh {selectedTaskConfig.label.toLowerCase()} analysis. Results are tracked per task, so switching modes does not leave stale output on screen.
+          Select a task above to run a fresh {selectedTaskConfig.label.toLowerCase()} analysis. 
         </div>
       )}
     </div>
