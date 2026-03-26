@@ -779,7 +779,6 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
                   </div>
                   <div className="mt-6">
                     <DecisionIntelligencePanel
-                      key={`viz-agent-${currentChartPreview.chartSpec.table}-${currentChartPreview.chartSpec.encoding.x.field}-${currentChartPreview.chartSpec.encoding.y[0]?.field ?? "metric"}-${currentChartPreview.chartSpec.semantic_context?.matched_kpi_id ?? "none"}`}
                       datasetId={routeDatasetId}
                       martId={selectedAggregation}
                       chartSpec={currentChartPreview.chartSpec}

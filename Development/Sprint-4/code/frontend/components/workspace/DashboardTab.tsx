@@ -782,7 +782,6 @@ export default function DashboardTab() {
                     />
                   ) : null}
                   <DecisionIntelligencePanel
-                    key={`dashboard-${previewChart.backendId ?? previewChart.id}-${previewChart.chartSpec.table}-${previewChart.chartSpec.encoding.x.field}-${previewChart.chartSpec.encoding.y[0]?.field ?? "metric"}`}
                     datasetId={selectedDatasetId}
                     martId={previewChart.martId}
                     chartSpec={previewChart.chartSpec}

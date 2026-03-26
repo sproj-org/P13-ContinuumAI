@@ -988,7 +988,6 @@ export default function ChartBuilderTab() {
 
                   {previewChartSpec ? (
                     <DecisionIntelligencePanel
-                      key={`chart-builder-${previewIdentity}`}
                       datasetId={selectedDatasetId}
                       martId={selectedAggregation}
                       chartSpec={previewChartSpec}

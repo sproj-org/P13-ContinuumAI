@@ -47,6 +47,14 @@ type TaskRunState = {
   error: string | null;
 };
 
+type TaskPanelState = {
+  selectedTask: DecisionTaskType;
+  displayedTask: DecisionTaskType;
+  runningTask: DecisionTaskType | null;
+  lastCompletedTask: DecisionTaskType | null;
+  tasks: Record<DecisionTaskType, TaskRunState>;
+};
+
 const TASK_CONFIG: Record<DecisionTaskType, { label: string; description: string; icon: LucideIcon; accent: string }> = {
   forecast: {
     label: "Forecast",
@@ -80,6 +88,16 @@ function createTaskState(): Record<DecisionTaskType, TaskRunState> {
     anomaly: { runId: 0, isLoading: false, analysis: null, error: null },
     segment: { runId: 0, isLoading: false, analysis: null, error: null },
     strategy_risk: { runId: 0, isLoading: false, analysis: null, error: null },
+  };
+}
+
+function createPanelState(defaultTask: DecisionTaskType): TaskPanelState {
+  return {
+    selectedTask: defaultTask,
+    displayedTask: defaultTask,
+    runningTask: null,
+    lastCompletedTask: null,
+    tasks: createTaskState(),
   };
 }
 
@@ -278,30 +296,11 @@ export default function DecisionIntelligencePanel({
   onChartSpecChange,
   taskRequest,
 }: DecisionIntelligencePanelProps) {
-  const [selectedTaskState, setSelectedTaskState] = useState<{ contextKey: string; task: DecisionTaskType }>({
-    contextKey: "initial",
-    task: "forecast",
-  });
-  const [runningTaskState, setRunningTaskState] = useState<{ contextKey: string; task: DecisionTaskType | null }>({
-    contextKey: "initial",
-    task: null,
-  });
-  const [lastCompletedTaskState, setLastCompletedTaskState] = useState<{ contextKey: string; task: DecisionTaskType | null }>({
-    contextKey: "initial",
-    task: null,
-  });
-  const [taskStateBucket, setTaskStateBucket] = useState<{
-    contextKey: string;
-    tasks: Record<DecisionTaskType, TaskRunState>;
-  }>({
-    contextKey: "initial",
-    tasks: createTaskState(),
-  });
+  const [panelStateByContext, setPanelStateByContext] = useState<Record<string, TaskPanelState>>({});
   const [horizon, setHorizon] = useState(6);
   const [clusterCount, setClusterCount] = useState(4);
   const runIdRef = useRef(0);
   const autoRunSeedRef = useRef<string | null>(null);
-  const contextLifecycleRef = useRef<string>("");
   const handledTaskRequestRef = useRef<number | null>(null);
 
   const resolvedTable = martId || chartSpec?.table || analysisContext?.table || chartSpec?.semantic_context?.analysis_context?.table || null;
@@ -367,11 +366,13 @@ export default function DecisionIntelligencePanel({
   );
 
   const defaultTask: DecisionTaskType = analysisSource === "strategy" && resolvedKpiId ? "strategy_risk" : "forecast";
-  const selectedTask = selectedTaskState.contextKey === stableContextKey ? selectedTaskState.task : defaultTask;
-  const runningTask = runningTaskState.contextKey === stableContextKey ? runningTaskState.task : null;
-  const lastCompletedTask = lastCompletedTaskState.contextKey === stableContextKey ? lastCompletedTaskState.task : null;
-  const taskStates = taskStateBucket.contextKey === stableContextKey ? taskStateBucket.tasks : createTaskState();
-  const activeTaskState = taskStates[selectedTask];
+  const currentPanelState = panelStateByContext[stableContextKey] ?? createPanelState(defaultTask);
+  const selectedTask = currentPanelState.selectedTask;
+  const displayedTask = currentPanelState.displayedTask;
+  const runningTask = currentPanelState.runningTask;
+  const lastCompletedTask = currentPanelState.lastCompletedTask;
+  const taskStates = currentPanelState.tasks;
+  const activeTaskState = taskStates[displayedTask];
   const activeAnalysis = activeTaskState.analysis;
   const activePrediction = activeAnalysis?.prediction ?? null;
   const activeSegmentation = activeAnalysis?.segmentation ?? null;
@@ -381,62 +382,72 @@ export default function DecisionIntelligencePanel({
     [chartSpec, chartTitle, resolvedKpiId, resolvedTable],
   );
 
-  useEffect(() => {
-    contextLifecycleRef.current = stableContextKey;
-  }, [stableContextKey]);
-
   const runAnalysis = async (task: DecisionTaskType) => {
     const table = resolvedTable;
     if (!table && task !== "strategy_risk") {
-      setTaskStateBucket((previous) => {
-        const nextTasks = previous.contextKey === stableContextKey ? previous.tasks : createTaskState();
+      setPanelStateByContext((previous) => {
+        const current = previous[stableContextKey] ?? createPanelState(defaultTask);
         return {
-          contextKey: stableContextKey,
-          tasks: {
-            ...nextTasks,
-            [task]: {
-              ...nextTasks[task],
-              isLoading: false,
-              analysis: null,
-              error: "Select a mart or chart before running advanced analysis.",
+          ...previous,
+          [stableContextKey]: {
+            ...current,
+            selectedTask: task,
+            displayedTask: task,
+            runningTask: null,
+            tasks: {
+              ...current.tasks,
+              [task]: {
+                ...current.tasks[task],
+                isLoading: false,
+                analysis: null,
+                error: "Select a mart or chart before running advanced analysis.",
+              },
             },
           },
         };
       });
-      setRunningTaskState({ contextKey: stableContextKey, task: null });
       return;
     }
     if (task === "strategy_risk" && !resolvedKpiId) {
-      setTaskStateBucket((previous) => {
-        const nextTasks = previous.contextKey === stableContextKey ? previous.tasks : createTaskState();
+      setPanelStateByContext((previous) => {
+        const current = previous[stableContextKey] ?? createPanelState(defaultTask);
         return {
-          contextKey: stableContextKey,
-          tasks: {
-            ...nextTasks,
-            [task]: {
-              ...nextTasks[task],
-              isLoading: false,
-              analysis: null,
-              error: "A matched KPI is required for strategy risk analysis.",
+          ...previous,
+          [stableContextKey]: {
+            ...current,
+            selectedTask: task,
+            displayedTask: task,
+            runningTask: null,
+            tasks: {
+              ...current.tasks,
+              [task]: {
+                ...current.tasks[task],
+                isLoading: false,
+                analysis: null,
+                error: "A matched KPI is required for strategy risk analysis.",
+              },
             },
           },
         };
       });
-      setRunningTaskState({ contextKey: stableContextKey, task: null });
       return;
     }
 
     const runId = ++runIdRef.current;
     const requestContextKey = stableContextKey;
-    setSelectedTaskState({ contextKey: stableContextKey, task });
-    setRunningTaskState({ contextKey: stableContextKey, task });
-    setTaskStateBucket((previous) => {
-      const nextTasks = previous.contextKey === stableContextKey ? previous.tasks : createTaskState();
+    setPanelStateByContext((previous) => {
+      const current = previous[stableContextKey] ?? createPanelState(defaultTask);
       return {
-        contextKey: stableContextKey,
-        tasks: {
-          ...nextTasks,
-          [task]: { runId, isLoading: true, analysis: null, error: null },
+        ...previous,
+        [stableContextKey]: {
+          ...current,
+          selectedTask: task,
+          displayedTask: task,
+          runningTask: task,
+          tasks: {
+            ...current.tasks,
+            [task]: { runId, isLoading: true, analysis: null, error: null },
+          },
         },
       };
     });
@@ -494,56 +505,62 @@ export default function DecisionIntelligencePanel({
 
     try {
       const response = await apiClient.postAnalysis(datasetId, request);
-      setTaskStateBucket((previous) => {
-        const nextTasks = previous.contextKey === requestContextKey ? previous.tasks : createTaskState();
-        if (contextLifecycleRef.current !== requestContextKey || nextTasks[task].runId !== runId) {
+      setPanelStateByContext((previous) => {
+        const current = previous[requestContextKey];
+        if (!current || current.tasks[task].runId !== runId) {
           return previous;
         }
         return {
-          contextKey: requestContextKey,
-          tasks: {
-            ...nextTasks,
-            [task]: { runId, isLoading: false, analysis: response, error: null },
+          ...previous,
+          [requestContextKey]: {
+            ...current,
+            runningTask: current.runningTask === task ? null : current.runningTask,
+            lastCompletedTask: task,
+            tasks: {
+              ...current.tasks,
+              [task]: { runId, isLoading: false, analysis: response, error: null },
+            },
           },
         };
       });
-      if (contextLifecycleRef.current === requestContextKey) {
-        setRunningTaskState((current) => ({
-          contextKey: requestContextKey,
-          task: current.contextKey === requestContextKey && current.task === task ? null : current.task,
-        }));
-        setLastCompletedTaskState({ contextKey: requestContextKey, task });
-      }
 
       if (chartSpec && onChartSpecChange) {
         onChartSpecChange(mergeChartSemanticContext(chartSpec, buildSemanticPatch(response, request.analysis_context ?? {}, resolvedKpiId)));
       }
     } catch (requestError) {
       const message = formatError(requestError);
-      setTaskStateBucket((previous) => {
-        const nextTasks = previous.contextKey === requestContextKey ? previous.tasks : createTaskState();
-        if (contextLifecycleRef.current !== requestContextKey || nextTasks[task].runId !== runId) {
+      setPanelStateByContext((previous) => {
+        const current = previous[requestContextKey];
+        if (!current || current.tasks[task].runId !== runId) {
           return previous;
         }
         return {
-          contextKey: requestContextKey,
-          tasks: {
-            ...nextTasks,
-            [task]: { runId, isLoading: false, analysis: null, error: message },
+          ...previous,
+          [requestContextKey]: {
+            ...current,
+            runningTask: current.runningTask === task ? null : current.runningTask,
+            tasks: {
+              ...current.tasks,
+              [task]: { runId, isLoading: false, analysis: null, error: message },
+            },
           },
         };
       });
-      if (contextLifecycleRef.current === requestContextKey) {
-        setRunningTaskState((current) => ({
-          contextKey: requestContextKey,
-          task: current.contextKey === requestContextKey && current.task === task ? null : current.task,
-        }));
-      }
     }
   };
 
   const handleTaskSelect = (task: DecisionTaskType) => {
-    setSelectedTaskState({ contextKey: stableContextKey, task });
+    setPanelStateByContext((previous) => {
+      const current = previous[stableContextKey] ?? createPanelState(defaultTask);
+      return {
+        ...previous,
+        [stableContextKey]: {
+          ...current,
+          selectedTask: task,
+          displayedTask: task,
+        },
+      };
+    });
     void runAnalysis(task);
   };
   const runAnalysisEvent = useEffectEvent((task: DecisionTaskType) => {
@@ -571,7 +588,7 @@ export default function DecisionIntelligencePanel({
     runAnalysisEvent(taskRequest.task);
   }, [taskRequest]);
 
-  const selectedTaskConfig = TASK_CONFIG[selectedTask];
+  const selectedTaskConfig = TASK_CONFIG[displayedTask];
   const assistantFocus = useMemo(() => {
     if (activeAnalysis) {
       return buildAnalysisFocusContext({
@@ -583,7 +600,7 @@ export default function DecisionIntelligencePanel({
         analysisContext: resolvedAnalysisContext,
         semanticContext: chartSpec?.semantic_context ?? null,
         analysis: activeAnalysis,
-        task: selectedTask,
+        task: displayedTask,
         breadcrumbs: [selectedTaskConfig.label],
       });
     }
@@ -615,7 +632,7 @@ export default function DecisionIntelligencePanel({
     resolvedAnalysisContext,
     resolvedKpiId,
     resolvedTable,
-    selectedTask,
+    displayedTask,
     selectedTaskConfig.label,
   ]);
   const assistantSuggestions = useMemo(() => contextualPromptSuggestions(assistantFocus), [assistantFocus]);
@@ -678,9 +695,9 @@ export default function DecisionIntelligencePanel({
             className="ml-2 w-16 rounded-md border border-slate-300 px-2 py-1 text-xs"
           />
         </label>
-        <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-1 text-[11px] text-indigo-700">
-          Selected task: {selectedTaskConfig.label}
-        </span>
+          <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-1 text-[11px] text-indigo-700">
+            Selected task: {TASK_CONFIG[selectedTask].label}
+          </span>
         {runningTask ? (
           <span className="rounded-full border border-indigo-200 bg-white px-2 py-1 text-[11px] text-indigo-700">
             Running: {TASK_CONFIG[runningTask].label}
