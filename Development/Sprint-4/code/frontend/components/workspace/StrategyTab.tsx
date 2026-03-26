@@ -2711,6 +2711,7 @@ export default function StrategyTab() {
             </div>
             <div className="mt-4">
               <DecisionIntelligencePanel
+                key={`strategy-${selectedEvaluationKpi.id}-${selectedEvaluationKpi.marts?.[0] ?? "none"}-${selectedEvaluationKpi.display_name || selectedEvaluationKpi.id}`}
                 datasetId={datasetId}
                 martId={selectedEvaluationKpi.marts?.[0] ?? null}
                 chartTitle={selectedEvaluationKpi.display_name || selectedEvaluationKpi.id}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   BarChart3,
@@ -334,24 +334,6 @@ export default function DecisionIntelligencePanel({
   const activePrediction = activeAnalysis?.prediction ?? null;
   const activeSegmentation = activeAnalysis?.segmentation ?? null;
   const activeStrategy = activeAnalysis?.strategy ?? null;
-  const contextSignature = useMemo(
-    () =>
-      JSON.stringify({
-        datasetId,
-        table: resolvedTable,
-        kpiId: resolvedKpiId,
-        chartTitle,
-        chartType: chartSpec?.chart.type ?? null,
-        xField: chartSpec?.encoding.x.field ?? null,
-        yField: chartSpec?.encoding.y[0]?.field ?? null,
-      }),
-    [chartSpec?.chart.type, chartSpec?.encoding.x.field, chartSpec?.encoding.y[0]?.field, chartTitle, datasetId, resolvedKpiId, resolvedTable],
-  );
-
-  useEffect(() => {
-    setTaskStates(createTaskState());
-    setSelectedTask("forecast");
-  }, [contextSignature]);
 
   const runAnalysis = async (task: PanelTask) => {
     const table = resolvedTable;
