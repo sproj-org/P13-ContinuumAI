@@ -10,9 +10,16 @@ os.environ["DATABASE_URL"] = "sqlite:///./test_chat_orchestrator.db"
 os.environ["JWT_SECRET_KEY"] = "test-secret"
 
 from app.services.agents import chat_orchestrator
-from app.services.agents.chat_models import ChatFocusContext, ChatState
+from app.services.agents.chat_models import ChatFocusContext, ChatQuickPrompt, ChatState
 from app.services.charts.models import ChartSpecV1
-from app.services.intelligence.specs import AnalysisContextSpec, AnalysisResponse, InsightCard, PlanSpec
+from app.services.intelligence.specs import (
+    AnalysisContextSpec,
+    AnalysisResponse,
+    InsightCard,
+    PlanSpec,
+    SegmentProfile,
+    SegmentSummary,
+)
 
 
 CONTEXT = {
@@ -448,3 +455,175 @@ def test_maybe_run_structured_analysis_uses_focus_context_for_insight(monkeypatc
     assert captured["request"].chart_spec.table == "gold_sales_daily"
     assert captured["request"].analysis_context is not None
     assert captured["request"].analysis_context.source == "dashboard"
+
+
+def test_maybe_handle_focus_prompt_explains_current_chart_without_chart_generation() -> None:
+    response = chat_orchestrator._maybe_handle_focus_prompt(
+        dataset_id="silkroute",
+        table="gold_sales_daily",
+        message="Explain this chart",
+        state=ChatState(),
+        focus=ChatFocusContext(
+            focus_type="chart",
+            title="Revenue Trend",
+            table="gold_sales_daily",
+            chart_spec=ChartSpecV1.model_validate(
+                {
+                    "version": "v1",
+                    "table": "gold_sales_daily",
+                    "chart": {"type": "line"},
+                    "encoding": {
+                        "x": {"field": "sales_date"},
+                        "y": [{"field": "net_sales", "aggregation": "sum"}],
+                    },
+                }
+            ),
+            chart_rows=[{"sales_date": "2025-01", "net_sales": 120.0}],
+            summary="Net sales are climbing steadily.",
+        ),
+        quick_prompt=ChatQuickPrompt(
+            label="Explain this chart",
+            prompt_text="Explain this chart",
+            prompt_kind="ask",
+            preferred_route="explain",
+            focus_type="chart",
+            artifact_action="explain_chart",
+        ),
+        db=SimpleNamespace(),
+    )
+
+    assert response is not None
+    assert response.response_type == "explain"
+    assert "Revenue Trend" in response.message
+    assert "net_sales" in response.message
+
+
+def test_maybe_handle_focus_prompt_answers_segment_question_from_structured_result() -> None:
+    analysis = AnalysisResponse(
+        task_type="segment",
+        agent_role="ml_agent",
+        plan_spec=PlanSpec(
+            dataset_id="silkroute",
+            table="gold_customer_360",
+            user_message="Segment customers",
+            primary_task="segment",
+            route_reason="Segment focus",
+            tasks=[],
+            suggested_follow_ups=[],
+        ),
+        segmentation=SegmentSummary(
+            entity_field="customer_id",
+            cluster_count=3,
+            profiles=[
+                SegmentProfile(
+                    cluster_id=0,
+                    label="High value loyalists",
+                    entity_count=18,
+                    centroid={"net_sales": 900.0, "margin_pct": 0.42},
+                    metric_highlights=["high net sales", "strong margin"],
+                ),
+                SegmentProfile(
+                    cluster_id=1,
+                    label="Broad middle",
+                    entity_count=64,
+                    centroid={"net_sales": 420.0, "margin_pct": 0.21},
+                    metric_highlights=["mid sales", "balanced mix"],
+                ),
+                SegmentProfile(
+                    cluster_id=2,
+                    label="Low value attrition risk",
+                    entity_count=12,
+                    centroid={"net_sales": 85.0, "margin_pct": 0.08},
+                    metric_highlights=["low sales", "thin margin"],
+                ),
+            ],
+            comparison_highlights=["Cluster 0 materially outperforms the rest on sales and margin."],
+        ),
+        suggested_actions=[],
+        meta={},
+    )
+
+    response = chat_orchestrator._maybe_handle_focus_prompt(
+        dataset_id="silkroute",
+        table="gold_customer_360",
+        message="What differentiates these clusters?",
+        state=ChatState(),
+        focus=ChatFocusContext(
+            focus_type="analysis_result",
+            title="Customer segments",
+            table="gold_customer_360",
+            active_task="segment",
+            analysis_result=analysis,
+            summary="Cluster 0 outperforms the rest on sales and margin.",
+        ),
+        quick_prompt=None,
+        db=SimpleNamespace(),
+    )
+
+    assert response is not None
+    assert response.response_type == "explain"
+    assert "Cluster" in response.message
+    assert "differentiators" in response.message or "stands out" in response.message
+
+
+def test_maybe_handle_focus_prompt_routes_task_prompt_to_direct_analysis(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, Any] = {}
+
+    def fake_run_analysis_request(*, dataset_id, request, db):
+        captured["dataset_id"] = dataset_id
+        captured["task_type"] = request.task_type
+        return AnalysisResponse(
+            task_type="forecast",
+            agent_role="ml_agent",
+            plan_spec=PlanSpec(
+                dataset_id=dataset_id,
+                table=request.table,
+                user_message=request.message or "Forecast this metric",
+                primary_task="forecast",
+                route_reason="Typed task prompt",
+                tasks=[],
+                suggested_follow_ups=[],
+            ),
+            insight_cards=[InsightCard(title="Forecast routed", summary="Prompt routed to forecast.", severity="info")],
+            suggested_actions=[],
+            meta={},
+        )
+
+    monkeypatch.setattr(chat_orchestrator, "run_analysis_request", fake_run_analysis_request)
+
+    response = chat_orchestrator._maybe_handle_focus_prompt(
+        dataset_id="silkroute",
+        table="gold_sales_daily",
+        message="Forecast this metric",
+        state=ChatState(),
+        focus=ChatFocusContext(
+            focus_type="chart",
+            title="Sales by date",
+            table="gold_sales_daily",
+            chart_spec=ChartSpecV1.model_validate(
+                {
+                    "version": "v1",
+                    "table": "gold_sales_daily",
+                    "chart": {"type": "line"},
+                    "encoding": {
+                        "x": {"field": "sales_date"},
+                        "y": [{"field": "net_sales", "aggregation": "sum"}],
+                    },
+                }
+            ),
+        ),
+        quick_prompt=ChatQuickPrompt(
+            label="Forecast this metric",
+            prompt_text="Forecast this metric",
+            prompt_kind="task",
+            preferred_route="analysis",
+            focus_type="chart",
+            task_type="forecast",
+        ),
+        db=SimpleNamespace(),
+    )
+
+    assert response is not None
+    assert response.analysis is not None
+    assert captured["dataset_id"] == "silkroute"
+    assert captured["task_type"] == "forecast"

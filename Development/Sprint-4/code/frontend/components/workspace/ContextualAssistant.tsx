@@ -1,26 +1,20 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
-import { BrainCircuit, Loader2, MessageSquareText, Send, Sparkles, TrendingUp } from "lucide-react";
+import { FormEvent, useState } from "react";
+import { ArrowUpRight, BrainCircuit, Loader2, MessageSquareText, Send, Sparkles } from "lucide-react";
 
 import MarkdownMessage from "@/components/common/MarkdownMessage";
-import { ApiRequestError, apiClient } from "@/lib/api";
+import { apiClient } from "@/lib/api";
 import { applyChartSpecPatch } from "@/lib/chart-spec-patch";
-import type { DecisionTaskType } from "@/lib/types/analysis";
+import { assistantText, applyChatResponseState, buildChatHistory, EMPTY_CHAT_SELECTIONS, formatChatError, toRequestState } from "@/lib/chat-runtime";
+import { useAppStore } from "@/lib/store";
 import type { ChartSpecV1 } from "@/lib/types/chartspec";
-import type { ChatFocusContext, ChatHistoryTurn, ChatRequest, ChatResponse } from "@/lib/types/chat";
+import type { ChatFocusContext, ChatQuickPrompt, ChatResponse } from "@/lib/types/chat";
 
-type ContextualTurn = {
-  role: "user" | "assistant";
-  message: string;
-  response?: ChatResponse | null;
+type LocalPreview = {
+  promptLabel: string;
+  response: ChatResponse;
 };
-
-export interface ContextualTaskAction {
-  task: DecisionTaskType;
-  label: string;
-  onTrigger: () => void;
-}
 
 interface ContextualAssistantProps {
   datasetId: string;
@@ -28,55 +22,28 @@ interface ContextualAssistantProps {
   title: string;
   description: string;
   placeholder?: string;
-  suggestions?: string[];
-  taskActions?: ContextualTaskAction[];
+  suggestions?: ChatQuickPrompt[];
   onChartSpecChange?: (chartSpec: ChartSpecV1) => void;
 }
 
-function assistantText(response: ChatResponse): string {
-  if (response.response_type === "chart") {
-    return response.narrative;
+function promptMode(prompt: ChatQuickPrompt | null | undefined): "auto" | "chart" | "explain" {
+  if (!prompt) {
+    return "auto";
   }
-  if (response.response_type === "chart_patch") {
-    return response.narrative ?? "Applied the requested chart update.";
+  if (prompt.preferred_route === "chart_patch" || prompt.preferred_route === "chart") {
+    return "chart";
   }
-  if (response.response_type === "clarify") {
-    return response.question || "Could you clarify your request?";
+  if (prompt.preferred_route === "explain") {
+    return "explain";
   }
-  return response.message;
+  return "auto";
 }
 
-function querySpecTags(response: ChatResponse | null | undefined): string[] {
-  const spec = response?.query_spec;
-  if (!spec) {
-    return [];
+function promptBadge(prompt: ChatQuickPrompt): string {
+  if (prompt.prompt_kind === "task" && prompt.task_type) {
+    return prompt.task_type.replace("_", " ");
   }
-
-  const tags: string[] = [];
-  if (spec.chart_type) {
-    tags.push(`Chart ${spec.chart_type}`);
-  }
-  if (spec.aggregation && spec.measures[0]) {
-    tags.push(`Metric ${spec.aggregation}(${spec.measures[0]})`);
-  } else if (spec.measures[0]) {
-    tags.push(`Metric ${spec.measures[0]}`);
-  }
-  if (spec.time_field) {
-    tags.push(`Time ${spec.time_field}${spec.time_grain ? ` (${spec.time_grain})` : ""}`);
-  } else if (spec.dimensions[0]) {
-    tags.push(`Group ${spec.dimensions[0]}`);
-  }
-  return tags.slice(0, 3);
-}
-
-function formatError(error: unknown): string {
-  if (error instanceof ApiRequestError) {
-    return error.hint ? `${error.message} ${error.hint}` : error.message;
-  }
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return "Request failed.";
+  return prompt.prompt_kind.replace("_", " ");
 }
 
 export default function ContextualAssistant({
@@ -84,60 +51,96 @@ export default function ContextualAssistant({
   focus,
   title,
   description,
-  placeholder = "Ask a follow-up about this view...",
+  placeholder = "Ask VizAgent about this artifact...",
   suggestions = [],
-  taskActions = [],
   onChartSpecChange,
 }: ContextualAssistantProps) {
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [turns, setTurns] = useState<ContextualTurn[]>([]);
+  const [lastPreview, setLastPreview] = useState<LocalPreview | null>(null);
 
-  const history = useMemo<ChatHistoryTurn[]>(
-    () =>
-      turns.slice(-6).map((turn) => ({
-        role: turn.role,
-        message: turn.message,
-        response_type: turn.response?.response_type ?? null,
-      })),
-    [turns],
-  );
+  const {
+    chatTurnsByKey,
+    lastChartSpecByKey,
+    appendChatTurn,
+    patchChatState,
+    setLastChartSpec,
+    setSelectedAggregation,
+    setVizAgentOpen,
+  } = useAppStore();
 
-  const canSend = !isLoading && Boolean(focus.table || focus.chart_spec?.table || focus.analysis_context?.table);
+  const table = focus.table ?? focus.chart_spec?.table ?? focus.analysis_context?.table ?? null;
+  const chatKey = table ? `${datasetId}:${table}` : null;
+  const turns = chatKey ? chatTurnsByKey[chatKey] ?? [] : [];
+  const lastChartSpec = chatKey ? lastChartSpecByKey[chatKey] ?? focus.chart_spec ?? null : focus.chart_spec ?? null;
+  const canSend = !isLoading && Boolean(chatKey);
 
-  const sendPrompt = async (prompt: string) => {
-    const trimmed = prompt.trim();
-    if (!trimmed || !canSend) {
+  const sendPrompt = async (promptText: string, quickPrompt?: ChatQuickPrompt | null) => {
+    const trimmed = promptText.trim();
+    if (!trimmed || !chatKey || !table) {
       return;
     }
 
-    const nextUserTurn: ContextualTurn = { role: "user", message: trimmed };
-    setTurns((previous) => [...previous, nextUserTurn]);
+    const originalIntent = quickPrompt?.prompt_text.trim() || trimmed;
+    const userVisibleMessage = quickPrompt?.label || trimmed;
+
+    setSelectedAggregation(table);
+    setVizAgentOpen(true);
     setMessage("");
     setError(null);
     setIsLoading(true);
 
-    const request: ChatRequest = {
-      message: trimmed,
-      table: focus.table ?? focus.chart_spec?.table ?? focus.analysis_context?.table ?? null,
-      mode: "auto",
-      focus,
-      state: focus.chart_spec ? { last_chart_spec: focus.chart_spec } : undefined,
-      history: [...history, { role: "user", message: trimmed }],
-    };
+    patchChatState(chatKey, {
+      clarify_id: null,
+      selections: EMPTY_CHAT_SELECTIONS,
+      original_user_intent: originalIntent,
+    });
+    appendChatTurn(chatKey, {
+      role: "user",
+      message: userVisibleMessage,
+      createdAt: new Date().toISOString(),
+    });
+
+    const requestState = toRequestState(lastChartSpec, {
+      clarify_id: null,
+      original_user_intent: originalIntent,
+      selections: EMPTY_CHAT_SELECTIONS,
+    });
 
     try {
-      const response = await apiClient.postChat(datasetId, request);
+      const response = await apiClient.postChat(datasetId, {
+        message: originalIntent,
+        table,
+        mode: promptMode(quickPrompt),
+        state: requestState,
+        history: buildChatHistory(turns, originalIntent),
+        focus,
+        quick_prompt: quickPrompt ?? undefined,
+      });
+      appendChatTurn(chatKey, {
+        role: "assistant",
+        message: assistantText(response),
+        response,
+        createdAt: new Date().toISOString(),
+      });
+      applyChatResponseState(response, originalIntent, {
+        chatKey,
+        setLastChartSpec,
+        patchChatState,
+      });
       if (response.response_type === "chart" && response.chart_spec && onChartSpecChange) {
         onChartSpecChange(response.chart_spec);
       }
       if (response.response_type === "chart_patch" && focus.chart_spec && onChartSpecChange) {
         onChartSpecChange(applyChartSpecPatch(focus.chart_spec, response.patch));
       }
-      setTurns((previous) => [...previous, { role: "assistant", message: assistantText(response), response }]);
+      setLastPreview({
+        promptLabel: userVisibleMessage,
+        response,
+      });
     } catch (requestError) {
-      setError(formatError(requestError));
+      setError(formatChatError(requestError));
     } finally {
       setIsLoading(false);
     }
@@ -162,21 +165,30 @@ export default function ContextualAssistant({
             </div>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] text-slate-600">
-            Focus: {focus.focus_type.replace("_", " ")}
+        <button
+          type="button"
+          onClick={() => setVizAgentOpen(true)}
+          className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs text-slate-700 hover:border-indigo-300 hover:bg-indigo-50"
+        >
+          <ArrowUpRight className="h-3.5 w-3.5" />
+          <span>Open VizAgent</span>
+        </button>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] text-slate-600">
+          Focus: {focus.focus_type.replace("_", " ")}
+        </span>
+        {focus.active_task ? (
+          <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-1 text-[11px] text-indigo-700">
+            {focus.active_task.replace("_", " ")}
           </span>
-          {focus.active_task ? (
-            <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-1 text-[11px] text-indigo-700">
-              {focus.active_task.replace("_", " ")}
-            </span>
-          ) : null}
-          {focus.kpi_id ? (
-            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] text-emerald-700">
-              KPI {focus.kpi_id}
-            </span>
-          ) : null}
-        </div>
+        ) : null}
+        {focus.kpi_id ? (
+          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] text-emerald-700">
+            KPI {focus.kpi_id}
+          </span>
+        ) : null}
       </div>
 
       {focus.summary ? (
@@ -185,83 +197,55 @@ export default function ContextualAssistant({
         </div>
       ) : null}
 
-      {taskActions.length > 0 ? (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {taskActions.map((action) => (
-            <button
-              key={action.task}
-              type="button"
-              onClick={action.onTrigger}
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs text-slate-700 hover:border-indigo-300 hover:bg-indigo-50"
-            >
-              <TrendingUp className="h-3.5 w-3.5" />
-              <span>{action.label}</span>
-            </button>
-          ))}
-        </div>
-      ) : null}
-
       {suggestions.length > 0 ? (
         <div className="mt-3 flex flex-wrap gap-2">
           {suggestions.slice(0, 4).map((suggestion) => (
             <button
-              key={suggestion}
+              key={`${suggestion.prompt_kind}-${suggestion.label}`}
               type="button"
-              onClick={() => void sendPrompt(suggestion)}
+              onClick={() => void sendPrompt(suggestion.prompt_text, suggestion)}
               disabled={!canSend || isLoading}
               className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-white px-3 py-1.5 text-xs text-indigo-700 hover:bg-indigo-50 disabled:opacity-50"
             >
               <Sparkles className="h-3.5 w-3.5" />
-              <span>{suggestion}</span>
+              <span>{suggestion.label}</span>
+              <span className="rounded-full bg-indigo-50 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-indigo-600">
+                {promptBadge(suggestion)}
+              </span>
             </button>
           ))}
         </div>
       ) : null}
 
-      {turns.length > 0 ? (
-        <div className="mt-4 space-y-2">
-          {turns.slice(-4).map((turn, index) => (
-            <div
-              key={`${turn.role}-${index}-${turn.message}`}
-              className={`rounded-xl border px-3 py-2 ${
-                turn.role === "assistant" ? "border-slate-200 bg-slate-50" : "border-indigo-200 bg-indigo-50"
-              }`}
-            >
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                {turn.role === "assistant" ? "Assistant" : "You"}
-              </p>
-              <div className="mt-1 text-sm text-slate-800">
-                {turn.role === "assistant" ? <MarkdownMessage content={turn.message} /> : <p>{turn.message}</p>}
-              </div>
-              {turn.response?.analysis ? (
-                <div className="mt-2 rounded-lg border border-slate-200 bg-white px-2 py-2 text-[11px] text-slate-700">
-                  <div className="flex flex-wrap gap-1.5">
-                    <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] uppercase tracking-wide text-slate-600">
-                      {turn.response.analysis.task_type.replace("_", " ")}
-                    </span>
-                    <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] text-indigo-700">
-                      {turn.response.analysis.agent_role}
-                    </span>
-                  </div>
-                  {turn.response.analysis.insight_cards[0] ? (
-                    <p className="mt-2 text-[11px] text-slate-700">
-                      <span className="font-medium text-slate-900">{turn.response.analysis.insight_cards[0].title}:</span>{" "}
-                      {turn.response.analysis.insight_cards[0].summary}
-                    </p>
-                  ) : null}
-                </div>
-              ) : null}
-              {querySpecTags(turn.response).length > 0 ? (
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {querySpecTags(turn.response).map((tag) => (
-                    <span key={tag} className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] text-slate-600">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              ) : null}
+      {lastPreview ? (
+        <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Sent to VizAgent</p>
+              <p className="mt-1 text-sm font-semibold text-slate-900">{lastPreview.promptLabel}</p>
             </div>
-          ))}
+            <button
+              type="button"
+              onClick={() => setVizAgentOpen(true)}
+              className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-1 text-[11px] text-slate-700 hover:bg-slate-100"
+            >
+              <ArrowUpRight className="h-3 w-3" />
+              Continue there
+            </button>
+          </div>
+          <div className="mt-2 text-sm text-slate-800">
+            <MarkdownMessage content={assistantText(lastPreview.response)} />
+          </div>
+          {lastPreview.response.analysis ? (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] uppercase tracking-wide text-slate-600">
+                {lastPreview.response.analysis.task_type.replace("_", " ")}
+              </span>
+              <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] text-indigo-700">
+                {lastPreview.response.analysis.agent_role}
+              </span>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -273,7 +257,7 @@ export default function ContextualAssistant({
 
       {!canSend ? (
         <div className="mt-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-3 text-xs text-slate-500">
-          Select a mart or chart context before starting a contextual conversation.
+          Select a mart or chart context before handing this conversation to VizAgent.
         </div>
       ) : null}
 
@@ -297,7 +281,7 @@ export default function ContextualAssistant({
       {isLoading ? (
         <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
           <BrainCircuit className="h-3.5 w-3.5 text-indigo-600" />
-          <span>Using the current artifact context to answer the follow-up.</span>
+          <span>Sending the current artifact context into the shared VizAgent thread.</span>
         </div>
       ) : null}
     </div>

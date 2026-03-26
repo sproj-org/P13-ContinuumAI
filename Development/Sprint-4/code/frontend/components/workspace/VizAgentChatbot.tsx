@@ -8,6 +8,7 @@ import {
   Send,
   Loader2,
   ChevronDown,
+  ChevronUp,
   Search,
   Check,
   Trash2,
@@ -22,16 +23,15 @@ import { useAppStore } from "@/lib/store";
 import { useToast } from "@/lib/toast-context";
 import { apiClient } from "@/lib/api";
 import { applyChartSpecPatch } from "@/lib/chart-spec-patch";
+import { applyChatResponseState, assistantText, buildChatHistory, EMPTY_CHAT_SELECTIONS, formatChatError, toRequestState } from "@/lib/chat-runtime";
 import type {
   ChatRequest,
-  ChatResponse,
   ChatClarifyResponse,
   ChatChartResponse,
   ChatFocusContext,
   ChatHintsResponse,
-  ChatHistoryTurn,
+  ChatQuickPrompt,
   QuerySpec,
-  ChatStatePayload,
 } from "@/lib/types/chat";
 import DecisionIntelligencePanel from "@/components/workspace/DecisionIntelligencePanel";
 import { buildAnalysisFocusContext, buildChartFocusContext, contextualPromptSuggestions } from "@/lib/contextual-focus";
@@ -45,23 +45,6 @@ import { getMartDrillAdvisory } from "@/lib/mart-drill-utils";
 interface VizAgentChatbotProps {
   isOpen: boolean;
   onClose: () => void;
-}
-
-// Helper: extract readable text from assistant response
-function assistantText(res: ChatResponse): string {
-  if (res.response_type === "chart") {
-    return res.narrative;
-  }
-  if (res.response_type === "chart_patch") {
-    return res.narrative ?? "Applied a chart update request.";
-  }
-  if (res.response_type === "clarify") {
-    return res.question || "Could you clarify your request?";
-  }
-  if (res.response_type === "refuse") {
-    return res.message;
-  }
-  return res.message;
 }
 
 // Helper: normalize clarify stage
@@ -99,60 +82,12 @@ function querySpecLabel(spec: QuerySpec | null | undefined): string[] {
   return labels;
 }
 
-// Helper: build request state
-function toRequestState(
-  lastChartSpec: ChatStatePayload["last_chart_spec"] | null,
-  baseState: {
-    clarify_id: string | null;
-    original_user_intent: string | null;
-    selections: {
-      metric: string | null;
-      dimension: string | null;
-      temporal: string | null;
-      time_grain: "day" | "week" | "month" | "quarter" | "year" | null;
-      aggregation: "sum" | "avg" | "count" | "min" | "max" | null;
-      limit: number | null;
-    };
-  }
-): ChatStatePayload | undefined {
-  const selections: NonNullable<ChatStatePayload["selections"]> = {};
-  if (baseState.selections.metric) selections.metric = baseState.selections.metric;
-  if (baseState.selections.dimension) selections.dimension = baseState.selections.dimension;
-  if (baseState.selections.temporal) selections.temporal = baseState.selections.temporal;
-  if (baseState.selections.time_grain) selections.time_grain = baseState.selections.time_grain;
-  if (baseState.selections.aggregation) selections.aggregation = baseState.selections.aggregation;
-  if (typeof baseState.selections.limit === "number") selections.limit = baseState.selections.limit;
-
-  const payload: ChatStatePayload = {};
-  if (lastChartSpec) {
-    payload.last_chart_spec = lastChartSpec;
-  }
-  if (baseState.clarify_id) {
-    payload.clarify_id = baseState.clarify_id;
-  }
-  if (Object.keys(selections).length > 0) {
-    payload.selections = selections;
-  }
-  if (baseState.original_user_intent) {
-    payload.original_user_intent = baseState.original_user_intent;
-  }
-  return Object.keys(payload).length > 0 ? payload : undefined;
-}
 
 const modeOptions = [
   { id: "auto", label: "Auto" },
   { id: "chart", label: "Chart" },
   { id: "explain", label: "Explain" },
 ] as const;
-
-const EMPTY_SELECTIONS = {
-  metric: null,
-  dimension: null,
-  temporal: null,
-  time_grain: null,
-  aggregation: null,
-  limit: null,
-} as const;
 
 type ChartPreviewState = {
   chartSpec: ChatChartResponse["chart_spec"];
@@ -195,6 +130,7 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
   const [chatHints, setChatHints] = useState<ChatHintsResponse | null>(null);
   const [isMartOpen, setIsMartOpen] = useState(false);
   const [martQuery, setMartQuery] = useState("");
+  const [showContextDetails, setShowContextDetails] = useState(false);
   const [showSavedPrompts, setShowSavedPrompts] = useState(false);
   const [currentChartPreview, setCurrentChartPreview] = useState<ChartPreviewState | null>(null);
   const [selectedDashboardOption, setSelectedDashboardOption] = useState<string>("Default");
@@ -486,54 +422,16 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
     };
   }, [chatHints, chatMode, selectedAggregation]);
 
-  const applyResponseState = (
-    key: string,
-    response: ChatResponse,
-    originalIntent: string
-  ) => {
-    if (response.response_type === "chart") {
-      setLastChartSpec(key, response.chart_spec);
-      patchChatState(key, {
-        clarify_id: null,
-        original_user_intent: originalIntent,
-        selections: EMPTY_SELECTIONS,
-      });
-      return;
-    }
-
-    if (response.response_type === "clarify") {
-      patchChatState(key, {
-        clarify_id: response.clarify_id,
-        original_user_intent: originalIntent,
-      });
-      return;
-    }
-
-    patchChatState(key, {
-      clarify_id: null,
-      original_user_intent: originalIntent,
-    });
-  };
-
-  const buildHistory = (items: typeof turns, nextMessage: string): ChatHistoryTurn[] => {
-    const history = items
-      .slice(-7)
-      .map((turn) => ({
-        role: turn.role,
-        message: turn.message,
-        response_type: turn.response?.response_type ?? null,
-      }));
-    return [...history, { role: "user", message: nextMessage }];
-  };
-
   const sendChatRequest = async ({
     userVisibleMessage,
     requestMessage,
     state,
+    quickPrompt,
   }: {
     userVisibleMessage: string;
     requestMessage: string;
-    state: ChatStatePayload | undefined;
+    state: ReturnType<typeof toRequestState>;
+    quickPrompt?: ChatQuickPrompt | null;
   }) => {
     if (!selectedAggregation || !chatKey) {
       setError("Select a mart first");
@@ -552,10 +450,16 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
       const request: ChatRequest = {
         message: requestMessage,
         table: selectedAggregation,
-        mode: chatMode,
+        mode:
+          quickPrompt?.preferred_route === "chart_patch" || quickPrompt?.preferred_route === "chart"
+            ? "chart"
+            : quickPrompt?.preferred_route === "explain"
+              ? "explain"
+              : chatMode,
         state,
-        history: buildHistory(turns, requestMessage),
+        history: buildChatHistory(turns, requestMessage),
         focus: activeFocus,
+        quick_prompt: quickPrompt ?? undefined,
       };
       const response = await apiClient.postChat(routeDatasetId, request);
       appendChatTurn(chatKey, {
@@ -564,7 +468,11 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
         response,
         createdAt: new Date().toISOString(),
       });
-      applyResponseState(chatKey, response, state?.original_user_intent ?? requestMessage);
+      applyChatResponseState(response, state?.original_user_intent ?? requestMessage, {
+        chatKey,
+        setLastChartSpec,
+        patchChatState,
+      });
       
       // Update chart preview if response is a chart
       if (response.response_type === "chart" && response.chart_spec && response.rows) {
@@ -592,34 +500,39 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
         );
       }
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Chat request failed");
+      setError(formatChatError(requestError));
     } finally {
       setIsLoading(false);
     }
   };
 
-  const submitPrompt = async (prompt: string) => {
+  const submitPrompt = async (prompt: string, quickPrompt?: ChatQuickPrompt | null) => {
     const trimmed = prompt.trim();
     if (!trimmed || !chatKey) {
       return;
     }
 
-    const originalIntent = trimmed;
+    const originalIntent = quickPrompt?.prompt_text.trim() || trimmed;
     patchChatState(chatKey, {
       clarify_id: null,
-      selections: EMPTY_SELECTIONS,
+      selections: EMPTY_CHAT_SELECTIONS,
       original_user_intent: originalIntent,
     });
     const requestState = toRequestState(lastChartSpec, {
       clarify_id: null,
       original_user_intent: originalIntent,
-      selections: EMPTY_SELECTIONS,
+      selections: EMPTY_CHAT_SELECTIONS,
     });
     await sendChatRequest({
-      userVisibleMessage: trimmed,
-      requestMessage: trimmed,
+      userVisibleMessage: quickPrompt?.label || trimmed,
+      requestMessage: originalIntent,
       state: requestState,
+      quickPrompt,
     });
+  };
+
+  const submitQuickPrompt = async (prompt: ChatQuickPrompt) => {
+    await submitPrompt(prompt.prompt_text, prompt);
   };
 
   const handleSubmit = async (event: FormEvent) => {
@@ -653,7 +566,7 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
     }
     const current = chatState ?? {
       clarify_id: null,
-      selections: EMPTY_SELECTIONS,
+      selections: EMPTY_CHAT_SELECTIONS,
       original_user_intent: null,
     };
     const mergedSelections = {
@@ -977,25 +890,43 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
         </div>
 
         {selectedAggregation ? (
-          <div className="rounded-lg border border-indigo-200 bg-indigo-50/60 p-2">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-indigo-700">Active context</p>
-            <p className="mt-1 text-[11px] text-slate-700">
-              Dataset <span className="font-medium">{routeDatasetId}</span> using mart{" "}
-              <span className="font-medium">{selectedMart?.label ?? selectedAggregation}</span>
-            </p>
-            {martSummary ? <p className="mt-1 text-[10px] text-slate-600">{martSummary}</p> : null}
-            {contextTags.length > 0 ? (
+          <div className="rounded-lg border border-slate-200 bg-white p-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] text-slate-700">
+                Dataset {routeDatasetId}
+              </span>
+              <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] text-indigo-700">
+                Mart {selectedMart?.label ?? selectedAggregation}
+              </span>
+              {activeFocus ? (
+                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] text-emerald-700">
+                  {activeFocus.title || "Current artifact"}
+                </span>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setShowContextDetails((current) => !current)}
+                className="ml-auto inline-flex items-center gap-1 rounded-full border border-slate-300 bg-slate-50 px-2 py-0.5 text-[10px] text-slate-700 hover:bg-slate-100"
+              >
+                {showContextDetails ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                {showContextDetails ? "Hide context" : "Show context"}
+              </button>
+            </div>
+            {showContextDetails && martSummary ? <p className="mt-3 text-[11px] text-slate-700">{martSummary}</p> : null}
+            {showContextDetails && contextTags.length > 0 ? (
               <div className="mt-2 flex flex-wrap gap-1">
                 {contextTags.map((tag) => (
-                  <span key={tag} className="rounded-full border border-indigo-200 bg-white px-2 py-0.5 text-[10px] text-indigo-700">
+                  <span key={tag} className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] text-slate-600">
                     {tag}
                   </span>
                 ))}
               </div>
-            ) : (
+            ) : showContextDetails ? (
               <p className="mt-2 text-[10px] text-slate-500">No structured query yet. Ask a chart question to build one.</p>
-            )}
-            {activeFocus ? (
+            ) : null}
+            {showContextDetails && activeFocus?.summary ? (
+              <p className="mt-1 text-[11px] text-slate-700">{activeFocus.summary}</p>
+            ) : showContextDetails && activeFocus ? (
               <div className="mt-3 rounded-lg border border-white/80 bg-white px-2 py-2">
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Focused artifact</p>
                 <p className="mt-1 text-[11px] text-slate-800">
@@ -1006,12 +937,12 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {focusSuggestions.slice(0, 3).map((suggestion) => (
                       <button
-                        key={suggestion}
+                        key={`${suggestion.prompt_kind}-${suggestion.label}`}
                         type="button"
-                        onClick={() => setMessage(suggestion)}
+                        onClick={() => void submitQuickPrompt(suggestion)}
                         className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] text-slate-700 hover:bg-slate-100"
                       >
-                        {suggestion}
+                        {suggestion.label}
                       </button>
                     ))}
                   </div>
@@ -1193,38 +1124,33 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
       {/* Input Form */}
       <div className="border-t border-indigo-200/50 p-3 space-y-2 bg-white/80 backdrop-blur-sm">
         {/* Hints/Guidance */}
-        {selectedAggregation && guidance.examples.length > 0 ? (
+        {(focusSuggestions.length > 0 || (selectedAggregation && guidance.examples.length > 0)) ? (
           <div className="rounded-lg border border-indigo-200 bg-indigo-50/50 p-2">
-            <p className="text-[10px] text-indigo-900 font-medium mb-1">{guidance.title}</p>
+            <p className="text-[10px] text-indigo-900 font-medium mb-1">
+              {focusSuggestions.length > 0 ? "Focused prompts" : guidance.title}
+            </p>
             <div className="flex flex-wrap gap-1.5">
-              {guidance.examples.slice(0, 2).map((example) => (
-                <button
-                  key={example}
-                  type="button"
-                  onClick={() => setMessage(example)}
-                  className="px-2 py-0.5 text-[10px] rounded-full border border-slate-300 text-slate-700 hover:bg-slate-100"
-                >
-                  {example}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        {activeFocus && focusSuggestions.length > 0 ? (
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-2">
-            <p className="text-[10px] text-slate-900 font-medium mb-1">Ask about the focused artifact</p>
-            <div className="flex flex-wrap gap-1.5">
-              {focusSuggestions.slice(0, 3).map((suggestion) => (
-                <button
-                  key={suggestion}
-                  type="button"
-                  onClick={() => setMessage(suggestion)}
-                  className="px-2 py-0.5 text-[10px] rounded-full border border-slate-300 text-slate-700 hover:bg-white"
-                >
-                  {suggestion}
-                </button>
-              ))}
+              {focusSuggestions.length > 0
+                ? focusSuggestions.slice(0, 3).map((suggestion) => (
+                    <button
+                      key={`${suggestion.prompt_kind}-${suggestion.label}`}
+                      type="button"
+                      onClick={() => void submitQuickPrompt(suggestion)}
+                      className="px-2 py-0.5 text-[10px] rounded-full border border-slate-300 text-slate-700 hover:bg-slate-100"
+                    >
+                      {suggestion.label}
+                    </button>
+                  ))
+                : guidance.examples.slice(0, 2).map((example) => (
+                    <button
+                      key={example}
+                      type="button"
+                      onClick={() => setMessage(example)}
+                      className="px-2 py-0.5 text-[10px] rounded-full border border-slate-300 text-slate-700 hover:bg-slate-100"
+                    >
+                      {example}
+                    </button>
+                  ))}
             </div>
           </div>
         ) : null}

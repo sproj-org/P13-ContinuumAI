@@ -19,7 +19,6 @@ import {
 } from "@/lib/chart-display";
 import { createChartBuilderSeed } from "@/lib/chart-builder-seed";
 import { getMartDrillAdvisory } from "@/lib/mart-drill-utils";
-import type { DecisionTaskType } from "@/lib/types/analysis";
 import type { ChartSemanticContext, ChartSpecV1, FilterOperator, FilterSpec } from "@/lib/types/chartspec";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/lib/toast-context";
@@ -254,7 +253,6 @@ export default function ChartBuilderTab() {
   const [copiedTab, setCopiedTab] = useState<DebugTab | null>(null);
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState<boolean>(false);
   const [selectedDashboards, setSelectedDashboards] = useState<string[]>([]);
-  const [taskRequest, setTaskRequest] = useState<{ task: DecisionTaskType; token: number } | null>(null);
   const [analysisSemanticContext, setAnalysisSemanticContext] = useState<{
     signature: string;
     context: Partial<ChartSemanticContext> | null;
@@ -609,10 +607,6 @@ export default function ChartBuilderTab() {
     () => (chartFocus ? contextualPromptSuggestions(chartFocus) : []),
     [chartFocus],
   );
-
-  const requestAnalysisTask = (task: DecisionTaskType) => {
-    setTaskRequest({ task, token: Date.now() + Math.random() });
-  };
 
   const applyContextualChartSpec = (nextChartSpec: ChartSpecV1) => {
     setSelectedAggregation(nextChartSpec.table);
@@ -969,19 +963,7 @@ export default function ChartBuilderTab() {
                       focus={chartFocus}
                       title="Ask about this chart"
                       description="Use the current chart, semantic mapping, and mart context as the starting point."
-                      suggestions={[
-                        ...chartFocusSuggestions,
-                        "Break this down further",
-                        "Compare this with the previous period",
-                      ]}
-                      taskActions={[
-                        { task: "forecast", label: "Forecast this metric", onTrigger: () => requestAnalysisTask("forecast") },
-                        { task: "anomaly", label: "Find anomalies", onTrigger: () => requestAnalysisTask("anomaly") },
-                        { task: "segment", label: "Segment likely drivers", onTrigger: () => requestAnalysisTask("segment") },
-                        ...(chartFocus.kpi_id
-                          ? [{ task: "strategy_risk" as const, label: "Check KPI risk", onTrigger: () => requestAnalysisTask("strategy_risk") }]
-                          : []),
-                      ]}
+                      suggestions={chartFocusSuggestions}
                       onChartSpecChange={applyContextualChartSpec}
                     />
                   ) : null}
@@ -994,7 +976,6 @@ export default function ChartBuilderTab() {
                       chartRows={previewData.rows}
                       chartTitle={chartTitlePreview}
                       analysisSource="chart_builder"
-                      taskRequest={taskRequest}
                       onChartSpecChange={(nextChartSpec) => {
                         setAnalysisSemanticContext({
                           signature: chartSpecSignature,

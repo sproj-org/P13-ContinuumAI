@@ -15,6 +15,24 @@ export type MissingField = 'metric' | 'x_axis' | 'time_grain' | 'table';
 export type ChatRole = 'user' | 'assistant';
 export type ChatResponseType = 'chart' | 'chart_patch' | 'explain' | 'clarify' | 'refuse';
 export type ChatFallbackReason = 'missing_key' | 'openai_error';
+export type ChatPromptKind = 'ask' | 'task' | 'chart_edit' | 'follow_up' | 'compare' | 'drill';
+export type ChatPromptRoute = 'explain' | 'analysis' | 'chart' | 'chart_patch' | 'guidance';
+export type ChatPromptArtifactAction =
+  | 'explain_chart'
+  | 'explain_kpi'
+  | 'next_step'
+  | 'drill_next'
+  | 'chart_change'
+  | 'forecast_drivers'
+  | 'forecast_target_gap'
+  | 'anomaly_driver'
+  | 'anomaly_scope'
+  | 'segment_differentiators'
+  | 'segment_compare_extremes'
+  | 'segment_drill_priority'
+  | 'risk_driver'
+  | 'risk_slice'
+  | 'risk_next_step';
 
 export interface ChatDebugMetadata {
   used_fallback?: boolean;
@@ -53,8 +71,20 @@ export interface ChatFocusContext {
   analysis_context?: AnalysisContext | null;
   semantic_context?: ChartSemanticContext | null;
   active_task?: string | null;
+  analysis_result?: AnalysisResponse | null;
   summary?: string | null;
   breadcrumbs?: string[];
+}
+
+export interface ChatQuickPrompt {
+  label: string;
+  prompt_text: string;
+  prompt_kind: ChatPromptKind;
+  preferred_route: ChatPromptRoute;
+  focus_type?: ChatFocusType | null;
+  analysis_result_type?: string | null;
+  artifact_action?: ChatPromptArtifactAction | null;
+  task_type?: string | null;
 }
 
 export interface ChatRequest {
@@ -64,6 +94,7 @@ export interface ChatRequest {
   state?: ChatStatePayload;
   history?: ChatHistoryTurn[];
   focus?: ChatFocusContext | null;
+  quick_prompt?: ChatQuickPrompt | null;
   debug?: boolean;
 }
 

@@ -22,8 +22,6 @@ import {
 } from "@/lib/hooks";
 import { humanizeChartType, humanizeMartLabel, resolveChartTitle } from "@/lib/chart-display";
 import { createChartBuilderSeed } from "@/lib/chart-builder-seed";
-import type { DecisionTaskType } from "@/lib/types/analysis";
-
 export default function DashboardTab() {
   const {
     savedCharts,
@@ -39,7 +37,6 @@ export default function DashboardTab() {
   const [editingChartId, setEditingChartId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
   const [previewChart, setPreviewChart] = useState<typeof savedCharts[0] | null>(null);
-  const [previewTaskRequest, setPreviewTaskRequest] = useState<{ task: DecisionTaskType; token: number } | null>(null);
   const [selectedDashboardName, setSelectedDashboardName] = useState<string | null>(null);
   const [newDashboardName, setNewDashboardName] = useState("");
   const [isCreateDashboardOpen, setIsCreateDashboardOpen] = useState(false);
@@ -767,15 +764,7 @@ export default function DashboardTab() {
                       focus={previewFocus}
                       title="Ask about this chart"
                       description="Use the saved chart, dashboard context, and KPI linkage as the starting point."
-                      suggestions={[...previewSuggestions, "Break this down further", "Compare this with another chart"]}
-                      taskActions={[
-                        { task: "forecast", label: "Forecast this metric", onTrigger: () => setPreviewTaskRequest({ task: "forecast", token: Date.now() + Math.random() }) },
-                        { task: "anomaly", label: "Find anomalies", onTrigger: () => setPreviewTaskRequest({ task: "anomaly", token: Date.now() + Math.random() }) },
-                        { task: "segment", label: "Segment likely drivers", onTrigger: () => setPreviewTaskRequest({ task: "segment", token: Date.now() + Math.random() }) },
-                        ...(previewFocus.kpi_id
-                          ? [{ task: "strategy_risk" as const, label: "Check KPI risk", onTrigger: () => setPreviewTaskRequest({ task: "strategy_risk", token: Date.now() + Math.random() }) }]
-                          : []),
-                      ]}
+                      suggestions={previewSuggestions}
                       onChartSpecChange={(nextChartSpec) => {
                         setPreviewChart((current) => (current ? { ...current, chartSpec: nextChartSpec } : current));
                       }}
@@ -789,7 +778,6 @@ export default function DashboardTab() {
                     chartTitle={previewChartTitle}
                     kpiId={previewChart.chartSpec.semantic_context?.matched_kpi_id ?? null}
                     analysisSource="dashboard"
-                    taskRequest={previewTaskRequest}
                     onChartSpecChange={(nextChartSpec) => {
                       setPreviewChart((current) => (current ? { ...current, chartSpec: nextChartSpec } : current));
                     }}

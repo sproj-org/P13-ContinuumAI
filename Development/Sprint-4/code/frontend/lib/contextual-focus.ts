@@ -2,7 +2,7 @@
 
 import type { AnalysisContext, AnalysisResponse, DecisionTaskType } from "@/lib/types/analysis";
 import type { ChartSemanticContext, ChartSpecV1 } from "@/lib/types/chartspec";
-import type { ChatFocusContext } from "@/lib/types/chat";
+import type { ChatFocusContext, ChatQuickPrompt } from "@/lib/types/chat";
 
 type ChartFocusInput = {
   title: string;
@@ -82,6 +82,7 @@ export function buildChartFocusContext({
     chart_rows: chartRows ?? [],
     analysis_context: analysisContext ?? chartSpec?.semantic_context?.analysis_context ?? null,
     semantic_context: semanticContext ?? chartSpec?.semantic_context ?? null,
+    analysis_result: null,
     breadcrumbs: breadcrumbs ?? [],
     summary: firstNonEmpty(
       analysisContext?.semantic?.matched_kpi_label,
@@ -117,6 +118,7 @@ export function buildAnalysisFocusContext({
     ...base,
     focus_type: "analysis_result",
     active_task: task,
+    analysis_result: analysis,
     summary: analysisSummary(analysis),
   };
 }
@@ -136,62 +138,125 @@ export function buildKpiFocusContext({
     kpi_id: kpiId ?? analysisContext?.semantic?.matched_kpi_id ?? null,
     analysis_context: analysisContext ?? null,
     semantic_context: null,
+    analysis_result: null,
     breadcrumbs: breadcrumbs ?? [],
     summary: summary ?? analysisContext?.strategy?.status ?? null,
   };
 }
 
-export function contextualPromptSuggestions(focus: ChatFocusContext): string[] {
+function prompt(
+  label: string,
+  promptText: string,
+  promptKind: ChatQuickPrompt["prompt_kind"],
+  preferredRoute: ChatQuickPrompt["preferred_route"],
+  focus: ChatFocusContext,
+  options?: Partial<Pick<ChatQuickPrompt, "artifact_action" | "analysis_result_type" | "task_type">>,
+): ChatQuickPrompt {
+  return {
+    label,
+    prompt_text: promptText,
+    prompt_kind: promptKind,
+    preferred_route: preferredRoute,
+    focus_type: focus.focus_type,
+    analysis_result_type: focus.active_task ?? null,
+    artifact_action: options?.artifact_action ?? null,
+    task_type: options?.task_type ?? null,
+  };
+}
+
+export function contextualPromptSuggestions(focus: ChatFocusContext): ChatQuickPrompt[] {
   if (focus.focus_type === "analysis_result") {
     if (focus.active_task === "forecast") {
       return [
-        "Explain this forecast",
-        "What is driving the projected change?",
-        "Which slice should I inspect next?",
+        prompt("Explain this forecast", "Explain this forecast", "ask", "explain", focus, {
+          artifact_action: "forecast_drivers",
+        }),
+        prompt("What is driving the projected change?", "What is driving the projected change?", "follow_up", "explain", focus, {
+          artifact_action: "forecast_drivers",
+        }),
+        prompt("What should I inspect next?", "Which slice should I inspect next?", "follow_up", "guidance", focus, {
+          artifact_action: "next_step",
+        }),
       ];
     }
     if (focus.active_task === "anomaly") {
       return [
-        "What is driving this anomaly?",
-        "Which entities should I compare next?",
-        "Is this anomaly broad-based or isolated?",
+        prompt("What is driving this anomaly?", "What is driving this anomaly?", "follow_up", "explain", focus, {
+          artifact_action: "anomaly_driver",
+        }),
+        prompt("Which entities should I compare next?", "Which entities should I compare next?", "follow_up", "guidance", focus, {
+          artifact_action: "next_step",
+        }),
+        prompt("Is this anomaly broad-based or isolated?", "Is this anomaly broad-based or isolated?", "follow_up", "explain", focus, {
+          artifact_action: "anomaly_scope",
+        }),
       ];
     }
     if (focus.active_task === "segment") {
       return [
-        "Compare the strongest cluster to the weakest",
-        "What differentiates these clusters?",
-        "Which cluster should I drill into first?",
+        prompt("Compare strongest vs weakest cluster", "Compare the strongest cluster to the weakest", "compare", "explain", focus, {
+          artifact_action: "segment_compare_extremes",
+        }),
+        prompt("What differentiates these clusters?", "What differentiates these clusters?", "compare", "explain", focus, {
+          artifact_action: "segment_differentiators",
+        }),
+        prompt("Which cluster should I drill into first?", "Which cluster should I drill into first?", "drill", "guidance", focus, {
+          artifact_action: "segment_drill_priority",
+        }),
       ];
     }
     if (focus.active_task === "strategy_risk") {
       return [
-        "Why is this KPI at risk?",
-        "What should I look at next?",
-        "Which business slice is most likely driving the risk?",
+        prompt("Why is this KPI at risk?", "Why is this KPI at risk?", "follow_up", "explain", focus, {
+          artifact_action: "risk_driver",
+        }),
+        prompt("What should I look at next?", "What should I look at next?", "follow_up", "guidance", focus, {
+          artifact_action: "risk_next_step",
+        }),
+        prompt("Which business slice is driving the risk?", "Which business slice is most likely driving the risk?", "follow_up", "explain", focus, {
+          artifact_action: "risk_slice",
+        }),
       ];
     }
   }
 
   if (focus.focus_type === "kpi") {
     return [
-      "Explain this KPI in business terms",
-      "Why might this KPI move off target?",
-      "What analysis should I run next?",
+      prompt("Explain this KPI", "Explain this KPI in business terms", "ask", "explain", focus, {
+        artifact_action: "explain_kpi",
+      }),
+      prompt("Why might this KPI move off target?", "Why might this KPI move off target?", "follow_up", "guidance", focus, {
+        artifact_action: "risk_driver",
+      }),
+      prompt("What analysis should I run next?", "What analysis should I run next?", "follow_up", "guidance", focus, {
+        artifact_action: "next_step",
+      }),
     ];
   }
 
   if (focus.focus_type === "drill_state") {
     return [
-      "What changed after this drill?",
-      "Which categories are driving this view?",
-      "What should I drill into next?",
+      prompt("What changed after this drill?", "What changed after this drill?", "follow_up", "explain", focus, {
+        artifact_action: "chart_change",
+      }),
+      prompt("Which categories are driving this view?", "Which categories are driving this view?", "follow_up", "explain", focus, {
+        artifact_action: "chart_change",
+      }),
+      prompt("What should I drill into next?", "What should I drill into next?", "drill", "guidance", focus, {
+        artifact_action: "drill_next",
+      }),
     ];
   }
 
   return [
-    "Explain this chart",
-    "What changed here?",
-    "What should I look at next?",
+    prompt("Explain this chart", "Explain this chart", "ask", "explain", focus, {
+      artifact_action: "explain_chart",
+    }),
+    prompt("What changed here?", "What changed here?", "follow_up", "explain", focus, {
+      artifact_action: "chart_change",
+    }),
+    prompt("What should I look at next?", "What should I look at next?", "follow_up", "guidance", focus, {
+      artifact_action: "next_step",
+    }),
   ];
 }

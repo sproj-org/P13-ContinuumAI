@@ -37,7 +37,6 @@ interface DecisionIntelligencePanelProps {
   analysisSource?: AnalysisSource;
   analysisContext?: AnalysisContext | null;
   onChartSpecChange?: (nextChartSpec: ChartSpecV1) => void;
-  taskRequest?: { task: DecisionTaskType; token: number } | null;
 }
 
 type TaskRunState = {
@@ -294,14 +293,12 @@ export default function DecisionIntelligencePanel({
   analysisSource = "api",
   analysisContext,
   onChartSpecChange,
-  taskRequest,
 }: DecisionIntelligencePanelProps) {
   const [panelStateByContext, setPanelStateByContext] = useState<Record<string, TaskPanelState>>({});
   const [horizon, setHorizon] = useState(6);
   const [clusterCount, setClusterCount] = useState(4);
   const runIdRef = useRef(0);
   const autoRunSeedRef = useRef<string | null>(null);
-  const handledTaskRequestRef = useRef<number | null>(null);
 
   const resolvedTable = martId || chartSpec?.table || analysisContext?.table || chartSpec?.semantic_context?.analysis_context?.table || null;
   const resolvedKpiId =
@@ -579,14 +576,6 @@ export default function DecisionIntelligencePanel({
     autoRunSeedRef.current = seed;
     runAnalysisEvent("strategy_risk");
   }, [analysisSource, chartTitle, resolvedKpiId, resolvedTable, stableContextKey]);
-
-  useEffect(() => {
-    if (!taskRequest || handledTaskRequestRef.current === taskRequest.token) {
-      return;
-    }
-    handledTaskRequestRef.current = taskRequest.token;
-    runAnalysisEvent(taskRequest.task);
-  }, [taskRequest]);
 
   const selectedTaskConfig = TASK_CONFIG[displayedTask];
   const assistantFocus = useMemo(() => {

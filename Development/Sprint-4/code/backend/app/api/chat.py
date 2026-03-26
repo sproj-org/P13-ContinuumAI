@@ -36,6 +36,7 @@ def chat_with_dataset(
             state=request.state,
             history=request.history,
             focus=request.focus,
+            quick_prompt=request.quick_prompt,
             db=db,
             debug=request.debug,
         )

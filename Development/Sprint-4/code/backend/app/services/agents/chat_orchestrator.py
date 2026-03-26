@@ -21,10 +21,12 @@ from app.services.agents.chat_models import (
     ChatExplainResponse,
     ChatHistoryTurn,
     ChatMode,
+    ChatPatchResponse,
     ChatPlanChart,
     ChatPlanClarify,
     ChatPlanExplain,
     ChatPlanPatch,
+    ChatQuickPrompt,
     ChatPlanRefuse,
     ChatPlanUnion,
     ChatRefuseResponse,
@@ -43,6 +45,7 @@ from app.services.agents.mart_context import build_compact_mart_context
 from app.services.agents.spec_patch import apply_patch
 from app.services.charts.models import ChartSpecV1
 from app.services.charts.spec_resolver import execute_chart_preview
+from app.services.intelligence.result_answers import answer_analysis_question
 from app.services.llm.openai_client import OpenAIClient, OpenAIJSONError
 from app.services.llm.openai_diagnostics import (
     OpenAIDiagnostics,
@@ -1500,6 +1503,201 @@ def _analysis_to_chat_response(analysis: AnalysisResponse) -> ChatResponseUnion:
     )
 
 
+def _focus_semantic_digest(focus: ChatFocusContext | None) -> dict[str, Any]:
+    if focus is None:
+        return {}
+    if isinstance(focus.semantic_context, dict):
+        return dict(focus.semantic_context)
+    if focus.analysis_context and focus.analysis_context.semantic:
+        return focus.analysis_context.semantic.model_dump(mode="json", exclude_none=True)
+    if focus.chart_spec and focus.chart_spec.semantic_context:
+        return focus.chart_spec.semantic_context.model_dump(mode="json", exclude_none=True)
+    return {}
+
+
+def _focus_chart_metric(focus: ChatFocusContext | None) -> str | None:
+    if focus is None or focus.chart_spec is None or not focus.chart_spec.encoding.y:
+        return None
+    return focus.chart_spec.encoding.y[0].field
+
+
+def _next_focus_drill_dimension(focus: ChatFocusContext | None) -> str | None:
+    if focus is None:
+        return None
+    semantic = _focus_semantic_digest(focus)
+    preferred_path = semantic.get("preferred_drill_path") or []
+    if not isinstance(preferred_path, list):
+        preferred_path = []
+    drill_path = [item for item in preferred_path if isinstance(item, str) and item.strip()]
+    if not drill_path:
+        return None
+    current_dimension = focus.chart_spec.encoding.x.field if focus.chart_spec is not None else None
+    if current_dimension in drill_path:
+        current_index = drill_path.index(current_dimension)
+        if current_index + 1 < len(drill_path):
+            return drill_path[current_index + 1]
+    for dimension in drill_path:
+        if dimension != current_dimension:
+            return dimension
+    return None
+
+
+def _focus_explain_message(focus: ChatFocusContext) -> str:
+    metric = _focus_chart_metric(focus)
+    x_field = focus.chart_spec.encoding.x.field if focus.chart_spec is not None else None
+    row_count = len(focus.chart_rows)
+    if focus.focus_type == "kpi":
+        return (
+            f"{focus.title or 'This KPI'} is linked to mart {(_focus_table(focus) or 'the current mart')}. "
+            f"{focus.summary or 'Use the linked target, rules, and semantic context to evaluate current performance.'}"
+        )
+    if focus.focus_type == "analysis_result" and focus.analysis_result is not None:
+        return answer_analysis_question(
+            message="Explain this result",
+            analysis=focus.analysis_result,
+            artifact_action=focus.active_task == "strategy_risk" and "risk_driver" or None,
+        ) or (focus.summary or "This result is grounded in the current analysis context.")
+    return (
+        f"{focus.title or 'This chart'} is currently showing "
+        f"{metric or 'the selected metric'} by {x_field or 'the selected grouping'}"
+        f"{f' across {row_count} rows' if row_count else ''}. "
+        f"{focus.summary or 'Use this as the base view before drilling or launching a follow-up analysis.'}"
+    )
+
+
+def _focus_guidance_message(focus: ChatFocusContext) -> str:
+    if focus.analysis_result is not None:
+        answer = answer_analysis_question(
+            message="What should I look at next?",
+            analysis=focus.analysis_result,
+            artifact_action="risk_next_step" if focus.active_task == "strategy_risk" else None,
+        )
+        if answer:
+            return answer
+    next_drill = _next_focus_drill_dimension(focus)
+    if next_drill:
+        return f"Next, break the current view down by {next_drill} to isolate where the signal is concentrated."
+    if focus.focus_type == "kpi":
+        return "Start with KPI Risk or Forecast, then compare the weakest business slice against the strongest."
+    if _focus_chart_metric(focus):
+        return "Explain the current chart first, then forecast the metric or compare the weakest business slice if the pattern looks uneven."
+    return "Start with the most prominent metric, then drill into the next business slice or launch a forecast if the question is time-based."
+
+
+def _drill_patch_response(focus: ChatFocusContext) -> ChatPatchResponse | None:
+    if focus.chart_spec is None:
+        return None
+    next_dimension = _next_focus_drill_dimension(focus)
+    if not next_dimension:
+        return None
+    return ChatPatchResponse(
+        response_type="chart_patch",
+        patch={"set": {"encoding.x.field": next_dimension}, "unset": [], "add": {}},
+        narrative=f"Updated the chart to break the current view down by {next_dimension}.",
+        meta={"artifact_action": "drill_next", "next_dimension": next_dimension},
+    )
+
+
+def _direct_analysis_response(
+    *,
+    dataset_id: str,
+    message: str,
+    task_type: str | None,
+    table: str,
+    state: ChatState,
+    focus: ChatFocusContext | None,
+    db: Session,
+) -> ChatResponseUnion | None:
+    if task_type not in {"forecast", "anomaly", "segment", "strategy_risk"}:
+        return None
+    chart_spec: ChartSpecV1 | None = None
+    if state.last_chart_spec:
+        try:
+            chart_spec = state.last_chart_spec if isinstance(state.last_chart_spec, ChartSpecV1) else ChartSpecV1.model_validate(state.last_chart_spec)
+        except ValidationError:
+            chart_spec = None
+    if chart_spec is None and focus and focus.chart_spec is not None:
+        chart_spec = focus.chart_spec
+    analysis_request = AnalysisRequest(
+        message=message,
+        task_type=task_type,
+        table=table or _focus_table(focus),
+        chart_spec=chart_spec,
+        chart_rows=list(focus.chart_rows) if focus else [],
+        kpi_id=focus.kpi_id if focus and focus.kpi_id else None,
+        analysis_context=_focus_analysis_context(focus),
+    )
+    analysis = run_analysis_request(dataset_id=dataset_id, request=analysis_request, db=db)
+    return _analysis_to_chat_response(analysis)
+
+
+def _maybe_handle_focus_prompt(
+    *,
+    dataset_id: str,
+    table: str,
+    message: str,
+    state: ChatState,
+    focus: ChatFocusContext | None,
+    quick_prompt: ChatQuickPrompt | None,
+    db: Session,
+) -> ChatResponseUnion | None:
+    artifact_action = quick_prompt.artifact_action if quick_prompt is not None else None
+    effective_message = quick_prompt.prompt_text if quick_prompt is not None else message
+    if quick_prompt is not None and (quick_prompt.prompt_kind == "task" or quick_prompt.preferred_route == "analysis"):
+        return _direct_analysis_response(
+            dataset_id=dataset_id,
+            message=effective_message,
+            task_type=quick_prompt.task_type,
+            table=table,
+            state=state,
+            focus=focus,
+            db=db,
+        )
+
+    if focus and focus.analysis_result is not None:
+        answer = answer_analysis_question(
+            message=effective_message,
+            analysis=focus.analysis_result,
+            artifact_action=artifact_action,
+        )
+        if answer:
+            return ChatExplainResponse(
+                response_type="explain",
+                message=answer,
+                citations=[],
+                meta={"from_analysis_focus": True, "artifact_action": artifact_action},
+                query_spec=focus.analysis_result.query_spec,
+                plan_spec=focus.analysis_result.plan_spec,
+                analysis=focus.analysis_result,
+            )
+
+    if quick_prompt is None or focus is None:
+        return None
+
+    if quick_prompt.artifact_action == "drill_next" and quick_prompt.preferred_route in {"guidance", "chart_patch"}:
+        patched = _drill_patch_response(focus)
+        if patched is not None:
+            return patched
+
+    if quick_prompt.preferred_route == "explain":
+        return ChatExplainResponse(
+            response_type="explain",
+            message=_focus_explain_message(focus),
+            citations=[],
+            meta={"from_focus": True, "artifact_action": artifact_action},
+        )
+
+    if quick_prompt.preferred_route == "guidance":
+        return ChatExplainResponse(
+            response_type="explain",
+            message=_focus_guidance_message(focus),
+            citations=[],
+            meta={"from_focus_guidance": True, "artifact_action": artifact_action},
+        )
+
+    return None
+
+
 def _maybe_run_structured_analysis(
     *,
     dataset_id: str,
@@ -1796,6 +1994,7 @@ def _build_user_prompt(
     state: ChatState,
     history: list[ChatHistoryTurn] | None,
     focus: ChatFocusContext | None = None,
+    quick_prompt: ChatQuickPrompt | None = None,
 ) -> str:
     compact_kpis = [
         {
@@ -1852,6 +2051,7 @@ def _build_user_prompt(
         for item in (history or [])
     ][-8:]
     focus_digest = _focus_digest(focus)
+    quick_prompt_digest = quick_prompt.model_dump(mode="json", exclude_none=True) if quick_prompt is not None else {}
 
     return (
         f"User message:\n{message}\n\n"
@@ -1867,10 +2067,11 @@ def _build_user_prompt(
         f"Conversation state: {json.dumps(state.model_dump(mode='json', exclude_none=True), ensure_ascii=True)}\n\n"
         f"Recent chat history: {json.dumps(compact_history, ensure_ascii=True)}\n\n"
         f"Focused artifact context: {json.dumps(focus_digest or {}, ensure_ascii=True)}\n\n"
+        f"Quick prompt metadata: {json.dumps(quick_prompt_digest, ensure_ascii=True)}\n\n"
         f"ChartSpec summary: {json.dumps(chartspec_summary, ensure_ascii=True)}\n"
         f"Allowed response schema: {json.dumps(response_schema, ensure_ascii=True)}\n\n"
         f"Additional explain instructions: {explain_instructions}\n\n"
-        "Instruction: choose best available fields from context, use the focused artifact when present, do not copy templates verbatim, and avoid unnecessary clarify."
+        "Instruction: choose best available fields from context, use the focused artifact when present, honor quick prompt metadata when provided, do not copy templates verbatim, and avoid unnecessary clarify."
     )
 
 
@@ -1886,6 +2087,7 @@ def _generate_plan(
     state: ChatState,
     history: list[ChatHistoryTurn] | None,
     focus: ChatFocusContext | None = None,
+    quick_prompt: ChatQuickPrompt | None = None,
 ) -> tuple[
     ChatPlanUnion | None,
     Literal["missing_key", "openai_error"] | None,
@@ -1916,6 +2118,7 @@ def _generate_plan(
         state=state,
         history=history,
         focus=focus,
+        quick_prompt=quick_prompt,
     )
 
     corrective_prompt: str | None = None
@@ -2116,6 +2319,7 @@ def run_chat_orchestration(
     state: ChatState | dict[str, Any] | None,
     history: list[ChatHistoryTurn] | None = None,
     focus: ChatFocusContext | None = None,
+    quick_prompt: ChatQuickPrompt | None = None,
     db: Session,
     debug: bool = False,
 ) -> dict[str, Any]:
@@ -2173,6 +2377,18 @@ def run_chat_orchestration(
 
     context = build_compact_mart_context(dataset_id=dataset_id, table=resolved_table)
     intent_message = parsed_state.original_user_intent or message
+
+    focused_prompt_response = _maybe_handle_focus_prompt(
+        dataset_id=dataset_id,
+        table=resolved_table,
+        message=intent_message,
+        state=parsed_state,
+        focus=focus,
+        quick_prompt=quick_prompt,
+        db=db,
+    )
+    if focused_prompt_response is not None:
+        return finalize(focused_prompt_response.model_dump(mode="json"))
 
     state_plan = _state_driven_plan(table=resolved_table, mode=mode, context=context, state=parsed_state, message=message)
     if isinstance(state_plan, ChatPlanChart):
@@ -2235,6 +2451,7 @@ def run_chat_orchestration(
         state=parsed_state,
         history=history,
         focus=focus,
+        quick_prompt=quick_prompt,
     )
     if plan is None:
         used_fallback = True

@@ -1,13 +1,12 @@
 "use client";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { useAuth } from "@/lib/auth-context";
 import { useAppStore, WorkspaceTab } from "@/lib/store";
 import { useAggregations } from "@/lib/hooks";
 import { useChatSync } from "@/lib/useChatSync";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Database,
@@ -29,11 +28,9 @@ const tabs: { id: WorkspaceTab; label: string; icon: React.ReactNode }[] = [
 ];
 
 function WorkspaceContent() {
-  const { user, logout } = useAuth();
   const router = useRouter();
   const params = useParams();
   const datasetId = params.datasetId as string;
-  const [isVizAgentOpen, setIsVizAgentOpen] = useState(false);
 
   const {
     activeTab,
@@ -45,6 +42,8 @@ function WorkspaceContent() {
     setSelectedAggregation,
     availableMarts,
     setAvailableMarts,
+    vizAgentOpen,
+    setVizAgentOpen,
   } = useAppStore();
   const { data: aggregationsData } = useAggregations(selectedDatasetId);
 
@@ -93,7 +92,7 @@ function WorkspaceContent() {
   // Trigger window resize when VizAgent opens/closes to make charts resize properly
   useEffect(() => {
     window.dispatchEvent(new Event('resize'));
-  }, [isVizAgentOpen]);
+  }, [vizAgentOpen]);
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -157,7 +156,7 @@ function WorkspaceContent() {
 
             <div className="flex items-center gap-4">
               <button
-                onClick={() => setIsVizAgentOpen(!isVizAgentOpen)}
+                onClick={() => setVizAgentOpen(!vizAgentOpen)}
                 className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-gradient-to-r from-[#4f46e5] to-indigo-600 rounded-lg hover:from-indigo-600 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg"
               >
                 <Sparkles className="w-4 h-4" />
@@ -175,14 +174,14 @@ function WorkspaceContent() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
         className={`h-[calc(100vh-3.5rem)] transition-all duration-100 ${
-          isVizAgentOpen ? "mr-96" : "mr-0"
+          vizAgentOpen ? "mr-96" : "mr-0"
         }`}
       >
         {renderTabContent()}
       </motion.main>
 
       {/* VizAgent Chatbot Sidebar */}
-      <VizAgentChatbot isOpen={isVizAgentOpen} onClose={() => setIsVizAgentOpen(false)} />
+      <VizAgentChatbot isOpen={vizAgentOpen} onClose={() => setVizAgentOpen(false)} />
     </div>
   );
 }

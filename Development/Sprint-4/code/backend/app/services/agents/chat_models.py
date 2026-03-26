@@ -25,6 +25,25 @@ ChatResponseType = Literal["chart", "chart_patch", "explain", "clarify", "refuse
 ChatFallbackReason = Literal["missing_key", "openai_error"]
 ChartType = Literal["bar", "line", "pie", "histogram", "kpi"]
 ChatFocusType = Literal["chart", "dashboard", "kpi", "analysis_result", "drill_state"]
+ChatPromptKind = Literal["ask", "task", "chart_edit", "follow_up", "compare", "drill"]
+ChatPromptRoute = Literal["explain", "analysis", "chart", "chart_patch", "guidance"]
+ChatPromptArtifactAction = Literal[
+    "explain_chart",
+    "explain_kpi",
+    "next_step",
+    "drill_next",
+    "chart_change",
+    "forecast_drivers",
+    "forecast_target_gap",
+    "anomaly_driver",
+    "anomaly_scope",
+    "segment_differentiators",
+    "segment_compare_extremes",
+    "segment_drill_priority",
+    "risk_driver",
+    "risk_slice",
+    "risk_next_step",
+]
 
 
 def create_clarify_id() -> str:
@@ -98,6 +117,7 @@ class ChatFocusContext(BaseModel):
     analysis_context: AnalysisContextSpec | None = None
     semantic_context: dict[str, Any] | None = None
     active_task: str | None = None
+    analysis_result: AnalysisResponse | None = None
     summary: str | None = None
     breadcrumbs: list[str] = Field(default_factory=list)
 
@@ -124,6 +144,7 @@ class ChatRequest(BaseModel):
     state: ChatState | None = None
     history: list[ChatHistoryTurn] | None = None
     focus: ChatFocusContext | None = None
+    quick_prompt: "ChatQuickPrompt | None" = None
     debug: bool = False
 
     @field_validator("message")
@@ -133,6 +154,25 @@ class ChatRequest(BaseModel):
         if not trimmed:
             raise ValueError("message is required")
         return trimmed
+
+
+class ChatQuickPrompt(BaseModel):
+    label: str
+    prompt_text: str
+    prompt_kind: ChatPromptKind
+    preferred_route: ChatPromptRoute
+    focus_type: ChatFocusType | None = None
+    analysis_result_type: str | None = None
+    artifact_action: ChatPromptArtifactAction | None = None
+    task_type: str | None = None
+
+    @field_validator("label", "prompt_text", "analysis_result_type", "task_type")
+    @classmethod
+    def trim_prompt_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        trimmed = value.strip()
+        return trimmed or None
 
 
 class ChartSpecPatch(BaseModel):

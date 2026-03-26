@@ -82,6 +82,8 @@ interface AppState {
 
   activeTab: WorkspaceTab;
   setActiveTab: (tab: WorkspaceTab) => void;
+  vizAgentOpen: boolean;
+  setVizAgentOpen: (open: boolean) => void;
 
   // Chart builder state
   chartConfig: ChartConfig;
@@ -655,6 +657,8 @@ export const useAppStore = create<AppState>()(
 
       activeTab: 'marts',
       setActiveTab: (tab) => set({ activeTab: tab }),
+      vizAgentOpen: false,
+      setVizAgentOpen: (open) => set({ vizAgentOpen: open }),
 
       // Chart builder
       chartConfig: defaultChartConfig,
@@ -822,6 +826,7 @@ export const useAppStore = create<AppState>()(
       resetStore: () =>
         set({
           activeTab: 'marts',
+          vizAgentOpen: false,
           selectedAggregation: null,
           chartBuilderSeed: null,
           savedCharts: [],
