@@ -715,6 +715,37 @@ def test_artifact_answer_mode_detects_what_happened_for_chart_prompt() -> None:
     assert answer_mode == "what_happened"
 
 
+def test_artifact_answer_mode_detects_target_gap_explanation_for_kpi_prompt() -> None:
+    answer_mode = chat_orchestrator._artifact_answer_mode(
+        message="Why might this KPI move off target?",
+        focus=ChatFocusContext(
+            focus_type="kpi",
+            title="Net Sales Growth",
+            table="gold_sales_daily",
+            kpi_id="net_sales_growth",
+        ),
+        quick_prompt=None,
+    )
+
+    assert answer_mode == "target_gap_explanation"
+
+
+def test_artifact_answer_mode_detects_strategy_next_action_for_strategy_risk_prompt() -> None:
+    answer_mode = chat_orchestrator._artifact_answer_mode(
+        message="What analysis should I run next?",
+        focus=ChatFocusContext(
+            focus_type="analysis_result",
+            title="Net Sales Growth risk",
+            table="gold_sales_daily",
+            active_task="strategy_risk",
+            kpi_id="net_sales_growth",
+        ),
+        quick_prompt=None,
+    )
+
+    assert answer_mode == "strategy_next_action"
+
+
 def test_build_artifact_answer_user_prompt_includes_chart_evidence_and_strategy_context() -> None:
     prompt = chat_orchestrator._build_artifact_answer_user_prompt(
         dataset_id="silkroute",

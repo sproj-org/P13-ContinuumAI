@@ -250,7 +250,7 @@ def _answer_segment_question(
         )
 
     if (
-        answer_mode in {"drill_priority", "next_best_action"}
+        answer_mode in {"drill_priority", "next_best_action", "strategy_next_action"}
         or artifact_action == "segment_drill_priority"
         or _contains_any(text, ("drill", "inspect first", "start with"))
     ):
@@ -385,6 +385,13 @@ def _answer_risk_question(
             f"That keeps the KPI in a {evidence.get('risk_band')} risk band and should shape the next investigation and corrective action."
         )
 
+    if answer_mode == "target_gap_explanation":
+        return (
+            f"{strategy.kpi_label or strategy.kpi_id} is currently at {_format_number(evidence.get('current_value'))} "
+            f"versus a target of {_format_number(evidence.get('target_value'))}, and is projecting toward {_format_number(evidence.get('projected_value'))}. "
+            f"That leaves a gap of {_format_number(evidence.get('variance_to_target'))} and keeps the KPI in a {evidence.get('risk_band')} risk band."
+        )
+
     if artifact_action == "risk_driver" or _contains_any(text, ("why", "driving", "driver", "at risk")):
         return (
             f"{strategy.kpi_label or strategy.kpi_id} is currently assessed as {strategy.risk_band} risk because "
@@ -401,7 +408,7 @@ def _answer_risk_question(
             )
         return "Start with the first drill dimension on the linked KPI and compare the weakest business slice against the strongest."
 
-    if answer_mode == "next_best_action" or artifact_action == "risk_next_step" or _contains_any(text, ("next", "what should", "investigate")):
+    if answer_mode in {"next_best_action", "strategy_next_action"} or artifact_action == "risk_next_step" or _contains_any(text, ("next", "what should", "investigate")):
         recommended = evidence["recommended_actions"][0] if evidence.get("recommended_actions") else None
         if recommended:
             return recommended

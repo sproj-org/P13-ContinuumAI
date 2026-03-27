@@ -23,11 +23,13 @@ export type ChatPromptAnswerMode =
   | 'diagnose'
   | 'recommend'
   | 'next_best_action'
+  | 'strategy_next_action'
   | 'drill_priority'
   | 'segment_differentiation'
   | 'segment_comparison'
   | 'forecast_interpretation'
   | 'risk_explanation'
+  | 'target_gap_explanation'
   | 'strategy_alignment'
   | 'kpi_strategy_relationship';
 export type ChatPromptArtifactAction =

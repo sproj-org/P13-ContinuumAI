@@ -521,7 +521,7 @@ def _focus_digest(focus: ChatFocusContext | None) -> dict[str, Any] | None:
         }
     if focus.analysis_context is not None:
         digest["analysis_context"] = focus.analysis_context.model_dump(mode="json", exclude_none=True)
-    if focus.analysis_result is not None:
+    if focus.focus_type == "analysis_result" or focus.analysis_result is not None or focus.active_task is not None:
         digest["analysis_result"] = _analysis_digest(focus.analysis_result)
     return {key: value for key, value in digest.items() if value not in (None, [], {})}
 
@@ -1914,7 +1914,7 @@ def _artifact_answer_mode(
         if artifact_action in {"forecast_drivers", "forecast_target_gap"}:
             return "forecast_interpretation"
         if artifact_action in {"risk_driver", "risk_slice", "risk_next_step"}:
-            return "risk_explanation" if artifact_action != "risk_next_step" else "next_best_action"
+            return "risk_explanation" if artifact_action != "risk_next_step" else "strategy_next_action"
         if quick_prompt.preferred_route == "guidance":
             return "next_best_action"
         if quick_prompt.preferred_route == "explain":
@@ -1935,17 +1935,17 @@ def _artifact_answer_mode(
         for token in ("strategy", "north star", "pillar", "objective", "alignment", "align", "supports the strategy", "matters strategically")
     ):
         return "kpi_strategy_relationship" if focus.focus_type == "kpi" or focus.kpi_id else "strategy_alignment"
-    if focus.analysis_result is not None:
+    if focus.focus_type == "analysis_result" or focus.analysis_result is not None or focus.active_task is not None:
         if any(token in text for token in ("differentiate", "differentiates", "difference")):
             return "segment_differentiation"
         if any(token in text for token in ("compare", "strongest", "weakest")):
             return "segment_comparison"
         if any(token in text for token in ("drill", "inspect first", "drill into first")):
             return "drill_priority"
-        if any(token in text for token in ("look at next", "what should", "next step", "inspect next")):
-            return "next_best_action"
+        if any(token in text for token in ("look at next", "what should", "next step", "inspect next", "analysis should i run")):
+            return "strategy_next_action" if focus.active_task == "strategy_risk" else "next_best_action"
         if focus.active_task == "strategy_risk" or any(token in text for token in ("risk", "off target", "target")):
-            return "risk_explanation"
+            return "target_gap_explanation" if any(token in text for token in ("gap", "off target", "miss target")) else "risk_explanation"
         if focus.active_task == "forecast" or any(token in text for token in ("forecast", "projected", "confidence", "uncertainty")):
             return "forecast_interpretation"
         if focus.active_task == "anomaly" or any(token in text for token in ("anomaly", "most anomalous")):
@@ -1955,9 +1955,9 @@ def _artifact_answer_mode(
         return "explain"
     if focus.focus_type == "kpi":
         if any(token in text for token in ("next", "analysis should i run", "look at next")):
-            return "next_best_action"
+            return "strategy_next_action"
         if any(token in text for token in ("target", "risk", "off target")):
-            return "risk_explanation"
+            return "target_gap_explanation" if any(token in text for token in ("gap", "off target", "miss target")) else "risk_explanation"
         return "explain"
     if focus.focus_type in {"chart", "drill_state"} and any(
         token in text
@@ -1996,6 +1996,11 @@ def _artifact_answer_requirements(answer_mode: str) -> list[str]:
             "Use the preferred drill path or strongest follow-up analysis if it is available in context.",
             "If strategic target or KPI gap context is available, keep the next step aligned to that gap rather than giving generic advice.",
         ],
+        "strategy_next_action": [
+            "Recommend one or two next actions only.",
+            "Keep the recommendation explicitly tied to KPI target status, risk band, or strategy context when available.",
+            "Prefer the smallest next drill or analysis that helps close the strategic information gap.",
+        ],
         "drill_priority": [
             "Name the one dimension, cluster, or slice to inspect first and explain why it should come first.",
         ],
@@ -2015,6 +2020,10 @@ def _artifact_answer_requirements(answer_mode: str) -> list[str]:
             "Explicitly reference current, projected, and target values when they are available.",
             "Connect the risk explanation back to the KPI and the most relevant next investigation step.",
             "Use supporting details, triggered rules, or top anomaly context if they are available.",
+        ],
+        "target_gap_explanation": [
+            "Explain the current-versus-target gap using current, projected, and target values when available.",
+            "Name the strategic implication of that gap and the smallest grounded next step.",
         ],
         "strategy_alignment": [
             "Explain how the current chart or result affects the KPI, north star, or strategic pillar context that is provided.",
@@ -2298,11 +2307,36 @@ def _focus_guidance_message(focus: ChatFocusContext, strategy_digest: dict[str, 
     )
 
 
+def _focus_target_gap_message(focus: ChatFocusContext, strategy_digest: dict[str, Any]) -> str:
+    strategy_context = _focus_strategy_answer_context(focus, strategy_digest)
+    target_status = strategy_context.get("target_status") if isinstance(strategy_context.get("target_status"), dict) else {}
+    kpi_label = strategy_context.get("matched_kpi_label") or _focus_primary_kpi_label(focus) or focus.title or "this KPI"
+    current_value = target_status.get("current_value")
+    projected_value = target_status.get("projected_value")
+    target_value = target_status.get("target_value")
+    variance = target_status.get("variance")
+    risk_band = target_status.get("risk_band")
+    next_drill = _next_focus_drill_dimension(focus)
+
+    parts = [f"{kpi_label} is currently at {_format_metric_value(current_value)} against a target of {_format_metric_value(target_value)}."]
+    if projected_value is not None:
+        parts.append(f"The projected path points to {_format_metric_value(projected_value)}.")
+    if variance is not None:
+        parts.append(f"That leaves a target gap of {_format_metric_value(variance)}.")
+    if risk_band:
+        parts.append(f"Current risk is {risk_band}.")
+    if next_drill:
+        parts.append(f"Inspect {next_drill} next to find which slice is widening that gap.")
+    return " ".join(parts)
+
+
 def _focus_fallback_message(focus: ChatFocusContext, answer_mode: str, strategy_digest: dict[str, Any]) -> str:
-    if answer_mode in {"recommend", "next_best_action", "drill_priority"}:
+    if answer_mode in {"recommend", "next_best_action", "strategy_next_action", "drill_priority"}:
         return _focus_guidance_message(focus, strategy_digest)
     if answer_mode == "what_happened":
         return _focus_what_happened_message(focus)
+    if answer_mode == "target_gap_explanation":
+        return _focus_target_gap_message(focus, strategy_digest)
     if answer_mode == "strategy_alignment":
         return _focus_strategy_alignment_message(focus, strategy_digest)
     if answer_mode == "kpi_strategy_relationship":

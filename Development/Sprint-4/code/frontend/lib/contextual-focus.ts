@@ -222,7 +222,7 @@ export function contextualPromptSuggestions(focus: ChatFocusContext): ChatQuickP
           artifact_action: "risk_driver",
         }),
         prompt("What should I look at next?", "What should I look at next?", "follow_up", "guidance", focus, {
-          answer_mode: "next_best_action",
+          answer_mode: "strategy_next_action",
           artifact_action: "risk_next_step",
         }),
         prompt("How does this risk affect the strategy?", "How does this KPI risk affect the strategy?", "follow_up", "explain", focus, {
@@ -248,11 +248,11 @@ export function contextualPromptSuggestions(focus: ChatFocusContext): ChatQuickP
         artifact_action: "kpi_strategy_relationship",
       }),
       prompt("Why might this KPI move off target?", "Why might this KPI move off target?", "follow_up", "guidance", focus, {
-        answer_mode: "risk_explanation",
+        answer_mode: "target_gap_explanation",
         artifact_action: "risk_driver",
       }),
       prompt("What analysis should I run next?", "What analysis should I run next?", "follow_up", "guidance", focus, {
-        answer_mode: "next_best_action",
+        answer_mode: "strategy_next_action",
         artifact_action: "next_step",
       }),
     ];
