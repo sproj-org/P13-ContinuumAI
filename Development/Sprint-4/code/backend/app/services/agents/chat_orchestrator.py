@@ -45,7 +45,7 @@ from app.services.agents.mart_context import build_compact_mart_context
 from app.services.agents.spec_patch import apply_patch
 from app.services.charts.models import ChartSpecV1
 from app.services.charts.spec_resolver import execute_chart_preview
-from app.services.intelligence.result_answers import answer_analysis_question
+from app.services.intelligence.result_answers import answer_analysis_question, build_analysis_answer_evidence
 from app.services.llm.openai_client import OpenAIClient, OpenAIJSONError
 from app.services.llm.openai_diagnostics import (
     OpenAIDiagnostics,
@@ -1779,6 +1779,26 @@ def _compact_strategy_answer_digest(strategy_digest: dict[str, Any]) -> dict[str
     }
 
 
+def _compact_provenance_digest(provenance: Any) -> dict[str, Any]:
+    if not isinstance(provenance, dict):
+        return {}
+    preferred_keys = (
+        "source",
+        "target_source",
+        "rule_source",
+        "revision",
+        "evaluation_run_at",
+        "reconciled_at",
+    )
+    digest: dict[str, Any] = {}
+    for key in preferred_keys:
+        value = provenance.get(key)
+        if value in (None, "", [], {}):
+            continue
+        digest[key] = value
+    return digest
+
+
 def _compact_answer_context(context: dict[str, Any]) -> dict[str, Any]:
     measures, dimensions, temporals = _extract_fields(context)
     return {
@@ -1812,30 +1832,60 @@ def _focus_semantic_answer_digest(focus: ChatFocusContext | None) -> dict[str, A
 def _focus_strategy_answer_context(focus: ChatFocusContext | None, strategy_digest: dict[str, Any]) -> dict[str, Any]:
     strategy_runtime = _compact_strategy_answer_digest(strategy_digest)
     local_strategy: dict[str, Any] = {}
+    result_strategy: dict[str, Any] = {}
     analysis_context = _focus_analysis_context(focus)
     if analysis_context is not None and getattr(analysis_context, "strategy", None) is not None:
         local_strategy = analysis_context.strategy.model_dump(mode="json", exclude_none=True)
+    if focus is not None and focus.analysis_result is not None and focus.analysis_result.strategy is not None:
+        result_strategy = focus.analysis_result.strategy.model_dump(mode="json", exclude_none=True)
     semantic = _focus_semantic_answer_digest(focus)
+    target_status = {
+        "status": local_strategy.get("status"),
+        "current_value": result_strategy.get("current_value", local_strategy.get("current_value")),
+        "projected_value": result_strategy.get("projected_value"),
+        "target_value": result_strategy.get("target_value", local_strategy.get("target_value")),
+        "variance": result_strategy.get("variance_to_target", local_strategy.get("variance")),
+        "target_direction": local_strategy.get("target_direction"),
+        "target_horizon": result_strategy.get("target_horizon", local_strategy.get("target_horizon")),
+        "risk_band": result_strategy.get("risk_band"),
+        "confidence_score": result_strategy.get("confidence_score"),
+    }
     return {
         "north_star": strategy_runtime.get("north_star"),
         "pillars": strategy_runtime.get("pillars", [])[:4],
+        "matched_kpi_id": semantic.get("matched_kpi_id"),
         "matched_kpi_label": semantic.get("matched_kpi_label"),
-        "target_status": local_strategy,
+        "semantic_family": semantic.get("semantic_family"),
+        "target_status": {key: value for key, value in target_status.items() if value not in (None, "", [], {})},
+        "triggered_rules": local_strategy.get("triggered_rules", [])[:4],
+        "triggered_rule_actions": local_strategy.get("triggered_rule_actions", [])[:4],
+        "provenance": _compact_provenance_digest(local_strategy.get("provenance")),
     }
 
 
 def _build_answering_context(
     *,
+    question: str,
+    answer_mode: str,
     focus: ChatFocusContext,
     quick_prompt: ChatQuickPrompt | None,
     context: dict[str, Any],
     strategy_digest: dict[str, Any],
 ) -> dict[str, Any]:
+    analysis_evidence = build_analysis_answer_evidence(focus.analysis_result) if focus.analysis_result is not None else {}
     return {
+        "question": question,
+        "answer_mode": answer_mode,
         "artifact": _focus_digest(focus) or {},
+        "analysis_evidence": analysis_evidence,
         "chart_evidence": _focus_chart_evidence(focus),
         "semantic": _focus_semantic_answer_digest(focus),
         "strategy": _focus_strategy_answer_context(focus, strategy_digest),
+        "drill": {
+            "breadcrumbs": list(focus.breadcrumbs),
+            "current_dimension": focus.chart_spec.encoding.x.field if focus.chart_spec is not None else None,
+            "next_dimension": _next_focus_drill_dimension(focus),
+        },
         "mart": _compact_answer_context(context),
         "quick_prompt": quick_prompt.model_dump(mode="json", exclude_none=True) if quick_prompt is not None else {},
     }
@@ -1944,6 +1994,7 @@ def _artifact_answer_requirements(answer_mode: str) -> list[str]:
             "Recommend one or two next actions only.",
             "Prefer the next drill, comparison, or analysis that best explains the current signal.",
             "Use the preferred drill path or strongest follow-up analysis if it is available in context.",
+            "If strategic target or KPI gap context is available, keep the next step aligned to that gap rather than giving generic advice.",
         ],
         "drill_priority": [
             "Name the one dimension, cluster, or slice to inspect first and explain why it should come first.",
@@ -1951,6 +2002,7 @@ def _artifact_answer_requirements(answer_mode: str) -> list[str]:
         "segment_differentiation": [
             "Contrast the clusters using the strongest differentiators in the supplied profiles.",
             "Mention the most important feature gaps or profile highlights explicitly.",
+            "If a KPI or metric focus is available, say which cluster most helps or hurts that KPI.",
         ],
         "segment_comparison": [
             "Compare the strongest cluster against the weakest relevant cluster using the supplied profiles.",
@@ -1962,14 +2014,17 @@ def _artifact_answer_requirements(answer_mode: str) -> list[str]:
         "risk_explanation": [
             "Explicitly reference current, projected, and target values when they are available.",
             "Connect the risk explanation back to the KPI and the most relevant next investigation step.",
+            "Use supporting details, triggered rules, or top anomaly context if they are available.",
         ],
         "strategy_alignment": [
             "Explain how the current chart or result affects the KPI, north star, or strategic pillar context that is provided.",
             "State why the signal matters strategically and what decision or investigation it should trigger next.",
+            "Use target status, risk band, triggered rules, or provenance context when it is available.",
         ],
         "kpi_strategy_relationship": [
             "Explain what the KPI measures and how it supports the current strategic objective or pillar context.",
             "Reference semantic family, business concepts, target status, or triggered rules when that information is available.",
+            "Make the recommended action specific to the current KPI instead of describing strategy in the abstract.",
         ],
     }
     return [*base, *mapping.get(answer_mode, [])]
@@ -1999,6 +2054,8 @@ def _build_artifact_answer_user_prompt(
     strategy_digest: dict[str, Any],
 ) -> str:
     answering_context = _build_answering_context(
+        question=question,
+        answer_mode=answer_mode,
         focus=focus,
         quick_prompt=quick_prompt,
         context=context,

@@ -21,6 +21,7 @@ from app.services.intelligence.specs import (
     SegmentProfile,
     SegmentSummary,
     StrategyContextSpec,
+    StrategyRiskSummary,
 )
 
 
@@ -773,6 +774,86 @@ def test_build_artifact_answer_user_prompt_includes_chart_evidence_and_strategy_
     assert "\"chart_evidence\"" in prompt
     assert "\"matched_kpi_label\": \"Net Sales Growth\"" in prompt
     assert "\"north_star\": \"Revenue Growth\"" in prompt
+
+
+def test_build_artifact_answer_user_prompt_includes_analysis_evidence_and_triggered_rules() -> None:
+    prompt = chat_orchestrator._build_artifact_answer_user_prompt(
+        dataset_id="silkroute",
+        question="Why is this KPI at risk?",
+        answer_mode="risk_explanation",
+        focus=ChatFocusContext(
+            focus_type="analysis_result",
+            title="Net Sales Growth risk",
+            table="gold_sales_daily",
+            kpi_id="net_sales_growth",
+            active_task="strategy_risk",
+            analysis_context=AnalysisContextSpec(
+                source="strategy",
+                table="gold_sales_daily",
+                semantic=SemanticContextSpec(
+                    matched_kpi_id="net_sales_growth",
+                    matched_kpi_label="Net Sales Growth",
+                    semantic_family="revenue",
+                    preferred_drill_path=["region", "city", "store_id"],
+                ),
+                strategy=StrategyContextSpec(
+                    target_value=125.0,
+                    current_value=101.0,
+                    status="watch",
+                    triggered_rules=["Escalate if growth stays below plan."],
+                    triggered_rule_actions=["Review region mix before promo expansion."],
+                    provenance={"source": "evaluation", "revision": "r0004"},
+                ),
+            ),
+            analysis_result=AnalysisResponse(
+                task_type="strategy_risk",
+                agent_role="strategy_agent",
+                plan_spec=PlanSpec(
+                    dataset_id="silkroute",
+                    table="gold_sales_daily",
+                    user_message="Why is this KPI at risk?",
+                    primary_task="strategy_risk",
+                    route_reason="Risk follow-up",
+                    tasks=[],
+                    suggested_follow_ups=[],
+                ),
+                strategy=StrategyRiskSummary(
+                    kpi_id="net_sales_growth",
+                    kpi_label="Net Sales Growth",
+                    current_value=101.0,
+                    projected_value=112.0,
+                    target_value=125.0,
+                    variance_to_target=-13.0,
+                    risk_band="medium",
+                    confidence_score=0.58,
+                    target_horizon="quarter",
+                    forecast_basis="Recent sales trend",
+                    explanation="Growth remains below the target path.",
+                    recommended_actions=["Compare the weakest region against the strongest."],
+                    supporting_details=["South region is trailing plan."],
+                ),
+                suggested_actions=[],
+                meta={},
+            ),
+            summary="Growth remains below the target path.",
+        ),
+        quick_prompt=ChatQuickPrompt(
+            label="Why is this KPI at risk?",
+            prompt_text="Why is this KPI at risk?",
+            prompt_kind="follow_up",
+            preferred_route="explain",
+            answer_mode="risk_explanation",
+            focus_type="analysis_result",
+            analysis_result_type="strategy_risk",
+            artifact_action="risk_driver",
+        ),
+        context=CONTEXT,
+        strategy_digest=STRATEGY_DIGEST,
+    )
+
+    assert "\"analysis_evidence\"" in prompt
+    assert "\"triggered_rules\": [\"Escalate if growth stays below plan.\"]" in prompt
+    assert "\"risk_band\": \"medium\"" in prompt
 
 
 def test_maybe_handle_focus_prompt_what_happened_fallback_uses_chart_evidence(monkeypatch: pytest.MonkeyPatch) -> None:
