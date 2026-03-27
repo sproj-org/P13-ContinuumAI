@@ -1,5 +1,6 @@
 from functools import lru_cache
 from pathlib import Path
+from typing import Optional
 
 from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings
@@ -33,6 +34,17 @@ class Settings(BaseSettings):
         default="gpt-4o-mini",
         validation_alias=AliasChoices("VIZAGENT_MODEL", "OPENAI_MODEL"),
     )
+
+    # Minimal alerts MVP (additive, standalone runner)
+    ALERTS_ENABLED: bool = False
+    ALERT_STATE_FILE: str = "out/alerts_state.json"
+    ALERT_EMAIL_TO: str = ""
+    ALERT_EMAIL_FROM: str = ""
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: Optional[str] = None
+    SMTP_PASSWORD: Optional[str] = None
+    SMTP_USE_TLS: bool = True
 
     class Config:
         env_file = str(ENV_FILE)

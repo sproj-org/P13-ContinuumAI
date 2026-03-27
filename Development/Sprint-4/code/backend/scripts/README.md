@@ -46,3 +46,57 @@ python Development/Sprint-3/code/backend/scripts/load_gold_marts.py
 - chunked multi-row inserts (`chunksize`, `method="multi"`)
 
 No incremental logic is used.
+
+## Minimal Alert Scheduler (Windows)
+
+Use `setup_minimal_alert_scheduler.ps1` to register a recurring Windows Task Scheduler job.
+The scheduled job runs `run_minimal_alert.py` without `--force`, so an email is sent only when a KPI/rule transitions into `critical`.
+
+Internally, the task executes `run_minimal_alert_scheduled.ps1`, which calls the Python runner from backend root.
+
+### Create/Update Task
+
+```powershell
+Set-Location Development/Sprint-4/code/backend
+powershell -ExecutionPolicy Bypass -File scripts/setup_minimal_alert_scheduler.ps1 -DatasetId silkroute -EveryMinutes 60
+```
+
+### Verify Task
+
+```powershell
+schtasks /Query /TN ContinuumAI-MinimalAlert-silkroute /FO LIST /V
+```
+
+### Remove Task
+
+```powershell
+schtasks /Delete /TN ContinuumAI-MinimalAlert-silkroute /F
+```
+
+## Minimal Alert Event Hook (No Core Code Changes)
+
+Use this script at your strategy recompute completion point (pipeline/job step). It runs alert checks in non-force mode and appends monitor logs.
+
+```powershell
+Set-Location Development/Sprint-4/code/backend
+python scripts/run_minimal_alert_event_hook.py --dataset-id silkroute --source strategy_recompute
+```
+
+Monitor log path (JSONL): `out/alerts_monitor.jsonl`
+
+Logged fields include:
+- `alert_triggered`
+- `email_sent`
+- `reason`
+- `transition_count`
+- `revision`
+- `generated_at`
+
+## Minimal Alert Daily Backup Scheduler (Windows)
+
+Create a daily fallback task (recommended with event-hook primary):
+
+```powershell
+Set-Location Development/Sprint-4/code/backend
+powershell -ExecutionPolicy Bypass -File scripts/setup_minimal_alert_backup_daily.ps1 -DatasetId silkroute -Time 09:00
+```
