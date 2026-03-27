@@ -353,6 +353,16 @@ export interface StrategyRulesResponse {
   available_kpis: string[];
 }
 
+export interface StrategyWorkspaceStateResponse {
+  decision_state: DecisionStateResponse;
+  strategy_bundle: StrategyBundleEditorResponse;
+  kpi_bundle: StrategyBundleEditorResponse;
+  overview: StrategyOverviewResponse;
+  targets: StrategyTargetsResponse;
+  rules: StrategyRulesResponse;
+  kpi_library: StrategyKpiLibraryResponse;
+}
+
 export interface StrategyRuleUpsertRequest {
   expected_revision: string;
   rule: StrategyRule;

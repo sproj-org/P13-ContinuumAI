@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { AlertTriangle, BarChart3, Plus, RefreshCw, Save, Trash2, X } from "lucide-react";
 
@@ -539,13 +539,14 @@ export default function StrategyTab() {
   const [decisionSignalsState, setDecisionSignalsState] = useState<StrategyDecisionSignalsResponse | null>(null);
   const [evaluationLoading, setEvaluationLoading] = useState(false);
   const [selectedEvaluationKpi, setSelectedEvaluationKpi] = useState<StrategyEvaluationKpiResult | null>(null);
+  const loadRequestIdRef = useRef(0);
 
   const revision = kpiLibrary?.revision ?? decision?.revision ?? null;
   const readiness = decision?.readiness;
   const kpisDefined = decision?.readiness_flags?.kpis_defined ?? true;
   const targetsDefined = decision?.readiness_flags?.targets_defined ?? false;
   const rulesDefined = decision?.readiness_flags?.rules_defined ?? false;
-  const kpis = kpiLibrary?.kpis ?? [];
+  const kpis = useMemo(() => kpiLibrary?.kpis ?? [], [kpiLibrary]);
   const kpiLabelById = useMemo(() => {
     const map = new Map<string, string>();
     for (const item of kpis) {
@@ -553,9 +554,9 @@ export default function StrategyTab() {
     }
     return map;
   }, [kpis]);
-  const availableMarts = kpiLibrary?.available_marts ?? [];
-  const martColumns = kpiLibrary?.mart_columns ?? {};
-  const targets = targetsState?.targets ?? [];
+  const availableMarts = useMemo(() => kpiLibrary?.available_marts ?? [], [kpiLibrary]);
+  const martColumns = useMemo(() => kpiLibrary?.mart_columns ?? {}, [kpiLibrary]);
+  const targets = useMemo(() => targetsState?.targets ?? [], [targetsState]);
 
   const targetByKpiId = useMemo(() => {
     const map = new Map<string, StrategyTarget>();
@@ -564,8 +565,8 @@ export default function StrategyTab() {
     }
     return map;
   }, [targets]);
-  const rules = rulesState?.rules ?? [];
-  const knownRuleKpis = useMemo(() => new Set(rulesState?.available_kpis || []), [rulesState]);
+  const rules = useMemo(() => rulesState?.rules ?? [], [rulesState]);
+  const knownRuleKpis = useMemo(() => new Set(rulesState?.available_kpis ?? []), [rulesState?.available_kpis]);
   const kpiById = useMemo(() => {
     const map = new Map<string, StrategyKpi>();
     for (const item of kpis) {
@@ -736,37 +737,30 @@ export default function StrategyTab() {
   }, [kpis, targets]);
 
   const load = useCallback(async () => {
+    const requestId = loadRequestIdRef.current + 1;
+    loadRequestIdRef.current = requestId;
     setLoading(true);
     setError(null);
     try {
-      const [decisionState, strategyBundle, kpiBundle, kpiState, overviewState, targetState, rulesBundle] = await Promise.all([
-        apiClient.getDecisionState(datasetId),
-        apiClient.getStrategyBundle(),
-        apiClient.getKpiRegistryBundle(),
-        apiClient.getStrategyKpis(datasetId),
-        apiClient.getStrategyOverview(),
-        apiClient.getStrategyTargets(),
-        apiClient.getStrategyRules(),
-      ]);
-      setDecision(decisionState);
-      setKpiLibrary(kpiState);
-      setStrategyBaseYaml(strategyBundle.base_yaml);
-      setStrategyOverrideYaml(strategyBundle.override_yaml);
-      setKpiBaseYaml(kpiBundle.base_yaml);
-      setKpiOverrideYaml(kpiBundle.override_yaml);
-      setStrategyMode("base");
-      setKpiMode("base");
-      setStrategyText(strategyBundle.base_yaml);
-      setKpiText(kpiBundle.base_yaml);
-      setOverviewRevision(overviewState.revision);
+      const workspaceState = await apiClient.getStrategyWorkspaceState(datasetId);
+      if (loadRequestIdRef.current !== requestId) {
+        return;
+      }
+      setDecision(workspaceState.decision_state);
+      setKpiLibrary(workspaceState.kpi_library);
+      setStrategyBaseYaml(workspaceState.strategy_bundle.base_yaml);
+      setStrategyOverrideYaml(workspaceState.strategy_bundle.override_yaml);
+      setKpiBaseYaml(workspaceState.kpi_bundle.base_yaml);
+      setKpiOverrideYaml(workspaceState.kpi_bundle.override_yaml);
+      setOverviewRevision(workspaceState.overview.revision);
       setStrategyContextDraft({
-        company: overviewState.strategy_context.company || "",
-        horizon: overviewState.strategy_context.horizon || "",
-        north_star_metric: overviewState.strategy_context.north_star_metric || "",
-        narrative: overviewState.strategy_context.narrative || "",
+        company: workspaceState.overview.strategy_context.company || "",
+        horizon: workspaceState.overview.strategy_context.horizon || "",
+        north_star_metric: workspaceState.overview.strategy_context.north_star_metric || "",
+        narrative: workspaceState.overview.strategy_context.narrative || "",
       });
-      setPillarsDraft(overviewState.pillars || []);
-      const nextSwot: StrategySwotPayload = overviewState.swot || {
+      setPillarsDraft(workspaceState.overview.pillars || []);
+      const nextSwot: StrategySwotPayload = workspaceState.overview.swot || {
         strengths: [],
         weaknesses: [],
         opportunities: [],
@@ -778,12 +772,17 @@ export default function StrategyTab() {
         opportunities: listToLines(nextSwot.opportunities),
         threats: listToLines(nextSwot.threats),
       });
-      setTargetsState(targetState);
-      setRulesState(rulesBundle);
+      setTargetsState(workspaceState.targets);
+      setRulesState(workspaceState.rules);
     } catch (requestError) {
+      if (loadRequestIdRef.current !== requestId) {
+        return;
+      }
       setError(requestError instanceof Error ? requestError.message : "Failed to load strategy state");
     } finally {
-      setLoading(false);
+      if (loadRequestIdRef.current === requestId) {
+        setLoading(false);
+      }
     }
   }, [datasetId]);
 

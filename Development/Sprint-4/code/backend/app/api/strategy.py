@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from datetime import datetime, timezone
 from typing import Any
 from typing import Literal
 
@@ -15,6 +16,7 @@ from app.core.mart_registry import DEFAULT_DATASET_ID
 from app.core.security import get_current_user
 from app.db.database import get_db
 from app.db.models import User
+from app.models.decision_state import DecisionStatePayload
 from app.models.kpi_registry import KPIRegistry, KPIRegistryEntry
 from app.models.strategy_bundle import (
     SWOTBlock,
@@ -31,9 +33,11 @@ from app.services.strategy.errors import (
 )
 from app.services.strategy.decision_signals import build_decision_surface
 from app.services.strategy.evaluation import evaluate_strategy
+from app.services.strategy.coverage import compute_readiness_and_coverage
 from app.services.strategy import storage as strategy_storage
 from app.services.strategy.storage import (
     get_current_revision_id,
+    get_kpi_registry_yaml_texts,
     get_strategy_yaml_texts,
     load_current_artifacts,
     update_kpi_registry,
@@ -412,6 +416,86 @@ def _rules_response(
     }
 
 
+def _decision_state_response(
+    *,
+    dataset_id: str,
+    revision: str,
+    strategy_payload: dict[str, Any],
+    kpi_registry_payload: dict[str, Any],
+) -> dict[str, Any]:
+    strategy_bundle = StrategyBundle.model_validate(strategy_payload)
+    kpi_registry = KPIRegistry.model_validate(kpi_registry_payload)
+    schema_snapshot = load_dataset_schema(dataset_id)
+    readiness, coverage_gaps, summaries, readiness_flags = compute_readiness_and_coverage(
+        strategy_bundle=strategy_bundle,
+        kpi_registry=kpi_registry,
+        schema_snapshot=schema_snapshot,
+    )
+    readiness_notes: list[str] = []
+    if isinstance(summaries, dict):
+        raw_notes = summaries.get("readiness_notes")
+        if isinstance(raw_notes, list):
+            readiness_notes = [str(item) for item in raw_notes if str(item).strip()]
+    payload = DecisionStatePayload(
+        revision=revision,
+        generated_at=datetime.now(timezone.utc),
+        strategy_bundle=strategy_bundle.model_dump(mode="python"),
+        kpi_registry=kpi_registry.model_dump(mode="python"),
+        readiness=readiness,
+        readiness_flags=readiness_flags,
+        readiness_notes=readiness_notes,
+        coverage_gaps=coverage_gaps,
+        summaries=summaries,
+    )
+    return payload.model_dump(mode="json")
+
+
+def _workspace_state_response(*, dataset_id: str) -> dict[str, Any]:
+    revision = get_current_revision_id()
+    base_strategy = _base_strategy_bundle_payload()
+    base_registry = _base_kpi_registry_payload()
+    strategy_base_yaml, strategy_override_yaml = get_strategy_yaml_texts()
+    kpi_base_yaml, kpi_override_yaml = get_kpi_registry_yaml_texts()
+    return {
+        "decision_state": _decision_state_response(
+            dataset_id=dataset_id,
+            revision=revision,
+            strategy_payload=base_strategy,
+            kpi_registry_payload=base_registry,
+        ),
+        "strategy_bundle": {
+            "revision": revision,
+            "mode": "merged",
+            "bundle": base_strategy,
+            "base_yaml": strategy_base_yaml,
+            "override_yaml": strategy_override_yaml,
+        },
+        "kpi_bundle": {
+            "revision": revision,
+            "mode": "merged",
+            "bundle": base_registry,
+            "base_yaml": kpi_base_yaml,
+            "override_yaml": kpi_override_yaml,
+        },
+        "overview": _overview_response(revision=revision, strategy_payload=base_strategy),
+        "targets": _targets_response(
+            revision=revision,
+            strategy_payload=base_strategy,
+            kpi_registry_payload=base_registry,
+        ),
+        "rules": _rules_response(
+            revision=revision,
+            strategy_payload=base_strategy,
+            kpi_registry_payload=base_registry,
+        ),
+        "kpi_library": _kpi_library_response(
+            dataset_id=dataset_id,
+            revision=revision,
+            kpi_registry_payload=base_registry,
+        ),
+    }
+
+
 @router.get("/summary")
 def get_dataset_strategy_summary(
     dataset_id: str,
@@ -606,6 +690,25 @@ def put_strategy_overview(
             status_code=422,
             code="VALIDATION_ERROR",
             message="Strategy bundle validation failed.",
+            hint=str(exc),
+        )
+
+
+@bundle_router.get("/workspace-state")
+def get_strategy_workspace_state(
+    dataset_id: str = DEFAULT_DATASET_ID,
+    current_user: User = Depends(get_current_user),
+):
+    _ = current_user
+    try:
+        return _workspace_state_response(dataset_id=dataset_id)
+    except KeyError as exc:
+        _raise_error(status_code=404, code="NOT_FOUND", message=str(exc))
+    except StrategyValidationError as exc:
+        _raise_error(
+            status_code=422,
+            code="VALIDATION_ERROR",
+            message="Strategy workspace state validation failed.",
             hint=str(exc),
         )
 

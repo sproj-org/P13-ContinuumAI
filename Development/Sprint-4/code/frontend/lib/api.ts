@@ -32,6 +32,7 @@ import type {
   StrategyKpiDeleteRequest,
   StrategyKpiLibraryResponse,
   StrategyKpiUpsertRequest,
+  StrategyWorkspaceStateResponse,
   StrategyBundleUpdateRequest,
 } from "./api-types";
 import type {
@@ -358,6 +359,10 @@ class ApiClient {
 
   async getStrategyOverview(): Promise<StrategyOverviewResponse> {
     return this.request<StrategyOverviewResponse>("/strategy/overview");
+  }
+
+  async getStrategyWorkspaceState(datasetId: string): Promise<StrategyWorkspaceStateResponse> {
+    return this.request<StrategyWorkspaceStateResponse>(`/strategy/workspace-state?dataset_id=${encodeURIComponent(datasetId)}`);
   }
 
   async putStrategyOverview(payload: StrategyOverviewUpdateRequest): Promise<StrategyOverviewResponse> {
