@@ -30,8 +30,9 @@ def test_seeded_kpis_cover_deeper_business_hierarchies() -> None:
     assert kpis["net_sales_growth"].preferred_drill_path[:4] == ["region", "city", "store_type", "store_id"]
     assert kpis["repeat_customer_rate"].preferred_drill_path[-2:] == ["top_category", "customer_id"]
     assert kpis["sell_through_rate"].preferred_drill_path[:3] == ["stockout_risk_flag", "store_id", "sku_id"]
-    assert kpis["transactions"].preferred_drill_path[4:8] == ["store_id", "category", "brand", "product_id"]
-    assert kpis["gross_margin_proxy"].mart_drill_overrides["gold_sales_daily"][5:9] == ["category", "brand", "product_id", "sku_id"]
+    assert kpis["transactions"].preferred_drill_path[4:9] == ["store_id", "category", "subcategory", "brand", "product_id"]
+    assert kpis["gross_margin_proxy"].mart_drill_overrides["gold_sales_daily"][5:10] == ["category", "subcategory", "brand", "product_id", "sku_id"]
+    assert kpis["return_rate"].preferred_drill_path[5:10] == ["category", "subcategory", "brand", "product_id", "sku_id"]
     assert kpis["1"].mart_drill_overrides["gold_sales_daily"][-5:] == ["category", "brand", "product_id", "sku_id", "sales_date"]
 
 
@@ -48,7 +49,9 @@ def test_hierarchy_resource_covers_deeper_sales_customer_and_store_paths() -> No
 
     assert "subcategory" in content
     assert "mart_sales:" in content
+    assert "[channel_type, region, city, store_type, store_id, category, subcategory, brand, product_id, sku_id, sales_date]" in content
     assert "[store_region, store_city, store_type, store_id, subcategory, brand, product_id, sku_id, sales_date]" in content
     assert "mart_customers:" in content
     assert "[segment, region, city, preferred_subcategory, preferred_brand, customer_id]" in content
     assert "mart_stores:" in content
+    assert "[category, subcategory, brand, product_id, sku_id, sales_date]" in content

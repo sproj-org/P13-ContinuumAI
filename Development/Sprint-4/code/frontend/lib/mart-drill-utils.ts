@@ -2,7 +2,7 @@ import type { DatasetProfileAPI, StrategyKpi } from "@/lib/api-types";
 import type { AvailableMart } from "@/lib/store";
 import type { ChartSemanticContext } from "@/lib/types/chartspec";
 
-const PRODUCT_KEYWORDS = ["product", "sku", "item", "brand", "category"];
+const PRODUCT_KEYWORDS = ["product", "sku", "item", "brand", "category", "subcategory"];
 const CUSTOMER_KEYWORDS = ["customer", "segment", "cohort", "churn"];
 const DRILLABLE_ROLES = new Set(["dimension", "datetime", "temporal", "id", "text", "boolean"]);
 const TEMPORAL_ROLES = new Set(["datetime", "temporal"]);
@@ -17,6 +17,7 @@ type DrillConcept =
   | "customer"
   | "customer_risk"
   | "category"
+  | "subcategory"
   | "brand"
   | "product"
   | "sku"
@@ -106,6 +107,7 @@ const CONCEPT_KEYWORDS: Record<DrillConcept, string[]> = {
   customer: ["customer_id", "customer", "account", "member", "loyalty"],
   customer_risk: ["churn_risk_bucket", "risk_bucket", "risk_band", "risk", "bucket"],
   category: ["department", "category", "subcategory", "family", "class", "group", "top_category"],
+  subcategory: ["subcategory", "sub_category", "sub category", "family", "class"],
   brand: ["brand"],
   product: ["product_id", "product", "item"],
   sku: ["sku_id", "sku", "article"],
@@ -122,12 +124,12 @@ const MART_DRILL_RULES: MartDrillRule[] = [
     id: "sales-daily",
     patterns: [/gold_sales_daily/i],
     explicitPaths: [
-      ["channel_type", "region", "city", "store_type", "store_id", "category", "brand", "product_id", "sku_id", "sales_date"],
-      ["region", "city", "store_type", "store_id", "category", "brand", "product_id", "sku_id", "sales_date"],
-      ["store_type", "store_id", "category", "brand", "product_id", "sku_id", "sales_date"],
-      ["category", "brand", "product_id", "sku_id", "sales_date"],
+      ["channel_type", "region", "city", "store_type", "store_id", "category", "subcategory", "brand", "product_id", "sku_id", "sales_date"],
+      ["region", "city", "store_type", "store_id", "category", "subcategory", "brand", "product_id", "sku_id", "sales_date"],
+      ["store_type", "store_id", "category", "subcategory", "brand", "product_id", "sku_id", "sales_date"],
+      ["category", "subcategory", "brand", "product_id", "sku_id", "sales_date"],
     ],
-    fallbackConcepts: ["channel", "region", "city", "store_type", "store", "category", "brand", "product", "sku", "date"],
+    fallbackConcepts: ["channel", "region", "city", "store_type", "store", "category", "subcategory", "brand", "product", "sku", "date"],
     terminalDimensions: ["store_id", "sku_id", "sales_date"],
   },
   {
@@ -151,11 +153,12 @@ const MART_DRILL_RULES: MartDrillRule[] = [
     id: "product-360",
     patterns: [/gold_product_360/i],
     explicitPaths: [
-      ["category", "brand", "product_id", "sku_id"],
+      ["category", "subcategory", "brand", "product_id", "sku_id"],
+      ["subcategory", "brand", "product_id", "sku_id"],
       ["brand", "product_id", "sku_id"],
       ["category", "sku_id"],
     ],
-    fallbackConcepts: ["category", "brand", "product", "sku"],
+    fallbackConcepts: ["category", "subcategory", "brand", "product", "sku"],
     terminalDimensions: ["sku_id"],
   },
   {

@@ -233,9 +233,9 @@ hierarchy:
   mart_overrides:
     gold_sales_daily:
       default_paths:
-        - [channel_type, region, city, store_type, store_id, category, brand, product_id, sku_id, sales_date]
-        - [region, city, store_type, store_id, category, brand, product_id, sku_id, sales_date]
-        - [category, brand, product_id, sku_id, sales_date]
+        - [channel_type, region, city, store_type, store_id, category, subcategory, brand, product_id, sku_id, sales_date]
+        - [region, city, store_type, store_id, category, subcategory, brand, product_id, sku_id, sales_date]
+        - [category, subcategory, brand, product_id, sku_id, sales_date]
       terminal_dimensions:
         - store_id
         - sku_id
@@ -247,7 +247,8 @@ hierarchy:
         - store_id
     gold_product_360:
       default_paths:
-        - [category, brand, product_id, sku_id]
+        - [category, subcategory, brand, product_id, sku_id]
+        - [subcategory, brand, product_id, sku_id]
       terminal_dimensions:
         - sku_id
     gold_customer_360:

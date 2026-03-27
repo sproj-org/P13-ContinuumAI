@@ -66,6 +66,7 @@ kpis:
       - store_type
       - store_id
       - category
+      - subcategory
       - brand
       - product_id
       - sku_id
@@ -93,6 +94,7 @@ kpis:
       - store_type
       - store_id
       - category
+      - subcategory
       - brand
       - product_id
       - sku_id
@@ -105,6 +107,7 @@ kpis:
         - store_type
         - store_id
         - category
+        - subcategory
         - brand
         - product_id
         - sku_id
@@ -133,6 +136,7 @@ kpis:
       - store_type
       - store_id
       - category
+      - subcategory
       - brand
       - product_id
       - sku_id
@@ -161,6 +165,7 @@ kpis:
       - store_type
       - store_id
       - category
+      - subcategory
       - brand
       - product_id
       - sku_id
@@ -173,6 +178,7 @@ kpis:
         - store_type
         - store_id
         - category
+        - subcategory
         - brand
         - product_id
         - sku_id
@@ -257,6 +263,7 @@ kpis:
       - store_type
       - store_id
       - category
+      - subcategory
       - brand
       - product_id
       - sku_id
@@ -284,6 +291,7 @@ kpis:
       - store_type
       - store_id
       - category
+      - subcategory
       - brand
       - product_id
       - sku_id
@@ -296,6 +304,7 @@ kpis:
         - store_type
         - store_id
         - category
+        - subcategory
         - brand
         - product_id
         - sku_id
@@ -326,6 +335,7 @@ kpis:
       - store_type
       - store_id
       - category
+      - subcategory
       - brand
       - product_id
       - sku_id
@@ -353,6 +363,7 @@ kpis:
       - store_type
       - store_id
       - category
+      - subcategory
       - brand
       - product_id
       - sku_id
@@ -365,6 +376,7 @@ kpis:
         - store_type
         - store_id
         - category
+        - subcategory
         - brand
         - product_id
         - sku_id
@@ -535,6 +547,7 @@ kpis:
       - store_type
       - store_id
       - category
+      - subcategory
       - brand
       - product_id
       - sku_id
@@ -562,6 +575,7 @@ kpis:
       - store_type
       - store_id
       - category
+      - subcategory
       - brand
       - product_id
       - sku_id
@@ -574,6 +588,7 @@ kpis:
         - store_type
         - store_id
         - category
+        - subcategory
         - brand
         - product_id
         - sku_id
@@ -603,6 +618,7 @@ kpis:
       - store_type
       - store_id
       - category
+      - subcategory
       - brand
       - product_id
       - sku_id
@@ -630,6 +646,7 @@ kpis:
       - store_type
       - store_id
       - category
+      - subcategory
       - brand
       - product_id
       - sku_id
@@ -642,6 +659,7 @@ kpis:
         - store_type
         - store_id
         - category
+        - subcategory
         - brand
         - product_id
         - sku_id
