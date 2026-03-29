@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import Noise from "@/components/Noise";
-import TargetCursor from "@/components/TargetCursor";
 import ElectricBorder from "@/components/ElectricBorder";
 
 export default function LoginPage() {
@@ -53,22 +52,14 @@ export default function LoginPage() {
 
   if (isLoading) {
     return (
-      <div className="h-screen w-screen overflow-hidden flex items-center justify-center bg-[#060010]">
-        <div className="text-lg text-white">Loading...</div>
+      <div className="h-screen w-screen overflow-hidden flex items-center justify-center bg-white">
+        <div className="text-lg text-slate-900">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="h-screen w-screen overflow-hidden flex items-center justify-center bg-[#060010]">
-      {/* Custom Cursor */}
-      <TargetCursor
-        spinDuration={2}
-        hideDefaultCursor
-        parallaxOn
-        hoverDuration={0.2}
-      />
-
+    <div className="h-screen w-screen overflow-hidden flex items-center justify-center bg-white">
       {/* Noise Background */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         <Noise
@@ -76,36 +67,36 @@ export default function LoginPage() {
           patternScaleX={1}
           patternScaleY={1}
           patternRefreshInterval={2}
-          patternAlpha={15}
+          patternAlpha={8}
         />
       </div>
 
       <div className="relative z-10 w-full max-w-md px-4">
         <ElectricBorder
-          color="#5237ff"
+          color="#4f46e5"
           speed={1}
           chaos={0.08}
           borderRadius={16}
         >
-          <div className="bg-[#060010]/90 backdrop-blur-sm p-8 rounded-2xl">
+          <div className="bg-white/95 backdrop-blur-sm p-8 rounded-2xl shadow-2xl">
             <div className="mb-6">
-              <h2 className="text-center text-3xl font-bold text-white">
+              <h2 className="text-center text-3xl font-bold text-slate-900">
                 Login
               </h2>
-              <p className="mt-2 text-center text-sm text-gray-400">
+              <p className="mt-2 text-center text-sm text-slate-600">
                 Don't have an account?{" "}
                 <Link
-                  href="/signup"
-                  className="cursor-target font-medium text-[#5237ff] hover:text-[#6347ff] transition-colors"
+                  href="/get-access"
+                  className="cursor-target font-medium text-[#4f46e5] hover:text-indigo-700 transition-colors"
                 >
-                  Sign Up
+                  Get Access
                 </Link>
               </p>
             </div>
 
             <form className="space-y-5" onSubmit={handleSubmit}>
               {(error || localError) && (
-                <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm">
+                <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-lg text-sm">
                   {error || localError}
                 </div>
               )}
@@ -114,7 +105,7 @@ export default function LoginPage() {
                 <div>
                   <label
                     htmlFor="username"
-                    className="block text-sm font-medium text-gray-300"
+                    className="block text-sm font-medium text-slate-700"
                   >
                     Username
                   </label>
@@ -126,7 +117,7 @@ export default function LoginPage() {
                     required
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="mt-1 block w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#5237ff] focus:border-transparent transition-all"
+                    className="mt-1 block w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#4f46e5] focus:border-transparent transition-all"
                     placeholder="johndoe"
                   />
                 </div>
@@ -134,7 +125,7 @@ export default function LoginPage() {
                 <div>
                   <label
                     htmlFor="password"
-                    className="block text-sm font-medium text-gray-300"
+                    className="block text-sm font-medium text-slate-700"
                   >
                     Password
                   </label>
@@ -146,7 +137,7 @@ export default function LoginPage() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="mt-1 block w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#5237ff] focus:border-transparent transition-all"
+                    className="mt-1 block w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#4f46e5] focus:border-transparent transition-all"
                     placeholder="••••••••"
                   />
                 </div>
@@ -155,7 +146,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="cursor-target w-full py-3 px-4 rounded-lg text-sm font-medium text-white bg-[#5237ff] hover:bg-[#6347ff] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#060010] focus:ring-[#5237ff] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="cursor-target w-full py-3 px-4 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-[#4f46e5] to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-[#4f46e5] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg"
               >
                 {isSubmitting ? "Signing in..." : "Login"}
               </button>
@@ -164,7 +155,7 @@ export default function LoginPage() {
             <div className="mt-6 text-center">
               <Link
                 href="/"
-                className="cursor-target text-sm text-gray-400 hover:text-white transition-colors"
+                className="cursor-target text-sm text-slate-600 hover:text-slate-900 transition-colors"
               >
                 ← Back to Home
               </Link>

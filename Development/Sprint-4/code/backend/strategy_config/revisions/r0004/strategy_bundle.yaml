@@ -1,0 +1,197 @@
+schema_version: 1
+version: 1.1.0
+strategic_context:
+  company: SilkRoute Retail
+  horizon: FY2026
+  north_star_metric: net_sales_growth
+  narrative: 'SilkRoute Retail is focused on profitable expansion across core metro
+    markets while protecting cash flow and margin quality. The FY2026 plan prioritizes
+    steady net sales growth through better assortment depth, stronger conversion in
+    high-intent categories, and disciplined promotion design that preserves realized
+    price.
+
+
+    Alongside growth, the leadership team is doubling down on retention by improving
+    repeat purchase frequency, reducing avoidable returns, and building segment-aware
+    offers for loyal and price-sensitive cohorts. Marketing and merchandising teams
+    are expected to coordinate campaign calendars with inventory posture so peak demand
+    periods translate into profitable throughput instead of deep discounting.
+
+
+    Inventory productivity remains a critical lever. Stores and supply teams are accountable
+    for faster sell-through, lower stockout exposure on high-velocity SKUs, and healthier
+    days-of-inventory. Decision rules in this strategy bundle are designed to escalate
+    early when growth softens, margin deteriorates, or inventory risk rises beyond
+    tolerance.'
+pillars:
+- id: growth
+  description: Drive sustainable top-line expansion through channel and assortment
+    execution.
+  owner: commercial_director
+- id: retention
+  description: Increase repeat behavior and customer lifetime value across priority
+    segments.
+  owner: crm_lead
+- id: margin
+  description: Protect gross margin by controlling discount intensity and return leakage.
+  owner: finance_controller
+- id: inventory
+  description: Improve inventory velocity and service levels while reducing stockout
+    and overstock risk.
+  owner: supply_chain_manager
+swot:
+  strengths:
+  - Broad city footprint with omni-channel transaction coverage
+  - Daily refreshed marts for sales, customer, and inventory health
+  - High signal in discount, return, and store productivity metrics
+  - Established private-label categories with strong repeat demand
+  weaknesses:
+  - Promotion decisions are still reactive in some regions
+  - Inconsistent target ownership across growth and retention KPIs
+  - Stockout risk remains elevated in top-selling SKUs
+  - Campaign attribution data is incomplete for full-funnel ROI measurement
+  opportunities:
+  - Expand high-margin assortment in flagship and mall stores
+  - Lift repeat rate through segment-specific offer orchestration
+  - Use inventory health signals to tighten replenishment cadence
+  - Standardize decision playbooks for margin and return control
+  threats:
+  - Price competition driving deeper discounting pressure
+  - Demand volatility in seasonal categories
+  - Supply-side delays increasing stockout and lost-sales risk
+  - Return rate escalation in high-value categories
+targets:
+  net_sales_growth:
+    target: 1.06
+    yellow_threshold: 1.03
+    red_threshold: 1.0
+    direction: up
+    owner: commercial_director
+    horizon: FY2026
+  transactions:
+    target: 5.2
+    yellow_threshold: 4.8
+    red_threshold: 4.4
+    direction: up
+    owner: retail_ops
+    horizon: FY2026
+  avg_order_value:
+    target: 69000.0
+    yellow_threshold: 66000.0
+    red_threshold: 62000.0
+    direction: up
+    owner: commercial_director
+    horizon: FY2026
+  repeat_customer_rate:
+    target: 4.1
+    yellow_threshold: 3.6
+    red_threshold: 3.0
+    direction: up
+    owner: crm_lead
+    horizon: FY2026
+  gross_margin_proxy:
+    target: 0.92
+    yellow_threshold: 0.9
+    red_threshold: 0.87
+    direction: up
+    owner: finance_controller
+    horizon: FY2026
+  discount_rate:
+    target: 0.04
+    yellow_threshold: 0.055
+    red_threshold: 0.07
+    direction: down
+    owner: pricing_manager
+    horizon: FY2026
+  sell_through_rate:
+    target: 0.42
+    yellow_threshold: 0.35
+    red_threshold: 0.28
+    direction: up
+    owner: supply_chain_manager
+    horizon: FY2026
+  stockout_rate:
+    target: 0.12
+    yellow_threshold: 0.16
+    red_threshold: 0.22
+    direction: down
+    owner: supply_chain_manager
+    horizon: FY2026
+  return_rate:
+    target: 0.035
+    yellow_threshold: 0.045
+    red_threshold: 0.06
+    direction: down
+    owner: customer_experience
+    horizon: FY2026
+  units_per_transaction:
+    target: 2.8
+    yellow_threshold: 2.4
+    red_threshold: 2.0
+    direction: up
+    owner: retail_ops
+    horizon: FY2026
+  customer_churn_risk:
+    target: 0.08
+    yellow_threshold: 0.12
+    red_threshold: 0.18
+    direction: down
+    owner: crm_lead
+    horizon: FY2026
+decision_rules:
+- id: rule_growth_guardrail
+  condition: kpi("net_sales_growth") < target("net_sales_growth")
+  action: Launch store-region growth recovery playbook and review demand drivers.
+  severity: block
+  rationale: Net sales growth must stay above plan to protect annual revenue commitments.
+- id: rule_transactions_softening
+  condition: kpi("transactions") < target("transactions")
+  action: Run traffic and conversion diagnostics by channel and city.
+  severity: warn
+  rationale: Transaction softness usually appears before broader sales underperformance.
+- id: rule_aov_deterioration
+  condition: kpi("avg_order_value") < target("avg_order_value")
+  action: Shift mix toward premium assortment and tighten markdown approvals.
+  severity: warn
+  rationale: AOV decline pressures growth and margin simultaneously.
+- id: rule_retention_gap
+  condition: kpi("repeat_customer_rate") < target("repeat_customer_rate")
+  action: Trigger retention offers for at-risk segments and review CRM cadence.
+  severity: warn
+  rationale: Repeat behavior is required for stable quarterly growth.
+- id: rule_margin_pressure
+  condition: kpi("gross_margin_proxy") < target("gross_margin_proxy")
+  action: Escalate pricing and discount governance with finance and merchandising.
+  severity: block
+  rationale: Margin compression beyond tolerance erodes profitability.
+- id: rule_discount_spike
+  condition: kpi("discount_rate") > target("discount_rate")
+  action: Freeze non-strategic markdowns and audit campaign discount ladders.
+  severity: warn
+  rationale: Excessive discounting can mask demand weakness and hurt margin quality.
+- id: rule_inventory_sell_through
+  condition: kpi("sell_through_rate") < target("sell_through_rate")
+  action: Prioritize inventory rebalancing and channel-level liquidation plans.
+  severity: warn
+  rationale: Slow sell-through raises carrying risk and future markdown pressure.
+- id: rule_stockout_alert
+  condition: kpi("stockout_rate") > target("stockout_rate")
+  action: Trigger replenishment escalation for top decile SKUs.
+  severity: block
+  rationale: Stockouts directly reduce conversion and customer satisfaction.
+- id: rule_returns_escalation
+  condition: kpi("return_rate") > target("return_rate")
+  action: Start root-cause review for quality issues and channel-specific return policies.
+  severity: warn
+  rationale: Returns growth can quickly erase net sales gains.
+- id: rule_churn_risk_watch
+  condition: kpi("customer_churn_risk") > target("customer_churn_risk")
+  action: Deploy churn-prevention journey for medium and high-risk cohorts.
+  severity: info
+  rationale: Early churn signals should trigger proactive retention motions.
+scoring_model:
+  weights:
+    kpi_coverage: 0.4
+    rule_readiness: 0.2
+    hierarchy_readiness: 0.2
+    data_readiness: 0.2

@@ -10,6 +10,7 @@ import {
 import { renderChart } from "@/components/workspace/renderChart";
 import type { ChartSpecV1, FilterOperator, FilterSpec } from "@/lib/types/chartspec";
 import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "@/lib/toast-context";
 import {
   DndContext,
   DragEndEvent,
@@ -33,6 +34,7 @@ import {
   AlertTriangle,
   Plus,
   Copy,
+  Save,
 } from "lucide-react";
 
 interface UIChartFilter {
@@ -69,9 +71,9 @@ const filterOperators: { id: FilterOperator; label: string }[] = [
 ];
 
 const roleColors: Record<ColumnRole, { bg: string; text: string; border: string }> = {
-  dimension: { bg: "bg-blue-500/20", text: "text-blue-400", border: "border-blue-500/30" },
-  measure: { bg: "bg-emerald-500/20", text: "text-emerald-400", border: "border-emerald-500/30" },
-  temporal: { bg: "bg-amber-500/20", text: "text-amber-400", border: "border-amber-500/30" },
+  dimension: { bg: "bg-blue-100", text: "text-blue-700", border: "border-blue-300" },
+  measure: { bg: "bg-indigo-100", text: "text-indigo-700", border: "border-indigo-300" },
+  temporal: { bg: "bg-amber-100", text: "text-amber-700", border: "border-amber-300" },
 };
 
 const roleIcons: Record<ColumnRole, React.ReactNode> = {
@@ -149,13 +151,13 @@ function DraggableField({ column }: { column: { name: string; role: ColumnRole }
       {...attributes}
       className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-grab active:cursor-grabbing transition-all ${
         isDragging
-          ? "opacity-50 bg-[#5237ff]/20 border border-[#5237ff]/30"
-          : `${roleStyle.bg} border ${roleStyle.border} hover:brightness-110`
+          ? "opacity-50 bg-indigo-200 border border-indigo-300"
+          : `${roleStyle.bg} border ${roleStyle.border} hover:brightness-95`
       }`}
     >
-      <GripVertical className="w-3 h-3 text-gray-500" />
+      <GripVertical className="w-3 h-3 text-slate-500" />
       <span className={`${roleStyle.text}`}>{roleIcons[column.role]}</span>
-      <span className="text-sm text-gray-200 truncate">{column.name}</span>
+      <span className="text-sm text-slate-900 truncate">{column.name}</span>
     </div>
   );
 }
@@ -177,29 +179,29 @@ function DropZone({
 
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-gray-400">{label}</label>
+      <label className="text-sm font-medium text-slate-700">{label}</label>
       <div
         ref={setNodeRef}
         className={`min-h-[48px] rounded-xl border-2 border-dashed transition-all flex items-center px-4 ${
           isOver
-            ? "border-[#5237ff] bg-[#5237ff]/10"
+            ? "border-indigo-400 bg-indigo-100"
             : value
-            ? "border-white/20 bg-white/5"
-            : "border-white/10 bg-white/[0.03]"
+            ? "border-slate-300 bg-white"
+            : "border-slate-300 bg-slate-50"
         }`}
       >
         {value ? (
           <div className="flex items-center justify-between w-full">
-            <span className="text-white text-sm">{value}</span>
+            <span className="text-slate-900 text-sm">{value}</span>
             <button
               onClick={onClear}
-              className="p-1 hover:bg-white/10 rounded-lg transition-colors"
+              className="p-1 hover:bg-slate-100 rounded-lg transition-colors"
             >
-              <X className="w-4 h-4 text-gray-400" />
+              <X className="w-4 h-4 text-slate-600" />
             </button>
           </div>
         ) : (
-          <span className="text-gray-500 text-sm">
+          <span className="text-slate-500 text-sm">
             Drop {acceptRoles.join(" or ")} here
           </span>
         )}
@@ -217,7 +219,10 @@ export default function ChartBuilderTab() {
     chartConfig,
     setChartConfig,
     resetChartConfig,
+    saveChart,
   } = useAppStore();
+
+  const { showToast } = useToast();
 
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
@@ -499,12 +504,32 @@ export default function ChartBuilderTab() {
     setValidationMessage(null);
   };
 
+  const handleSaveToDashboard = () => {
+    if (!previewData || !chartSpec || !selectedDatasetId || !selectedAggregation) {
+      return;
+    }
+
+    // Generate a title based on the chart config
+    const title = `${chartConfig.yAxis || 'Metric'} by ${chartConfig.xAxis || 'Dimension'}`;
+
+    saveChart({
+      title,
+      chartSpec: previewData.chart_spec,
+      rows: previewData.rows,
+      datasetId: selectedDatasetId,
+      martId: selectedAggregation,
+    });
+
+    // Show success feedback
+    showToast(`Chart "${title}" saved to dashboard!`, "success");
+  };
+
   return (
     <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="flex h-full">
-        <div className="w-64 border-r border-white/10 bg-[#060010]/50 overflow-y-auto p-4">
+      <div className="flex h-full bg-gradient-to-br from-white to-indigo-50/40">
+        <div className="w-64 border-r border-indigo-200/50 bg-white/80 backdrop-blur-sm overflow-y-auto p-4 shadow-sm">
           <div className="mb-6">
-            <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
+            <h3 className="text-sm font-medium text-indigo-900 uppercase tracking-wider mb-3">
               Aggregation
             </h3>
             <select
@@ -513,7 +538,7 @@ export default function ChartBuilderTab() {
                 setSelectedAggregation(event.target.value || null);
                 handleReset();
               }}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#5237ff]/50"
+              className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/50 shadow-sm"
             >
               <option value="">Select table</option>
               {availableMarts.map((table) => (
@@ -526,12 +551,12 @@ export default function ChartBuilderTab() {
 
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 text-[#5237ff] animate-spin" />
+              <Loader2 className="w-6 h-6 text-[#4F46E5] animate-spin" />
             </div>
           ) : transformedColumns.length > 0 ? (
             <>
               <div className="mb-6">
-                <h3 className="text-sm font-medium text-blue-400 mb-3 flex items-center gap-2">
+                <h3 className="text-sm font-medium text-blue-600 mb-3 flex items-center gap-2">
                   <Hash className="w-4 h-4" />
                   Dimensions
                 </h3>
@@ -543,7 +568,7 @@ export default function ChartBuilderTab() {
               </div>
 
               <div className="mb-6">
-                <h3 className="text-sm font-medium text-emerald-400 mb-3 flex items-center gap-2">
+                <h3 className="text-sm font-medium text-indigo-600 mb-3 flex items-center gap-2">
                   <BarChart3 className="w-4 h-4" />
                   Measures
                 </h3>
@@ -555,7 +580,7 @@ export default function ChartBuilderTab() {
               </div>
 
               <div className="mb-6">
-                <h3 className="text-sm font-medium text-amber-400 mb-3 flex items-center gap-2">
+                <h3 className="text-sm font-medium text-amber-600 mb-3 flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
                   Temporal
                 </h3>
@@ -567,7 +592,7 @@ export default function ChartBuilderTab() {
               </div>
             </>
           ) : selectedAggregation ? (
-            <p className="text-gray-500 text-sm text-center">No columns found</p>
+            <p className="text-slate-500 text-sm text-center">No columns found</p>
           ) : null}
         </div>
 
@@ -582,13 +607,13 @@ export default function ChartBuilderTab() {
                   className="h-full flex items-center justify-center"
                 >
                   <div className="text-center">
-                    <div className="w-20 h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4">
-                      <Sparkles className="w-10 h-10 text-gray-600" />
+                    <div className="w-20 h-20 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center mx-auto mb-4">
+                      <Sparkles className="w-10 h-10 text-slate-500" />
                     </div>
-                    <h3 className="text-xl font-medium text-gray-400 mb-2">
+                    <h3 className="text-xl font-medium text-slate-700 mb-2">
                       Build Your Chart
                     </h3>
-                    <p className="text-gray-500 max-w-sm">
+                    <p className="text-slate-600 max-w-sm">
                       Drag fields from the left panel to the axis drop zones on the right
                     </p>
                   </div>
@@ -601,9 +626,9 @@ export default function ChartBuilderTab() {
                   className="h-full flex items-center justify-center"
                 >
                   <div className="text-center">
-                    <AlertTriangle className="w-12 h-12 text-amber-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-300 mb-2">Invalid axis mapping</h3>
-                    <p className="text-gray-500 text-sm max-w-sm">{validationMessage}</p>
+                    <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-slate-700 mb-2">Invalid axis mapping</h3>
+                    <p className="text-slate-600 text-sm max-w-sm">{validationMessage}</p>
                   </div>
                 </motion.div>
               ) : isPreviewLoading ? (
@@ -614,9 +639,9 @@ export default function ChartBuilderTab() {
                   className="h-full flex items-center justify-center"
                 >
                   <div className="text-center">
-                    <Loader2 className="w-12 h-12 text-[#5237ff] mx-auto mb-4 animate-spin" />
-                    <h3 className="text-lg font-medium text-gray-400">Loading chart data...</h3>
-                    <p className="text-gray-500 text-sm mt-1">Executing chart preview</p>
+                    <Loader2 className="w-12 h-12 text-indigo-600 mx-auto mb-4 animate-spin" />
+                    <h3 className="text-lg font-medium text-slate-700">Loading chart data...</h3>
+                    <p className="text-slate-600 text-sm mt-1">Executing chart preview</p>
                   </div>
                 </motion.div>
               ) : previewError ? (
@@ -627,9 +652,9 @@ export default function ChartBuilderTab() {
                   className="h-full flex items-center justify-center"
                 >
                   <div className="text-center">
-                    <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-400 mb-2">Failed to load chart data</h3>
-                    <p className="text-gray-500 text-sm max-w-sm">{previewError.message}</p>
+                    <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-slate-700 mb-2">Failed to load chart data</h3>
+                    <p className="text-slate-600 text-sm max-w-sm">{previewError.message}</p>
                   </div>
                 </motion.div>
               ) : previewData && chartSpec ? (
@@ -638,19 +663,19 @@ export default function ChartBuilderTab() {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="bg-white/5 border border-white/10 rounded-2xl p-6 h-full flex flex-col gap-4"
+                  className="bg-white border border-slate-200 shadow-sm rounded-2xl p-6 h-full flex flex-col gap-4"
                 >
                   <div className="min-h-[360px]">{renderChart(chartSpec, previewData.rows)}</div>
 
                   {showExecutionDetails && executionDebug ? (
-                    <div className="border border-white/10 rounded-xl bg-black/30 overflow-hidden">
-                      <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between">
+                    <div className="border border-slate-300 rounded-xl bg-slate-50 overflow-hidden">
+                      <div className="px-3 py-2 border-b border-slate-300 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
                             onClick={() => setDebugTab("chartspec")}
                             className={`px-2 py-1 text-xs rounded-md ${
-                              debugTab === "chartspec" ? "bg-[#5237ff]/30 text-[#c7beff]" : "text-gray-300 hover:bg-white/10"
+                              debugTab === "chartspec" ? "bg-[#4f46e5] text-white shadow-sm" : "text-slate-700 hover:bg-slate-100"
                             }`}
                           >
                             ChartSpec
@@ -659,7 +684,7 @@ export default function ChartBuilderTab() {
                             type="button"
                             onClick={() => setDebugTab("aggregate_request")}
                             className={`px-2 py-1 text-xs rounded-md ${
-                              debugTab === "aggregate_request" ? "bg-[#5237ff]/30 text-[#c7beff]" : "text-gray-300 hover:bg-white/10"
+                              debugTab === "aggregate_request" ? "bg-[#4f46e5] text-white shadow-sm" : "text-slate-700 hover:bg-slate-100"
                             }`}
                           >
                             AggregateRequest
@@ -668,7 +693,7 @@ export default function ChartBuilderTab() {
                             type="button"
                             onClick={() => setDebugTab("sql")}
                             className={`px-2 py-1 text-xs rounded-md ${
-                              debugTab === "sql" ? "bg-[#5237ff]/30 text-[#c7beff]" : "text-gray-300 hover:bg-white/10"
+                              debugTab === "sql" ? "bg-[#4f46e5] text-white shadow-sm" : "text-slate-700 hover:bg-slate-100"
                             }`}
                           >
                             SQL
@@ -677,13 +702,13 @@ export default function ChartBuilderTab() {
                         <button
                           type="button"
                           onClick={copyDebugPayload}
-                          className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md border border-white/10 text-gray-300 hover:bg-white/10"
+                          className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50"
                         >
                           <Copy className="w-3.5 h-3.5" />
                           {copiedTab === debugTab ? "Copied" : "Copy"}
                         </button>
                       </div>
-                      <pre className="p-3 text-xs text-gray-300 overflow-x-auto max-h-[260px] leading-relaxed">
+                      <pre className="p-3 text-xs text-slate-700 overflow-x-auto max-h-[260px] leading-relaxed bg-slate-50 rounded-lg">
                         {toPrettyText(debugTabPayload)}
                       </pre>
                     </div>
@@ -697,8 +722,8 @@ export default function ChartBuilderTab() {
                   className="h-full flex items-center justify-center"
                 >
                   <div className="text-center">
-                    <AlertTriangle className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-400">No chart data</h3>
+                    <AlertTriangle className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-slate-600">No chart data</h3>
                   </div>
                 </motion.div>
               )}
@@ -706,9 +731,9 @@ export default function ChartBuilderTab() {
           </div>
         </div>
 
-        <div className="w-80 border-l border-white/10 bg-[#060010]/50 overflow-y-auto p-4 space-y-6">
+        <div className="w-80 border-l border-indigo-200/50 bg-white/80 backdrop-blur-sm overflow-y-auto p-4 space-y-6 shadow-sm">
           <div>
-            <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
+            <h3 className="text-sm font-medium text-indigo-900 uppercase tracking-wider mb-3">
               Chart Type
             </h3>
             <div className="grid grid-cols-2 gap-2">
@@ -718,8 +743,8 @@ export default function ChartBuilderTab() {
                   onClick={() => setChartConfig({ chartType: type.id })}
                   className={`flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all ${
                     chartConfig.chartType === type.id
-                      ? "bg-[#5237ff]/20 border border-[#5237ff]/30 text-[#7b69ff]"
-                      : "bg-white/5 border border-white/10 text-gray-400 hover:bg-white/10 hover:text-white"
+                      ? "bg-indigo-100 border border-indigo-300 text-indigo-700"
+                      : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                   }`}
                 >
                   {type.icon}
@@ -730,7 +755,7 @@ export default function ChartBuilderTab() {
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
+            <h3 className="text-sm font-medium text-indigo-900 uppercase tracking-wider">
               Axis Mapping
             </h3>
 
@@ -760,7 +785,7 @@ export default function ChartBuilderTab() {
           </div>
 
           <div>
-            <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
+            <h3 className="text-sm font-medium text-indigo-900 uppercase tracking-wider mb-3">
               Aggregation
             </h3>
             <div className="flex flex-wrap gap-2">
@@ -774,10 +799,10 @@ export default function ChartBuilderTab() {
                     title={!isValid ? `${aggregation.label} is not available for this column type` : undefined}
                     className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
                       !isValid
-                        ? "bg-white/5 border border-white/5 text-gray-600 cursor-not-allowed opacity-50"
+                        ? "bg-slate-100 border border-slate-200 text-slate-400 cursor-not-allowed opacity-50"
                         : chartConfig.aggregationFn === aggregation.id
-                        ? "bg-emerald-500/20 border border-emerald-500/30 text-emerald-300"
-                        : "bg-white/5 border border-white/10 text-gray-400 hover:text-white"
+                        ? "bg-indigo-100 border border-indigo-300 text-indigo-700"
+                        : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                     }`}
                   >
                     {aggregation.label}
@@ -788,16 +813,16 @@ export default function ChartBuilderTab() {
           </div>
 
           <div>
-            <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
+            <h3 className="text-sm font-medium text-indigo-900 uppercase tracking-wider mb-3">
               Filters
             </h3>
             <div className="space-y-3">
               {filters.map((filter) => (
-                <div key={filter.id} className="space-y-2 bg-white/5 border border-white/10 rounded-lg p-2">
+                <div key={filter.id} className="space-y-2 bg-slate-50 border border-slate-200 rounded-lg p-2">
                   <select
                     value={filter.field}
                     onChange={(event) => updateFilter(filter.id, { field: event.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded px-2 py-1.5 text-white text-xs"
+                    className="w-full bg-white border border-slate-200 rounded px-2 py-1.5 text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                   >
                     <option value="">Field</option>
                     {transformedColumns.map((column) => (
@@ -810,7 +835,7 @@ export default function ChartBuilderTab() {
                     <select
                       value={filter.op}
                       onChange={(event) => updateFilter(filter.id, { op: event.target.value as FilterOperator })}
-                      className="bg-white/5 border border-white/10 rounded px-2 py-1.5 text-white text-xs"
+                      className="bg-white border border-slate-200 rounded px-2 py-1.5 text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                     >
                       {filterOperators.map((op) => (
                         <option key={op.id} value={op.id}>{op.label}</option>
@@ -820,11 +845,11 @@ export default function ChartBuilderTab() {
                       value={filter.value}
                       onChange={(event) => updateFilter(filter.id, { value: event.target.value })}
                       placeholder={filter.op === "in" ? "a,b,c" : filter.op === "between" ? "min,max" : "value"}
-                      className="bg-white/5 border border-white/10 rounded px-2 py-1.5 text-white text-xs"
+                      className="bg-white border border-slate-200 rounded px-2 py-1.5 text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                     />
                     <button
                       onClick={() => removeFilter(filter.id)}
-                      className="px-2 py-1.5 rounded bg-red-500/20 border border-red-500/30 text-red-300"
+                      className="px-2 py-1.5 rounded bg-red-50 border border-red-200 text-red-600 hover:bg-red-100"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -833,7 +858,7 @@ export default function ChartBuilderTab() {
               ))}
               <button
                 onClick={addFilter}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-300 hover:text-white"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900"
               >
                 <Plus className="w-4 h-4" />
                 Add Filter
@@ -842,7 +867,7 @@ export default function ChartBuilderTab() {
           </div>
 
           <div>
-            <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
+            <h3 className="text-sm font-medium text-indigo-900 uppercase tracking-wider mb-3">
               Time Window
             </h3>
             {groupedColumns.temporal.length > 0 ? (
@@ -850,7 +875,7 @@ export default function ChartBuilderTab() {
                 <select
                   value={timeField}
                   onChange={(event) => setTimeField(event.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded px-2 py-2 text-white text-sm"
+                  className="w-full bg-white border border-slate-200 rounded px-2 py-2 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                 >
                   {groupedColumns.temporal.map((column) => (
                     <option key={column.name} value={column.name}>{column.name}</option>
@@ -859,7 +884,7 @@ export default function ChartBuilderTab() {
                 <select
                   value={timeWindow}
                   onChange={(event) => setTimeWindow(event.target.value as "none" | "last_7" | "last_30" | "last_90" | "custom")}
-                  className="w-full bg-white/5 border border-white/10 rounded px-2 py-2 text-white text-sm"
+                  className="w-full bg-white border border-slate-200 rounded px-2 py-2 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                 >
                   <option value="none">None</option>
                   <option value="last_7">Last 7 days</option>
@@ -873,24 +898,24 @@ export default function ChartBuilderTab() {
                       type="date"
                       value={customStartDate}
                       onChange={(event) => setCustomStartDate(event.target.value)}
-                      className="bg-white/5 border border-white/10 rounded px-2 py-2 text-white text-sm"
+                      className="bg-white border border-slate-200 rounded px-2 py-2 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                     />
                     <input
                       type="date"
                       value={customEndDate}
                       onChange={(event) => setCustomEndDate(event.target.value)}
-                      className="bg-white/5 border border-white/10 rounded px-2 py-2 text-white text-sm"
+                      className="bg-white border border-slate-200 rounded px-2 py-2 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                     />
                   </div>
                 ) : null}
               </div>
             ) : (
-              <p className="text-xs text-gray-500">No temporal field available for time windows.</p>
+              <p className="text-xs text-slate-500">No temporal field available for time windows.</p>
             )}
           </div>
 
           <div>
-            <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
+            <h3 className="text-sm font-medium text-indigo-900 uppercase tracking-wider mb-3">
               Sort & Limit
             </h3>
             <div className="space-y-2">
@@ -898,7 +923,7 @@ export default function ChartBuilderTab() {
                 <select
                   value={sortTarget}
                   onChange={(event) => setSortTarget(event.target.value as "x" | "metric")}
-                  className="bg-white/5 border border-white/10 rounded px-2 py-2 text-white text-sm"
+                  className="bg-white border border-slate-200 rounded px-2 py-2 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                 >
                   <option value="metric">Sort by metric</option>
                   <option value="x">Sort by X-axis</option>
@@ -906,7 +931,7 @@ export default function ChartBuilderTab() {
                 <select
                   value={sortDirection}
                   onChange={(event) => setSortDirection(event.target.value as "asc" | "desc")}
-                  className="bg-white/5 border border-white/10 rounded px-2 py-2 text-white text-sm"
+                  className="bg-white border border-slate-200 rounded px-2 py-2 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                 >
                   <option value="desc">Descending</option>
                   <option value="asc">Ascending</option>
@@ -923,22 +948,22 @@ export default function ChartBuilderTab() {
                     setResultLimit(Math.max(1, Math.min(5000, value)));
                   }
                 }}
-                className="w-full bg-white/5 border border-white/10 rounded px-2 py-2 text-white text-sm"
+                className="w-full bg-white border border-slate-200 rounded px-2 py-2 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
               />
             </div>
           </div>
 
           <div>
-            <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
+            <h3 className="text-sm font-medium text-indigo-900 uppercase tracking-wider mb-3">
               Debug
             </h3>
-            <label className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg border border-white/10 bg-white/5">
-              <span className="text-sm text-gray-300">Show execution details</span>
+            <label className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg border border-slate-200 bg-slate-50">
+              <span className="text-sm text-slate-700">Show execution details</span>
               <button
                 type="button"
                 onClick={() => setShowExecutionDetails((value) => !value)}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  showExecutionDetails ? "bg-[#5237ff]/60" : "bg-white/15"
+                  showExecutionDetails ? "bg-indigo-600" : "bg-slate-300"
                 }`}
                 aria-pressed={showExecutionDetails}
               >
@@ -952,8 +977,17 @@ export default function ChartBuilderTab() {
           </div>
 
           <button
+            onClick={handleSaveToDashboard}
+            disabled={!previewData || !chartSpec}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-[#4f46e5] to-indigo-600 text-white hover:from-indigo-600 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md"
+          >
+            <Save className="w-4 h-4" />
+            Save to Dashboard
+          </button>
+
+          <button
             onClick={handleReset}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition-all"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all"
           >
             <RefreshCw className="w-4 h-4" />
             Reset Chart
@@ -968,11 +1002,11 @@ export default function ChartBuilderTab() {
               roleColors[activeColumn.role].bg
             } border ${roleColors[activeColumn.role].border}`}
           >
-            <GripVertical className="w-3 h-3 text-gray-500" />
+            <GripVertical className="w-3 h-3 text-slate-500" />
             <span className={roleColors[activeColumn.role].text}>
               {roleIcons[activeColumn.role]}
             </span>
-            <span className="text-sm text-gray-200">{activeColumn.name}</span>
+            <span className="text-sm text-slate-900">{activeColumn.name}</span>
           </div>
         )}
       </DragOverlay>

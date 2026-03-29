@@ -427,19 +427,19 @@ export default function ChatPanel() {
   const canSave = Boolean(selectedAggregation && chatKey && message.trim() && !isLoading);
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="border-b border-white/10 p-4 flex items-center gap-2">
-        <MessageSquare className="w-5 h-5 text-[#5237ff]" />
+    <div className="h-full flex flex-col bg-gradient-to-br from-white via-indigo-50/20 to-violet-50/30">
+      <div className="border-b border-indigo-200/50 p-4 flex items-center gap-2 bg-white/80 backdrop-blur-sm shadow-sm">
+        <MessageSquare className="w-5 h-5 text-[#4F46E5]" />
         <div className="flex-1">
-          <h2 className="text-white font-semibold">Chat Analyst</h2>
-          <p className="text-xs text-gray-400">
+          <h2 className="text-slate-900 font-semibold">Chat Analyst</h2>
+          <p className="text-xs text-slate-600">
             {selectedAggregation ? `Chat scoped to: ${selectedAggregation}` : "Select a mart to chat"}
           </p>
           <div className="mt-2 relative" ref={martPickerRef}>
             <button
               type="button"
               onClick={() => setIsMartOpen((open) => !open)}
-              className="w-full max-w-xs flex items-center justify-between gap-2 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#5237ff]/50"
+              className="w-full max-w-xs flex items-center justify-between gap-2 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/50 shadow-sm"
             >
               <span className="truncate">
                 {selectedMart?.label ?? selectedMart?.id ?? "Select mart"}
@@ -447,21 +447,21 @@ export default function ChatPanel() {
               <ChevronDown className={`w-4 h-4 transition-transform ${isMartOpen ? "rotate-180" : ""}`} />
             </button>
             {isMartOpen ? (
-              <div className="absolute z-50 mt-2 w-full max-w-xs rounded-xl border border-white/10 bg-[#12061f]/95 backdrop-blur-xl shadow-xl shadow-black/40">
+              <div className="absolute z-50 mt-2 w-full max-w-xs rounded-xl border border-indigo-200 bg-white/95 backdrop-blur-xl shadow-xl">
                 <div className="p-2">
-                  <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-2 py-1.5">
-                    <Search className="w-3.5 h-3.5 text-gray-400" />
+                  <div className="flex items-center gap-2 rounded-lg border border-slate-300 bg-slate-50 px-2 py-1.5">
+                    <Search className="w-3.5 h-3.5 text-slate-400" />
                     <input
                       value={martQuery}
                       onChange={(event) => setMartQuery(event.target.value)}
                       placeholder="Search marts..."
-                      className="w-full bg-transparent text-xs text-gray-200 placeholder:text-gray-500 focus:outline-none"
+                      className="w-full bg-transparent text-xs text-slate-900 placeholder:text-slate-500 focus:outline-none"
                     />
                   </div>
                 </div>
                 <div className="max-h-64 overflow-y-auto p-2 pt-0 space-y-1">
                   {filteredMarts.length === 0 ? (
-                    <div className="px-3 py-2 text-[11px] text-gray-500">No marts available.</div>
+                    <div className="px-3 py-2 text-[11px] text-slate-500">No marts available.</div>
                   ) : (
                     filteredMarts.map((mart) => {
                       const isSelected = mart.id === selectedAggregation;
@@ -476,22 +476,22 @@ export default function ChatPanel() {
                           }}
                           className={`w-full text-left rounded-lg border px-3 py-2 transition-colors ${
                             isSelected
-                              ? "border-[#5237ff]/40 bg-[#5237ff]/15"
-                              : "border-white/5 bg-white/5 hover:bg-white/10"
+                              ? "border-indigo-300 bg-indigo-100 shadow-sm"
+                              : "border-slate-200 bg-white hover:bg-slate-50"
                           }`}
                         >
                           <div className="flex items-start gap-2">
-                            <span className={`mt-0.5 h-8 w-1 rounded-full ${isSelected ? "bg-[#5237ff]" : "bg-white/10"}`} />
+                            <span className={`mt-0.5 h-8 w-1 rounded-full ${isSelected ? "bg-[#4F46E5]" : "bg-slate-200"}`} />
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
-                                <p className="text-xs text-white font-semibold truncate">
+                                <p className="text-xs text-slate-900 font-semibold truncate">
                                   {mart.label ?? mart.id}
                                 </p>
-                                {isSelected ? <Check className="w-3.5 h-3.5 text-[#c7beff]" /> : null}
+                                {isSelected ? <Check className="w-3.5 h-3.5 text-indigo-600" /> : null}
                               </div>
-                              <p className="text-[11px] text-gray-400 truncate">{mart.id}</p>
+                              <p className="text-[11px] text-slate-600 truncate">{mart.id}</p>
                               {mart.description ? (
-                                <p className="text-[11px] text-gray-500 truncate">{mart.description}</p>
+                                <p className="text-[11px] text-slate-500 truncate">{mart.description}</p>
                               ) : null}
                             </div>
                           </div>
@@ -503,7 +503,7 @@ export default function ChatPanel() {
               </div>
             ) : null}
           </div>
-          <div className="mt-2 inline-flex rounded-lg border border-white/10 bg-white/5 p-1">
+          <div className="mt-2 inline-flex rounded-lg border border-slate-300 bg-slate-50 p-1">
             {modeOptions.map((option) => (
               <button
                 key={option.id}
@@ -511,8 +511,8 @@ export default function ChatPanel() {
                 onClick={() => setChatMode(option.id)}
                 className={`px-2.5 py-1 text-xs rounded-md transition-colors ${
                   chatMode === option.id
-                    ? "bg-[#5237ff]/30 text-[#c7beff]"
-                    : "text-gray-300 hover:bg-white/10"
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-slate-700 hover:bg-slate-100"
                 }`}
               >
                 {option.label}
@@ -524,7 +524,7 @@ export default function ChatPanel() {
           type="button"
           onClick={() => chatKey && clearChat(chatKey)}
           disabled={!chatKey || turns.length === 0}
-          className="px-2 py-1 text-xs text-gray-300 border border-white/10 rounded-lg hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-2 py-1 text-xs text-slate-700 border border-slate-300 bg-white rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <span className="inline-flex items-center gap-1">
             <Trash2 className="w-3.5 h-3.5" />
@@ -537,15 +537,15 @@ export default function ChatPanel() {
         {!selectedAggregation ? (
           <div className="h-full flex items-center justify-center text-center">
             <div>
-              <MessageSquare className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-              <p className="text-gray-400">Select a mart to chat.</p>
+              <MessageSquare className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+              <p className="text-slate-600">Select a mart to chat.</p>
             </div>
           </div>
         ) : turns.length === 0 ? (
           <div className="h-full flex items-center justify-center text-center">
             <div>
-              <MessageSquare className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-              <p className="text-gray-400">Ask for a chart or explanation using the selected mart.</p>
+              <MessageSquare className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+              <p className="text-slate-600">Ask for a chart or explanation using the selected mart.</p>
             </div>
           </div>
         ) : (
@@ -565,16 +565,16 @@ export default function ChatPanel() {
               <div
                 key={`${turn.createdAt}-${index}`}
                 className={`rounded-xl p-3 border ${
-                  isAssistant ? "bg-white/5 border-white/10" : "bg-[#5237ff]/10 border-[#5237ff]/30"
+                  isAssistant ? "bg-white border-slate-200 shadow-sm" : "bg-indigo-100 border-indigo-200 shadow-sm"
                 }`}
               >
-                <p className="text-xs text-gray-400 mb-1">{isAssistant ? "Assistant" : "You"}</p>
+                <p className="text-xs text-slate-600 mb-1">{isAssistant ? "Assistant" : "You"}</p>
                 {isAssistant ? (
                   turn.message ? (
                     <MarkdownMessage content={turn.message} />
                   ) : null
                 ) : (
-                  <p className="text-sm text-white">{turn.message}</p>
+                  <p className="text-sm text-slate-900">{turn.message}</p>
                 )}
                 {isAssistant && response?.response_type === "chart" ? (
                   <div className="mt-4 min-h-[320px]">
@@ -592,7 +592,7 @@ export default function ChatPanel() {
                               type="button"
                               disabled={isLoading || !selectedAggregation}
                               onClick={() => handleClarifyChip(response, "metric", item)}
-                              className="px-2 py-1 text-xs rounded-full border border-[#5237ff]/40 text-[#c7beff] bg-[#5237ff]/15 hover:bg-[#5237ff]/25 disabled:opacity-50"
+                              className="px-2 py-1 text-xs rounded-full border border-indigo-300 text-indigo-700 bg-indigo-100 hover:bg-indigo-200 disabled:opacity-50"
                             >
                               {item}
                             </button>
@@ -605,7 +605,7 @@ export default function ChatPanel() {
                       <>
                         {dimensions.length > 0 ? (
                           <div>
-                            <p className="text-[11px] uppercase tracking-wide text-blue-300 mb-1">Dimensions</p>
+                            <p className="text-[11px] uppercase tracking-wide text-blue-600 font-semibold mb-1">Dimensions</p>
                             <div className="flex flex-wrap gap-2">
                               {dimensions.map((item) => (
                                 <button
@@ -613,7 +613,7 @@ export default function ChatPanel() {
                                   type="button"
                                   disabled={isLoading || !selectedAggregation}
                                   onClick={() => handleClarifyChip(response, "dimension", item)}
-                                  className="px-2 py-1 text-xs rounded-full border border-blue-500/40 text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 disabled:opacity-50"
+                                  className="px-2 py-1 text-xs rounded-full border border-blue-300 text-blue-700 bg-blue-100 hover:bg-blue-200 disabled:opacity-50"
                                 >
                                   {item}
                                 </button>
@@ -623,7 +623,7 @@ export default function ChatPanel() {
                         ) : null}
                         {temporals.length > 0 ? (
                           <div>
-                            <p className="text-[11px] uppercase tracking-wide text-amber-300 mb-1">Time Fields</p>
+                            <p className="text-[11px] uppercase tracking-wide text-amber-600 font-semibold mb-1">Time Fields</p>
                             <div className="flex flex-wrap gap-2">
                               {temporals.map((item) => (
                                 <button
@@ -631,7 +631,7 @@ export default function ChatPanel() {
                                   type="button"
                                   disabled={isLoading || !selectedAggregation}
                                   onClick={() => handleClarifyChip(response, "temporal", item)}
-                                  className="px-2 py-1 text-xs rounded-full border border-amber-500/40 text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 disabled:opacity-50"
+                                  className="px-2 py-1 text-xs rounded-full border border-amber-300 text-amber-700 bg-amber-100 hover:bg-amber-200 disabled:opacity-50"
                                 >
                                   {item}
                                 </button>
@@ -651,7 +651,7 @@ export default function ChatPanel() {
                               type="button"
                               disabled={isLoading || !selectedAggregation}
                               onClick={() => handleClarifyChip(response, "time_grain", item)}
-                              className="px-2 py-1 text-xs rounded-full border border-emerald-500/40 text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 disabled:opacity-50"
+                              className="px-2 py-1 text-xs rounded-full border border-violet-300 text-violet-700 bg-violet-100 hover:bg-violet-200 disabled:opacity-50"
                             >
                               {item}
                             </button>
@@ -667,37 +667,37 @@ export default function ChatPanel() {
         )}
       </div>
 
-      <form onSubmit={handleSubmit} className="border-t border-white/10 p-4 space-y-2">
+      <form onSubmit={handleSubmit} className="border-t border-indigo-200/50 p-4 space-y-2 bg-white/80 backdrop-blur-sm">
         {selectedAggregation ? (
-          <div className="rounded-lg border border-white/10 bg-white/5 p-3">
-            <p className="text-xs text-gray-300 font-medium">{guidance.title}</p>
-            <p className="text-[11px] text-gray-400 mt-1">{guidance.lines[0]}</p>
-            <p className="text-[11px] text-gray-500">{guidance.lines[1]}</p>
+          <div className="rounded-lg border border-indigo-200 bg-indigo-50/50 p-3">
+            <p className="text-xs text-indigo-900 font-medium">{guidance.title}</p>
+            <p className="text-[11px] text-indigo-700 mt-1">{guidance.lines[0]}</p>
+            <p className="text-[11px] text-indigo-600">{guidance.lines[1]}</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {guidance.examples.map((example) => (
                 <button
                   key={example}
                   type="button"
                   onClick={() => setMessage(example)}
-                  className="px-2 py-1 text-xs rounded-full border border-white/15 text-gray-300 hover:bg-white/10"
+                  className="px-2 py-1 text-xs rounded-full border border-slate-300 text-slate-700 hover:bg-slate-100"
                 >
                   {example}
                 </button>
               ))}
               {isHintsLoading && guidance.examples.length === 0 ? (
-                <span className="text-[11px] text-gray-500">Loading suggestions...</span>
+                <span className="text-[11px] text-slate-500">Loading suggestions...</span>
               ) : null}
             </div>
           </div>
         ) : null}
         {selectedAggregation && savedPrompts.length > 0 ? (
-          <div className="rounded-lg border border-white/10 bg-white/5 p-3">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
             <div className="flex items-center justify-between">
-              <p className="text-xs text-gray-300 font-medium">Saved prompts</p>
+              <p className="text-xs text-slate-900 font-medium">Saved prompts</p>
               <button
                 type="button"
                 onClick={() => chatKey && clearSavedPrompts(chatKey)}
-                className="text-[11px] text-gray-400 hover:text-gray-200"
+                className="text-[11px] text-slate-600 hover:text-slate-900"
               >
                 Clear all
               </button>
@@ -706,19 +706,19 @@ export default function ChatPanel() {
               {savedPrompts.map((prompt) => (
                 <div
                   key={prompt}
-                  className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/10 px-2 py-1"
+                  className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-2 py-1"
                 >
                   <button
                     type="button"
                     onClick={() => setMessage(prompt)}
-                    className="text-xs text-gray-300 hover:text-white"
+                    className="text-xs text-slate-700 hover:text-slate-900"
                   >
                     {prompt}
                   </button>
                   <button
                     type="button"
                     onClick={() => chatKey && removeSavedPrompt(chatKey, prompt)}
-                    className="text-gray-500 hover:text-gray-200"
+                    className="text-slate-500 hover:text-slate-700"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -740,13 +740,13 @@ export default function ChatPanel() {
             onChange={(event) => setMessage(event.target.value)}
             placeholder={placeholder}
             disabled={!selectedAggregation || isLoading}
-            className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#5237ff]/50"
+            className="flex-1 bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/50 shadow-sm"
           />
           <button
             type="button"
             onClick={handleSavePrompt}
             disabled={!canSave}
-            className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-300 hover:text-white disabled:opacity-60"
+            className="px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 hover:text-slate-900 disabled:opacity-60"
             title="Save prompt"
           >
             <BookmarkPlus className="w-4 h-4" />
@@ -754,12 +754,12 @@ export default function ChatPanel() {
           <button
             type="submit"
             disabled={!canSend}
-            className="px-3 py-2 rounded-lg bg-[#5237ff]/20 border border-[#5237ff]/30 text-[#a397ff] hover:text-white disabled:opacity-60"
+            className="px-3 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-60 shadow-sm transition-colors"
           >
             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
         </div>
-        <p className="text-[11px] text-gray-500">
+        <p className="text-[11px] text-slate-600">
           Mode: {chatMode.toUpperCase()} | Mart: {selectedAggregation ?? "none"}
         </p>
       </form>

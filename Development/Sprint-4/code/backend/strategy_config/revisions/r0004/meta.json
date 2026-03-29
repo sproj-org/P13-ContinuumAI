@@ -1,0 +1,12 @@
+{
+  "revision": "r0004",
+  "created_at": "2026-03-06T03:55:22Z",
+  "author": "seed_bot",
+  "reason": "Seed rich demo-ready KPI registry",
+  "hashes": {
+    "strategy_bundle.yaml": "39c919458be65e58d53339b295a4bd6f57cceb8dc56bb76af242d7fa3785dd29",
+    "kpi_registry.yaml": "156e1286b7b54fa0698d89868ffa4df3236dcd27b97c6806efff4c112747984a",
+    "strategy_bundle.override.yaml": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+    "kpi_registry.override.yaml": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+  }
+}

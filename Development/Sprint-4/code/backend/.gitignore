@@ -1,0 +1,10 @@
+.env
+.env.*
+!.env.example
+test_artifacts/
+pytest_tmp*/
+.pytest_tmp*/
+pytest_trace.log
+manual_tmp_test*/
+mode700_test/
+mode777_test/

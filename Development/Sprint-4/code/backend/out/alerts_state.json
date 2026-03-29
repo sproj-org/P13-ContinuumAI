@@ -1,0 +1,37 @@
+{
+  "datasets": {
+    "silkroute": {
+      "revision": "r0005",
+      "generated_at": "2026-03-27T22:48:25.641878+00:00",
+      "last_run_at": "2026-03-27T22:48:29.473135+00:00",
+      "severity_by_signal": {
+        "signal_net_sales_growth": "critical",
+        "rule_rule_growth_guardrail": "critical",
+        "rule_rule_margin_pressure": "critical",
+        "signal_sell_through_rate": "critical",
+        "signal_3": "warn",
+        "signal_avg_order_value": "warn",
+        "signal_campaign_lift": "warn",
+        "signal_customer_churn_risk": "warn",
+        "gap_campaign_lift": "warn",
+        "signal_discount_rate": "warn",
+        "signal_gross_margin_proxy": "warn",
+        "signal_inventory_turnover": "warn",
+        "signal_1": "warn",
+        "signal_repeat_customer_rate": "warn",
+        "signal_return_rate": "warn",
+        "rule_rule_aov_deterioration": "warn",
+        "rule_rule_discount_spike": "warn",
+        "rule_rule_inventory_sell_through": "warn",
+        "rule_rule_returns_escalation": "warn",
+        "rule_rule_transactions_softening": "warn",
+        "signal_6": "warn",
+        "signal_stockout_rate": "warn",
+        "signal_2": "warn",
+        "signal_transactions": "warn",
+        "signal_units_per_transaction": "warn",
+        "rule_rule_churn_risk_watch": "info"
+      }
+    }
+  }
+}

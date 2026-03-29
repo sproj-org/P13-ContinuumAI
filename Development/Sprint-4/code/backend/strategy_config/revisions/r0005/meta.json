@@ -1,0 +1,12 @@
+{
+  "revision": "r0005",
+  "created_at": "2026-03-23T12:17:41Z",
+  "author": "harry",
+  "reason": "Apply selected reconciliation patches",
+  "hashes": {
+    "strategy_bundle.yaml": "f997f709f9d73fc0743a19454f08dcc51de2ef40c3e1059f8b7ccb5cefb6f7be",
+    "kpi_registry.yaml": "9c0ecf60ae683a73caf4500bae20afd5b6b995faf0ac08014f4f3b7ef9f07ca0",
+    "strategy_bundle.override.yaml": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+    "kpi_registry.override.yaml": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+  }
+}

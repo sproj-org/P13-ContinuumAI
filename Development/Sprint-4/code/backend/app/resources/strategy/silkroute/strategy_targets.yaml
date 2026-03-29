@@ -1,0 +1,39 @@
+strategy:
+  company: SilkRoute
+  horizon: 12_months
+
+  north_star:
+    name: Profitable_Revenue_Growth
+    description: Grow revenue while improving gross margin and reducing operational risk
+
+  strategic_pillars:
+
+    - id: P1
+      name: Margin-Led Growth
+      priority_weight: 0.35
+      objectives:
+        - grow_revenue_without_discount_dependency
+        - improve_gross_margin
+        - increase_attach_rate
+
+    - id: P2
+      name: Customer Value Expansion
+      priority_weight: 0.25
+      objectives:
+        - increase_repeat_purchase_rate
+        - increase_average_basket_size
+
+    - id: P3
+      name: Operational Excellence
+      priority_weight: 0.25
+      objectives:
+        - reduce_stock_outs
+        - lift_underperforming_stores
+        - improve_salesperson_performance
+
+    - id: P4
+      name: Risk & Quality Control
+      priority_weight: 0.15
+      objectives:
+        - reduce_return_rate
+        - reduce_margin_erosion

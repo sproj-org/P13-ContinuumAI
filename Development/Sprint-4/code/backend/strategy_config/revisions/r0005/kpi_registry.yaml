@@ -1,0 +1,503 @@
+schema_version: 1
+version: 1.1.0
+kpis:
+- id: net_sales_growth
+  description: 28-day net sales index versus prior 28-day baseline.
+  formula: sum(last_28d_net_sales)/nullif(sum(prev_28d_net_sales),0)
+  marts:
+  - gold_store_360
+  required_columns:
+  - last_28d_net_sales
+  - prev_28d_net_sales
+  dimensions:
+  - store_id
+  - region
+  - store_type
+  default_grain: month
+  pillar_id: growth
+  owner: commercial_analytics
+  display_name: Net Sales Growth Index
+  semantic_family: revenue
+  metric_aliases:
+  - revenue_growth
+  - sales_growth
+  preferred_drill_path:
+  - region
+  - store_type
+  - store_id
+  terminal_dimensions:
+  - store_id
+  disallowed_drill_dimensions: []
+  preferred_chart_types:
+  - bar
+  - line
+  derived_metrics: {}
+- id: transactions
+  description: Average transaction throughput proxy from daily order counts.
+  formula: avg(orders)
+  marts:
+  - gold_sales_daily
+  required_columns:
+  - orders
+  dimensions:
+  - sales_date
+  - store_id
+  - channel_type
+  default_grain: day
+  pillar_id: growth
+  owner: retail_ops
+  display_name: Transactions
+  semantic_family: transactions
+  metric_aliases:
+  - orders
+  - order_count
+  - transactions
+  preferred_drill_path:
+  - channel_type
+  - store_id
+  - sales_date
+  terminal_dimensions:
+  - store_id
+  - sales_date
+  disallowed_drill_dimensions: []
+  preferred_chart_types:
+  - bar
+  - line
+  derived_metrics: {}
+- id: avg_order_value
+  description: Average order value tracked at daily grain.
+  formula: avg(avg_order_value)
+  marts:
+  - gold_sales_daily
+  required_columns:
+  - avg_order_value
+  dimensions:
+  - sales_date
+  - store_id
+  - channel_type
+  default_grain: day
+  pillar_id: growth
+  owner: commercial_analytics
+  display_name: Average Order Value
+  semantic_family: basket
+  metric_aliases:
+  - aov
+  - avg_basket_value
+  - basket_value
+  preferred_drill_path:
+  - channel_type
+  - store_id
+  - sales_date
+  terminal_dimensions:
+  - store_id
+  - sales_date
+  disallowed_drill_dimensions: []
+  preferred_chart_types:
+  - bar
+  - line
+  derived_metrics: {}
+- id: repeat_customer_rate
+  description: Average active months as a retention engagement proxy.
+  formula: sum(active_months)/nullif(count(active_months),0)
+  marts:
+  - gold_customer_360
+  required_columns:
+  - active_months
+  dimensions:
+  - segment
+  - city
+  - region
+  default_grain: month
+  pillar_id: retention
+  owner: crm_analytics
+  display_name: Repeat Customer Activity
+  semantic_family: customer_retention
+  metric_aliases:
+  - repeat_rate
+  - repeat_customers
+  preferred_drill_path:
+  - segment
+  - region
+  - city
+  terminal_dimensions:
+  - city
+  disallowed_drill_dimensions: []
+  preferred_chart_types:
+  - bar
+  - pie
+  derived_metrics: {}
+- id: gross_margin_proxy
+  description: Net-after-returns as a share of gross sales.
+  formula: sum(net_sales_after_returns)/nullif(sum(gross_sales),0)
+  marts:
+  - gold_sales_daily
+  required_columns:
+  - net_sales_after_returns
+  - gross_sales
+  dimensions:
+  - sales_date
+  - store_id
+  - channel_type
+  default_grain: day
+  pillar_id: margin
+  owner: finance_analytics
+  display_name: Gross Margin Proxy
+  semantic_family: margin
+  metric_aliases:
+  - gross_margin
+  - margin_rate
+  preferred_drill_path:
+  - channel_type
+  - store_id
+  - sales_date
+  terminal_dimensions:
+  - store_id
+  - sales_date
+  disallowed_drill_dimensions: []
+  preferred_chart_types:
+  - bar
+  - line
+  derived_metrics: {}
+- id: discount_rate
+  description: Discount spend ratio versus gross sales.
+  formula: sum(discount_amount)/nullif(sum(gross_sales),0)
+  marts:
+  - gold_sales_daily
+  required_columns:
+  - discount_amount
+  - gross_sales
+  dimensions:
+  - sales_date
+  - store_id
+  - channel_type
+  default_grain: day
+  pillar_id: margin
+  owner: pricing_analytics
+  display_name: Discount Rate
+  semantic_family: discount
+  metric_aliases:
+  - discount_ratio
+  - markdown_rate
+  preferred_drill_path:
+  - channel_type
+  - store_id
+  - sales_date
+  terminal_dimensions:
+  - store_id
+  - sales_date
+  disallowed_drill_dimensions: []
+  preferred_chart_types:
+  - bar
+  - line
+  derived_metrics: {}
+- id: sell_through_rate
+  description: 28-day units sold relative to current stock on hand.
+  formula: sum(units_28d)/nullif(sum(stock_on_hand),0)
+  marts:
+  - gold_inventory_health_daily
+  required_columns:
+  - units_28d
+  - stock_on_hand
+  dimensions:
+  - snapshot_date
+  - store_id
+  - sku_id
+  default_grain: day
+  pillar_id: inventory
+  owner: inventory_analytics
+  display_name: Sell Through Rate
+  semantic_family: inventory
+  metric_aliases:
+  - sell_through
+  - sku_sell_through
+  preferred_drill_path:
+  - store_id
+  - sku_id
+  - snapshot_date
+  terminal_dimensions:
+  - sku_id
+  - snapshot_date
+  disallowed_drill_dimensions: []
+  preferred_chart_types:
+  - bar
+  - line
+  derived_metrics: {}
+- id: inventory_turnover
+  description: Adjusted demand velocity over stock on hand.
+  formula: sum(adj_avg_daily_units)/nullif(sum(stock_on_hand),0)
+  marts:
+  - gold_inventory_health_daily
+  required_columns:
+  - adj_avg_daily_units
+  - stock_on_hand
+  dimensions:
+  - snapshot_date
+  - store_id
+  - sku_id
+  default_grain: day
+  pillar_id: inventory
+  owner: supply_chain_analytics
+  display_name: Inventory Turnover Proxy
+  semantic_family: inventory
+  metric_aliases:
+  - stock_turn
+  - turnover
+  preferred_drill_path:
+  - store_id
+  - sku_id
+  - snapshot_date
+  terminal_dimensions:
+  - sku_id
+  - snapshot_date
+  disallowed_drill_dimensions: []
+  preferred_chart_types:
+  - bar
+  - line
+  derived_metrics: {}
+- id: stockout_rate
+  description: Share of inventory rows flagged for stockout risk.
+  formula: sum(stockout_risk_flag)/nullif(count(stockout_risk_flag),0)
+  marts:
+  - gold_inventory_health_daily
+  required_columns:
+  - stockout_risk_flag
+  dimensions:
+  - snapshot_date
+  - store_id
+  - sku_id
+  default_grain: day
+  pillar_id: inventory
+  owner: supply_chain_analytics
+  display_name: Stockout Risk Rate
+  semantic_family: inventory
+  metric_aliases:
+  - stockout
+  - stockout_risk
+  preferred_drill_path:
+  - store_id
+  - sku_id
+  - snapshot_date
+  terminal_dimensions:
+  - sku_id
+  - snapshot_date
+  disallowed_drill_dimensions: []
+  preferred_chart_types:
+  - bar
+  - pie
+  derived_metrics: {}
+- id: return_rate
+  description: Returns amount as a proportion of net sales.
+  formula: sum(returns_amount)/nullif(sum(net_sales),0)
+  marts:
+  - gold_sales_daily
+  required_columns:
+  - returns_amount
+  - net_sales
+  dimensions:
+  - sales_date
+  - store_id
+  - channel_type
+  default_grain: day
+  pillar_id: retention
+  owner: customer_experience
+  display_name: Return Rate
+  semantic_family: returns
+  metric_aliases:
+  - returns_rate
+  - refund_rate
+  preferred_drill_path:
+  - channel_type
+  - store_id
+  - sales_date
+  terminal_dimensions:
+  - store_id
+  - sales_date
+  disallowed_drill_dimensions: []
+  preferred_chart_types:
+  - bar
+  - line
+  derived_metrics: {}
+- id: units_per_transaction
+  description: Units sold per order across channels.
+  formula: sum(units)/nullif(sum(orders),0)
+  marts:
+  - gold_sales_daily
+  required_columns:
+  - units
+  - orders
+  dimensions:
+  - sales_date
+  - store_id
+  - channel_type
+  default_grain: day
+  pillar_id: growth
+  owner: retail_ops
+  display_name: Units Per Transaction
+  semantic_family: basket
+  metric_aliases:
+  - upt
+  - units_per_order
+  preferred_drill_path:
+  - channel_type
+  - store_id
+  - sales_date
+  terminal_dimensions:
+  - store_id
+  - sales_date
+  disallowed_drill_dimensions: []
+  preferred_chart_types:
+  - bar
+  - line
+  derived_metrics: {}
+- id: customer_churn_risk
+  description: Share of customers flagged as high return-risk proxy for churn behavior.
+  formula: sum(return_rate_flag)/nullif(count(return_rate_flag),0)
+  marts:
+  - gold_customer_360
+  required_columns:
+  - return_rate_flag
+  dimensions:
+  - segment
+  - city
+  - churn_risk_bucket
+  default_grain: month
+  pillar_id: retention
+  owner: crm_analytics
+  display_name: Customer Churn Risk
+  semantic_family: customer_risk
+  metric_aliases:
+  - churn_risk
+  - return_risk
+  preferred_drill_path:
+  - segment
+  - city
+  - churn_risk_bucket
+  terminal_dimensions:
+  - churn_risk_bucket
+  disallowed_drill_dimensions: []
+  preferred_chart_types:
+  - bar
+  - pie
+  derived_metrics: {}
+- id: campaign_lift
+  description: Campaign efficiency proxy; intentionally unresolved until campaign
+    marts are onboarded.
+  formula: sum(campaign_sales)/nullif(sum(campaign_spend),0)
+  marts:
+  - gold_sales_daily
+  required_columns:
+  - campaign_sales
+  - campaign_spend
+  dimensions:
+  - sales_date
+  - channel_type
+  default_grain: week
+  pillar_id: growth
+  owner: marketing_analytics
+  display_name: Campaign Lift
+  semantic_family: marketing
+  metric_aliases:
+  - uplift
+  - campaign_roi
+  preferred_drill_path:
+  - channel_type
+  - sales_date
+  terminal_dimensions:
+  - sales_date
+  disallowed_drill_dimensions: []
+  preferred_chart_types:
+  - bar
+  - line
+  derived_metrics: {}
+- id: '1'
+  description: Measures the growth rate of net sales over a specified period.
+  formula: (current_period_net_sales - previous_period_net_sales) / previous_period_net_sales
+  marts:
+  - gold_sales_daily
+  - gold_store_360
+  required_columns:
+  - net_sales
+  dimensions:
+  - city
+  - region
+  default_grain: monthly
+  pillar_id: profitability
+  owner: sales_team
+  display_name: Net Sales Growth
+  metric_aliases: []
+  preferred_drill_path: []
+  terminal_dimensions: []
+  disallowed_drill_dimensions: []
+  preferred_chart_types: []
+  derived_metrics: {}
+- id: '2'
+  description: Tracks the total number of transactions over a specified period.
+  formula: SUM(orders)
+  marts:
+  - gold_sales_daily
+  - gold_store_360
+  required_columns:
+  - orders
+  dimensions:
+  - city
+  - region
+  default_grain: daily
+  pillar_id: transaction_efficiency
+  owner: sales_team
+  display_name: Transaction Volume
+  metric_aliases: []
+  preferred_drill_path: []
+  terminal_dimensions: []
+  disallowed_drill_dimensions: []
+  preferred_chart_types: []
+  derived_metrics: {}
+- id: '3'
+  description: Calculates the average value of transactions.
+  formula: net_sales / orders
+  marts:
+  - gold_sales_daily
+  - gold_store_360
+  required_columns:
+  - net_sales
+  - orders
+  dimensions:
+  - city
+  - region
+  default_grain: monthly
+  pillar_id: customer_experience
+  owner: sales_team
+  display_name: Average Basket Size
+  metric_aliases: []
+  preferred_drill_path: []
+  terminal_dimensions: []
+  disallowed_drill_dimensions: []
+  preferred_chart_types: []
+  derived_metrics: {}
+- id: '6'
+  description: Tracks the frequency of stockouts for key SKUs.
+  formula: COUNT(stockout_risk_flag) / COUNT(sku_id)
+  marts:
+  - gold_inventory_health_daily
+  required_columns:
+  - stockout_risk_flag
+  - sku_id
+  dimensions:
+  - store_id
+  default_grain: daily
+  pillar_id: inventory_management
+  owner: inventory_team
+  display_name: Stockout Rate
+  metric_aliases: []
+  preferred_drill_path: []
+  terminal_dimensions: []
+  disallowed_drill_dimensions: []
+  preferred_chart_types: []
+  derived_metrics: {}
+aliases:
+  revenue: net_sales
+  aov: avg_order_value
+  stockout: stockout_rate
+  repeat_rate: repeat_customer_rate
+derived_metrics:
+  net_realization_rate: sum(net_sales_after_returns)/nullif(sum(gross_sales),0)
+  discount_to_net_ratio: sum(discount_amount)/nullif(sum(net_sales),0)

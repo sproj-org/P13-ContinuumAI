@@ -1,0 +1,22 @@
+strategic_context:
+
+  strengths:
+    - strong_online_growth
+    - high_performing_hero_skus
+
+  weaknesses:
+    - over_reliance_on_few_skus
+    - discount_heavy_selling
+
+  opportunities:
+    - increase_accessory_attach_rate
+    - improve_low_performing_salespeople
+
+  threats:
+    - stockouts_on_high_demand_items
+    - repeated_return_behavior
+
+  thresholds:
+    hero_sku_percentile: 90
+    high_return_rate: 0.12
+    underperforming_store_index: 0.8

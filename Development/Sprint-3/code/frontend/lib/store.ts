@@ -4,7 +4,17 @@ import type { ChartSpecV1 } from './types/chartspec';
 import type { ChatResponse } from './types/chat';
 
 export type DatasetId = string;
-export type WorkspaceTab = 'table-profiling' | 'column-profiling' | 'chart-builder' | 'chat';
+export type WorkspaceTab = 'marts' | 'chart-builder' | 'dashboard';
+
+export interface SavedChart {
+  id: string;
+  title: string;
+  chartSpec: ChartSpecV1;
+  rows: any[];
+  datasetId: string;
+  martId: string;
+  createdAt: string;
+}
 
 export interface AvailableMart {
   id: string;
@@ -45,6 +55,13 @@ export interface SavedPromptsState {
 interface AppState {
   selectedDatasetId: DatasetId;
   setSelectedDatasetId: (datasetId: DatasetId) => void;
+
+  // Saved charts for dashboard
+  savedCharts: SavedChart[];
+  saveChart: (chart: Omit<SavedChart, 'id' | 'createdAt'>) => void;
+  updateChartTitle: (chartId: string, newTitle: string) => void;
+  removeSavedChart: (chartId: string) => void;
+  clearSavedCharts: () => void;
 
   // Dataset selection
   activeDataset: DatasetId | null;
@@ -416,6 +433,31 @@ export const useAppStore = create<AppState>()(
           selectedDatasetId: dataset ?? state.selectedDatasetId,
         })),
 
+      // Saved charts for dashboard
+      savedCharts: [],
+      saveChart: (chart) =>
+        set((state) => ({
+          savedCharts: [
+            ...state.savedCharts,
+            {
+              ...chart,
+              id: `chart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              createdAt: new Date().toISOString(),
+            },
+          ],
+        })),
+      updateChartTitle: (chartId, newTitle) =>
+        set((state) => ({
+          savedCharts: state.savedCharts.map((c) =>
+            c.id === chartId ? { ...c, title: newTitle } : c
+          ),
+        })),
+      removeSavedChart: (chartId) =>
+        set((state) => ({
+          savedCharts: state.savedCharts.filter((c) => c.id !== chartId),
+        })),
+      clearSavedCharts: () => set({ savedCharts: [] }),
+
       // Workspace
       selectedAggregation: null,
       setSelectedAggregation: (table) => set({ selectedAggregation: table, selectedColumn: null }),
@@ -425,7 +467,7 @@ export const useAppStore = create<AppState>()(
       selectedColumn: null,
       setSelectedColumn: (column) => set({ selectedColumn: column }),
 
-      activeTab: 'table-profiling',
+      activeTab: 'marts',
       setActiveTab: (tab) => set({ activeTab: tab }),
 
       // Chart builder

@@ -1,0 +1,15 @@
+strategy_scoring:
+
+  scoring_model:
+    type: weighted_multi_factor
+
+  weights:
+    margin_impact: 0.35
+    revenue_growth_impact: 0.25
+    customer_value_impact: 0.15
+    risk_reduction_impact: 0.15
+    operational_efficiency_impact: 0.10
+
+  guardrails:
+    - if blocked_by_decision_rule == true:
+        final_score = 0

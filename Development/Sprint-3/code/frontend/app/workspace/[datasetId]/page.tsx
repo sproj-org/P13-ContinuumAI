@@ -5,26 +5,23 @@ import { useAuth } from "@/lib/auth-context";
 import { useAppStore, WorkspaceTab } from "@/lib/store";
 import { useAggregations } from "@/lib/hooks";
 import { useRouter, useParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Database,
-  Table2,
-  Columns3,
   BarChart3,
-  MessageSquare,
+  LayoutGrid,
   ArrowLeft,
-  LogOut,
+  Sparkles,
 } from "lucide-react";
 
 // Tab components
-import { TableProfilingTab, ColumnProfilingTab, ChartBuilderTab, ChatPanel } from "@/components/workspace";
+import { MartsTab, ChartBuilderTab, DashboardTab, NumiChatbot } from "@/components/workspace";
 
 const tabs: { id: WorkspaceTab; label: string; icon: React.ReactNode }[] = [
-  { id: "table-profiling", label: "Table Profiling", icon: <Table2 className="w-4 h-4" /> },
-  { id: "column-profiling", label: "Column Profiling", icon: <Columns3 className="w-4 h-4" /> },
+  { id: "marts", label: "Profiling", icon: <Database className="w-4 h-4" /> },
   { id: "chart-builder", label: "Chart Builder", icon: <BarChart3 className="w-4 h-4" /> },
-  { id: "chat", label: "Chat", icon: <MessageSquare className="w-4 h-4" /> },
+  { id: "dashboard", label: "Dashboard", icon: <LayoutGrid className="w-4 h-4" /> },
 ];
 
 function WorkspaceContent() {
@@ -32,6 +29,7 @@ function WorkspaceContent() {
   const router = useRouter();
   const params = useParams();
   const datasetId = params.datasetId as string;
+  const [isNumiOpen, setIsNumiOpen] = useState(false);
 
   const {
     activeTab,
@@ -85,41 +83,44 @@ function WorkspaceContent() {
     router.push("/dashboard");
   };
 
+  // Trigger window resize when Numi opens/closes to make charts resize properly
+  useEffect(() => {
+    window.dispatchEvent(new Event('resize'));
+  }, [isNumiOpen]);
+
   const renderTabContent = () => {
     switch (activeTab) {
-      case "table-profiling":
-        return <TableProfilingTab />;
-      case "column-profiling":
-        return <ColumnProfilingTab />;
+      case "marts":
+        return <MartsTab />;
       case "chart-builder":
         return <ChartBuilderTab />;
-      case "chat":
-        return <ChatPanel />;
+      case "dashboard":
+        return <DashboardTab />;
       default:
-        return <TableProfilingTab />;
+        return <MartsTab />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#060010]">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/20 to-violet-50/30 relative">
       {/* Nav */}
-      <nav className="border-b border-white/10 bg-[#060010]/80 backdrop-blur-sm sticky top-0 z-50">
+      <nav className="border-b border-indigo-100 bg-gradient-to-r from-white via-indigo-50/30 to-violet-50/20 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
         <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-14">
             <div className="flex items-center gap-4">
               <button
                 onClick={handleBack}
-                className="flex items-center gap-1 text-gray-400 hover:text-white transition-colors"
+                className="flex items-center gap-1 text-slate-600 hover:text-[#4f46e5] transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-white font-medium font-[family-name:var(--font-special-gothic)]">ContinuumAi</span>
-                  <span className="text-gray-600">/</span>
+                  <span className="text-slate-900 font-medium font-[family-name:var(--font-special-gothic)]">ContinuumAi</span>
+                  <span className="text-slate-300">/</span>
                   <div className="flex items-center gap-2">
-                    <Database className="w-4 h-4 text-[#5237ff]" />
-                    <span className="text-[#5237ff] font-medium capitalize">
+                    <Database className="w-4 h-4 text-[#4f46e5]" />
+                    <span className="text-[#4f46e5] font-medium capitalize">
                       {selectedDatasetId || datasetId}
                     </span>
                   </div>
@@ -135,8 +136,8 @@ function WorkspaceContent() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
                     activeTab === tab.id
-                      ? "bg-[#5237ff]/20 text-[#5237ff] border border-[#5237ff]/30"
-                      : "text-gray-400 hover:text-white hover:bg-white/5"
+                      ? "bg-gradient-to-r from-indigo-100 to-violet-100 text-[#4f46e5] border border-indigo-200 shadow-sm"
+                      : "text-slate-600 hover:text-[#4f46e5] hover:bg-indigo-50/50"
                   }`}
                 >
                   {tab.icon}
@@ -146,12 +147,12 @@ function WorkspaceContent() {
             </div>
 
             <div className="flex items-center gap-4">
-              <span className="text-gray-400 text-sm">{user?.username}</span>
               <button
-                onClick={logout}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
+                onClick={() => setIsNumiOpen(!isNumiOpen)}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-gradient-to-r from-[#4f46e5] to-indigo-600 rounded-lg hover:from-indigo-600 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg"
               >
-                <LogOut className="w-4 h-4" />
+                <Sparkles className="w-4 h-4" />
+                <span>Ask Numi</span>
               </button>
             </div>
           </div>
@@ -164,10 +165,15 @@ function WorkspaceContent() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
-        className="h-[calc(100vh-3.5rem)]"
+        className={`h-[calc(100vh-3.5rem)] transition-all duration-100 ${
+          isNumiOpen ? "mr-96" : "mr-0"
+        }`}
       >
         {renderTabContent()}
       </motion.main>
+
+      {/* Numi Chatbot Sidebar */}
+      <NumiChatbot isOpen={isNumiOpen} onClose={() => setIsNumiOpen(false)} />
     </div>
   );
 }

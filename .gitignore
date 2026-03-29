@@ -50,6 +50,19 @@ coverage.xml
 
 # Environments
 .env
+.env.*
+<<<<<<< HEAD
+**/.env
+**/.env.*
+!.env.example
+=======
+!.env.example
+!**/.env.example
+backend/.env
+frontend/.env
+**/.env
+**/.env.*
+>>>>>>> 7599888825e1aa7a1658e7d3beb0d95f793251d2
 .venv
 env/
 venv/
@@ -57,6 +70,11 @@ ENV/
 env.bak/
 venv.bak/
 venev/
+
+# Secrets / credentials
+*.pem
+*_service_account*.json
+**/service_account*.json
 
 # VS Code
 .vscode/

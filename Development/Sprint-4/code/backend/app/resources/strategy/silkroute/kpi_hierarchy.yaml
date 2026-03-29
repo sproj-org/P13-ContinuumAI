@@ -1,0 +1,291 @@
+kpis:
+  north_star:
+    id: NS1
+    name: Profitable_Revenue_Growth
+    formula: revenue * gross_margin_percentage
+    description: Grow revenue while improving margin quality and lowering operational risk.
+
+  revenue_metrics:
+    - id: net_sales_growth
+      name: Net_Sales_Growth_Index
+      formula: sum(last_28d_net_sales)/nullif(sum(prev_28d_net_sales),0)
+      tags:
+        - revenue
+        - growth
+        - store
+      related_fields:
+        - region
+        - city
+        - store_type
+        - store_id
+
+    - id: gross_margin_proxy
+      name: Gross_Margin_Proxy
+      formula: sum(net_sales_after_returns)/nullif(sum(gross_sales),0)
+      tags:
+        - margin
+        - revenue_quality
+        - channel
+      related_fields:
+        - channel_type
+        - region
+        - city
+        - store_id
+        - category
+        - brand
+        - product_id
+        - sku_id
+
+    - id: discount_rate
+      name: Discount_Rate
+      formula: sum(discount_amount)/nullif(sum(gross_sales),0)
+      tags:
+        - discount
+        - pricing
+        - channel
+      related_fields:
+        - channel_type
+        - region
+        - city
+        - store_id
+        - category
+        - brand
+        - product_id
+        - sku_id
+
+  customer_metrics:
+    - id: repeat_customer_rate
+      name: Repeat_Customer_Activity
+      formula: sum(active_months)/nullif(count(active_months),0)
+      tags:
+        - customer
+        - retention
+        - segment
+      related_fields:
+        - segment
+        - region
+        - city
+        - top_category
+        - customer_id
+
+    - id: customer_churn_risk
+      name: Customer_Churn_Risk
+      formula: sum(return_rate_flag)/nullif(count(return_rate_flag),0)
+      tags:
+        - customer
+        - churn
+        - risk
+      related_fields:
+        - segment
+        - churn_risk_bucket
+        - city
+        - customer_id
+
+  basket_metrics:
+    - id: avg_order_value
+      name: Average_Order_Value
+      formula: avg(avg_order_value)
+      tags:
+        - basket
+        - pricing
+      related_fields:
+        - channel_type
+        - region
+        - city
+        - store_type
+        - store_id
+        - category
+        - brand
+        - product_id
+        - sku_id
+        - sales_date
+
+    - id: units_per_transaction
+      name: Units_Per_Transaction
+      formula: sum(units)/nullif(sum(orders),0)
+      tags:
+        - basket
+        - units
+      related_fields:
+        - channel_type
+        - region
+        - city
+        - store_id
+        - category
+        - brand
+        - product_id
+        - sku_id
+        - sales_date
+
+  inventory_metrics:
+    - id: sell_through_rate
+      name: Sell_Through_Rate
+      formula: sum(units_28d)/nullif(sum(stock_on_hand),0)
+      tags:
+        - inventory
+        - sku
+        - store
+      related_fields:
+        - stockout_risk_flag
+        - store_id
+        - sku_id
+        - snapshot_date
+
+    - id: inventory_turnover
+      name: Inventory_Turnover_Proxy
+      formula: sum(adj_avg_daily_units)/nullif(sum(stock_on_hand),0)
+      tags:
+        - inventory
+        - turnover
+      related_fields:
+        - overstock_flag
+        - store_id
+        - sku_id
+        - snapshot_date
+
+    - id: stockout_rate
+      name: Stockout_Risk_Rate
+      formula: sum(stockout_risk_flag)/nullif(count(stockout_risk_flag),0)
+      tags:
+        - inventory
+        - stockout
+      related_fields:
+        - store_id
+        - sku_id
+        - snapshot_date
+
+  operations_metrics:
+    - id: transactions
+      name: Transactions
+      formula: avg(orders)
+      tags:
+        - transactions
+        - channel
+        - store
+      related_fields:
+        - channel_type
+        - region
+        - city
+        - store_type
+        - store_id
+        - category
+        - brand
+        - product_id
+        - sku_id
+        - sales_date
+
+    - id: return_rate
+      name: Return_Rate
+      formula: sum(returns_amount)/nullif(sum(net_sales),0)
+      tags:
+        - returns
+        - customer_experience
+      related_fields:
+        - channel_type
+        - region
+        - city
+        - store_id
+        - category
+        - brand
+        - product_id
+        - sku_id
+        - sales_date
+
+hierarchy:
+  business_concepts:
+    geography:
+      - region
+      - city
+      - store_type
+      - store_id
+    product:
+      - category
+      - subcategory
+      - brand
+      - product_id
+      - sku_id
+    customer:
+      - segment
+      - churn_risk_bucket
+      - region
+      - city
+      - top_category
+      - customer_id
+    inventory:
+      - stockout_risk_flag
+      - overstock_flag
+      - store_id
+      - sku_id
+      - snapshot_date
+    employee:
+      - role
+      - home_store_id
+      - salesperson_id
+    time:
+      - year
+      - quarter
+      - month
+      - sales_date
+      - snapshot_date
+      - first_purchase_date
+      - first_tx_date
+
+  mart_overrides:
+    gold_sales_daily:
+      default_paths:
+        - [channel_type, region, city, store_type, store_id, category, subcategory, brand, product_id, sku_id, sales_date]
+        - [region, city, store_type, store_id, category, subcategory, brand, product_id, sku_id, sales_date]
+        - [category, subcategory, brand, product_id, sku_id, sales_date]
+      terminal_dimensions:
+        - store_id
+        - sku_id
+        - sales_date
+    gold_store_360:
+      default_paths:
+        - [region, city, store_type, store_id]
+      terminal_dimensions:
+        - store_id
+    gold_product_360:
+      default_paths:
+        - [category, subcategory, brand, product_id, sku_id]
+        - [subcategory, brand, product_id, sku_id]
+      terminal_dimensions:
+        - sku_id
+    gold_customer_360:
+      default_paths:
+        - [segment, churn_risk_bucket, region, city, top_category, customer_id]
+        - [segment, region, city, top_category, customer_id]
+      terminal_dimensions:
+        - customer_id
+    mart_sales:
+      default_paths:
+        - [store_region, store_city, store_type, store_id, subcategory, brand, product_id, sku_id, sales_date]
+        - [customer_segment, customer_region, customer_city, subcategory, brand, product_id, customer_id]
+        - [subcategory, brand, product_id, sku_id, sales_date]
+      terminal_dimensions:
+        - customer_id
+        - sku_id
+        - sales_date
+    mart_customers:
+      default_paths:
+        - [segment, region, city, preferred_subcategory, preferred_brand, customer_id]
+        - [region, city, preferred_subcategory, preferred_brand, customer_id]
+      terminal_dimensions:
+        - customer_id
+    mart_stores:
+      default_paths:
+        - [region, city, store_type, store_id]
+      terminal_dimensions:
+        - store_id
+    gold_inventory_health_daily:
+      default_paths:
+        - [stockout_risk_flag, store_id, sku_id, snapshot_date]
+        - [overstock_flag, store_id, sku_id, snapshot_date]
+      terminal_dimensions:
+        - sku_id
+        - snapshot_date
+    gold_employee_360:
+      default_paths:
+        - [role, home_store_id, salesperson_id]
+      terminal_dimensions:
+        - salesperson_id

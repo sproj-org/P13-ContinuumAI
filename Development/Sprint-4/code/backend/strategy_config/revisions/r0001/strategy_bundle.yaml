@@ -1,0 +1,24 @@
+schema_version: 1
+version: "1.0.0"
+strategic_context:
+  company: "Demo Company"
+  horizon: "12 months"
+  north_star_metric: "net_sales_after_returns"
+  narrative: "Baseline strategy bundle for Sprint-4 Task 2."
+pillars:
+  - id: "growth"
+    description: "Drive profitable growth in core segments."
+    owner: "strategy"
+swot:
+  strengths: []
+  weaknesses: []
+  opportunities: []
+  threats: []
+targets: {}
+decision_rules: []
+scoring_model:
+  weights:
+    kpi_coverage: 0.4
+    rule_readiness: 0.2
+    hierarchy_readiness: 0.2
+    data_readiness: 0.2
