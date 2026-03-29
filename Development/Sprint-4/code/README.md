@@ -1,250 +1,207 @@
-# ContinuumAi
+# ContinuumAI (Sprint 4)
 
-A full-stack data analysis webapp for sales backed by AI. Built with Next.js (frontend) and FastAPI (backend) with PostgreSQL via Supabase.
+Single source of truth for local setup and run instructions for the Sprint 4 codebase.
 
-## 🚀 Quick Start
+## What Is In This Folder
 
-### Prerequisites
+- `backend/`: FastAPI backend with JWT auth, admin/org management, strategy services, dashboards, and chat APIs.
+- `frontend/`: Next.js frontend application.
 
-- **Node.js** (v18+) — [Download](https://nodejs.org/)
-- **Python** (v3.10+) — [Download](https://www.python.org/)
-- **PostgreSQL Database** — We use [Supabase](https://supabase.com/) (free tier available)
+## Prerequisites
 
----
+- Node.js 18+
+- npm
+- Python 3.10+
+- PostgreSQL connection string (Supabase or any compatible Postgres)
 
-### 1. Clone the Repository
+## Quick Start
+
+Run backend and frontend in separate terminals.
+
+### 1. Backend Setup
 
 ```bash
-git clone <repository-url>
-cd code
+cd backend
+python -m venv .venv
 ```
 
-### 2. Backend Setup
+Activate virtual environment:
+
+```powershell
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+```
 
 ```bash
-# Navigate to backend directory
-cd backend
+# macOS/Linux
+source .venv/bin/activate
+```
 
-# Create a virtual environment
-python -m venv venv
+Install dependencies:
 
-# Activate virtual environment
-# On Windows:
-venv\Scripts\activate
-# On macOS/Linux:
-source venv/bin/activate
-
-# Install dependencies
+```bash
 pip install -r requirements.txt
 ```
 
-#### Configure Backend Environment
+Create backend env file from template:
 
-Create a `.env` file in the `backend/` directory:
-
-```env
-# Supabase PostgreSQL Connection
-DATABASE_URL= 
-# JWT Configuration
-JWT_SECRET_KEY=secret
-JWT_ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-# CORS
-FRONTEND_URL=http://localhost:3000
-
+```powershell
+# Windows PowerShell
+Copy-Item .env.example .env
 ```
 
-> **Note:** Get your `DATABASE_URL` from Supabase Dashboard → Settings → Database → Connection string (URI)
+```bash
+# macOS/Linux
+cp .env.example .env
+```
 
-#### Run Backend
+Update `backend/.env` values.
+
+Required for startup:
+
+- `DATABASE_URL`
+- `JWT_SECRET_KEY`
+
+Recommended defaults (already present in `.env.example`):
+
+- `HOST=0.0.0.0`
+- `PORT=8000`
+- `FRONTEND_URL=http://localhost:3000`
+- `ENABLE_DEBUG=0`
+
+LLM-related values:
+
+- `OPENAI_API_KEY` for AI-backed features.
+- Model can be set with either `VIZAGENT_MODEL` or `OPENAI_MODEL`.
+  The backend resolves both to one model setting.
+
+Run backend:
 
 ```bash
-cd backend
 uvicorn app.main:app --reload
 ```
 
-Backend will be available at: `http://localhost:8000`
-API docs at: `http://localhost:8000/docs`
+Backend URLs:
 
----
+- API base: `http://localhost:8000/api`
+- Swagger docs: `http://localhost:8000/docs`
+- Health: `http://localhost:8000/api/health`
 
-### 3. Frontend Setup
+### 2. Frontend Setup
 
 ```bash
-# Navigate to frontend directory (from project root)
 cd frontend
-
-# Install dependencies
 npm install
 ```
 
-#### Configure Frontend Environment
+Create frontend env file from template:
 
-Create a `.env.local` file in the `frontend/` directory:
-
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8000/api
+```powershell
+# Windows PowerShell
+Copy-Item .env.example .env.local
 ```
 
-#### Run Frontend
+```bash
+# macOS/Linux
+cp .env.example .env.local
+```
+
+Set frontend env values:
+
+- `NEXT_PUBLIC_API_URL=http://localhost:8000/api`
+- `NEXT_PUBLIC_ENABLE_DEBUG=0` (optional)
+
+Run frontend:
 
 ```bash
-cd frontend
 npm run dev
 ```
 
-Frontend will be available at: `http://localhost:3000`
+Frontend URL:
 
----
+- `http://localhost:3000`
 
-## 📁 Project Structure
+## Environment Variables Reference
 
-```
-code/
-├── backend/                    # FastAPI backend
-│   ├── app/
-│   │   ├── main.py            # FastAPI app entry point, CORS config
-│   │   ├── api/
-│   │   │   └── auth.py        # Auth endpoints (signup, login, me, verify)
-│   │   ├── core/
-│   │   │   ├── config.py      # Environment settings (Pydantic Settings)
-│   │   │   └── security.py    # JWT tokens, password hashing (bcrypt)
-│   │   ├── db/
-│   │   │   ├── database.py    # SQLAlchemy engine & session
-│   │   │   └── models.py      # User model (SQLAlchemy ORM)
-│   │   └── schemas/
-│   │       └── user.py        # Pydantic schemas (UserCreate, UserLogin, etc.)
-│   ├── requirements.txt       # Python dependencies
-│   └── .env                   # Backend environment variables (create this)
-│
-├── frontend/                   # Next.js frontend
-│   ├── app/
-│   │   ├── layout.tsx         # Root layout with fonts, AuthProvider
-│   │   ├── globals.css        # Global styles, Tailwind imports
-│   │   ├── page.tsx           # Landing page (/)
-│   │   ├── login/
-│   │   │   └── page.tsx       # Login page (/login)
-│   │   ├── signup/
-│   │   │   └── page.tsx       # Signup page (/signup)
-│   │   └── dashboard/
-│   │       └── page.tsx       # Dashboard page (/dashboard) - Protected
-│   ├── components/
-│   │   ├── ElectricBorder.tsx # Animated electric border effect
-│   │   ├── Noise.tsx          # Animated noise background
-│   │   ├── ProtectedRoute.tsx # Auth guard for protected pages
-│   │   ├── TargetCursor.tsx   # Custom animated cursor
-│   │   └── TextType.tsx       # Typewriter text animation
-│   ├── lib/
-│   │   ├── api.ts             # API client for backend communication
-│   │   └── auth-context.tsx   # React context for auth state
-│   ├── package.json           # Node.js dependencies
-│   ├── next.config.ts         # Next.js configuration
-│   ├── tailwind.config.ts     # Tailwind CSS configuration
-│   ├── tsconfig.json          # TypeScript configuration
-│   └── .env.local             # Frontend environment variables (create this)
-│
-└── README.md                   # This file
-```
+### Backend (`backend/.env`)
 
----
+Core:
 
-## 🔐 Authentication Flow
+- `ENV`
+- `HOST`
+- `PORT`
+- `DATABASE_URL`
+- `JWT_SECRET_KEY`
+- `JWT_ALGORITHM`
+- `ACCESS_TOKEN_EXPIRE_MINUTES`
+- `FRONTEND_URL`
+- `CORS_ORIGINS`
+- `ENABLE_DEBUG`
 
-1. **Signup** (`POST /api/auth/signup`)
-   - Accepts: username, email, password, confirm_password
-   - Returns: JWT token + user data
-   - Password is hashed with bcrypt
+LLM:
 
-2. **Login** (`POST /api/auth/login`)
-   - Accepts: username, password
-   - Returns: JWT token + user data
+- `OPENAI_API_KEY`
+- `VIZAGENT_MODEL`
+- `OPENAI_MODEL`
 
-3. **Get Current User** (`GET /api/auth/me`)
-   - Requires: Bearer token in Authorization header
-   - Returns: Current user data
+Minimal alerts (optional feature set):
 
-4. **Verify Token** (`POST /api/auth/verify`)
-   - Requires: Bearer token in Authorization header
-   - Returns: Token validity status
+- `ALERTS_ENABLED`
+- `ALERT_STATE_FILE`
+- `ALERT_MONITOR_LOG`
+- `ALERT_DEFAULT_DATASET_ID`
+- `ALERT_EVENT_SOURCE`
+- `ALERT_EMAIL_TO`
+- `ALERT_EMAIL_FROM`
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_USER`
+- `SMTP_PASSWORD`
+- `SMTP_USE_TLS`
 
----
+### Frontend (`frontend/.env.local`)
 
-## 🎨 Design System
+- `NEXT_PUBLIC_API_URL`
+- `NEXT_PUBLIC_ENABLE_DEBUG`
 
-### Colors
-- **Primary Background:** `#060010` (deep purple/black)
-- **Accent:** `#5237ff` (vibrant purple)
-- **Accent Hover:** `#6347ff` (lighter purple)
+## Auth and Access Model (Current)
 
-### Fonts
-- **Heading:** Special Gothic Expanded One (Google Fonts CDN)
-- **Body:** Geist Sans
-- **Mono:** Geist Mono
+- Public signup is removed.
+- Users are created and managed by admins.
+- Admin APIs are under `/api/admin/*`.
+- Standard user auth endpoints remain under `/api/auth/*` (login, token verification, current user).
 
-### Animations (GSAP)
-- `Noise` — Animated grain background
-- `TargetCursor` — Custom cursor with parallax effect
-- `ElectricBorder` — Animated border around forms
-- `TextType` — Typewriter effect for text
+## OpenAI Fallback Troubleshooting
 
----
+If the app shows OpenAI fallback behavior:
 
-## 🛠 Tech Stack
+1. Check backend logs for `correlation_id` and diagnostic information.
+2. Validate `OPENAI_API_KEY` and selected model.
 
-### Backend
-- **FastAPI** — Modern Python web framework
-- **SQLAlchemy** — ORM for database operations
-- **Pydantic** — Data validation & settings
-- **python-jose** — JWT token handling
-- **bcrypt** — Password hashing
-- **psycopg2-binary** — PostgreSQL adapter
+Common API status mappings:
 
-### Frontend
-- **Next.js 15** — React framework with App Router
-- **React 19** — UI library
-- **TypeScript** — Type safety
-- **Tailwind CSS 4** — Utility-first CSS
-- **GSAP** — Animation library
+- `401` or `403`: invalid or unauthorized API key.
+- `429`: rate limited.
+- `404`: model name is invalid or unavailable.
+- `timeout` or network errors: local network/proxy/firewall/VPN issue.
 
-### Database
-- **PostgreSQL** — Via Supabase
+If `ENABLE_DEBUG=1`, debug endpoint is available:
 
----
+- `GET /api/debug/openai`
 
-## 📝 Development Notes
+Example response fields:
 
-### Adding New API Endpoints
+- `openai_configured`
+- `openai_model`
+- `vizagent_model`
+- `key_fingerprint`
 
-1. Create route in `backend/app/api/`
-2. Add schemas in `backend/app/schemas/`
-3. Include router in `backend/app/main.py`
-4. Add API client method in `frontend/lib/api.ts`
+## Notes
 
-### Adding New Pages
+- Backend reads environment from `backend/.env`.
+- Frontend normalizes API base URLs and supports values with or without trailing `/api`.
+- This file replaces previous split setup docs.
 
-1. Create folder in `frontend/app/`
-2. Add `page.tsx` inside
-3. For protected pages, wrap with `ProtectedRoute` component
+## License
 
-### Database Migrations
-
-Currently using auto-create tables via SQLAlchemy. For production, consider adding Alembic for proper migrations.
-
----
-
-## 🐛 Common Issues
-
-### CORS Errors
-Make sure backend CORS is configured to allow `http://localhost:3000`
-
-### Database Connection Failed
-Check your `DATABASE_URL` in `.env` — ensure Supabase database is accessible
-
-### Token Expired
-JWT tokens expire after 30 minutes by default. User needs to log in again.
-
----
-
-## 📄 License
-
-Private — Internal use only
+Private - Internal use only
