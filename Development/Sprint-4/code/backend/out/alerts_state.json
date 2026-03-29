@@ -2,8 +2,8 @@
   "datasets": {
     "silkroute": {
       "revision": "r0005",
-      "generated_at": "2026-03-27T22:48:25.641878+00:00",
-      "last_run_at": "2026-03-27T22:48:29.473135+00:00",
+      "generated_at": "2026-03-29T16:39:37.787249+00:00",
+      "last_run_at": "2026-03-29T16:39:37.790503+00:00",
       "severity_by_signal": {
         "signal_net_sales_growth": "critical",
         "rule_rule_growth_guardrail": "critical",
