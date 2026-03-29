@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress  # This YAML defines an Ingress, which manages external HTTP/HTTPS access to services inside the cluster
+metadata:
+  name: continuum-ingress
+  namespace: continuum-app   # Only services in the same namespace can be targeted by this Ingress.
+spec:      # Defines the desired behavior of the Ingress.
+  ingressClassName: nginx   # Tells Kubernetes to use the NGINX Ingress Controller
+  rules:   # This section defines routing rules for incoming requests. Each rule can match a host and paths inside that host.
+    - http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-svc
+                port:
+                  number: 8000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-svc
+                port:
+                  number: 80

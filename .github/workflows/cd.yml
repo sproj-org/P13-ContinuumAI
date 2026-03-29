@@ -14,7 +14,7 @@ on:
     workflows: ["CI-GHCR"]
     types:
       - completed
-    branches: [main, Sprint3_Final]
+    branches: [main, sprint4v1]
 
 # ─────────────────────────────────────────────
 # PERMISSIONS
@@ -28,7 +28,7 @@ permissions:
 # ─────────────────────────────────────────────
 env:
   GHCR_IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}
-  K8S_PATH: Development/Sprint-3/k8s  # Path to k8s manifests from repo root
+  K8S_PATH: Development/Sprint-4/k8s  # Path to k8s manifests from repo root
 
 # ─────────────────────────────────────────────
 # JOBS

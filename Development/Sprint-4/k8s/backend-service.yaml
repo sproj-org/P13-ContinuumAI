@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service  # The type of Kubernetes object being defined
+metadata:
+  name: backend-svc
+  namespace: continuum-app
+spec:           # Defines the desired state of the service.
+  type: ClusterIP
+  selector:     # Tells the service which pods it should route traffic to.
+    app: backend
+  ports:
+    - name: http # Optional, just a name for the port. Useful if a service exposes multiple ports.
+      port: 8000
+      targetPort: 8000

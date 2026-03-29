@@ -3,7 +3,7 @@
 # ============================================
 # This workflow automatically builds Docker images 
 # and pushes them to GitHub Container Registry (GHCR)
-# whenever you push to the main or sprint4v1 branch.
+# whenever you push to the main branch.
 
 name: CI-GHCR
 
@@ -13,9 +13,9 @@ name: CI-GHCR
 on:
   push:
     branches: [main, sprint4v1]  # Runs on main OR sprint4v1 branch
-    paths:                           # Only triggers if these folders change
-      - Development/Sprint-4/code/** # Backend or frontend code changes
-      - .github/workflows/**         # Workflow file changes
+    paths:                  # Only triggers if these folders change
+      - code/**             # Backend or frontend code changes
+      - .github/workflows/** # Workflow file changes
 
 # ─────────────────────────────────────────────
 # PERMISSIONS: What can this workflow do?
@@ -69,17 +69,15 @@ jobs:
           docker buildx build \
             -t $GHCR_IMAGE_PREFIX/backend:${{ github.sha }} \
             -t $GHCR_IMAGE_PREFIX/backend:latest \
-            --push Development/Sprint-4/code/backend
+            --push code/backend
 
       # ───────────────────────────────────────
       # Step 5: Build & Push Frontend Image
       # Creates: ghcr.io/YOUR_USERNAME/frontend:latest
-      # Pass API URL as build arg for Next.js
       # ───────────────────────────────────────
       - name: Build & Push Frontend
         run: |
           docker buildx build \
-            --build-arg NEXT_PUBLIC_API_URL=/api \
             -t $GHCR_IMAGE_PREFIX/frontend:${{ github.sha }} \
             -t $GHCR_IMAGE_PREFIX/frontend:latest \
-            --push Development/Sprint-4/code/frontend
+            --push code/frontend
