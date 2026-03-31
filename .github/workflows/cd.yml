@@ -1,67 +1,35 @@
-# ============================================
-# CD Workflow for ContinuumAI - Deploy to OKE
-# ============================================
-# This workflow automatically deploys to Oracle Kubernetes Engine (OKE)
-# after the CI workflow completes successfully.
-
 name: CD - Deploy to OKE
-
-# ─────────────────────────────────────────────
-# TRIGGER: Runs after CI-GHCR workflow completes
-# ─────────────────────────────────────────────
 on:
   workflow_run:
     workflows: ["CI-GHCR"]
     types:
       - completed
-    branches: [main, Sprint3_Final]
+    branches: [main]
 
-# ─────────────────────────────────────────────
-# PERMISSIONS
-# ─────────────────────────────────────────────
 permissions:
-  contents: read   # Can read repository files (needed for checkout)
-  packages: read   # Can pull Docker images from GHCR
+  contents: read
+  packages: read
 
-# ─────────────────────────────────────────────
-# ENVIRONMENT VARIABLES
-# ─────────────────────────────────────────────
 env:
   GHCR_IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}
-  K8S_PATH: Development/Sprint-3/k8s  # Path to k8s manifests from repo root
+  K8S_PATH: Development/Sprint-4/k8s
 
-# ─────────────────────────────────────────────
-# JOBS
-# ─────────────────────────────────────────────
 jobs:
   deploy:
-    # Only run if CI was successful
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
     runs-on: ubuntu-latest
 
     steps:
-      # ───────────────────────────────────────
-      # Step 1: Checkout Repository
-      # Checkout the branch that triggered the CI workflow
-      # ───────────────────────────────────────
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_branch }}
 
-      # ───────────────────────────────────────
-      # Step 2: Install OCI CLI
-      # Downloads and installs Oracle Cloud Infrastructure CLI
-      # ───────────────────────────────────────
       - name: Install OCI CLI
         run: |
           curl -L https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh | bash -s -- --accept-all-defaults
           echo "$HOME/bin" >> $GITHUB_PATH
 
-      # ───────────────────────────────────────
-      # Step 3: Configure OCI Credentials
-      # Sets up authentication with Oracle Cloud
-      # ───────────────────────────────────────
       - name: Configure OCI
         run: |
           mkdir -p ~/.oci
@@ -76,10 +44,6 @@ jobs:
 
           chmod 600 ~/.oci/oci_api_key.pem
 
-      # ───────────────────────────────────────
-      # Step 4: Get Kubeconfig for OKE Cluster
-      # Downloads cluster credentials to run kubectl commands
-      # ───────────────────────────────────────
       - name: Get kubeconfig
         run: |
           mkdir -p $HOME/.kube
@@ -94,45 +58,36 @@ jobs:
       - name: Set KUBECONFIG environment
         run: echo "KUBECONFIG=$HOME/.kube/config" >> $GITHUB_ENV
 
-      # ───────────────────────────────────────
-      # Step 5: Verify Cluster Connectivity
-      # ───────────────────────────────────────
       - name: Verify cluster connectivity
         run: |
           kubectl get nodes
           kubectl get namespaces
 
-      # ───────────────────────────────────────
-      # Step 6: Create Namespace
-      # ───────────────────────────────────────
       - name: Create namespace
-        run: kubectl create namespace continuum-app || echo "Namespace already exists"
+        run: kubectl apply -f $K8S_PATH/namespace.yaml
 
-      # ───────────────────────────────────────
-      # Step 7: Create GHCR Pull Secret
-      # Allows Kubernetes to pull images from GitHub Container Registry
-      # ───────────────────────────────────────
       - name: Create image pull secret
         run: |
           kubectl create secret docker-registry ghcr-secret \
             --docker-server=ghcr.io \
             --docker-username=${{ secrets.GHCR_USERNAME }} \
             --docker-password=${{ secrets.GHCR_PAT }} \
-            -n continuum-app || echo "Secret already exists"
+            -n continuum-app \
+            --dry-run=client -o yaml | kubectl apply -f -
 
-      # ───────────────────────────────────────
-      # Step 8: Create App Secrets (Database URL, JWT)
-      # ───────────────────────────────────────
       - name: Create app secrets
         run: |
           kubectl create secret generic app-secrets \
             --from-literal=DATABASE_URL="${{ secrets.DATABASE_URL }}" \
             --from-literal=JWT_SECRET_KEY="${{ secrets.JWT_SECRET_KEY }}" \
-            -n continuum-app || echo "Secret already exists"
+            --from-literal=OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" \
+            --from-literal=ALERT_EMAIL_TO="${{ secrets.ALERT_EMAIL_TO }}" \
+            --from-literal=ALERT_EMAIL_FROM="${{ secrets.ALERT_EMAIL_FROM }}" \
+            --from-literal=SMTP_USER="${{ secrets.SMTP_USER }}" \
+            --from-literal=SMTP_PASSWORD="${{ secrets.SMTP_PASSWORD }}" \
+            -n continuum-app \
+            --dry-run=client -o yaml | kubectl apply -f -
 
-      # ───────────────────────────────────────
-      # Step 9: Deploy Backend
-      # ───────────────────────────────────────
       - name: Deploy Backend
         run: |
           kubectl apply -f $K8S_PATH/backend-deployment.yaml -n continuum-app
@@ -140,9 +95,6 @@ jobs:
           kubectl rollout status deployment/backend -n continuum-app --timeout=300s
           kubectl apply -f $K8S_PATH/backend-service.yaml -n continuum-app
 
-      # ───────────────────────────────────────
-      # Step 10: Deploy Frontend
-      # ───────────────────────────────────────
       - name: Deploy Frontend
         run: |
           kubectl apply -f $K8S_PATH/frontend-deployment.yaml -n continuum-app
@@ -150,9 +102,6 @@ jobs:
           kubectl rollout status deployment/frontend -n continuum-app --timeout=300s
           kubectl apply -f $K8S_PATH/frontend-service.yaml -n continuum-app
 
-      # ───────────────────────────────────────
-      # Step 11: Install NGINX Ingress Controller
-      # ───────────────────────────────────────
       - name: Install NGINX Ingress Controller
         run: |
           kubectl get namespace ingress-nginx || \
@@ -165,17 +114,11 @@ jobs:
           echo "Waiting for Ingress Controller LoadBalancer IP..."
           sleep 30
 
-      # ───────────────────────────────────────
-      # Step 12: Apply Ingress Rules
-      # ───────────────────────────────────────
       - name: Apply ingress
         run: |
           kubectl apply -f $K8S_PATH/ingress.yaml -n continuum-app
           kubectl get ingress -n continuum-app
 
-      # ───────────────────────────────────────
-      # Step 13: Show Deployment Info
-      # ───────────────────────────────────────
       - name: Show deployment status
         run: |
           echo "=== Pods ==="
