@@ -1,21 +1,28 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
-import { useAppStore } from "@/lib/store";
-import type { ChatTurn, ChatThreadState, ChatMode } from "@/lib/store";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useChatThreads, useDeleteChatThread, useUpsertChatThread } from "@/lib/hooks";
 import type { ChartSpecV1 } from "@/lib/types/chartspec";
-import { useChatThreads, useUpsertChatThread, useDeleteChatThread } from "@/lib/hooks";
+import { useAppStore, type ChatMode, type ChatThreadState, type ChatTurn } from "@/lib/store";
+import {
+  buildChatThreadSnapshots,
+  diffChatThreadSnapshots,
+  indexChatThreadSnapshots,
+  mergeHydratedChatThreads,
+  shouldEnableChatSync,
+  type ChatThreadSnapshot,
+} from "@/lib/chat-sync-core";
 
-/**
- * Bidirectional sync between Zustand chat state and the backend.
- *
- * 1. On mount  → fetch all threads from DB → hydrate Zustand store.
- * 2. On change → debounce-upsert the affected thread(s) back to DB.
- * 3. On clear  → delete the thread from DB.
- *
- * Drop this hook once inside the workspace page and forget about it.
- */
-export function useChatSync() {
+interface UseChatSyncOptions {
+  enabled?: boolean;
+}
+
+function toSnapshotThreadKeyMap(threads: ReadonlyArray<ChatThreadSnapshot>) {
+  return indexChatThreadSnapshots(threads);
+}
+
+export function useChatSync(options: UseChatSyncOptions = {}) {
+  const enabled = shouldEnableChatSync(options.enabled ?? true);
   const {
     chatTurnsByKey,
     chatStateByKey,
@@ -25,93 +32,175 @@ export function useChatSync() {
     hydrateChatThreads,
   } = useAppStore();
 
-  // ── Backend hooks ──────────────────────────────────────
-  const { data: backendThreads } = useChatThreads();
+  const localThreads = useMemo(
+    () =>
+      buildChatThreadSnapshots({
+        chatTurnsByKey,
+        chatStateByKey,
+        lastChartSpecByKey,
+        savedPromptsByKey,
+        chatMode,
+      }),
+    [chatMode, chatStateByKey, chatTurnsByKey, lastChartSpecByKey, savedPromptsByKey],
+  );
+  const localThreadMap = useMemo(() => toSnapshotThreadKeyMap(localThreads), [localThreads]);
+
+  const { data: backendThreads = [], isFetched } = useChatThreads({ enabled });
   const upsertMutation = useUpsertChatThread();
   const deleteMutation = useDeleteChatThread();
 
-  // Track whether we've done the initial hydration so we don't
-  // keep overwriting local edits every time the query refetches.
   const hydratedRef = useRef(false);
-
-  // Skip the very first sync-back that fires right after hydration
-  // (it would just re-upload the same data we just fetched).
   const skipNextSyncRef = useRef(false);
-
-  // Keep a snapshot of keys we know exist so we can detect deletions.
-  const prevKeysRef = useRef<Set<string>>(new Set());
-
-  // ── 1. Hydrate store from backend on first fetch ──────
-  useEffect(() => {
-    if (!backendThreads || hydratedRef.current) return;
-    hydratedRef.current = true;
-    skipNextSyncRef.current = true;
-
-    const threads = backendThreads.map((t) => ({
-      thread_key: t.thread_key,
-      turns: t.turns as unknown as ChatTurn[],
-      chat_state: t.chat_state as unknown as ChatThreadState | null,
-      last_chart_spec: t.last_chart_spec as unknown as ChartSpecV1 | null,
-      saved_prompts: t.saved_prompts,
-      chat_mode: (t.chat_mode || "auto") as ChatMode,
-    }));
-
-    // ALWAYS hydrate — even when empty — so stale local data from a
-    // previous user's session is wiped and the DB stays source-of-truth.
-    hydrateChatThreads(threads);
-
-    // Seed prevKeys
-    prevKeysRef.current = new Set(threads.map((t) => t.thread_key));
-  }, [backendThreads, hydrateChatThreads]);
-
-  // ── 2. Debounced sync back to backend ─────────────────
+  const prevSnapshotRef = useRef<Record<string, ChatThreadSnapshot>>({});
+  const dirtyKeysRef = useRef<Set<string>>(new Set());
+  const deletedKeysRef = useRef<Set<string>>(new Set());
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wasEnabledRef = useRef(enabled);
 
-  const syncToBackend = useCallback(() => {
-    const currentKeys = new Set(Object.keys(chatTurnsByKey));
+  const backendSnapshots = useMemo<ChatThreadSnapshot[]>(
+    () =>
+      backendThreads.map((thread) => ({
+        thread_key: thread.thread_key,
+        turns: thread.turns,
+        chat_state: thread.chat_state,
+        last_chart_spec: thread.last_chart_spec,
+        saved_prompts: thread.saved_prompts,
+        chat_mode: thread.chat_mode || "auto",
+      })),
+    [backendThreads],
+  );
 
-    // Detect deleted keys → delete from backend
-    for (const prevKey of prevKeysRef.current) {
-      if (!currentKeys.has(prevKey)) {
-        deleteMutation.mutate(prevKey);
-      }
+  const flushPendingSync = useCallback(() => {
+    if (!hydratedRef.current) {
+      return;
     }
 
-    // Upsert all current threads
-    for (const key of currentKeys) {
-      const turns = chatTurnsByKey[key];
-      // Skip empty threads (no turns yet)
-      if (!turns || turns.length === 0) continue;
+    const deletedKeys = Array.from(deletedKeysRef.current);
+    const dirtyKeys = Array.from(dirtyKeysRef.current);
 
+    deletedKeysRef.current.clear();
+    dirtyKeysRef.current.clear();
+
+    for (const threadKey of deletedKeys) {
+      deleteMutation.mutate(threadKey);
+    }
+
+    for (const threadKey of dirtyKeys) {
+      const thread = localThreadMap[threadKey];
+      if (!thread || thread.turns.length === 0) {
+        continue;
+      }
       upsertMutation.mutate({
-        thread_key: key,
-        turns: turns as unknown as Record<string, unknown>[],
-        chat_state: (chatStateByKey[key] ?? null) as unknown as Record<string, unknown> | null,
-        last_chart_spec: (lastChartSpecByKey[key] ?? null) as unknown as Record<string, unknown> | null,
-        saved_prompts: savedPromptsByKey[key] ?? [],
-        chat_mode: chatMode,
+        thread_key: thread.thread_key,
+        turns: thread.turns as Record<string, unknown>[],
+        chat_state: thread.chat_state,
+        last_chart_spec: thread.last_chart_spec,
+        saved_prompts: thread.saved_prompts,
+        chat_mode: thread.chat_mode,
       });
     }
-
-    prevKeysRef.current = currentKeys;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chatTurnsByKey, chatStateByKey, lastChartSpecByKey, savedPromptsByKey, chatMode]);
+  }, [deleteMutation, localThreadMap, upsertMutation]);
 
   useEffect(() => {
-    // Don't sync until initial hydration is done
-    if (!hydratedRef.current) return;
+    if (!enabled || !isFetched || hydratedRef.current) {
+      return;
+    }
 
-    // Skip the sync that fires right after hydration (no real changes)
+    const mergedThreads = mergeHydratedChatThreads({
+      localThreads,
+      remoteThreads: backendSnapshots,
+    });
+
+    hydratedRef.current = true;
+    skipNextSyncRef.current = true;
+    prevSnapshotRef.current = toSnapshotThreadKeyMap(mergedThreads);
+    dirtyKeysRef.current.clear();
+    deletedKeysRef.current.clear();
+
+    hydrateChatThreads(
+      mergedThreads.map((thread) => ({
+        thread_key: thread.thread_key,
+        turns: thread.turns as ChatTurn[],
+        chat_state: (thread.chat_state as ChatThreadState | null) ?? null,
+        last_chart_spec: (thread.last_chart_spec as ChartSpecV1 | null) ?? null,
+        saved_prompts: thread.saved_prompts,
+        chat_mode: (thread.chat_mode === "chart" || thread.chat_mode === "explain" ? thread.chat_mode : "auto") as ChatMode,
+      })),
+    );
+  }, [backendSnapshots, enabled, hydrateChatThreads, isFetched, localThreads]);
+
+  useEffect(() => {
+    if (!hydratedRef.current) {
+      return;
+    }
+
+    const diff = diffChatThreadSnapshots(prevSnapshotRef.current, localThreadMap);
+    if (diff.dirtyKeys.length === 0 && diff.deletedKeys.length === 0) {
+      return;
+    }
+
+    for (const threadKey of diff.deletedKeys) {
+      deletedKeysRef.current.add(threadKey);
+      dirtyKeysRef.current.delete(threadKey);
+    }
+
+    for (const threadKey of diff.dirtyKeys) {
+      dirtyKeysRef.current.add(threadKey);
+      deletedKeysRef.current.delete(threadKey);
+    }
+
+    prevSnapshotRef.current = localThreadMap;
+  }, [localThreadMap]);
+
+  useEffect(() => {
+    if (!enabled || !hydratedRef.current) {
+      return;
+    }
+
     if (skipNextSyncRef.current) {
       skipNextSyncRef.current = false;
       return;
     }
 
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(syncToBackend, 1500); // 1.5s debounce
+    if (dirtyKeysRef.current.size === 0 && deletedKeysRef.current.size === 0) {
+      return;
+    }
+
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null;
+      flushPendingSync();
+    }, 1500);
 
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
     };
-  }, [syncToBackend]);
+  }, [enabled, flushPendingSync, localThreadMap]);
+
+  useEffect(() => {
+    if (wasEnabledRef.current && !enabled) {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      flushPendingSync();
+    }
+    wasEnabledRef.current = enabled;
+  }, [enabled, flushPendingSync]);
+
+  useEffect(
+    () => () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      flushPendingSync();
+    },
+    [flushPendingSync],
+  );
 }

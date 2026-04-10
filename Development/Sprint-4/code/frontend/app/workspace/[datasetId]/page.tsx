@@ -3,7 +3,6 @@
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAppStore, WorkspaceTab } from "@/lib/store";
 import { useAggregations } from "@/lib/hooks";
-import { useChatSync } from "@/lib/useChatSync";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect } from "react";
@@ -46,9 +45,6 @@ function WorkspaceContent() {
     setVizAgentOpen,
   } = useAppStore();
   const { data: aggregationsData } = useAggregations(selectedDatasetId);
-
-  // Bidirectional sync: hydrate chat state from DB + debounced write-back
-  useChatSync();
 
   // Set active dataset on mount
   useEffect(() => {

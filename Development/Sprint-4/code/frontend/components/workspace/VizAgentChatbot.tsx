@@ -38,6 +38,7 @@ import { buildAnalysisFocusContext, buildChartFocusContext, contextualPromptSugg
 import { renderChart } from "@/components/workspace/renderChart";
 import MarkdownMessage from "@/components/common/MarkdownMessage";
 import { useSavedCharts, useStrategyKpis } from "@/lib/hooks";
+import { useChatSync } from "@/lib/useChatSync";
 import { attachChartSemanticContext, resolveChartTitle } from "@/lib/chart-display";
 import { createChartBuilderSeed } from "@/lib/chart-builder-seed";
 import { getMartDrillAdvisory } from "@/lib/mart-drill-utils";
@@ -97,6 +98,8 @@ type ChartPreviewState = {
 };
 
 export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
+  useChatSync({ enabled: isOpen });
+
   const params = useParams<{ datasetId: string }>();
   const {
     selectedDatasetId,
