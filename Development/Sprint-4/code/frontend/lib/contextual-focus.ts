@@ -262,11 +262,10 @@ export function contextualPromptSuggestions(focus: ChatFocusContext): ChatQuickP
     return [
       prompt("What happened after this drill?", "What happened after this drill?", "follow_up", "explain", focus, {
         answer_mode: "what_happened",
-        artifact_action: "chart_change",
+        artifact_action: "chart_delta",
       }),
       prompt("Which categories are driving this view?", "Which categories are driving this view?", "follow_up", "explain", focus, {
         answer_mode: "diagnose",
-        artifact_action: "chart_change",
       }),
       prompt("What should I drill into next?", "What should I drill into next?", "drill", "guidance", focus, {
         answer_mode: "drill_priority",
@@ -282,7 +281,7 @@ export function contextualPromptSuggestions(focus: ChatFocusContext): ChatQuickP
     }),
     prompt("What happened here?", "What happened here?", "follow_up", "explain", focus, {
       answer_mode: "what_happened",
-      artifact_action: "chart_change",
+      artifact_action: "chart_delta",
     }),
     prompt("What should I look at next?", "What should I look at next?", "follow_up", "guidance", focus, {
       answer_mode: "next_best_action",

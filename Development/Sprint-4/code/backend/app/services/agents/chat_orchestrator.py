@@ -111,6 +111,94 @@ _ANALYTICS_HINT_TOKENS = [
 ]
 
 _OFF_TOPIC_TOKENS = ["poem", "song", "lyrics", "novel", "haiku", "joke", "recipe"]
+_ARTIFACT_REFERENCE_TOKENS = [
+    "this chart",
+    "current chart",
+    "this view",
+    "current view",
+    "this artifact",
+    "current artifact",
+    "this result",
+    "current result",
+    "this kpi",
+    "current kpi",
+    "this mart",
+    "current mart",
+    "this dashboard",
+    "current dashboard",
+    "after this drill",
+    "here",
+]
+_EXPLAIN_DIRECTIVE_TOKENS = [
+    "explain",
+    "interpret",
+    "walk me through",
+    "help me understand",
+    "describe",
+    "summarize",
+]
+_EXPLICIT_CHART_INTENT_PREFIXES = (
+    "show ",
+    "plot ",
+    "chart ",
+    "graph ",
+    "visualize ",
+    "compare ",
+    "break down ",
+    "break this down ",
+    "group ",
+    "trend ",
+    "filter ",
+    "switch ",
+    "change ",
+    "turn ",
+    "convert ",
+)
+_EXPLICIT_CHART_INTENT_PHRASES = [
+    "show me",
+    "plot ",
+    "chart ",
+    "graph ",
+    "visualize ",
+    "switch to ",
+    "turn into ",
+    "turn this chart into",
+    "turn this into",
+    "change this chart",
+    "change the chart",
+    "change this view",
+    "change the view",
+    "break down by",
+    "break this down by",
+    "group by",
+    "group this by",
+    "compare by",
+    "compare this by",
+    "trend by",
+    "trend this by",
+    "filter to",
+    "line chart",
+    "bar chart",
+    "pie chart",
+    "histogram",
+]
+_EXPLICIT_CHART_PATCH_PHRASES = [
+    "turn this chart into",
+    "turn this into",
+    "change this chart",
+    "change the chart",
+    "change this view",
+    "change the view",
+    "switch this chart",
+    "switch the chart",
+    "switch this view",
+    "switch the view",
+    "break this down by",
+    "group this by",
+    "compare this by",
+    "trend this by",
+    "filter this to",
+]
 _STOP_WORDS = {
     "show",
     "please",
@@ -171,11 +259,20 @@ def _contains_any(text: str, needles: list[str]) -> bool:
     return any(needle in text for needle in needles)
 
 
+def _starts_with_any(text: str, prefixes: tuple[str, ...]) -> bool:
+    return any(text.startswith(prefix) for prefix in prefixes)
+
+
 def _pick_matching_field(message: str, fields: list[str]) -> str | None:
     normalized_message = _normalize_text(message)
     for field in fields:
         normalized_field = _normalize_text(field)
         if normalized_field and normalized_field in normalized_message:
+            return field
+    message_tokens = _tokenize(message)
+    for field in fields:
+        field_tokens = _tokenize(field)
+        if field_tokens and field_tokens.issubset(message_tokens):
             return field
     return None
 
@@ -207,6 +304,62 @@ def _is_probable_analytics_request(message: str, context: dict[str, Any]) -> boo
 
     metrics, dimensions, temporals = _extract_fields(context)
     return bool(_pick_matching_field(message, [*metrics, *dimensions, *temporals]))
+
+
+def _refers_to_current_artifact(message: str) -> bool:
+    return _contains_any(_normalize_text(message), _ARTIFACT_REFERENCE_TOKENS)
+
+
+def _is_explicit_explain_request(message: str) -> bool:
+    text = _normalize_text(message)
+    if _contains_any(text, _EXPLAIN_DIRECTIVE_TOKENS):
+        return True
+    if _contains_any(text, ["mean", "means", "represent", "represents"]):
+        return True
+    if _contains_any(text, ["what happened here", "what changed here", "after this drill"]):
+        return True
+    if any(text.startswith(prefix) for prefix in ("what is", "what does", "why")) and _refers_to_current_artifact(message):
+        return True
+    return False
+
+
+def _is_explicit_chart_intent(message: str) -> bool:
+    text = _normalize_text(message)
+    if _is_explicit_explain_request(message):
+        return False
+    if _starts_with_any(text, ("show ", "plot ", "chart ", "graph ", "visualize ")):
+        if not _contains_any(
+            text,
+            [
+                " by ",
+                "over time",
+                "trend",
+                "compare",
+                "break down",
+                "group by",
+                "filter to",
+                "top ",
+                "distribution",
+                "histogram",
+                "this chart",
+                "this view",
+                "monthly",
+                "weekly",
+                "daily",
+                "quarterly",
+                "yearly",
+            ],
+        ):
+            return False
+    if _starts_with_any(text, _EXPLICIT_CHART_INTENT_PREFIXES):
+        return True
+    if _contains_any(text, _EXPLICIT_CHART_INTENT_PHRASES):
+        return True
+    if re.search(r"\bwhat is\b.+\bby\b", text):
+        return True
+    if re.search(r"\bwhat is the trend of\b", text):
+        return True
+    return False
 
 
 def _is_mart_mismatch_request(message: str, context: dict[str, Any]) -> bool:
@@ -375,6 +528,54 @@ def _parse_state(raw_state: ChatState | dict[str, Any] | None) -> ChatState:
         return ChatState.model_validate(raw_state)
     except ValidationError:
         return ChatState()
+
+
+def _resolve_focus_chart_spec(state: ChatState | None, focus: ChatFocusContext | None) -> ChartSpecV1 | None:
+    if state is not None and state.last_chart_spec:
+        try:
+            return state.last_chart_spec if isinstance(state.last_chart_spec, ChartSpecV1) else ChartSpecV1.model_validate(state.last_chart_spec)
+        except ValidationError:
+            pass
+    if focus is not None and focus.chart_spec is not None:
+        return focus.chart_spec
+    return None
+
+
+def _is_explicit_chart_patch_intent(
+    message: str,
+    *,
+    state: ChatState | None,
+    focus: ChatFocusContext | None,
+    quick_prompt: ChatQuickPrompt | None,
+) -> bool:
+    if quick_prompt is not None and quick_prompt.preferred_route == "chart_patch":
+        return True
+    if _resolve_focus_chart_spec(state, focus) is None:
+        return False
+    text = _normalize_text(message)
+    if _contains_any(text, _EXPLICIT_CHART_PATCH_PHRASES):
+        return True
+    if any(token in text for token in ("change", "switch", "turn", "convert", "make")) and _contains_any(
+        text,
+        ["line chart", "bar chart", "pie chart", "histogram", "monthly", "weekly", "daily", "quarterly", "yearly"],
+    ):
+        return True
+    return False
+
+
+def _should_prioritize_chart_intent(
+    *,
+    mode: ChatMode,
+    message: str,
+    state: ChatState | None,
+    focus: ChatFocusContext | None,
+    quick_prompt: ChatQuickPrompt | None,
+) -> bool:
+    if mode == "chart":
+        return True
+    if quick_prompt is not None and quick_prompt.preferred_route in {"chart", "chart_patch"}:
+        return True
+    return _is_explicit_chart_patch_intent(message, state=state, focus=focus, quick_prompt=quick_prompt) or _is_explicit_chart_intent(message)
 
 
 def _focus_table(focus: ChatFocusContext | None) -> str | None:
@@ -1403,26 +1604,42 @@ def _fallback_plan_from_context(
     mode: ChatMode,
     table: str,
     context: dict[str, Any],
+    state: ChatState | None = None,
+    focus: ChatFocusContext | None = None,
+    quick_prompt: ChatQuickPrompt | None = None,
 ) -> ChatPlanUnion:
-    if mode == "explain":
-        return ChatPlanExplain(
-            response_type="explain",
-            message=_context_explain_message(context=context, table=table, user_message=message),
-        )
-
     if _is_obviously_off_topic(message):
         return ChatPlanRefuse(
             response_type="refuse",
             message="I can help with analytics for the selected mart. Ask about metrics, trends, filters, or breakdowns.",
         )
 
-    if mode == "auto" and _contains_any(_normalize_text(message), ["explain", "what is", "what does", "why"]):
+    if mode == "explain" or (mode == "auto" and _is_explicit_explain_request(message)):
         return ChatPlanExplain(
             response_type="explain",
             message=_context_explain_message(context=context, table=table, user_message=message),
         )
 
-    if _is_mart_mismatch_request(message, context):
+    base_chart = _resolve_focus_chart_spec(state, focus)
+    chart_request = _should_prioritize_chart_intent(
+        mode=mode,
+        message=message,
+        state=state,
+        focus=focus,
+        quick_prompt=quick_prompt,
+    )
+
+    patch_plan = _fallback_patch_plan_from_context(
+        message=message,
+        context=context,
+        state=state,
+        focus=focus,
+        quick_prompt=quick_prompt,
+    )
+    if patch_plan is not None:
+        return patch_plan
+
+    if _is_mart_mismatch_request(message, context) and not (chart_request and base_chart is not None):
         alternatives = _suggest_alternative_questions(context)
         suggestions = " "
         if alternatives:
@@ -1444,8 +1661,37 @@ def _fallback_plan_from_context(
     x_field = _pick_matching_field(message, [*dimensions, *temporals])
     time_intent = _has_time_intent(message)
     analytics_request = _is_probable_analytics_request(message, context)
+    normalized_message = _normalize_text(message)
+    should_fill_defaults = bool(
+        chart_request
+        or metric
+        or x_field
+        or time_intent
+        or _contains_any(
+            normalized_message,
+            [
+                " by ",
+                "over time",
+                "trend",
+                "compare",
+                "break down",
+                "group by",
+                "top ",
+                "count",
+                "sum",
+                "average",
+                "avg",
+                "min",
+                "max",
+                "total",
+                "distribution",
+                "histogram",
+                "filter to",
+            ],
+        )
+    )
 
-    if not analytics_request:
+    if not analytics_request and not chart_request:
         return ChatPlanClarify(
             response_type="clarify",
             clarify_id=create_clarify_id(),
@@ -1454,15 +1700,20 @@ def _fallback_plan_from_context(
             options=_build_stage_options("metric", context),
         )
 
-    if not metric and metrics:
+    if not metric and base_chart is not None and chart_request:
+        metric = base_chart.encoding.y[0].field
+    if not x_field and base_chart is not None and chart_request:
+        x_field = base_chart.encoding.x.field
+
+    if not metric and metrics and should_fill_defaults:
         metric = metrics[0]
 
     if not x_field:
-        if time_intent and temporals:
+        if time_intent and temporals and should_fill_defaults:
             x_field = temporals[0]
-        elif dimensions:
+        elif dimensions and should_fill_defaults:
             x_field = dimensions[0]
-        elif temporals:
+        elif temporals and should_fill_defaults:
             x_field = temporals[0]
 
     if metric and x_field:
@@ -1507,6 +1758,79 @@ def _fallback_plan_from_context(
         question=_question_for_stage("x_axis"),
         missing=["x_axis"],
         options=_build_stage_options("x_axis", context, prefer_temporal=time_intent),
+    )
+
+
+def _requested_chart_type(message: str, *, x_field: str | None = None, temporals: list[str] | None = None) -> str | None:
+    normalized = _normalize_text(message)
+    explicit_types = [
+        ("line chart", "line"),
+        ("bar chart", "bar"),
+        ("column chart", "bar"),
+        ("pie chart", "pie"),
+        ("donut chart", "pie"),
+        ("histogram", "histogram"),
+        ("distribution", "histogram"),
+        ("kpi", "kpi"),
+    ]
+    for token, chart_type in explicit_types:
+        if token in normalized:
+            return chart_type
+    if any(token in normalized for token in ("trend", "over time")):
+        return "line"
+    if x_field is not None and temporals is not None and x_field in set(temporals):
+        return "line"
+    return None
+
+
+def _fallback_patch_plan_from_context(
+    *,
+    message: str,
+    context: dict[str, Any],
+    state: ChatState | None,
+    focus: ChatFocusContext | None,
+    quick_prompt: ChatQuickPrompt | None,
+) -> ChatPlanPatch | None:
+    if not _is_explicit_chart_patch_intent(message, state=state, focus=focus, quick_prompt=quick_prompt):
+        return None
+
+    base_chart = _resolve_focus_chart_spec(state, focus)
+    if base_chart is None:
+        return None
+
+    metrics, dimensions, temporals = _extract_fields(context)
+    patch_set: dict[str, Any] = {}
+    requested_metric = _pick_matching_field(message, metrics)
+    requested_x = _pick_matching_field(message, [*dimensions, *temporals])
+    normalized_message = _normalize_text(message)
+
+    if requested_metric and requested_metric != base_chart.encoding.y[0].field:
+        patch_set["encoding.y.0.field"] = requested_metric
+
+    if requested_x and requested_x != base_chart.encoding.x.field:
+        patch_set["encoding.x.field"] = requested_x
+
+    chart_type = _requested_chart_type(message, x_field=requested_x, temporals=temporals)
+    if requested_x and requested_x in set(temporals):
+        chart_type = chart_type or "line"
+    if requested_x and requested_x in set(dimensions) and any(
+        token in normalized_message for token in ("break down", "break this down", "group by", "group this by", "compare by", "compare this by")
+    ):
+        chart_type = chart_type or "bar"
+    if chart_type and chart_type != base_chart.chart.type:
+        patch_set["chart.type"] = chart_type
+
+    if _requested_time_grain(message) and base_chart.encoding.x.field not in set(temporals) and temporals:
+        patch_set.setdefault("encoding.x.field", temporals[0])
+        patch_set.setdefault("chart.type", "line")
+
+    if not patch_set:
+        return None
+
+    return ChatPlanPatch(
+        response_type="chart_patch",
+        patch={"set": patch_set, "unset": [], "add": {}},
+        narrative_style="standard",
     )
 
 
@@ -1901,7 +2225,7 @@ def _artifact_answer_mode(
         if quick_prompt.answer_mode:
             return quick_prompt.answer_mode
         artifact_action = quick_prompt.artifact_action or ""
-        if artifact_action == "chart_change":
+        if artifact_action in {"chart_delta", "chart_change"} and quick_prompt.preferred_route == "explain":
             return "what_happened"
         if artifact_action in {"strategy_alignment", "kpi_strategy_relationship"}:
             return artifact_action
@@ -2396,6 +2720,7 @@ def _maybe_handle_focus_prompt(
     dataset_id: str,
     table: str,
     message: str,
+    mode: ChatMode = "auto",
     state: ChatState,
     focus: ChatFocusContext | None,
     quick_prompt: ChatQuickPrompt | None,
@@ -2427,6 +2752,15 @@ def _maybe_handle_focus_prompt(
         patched = _drill_patch_response(focus)
         if patched is not None:
             return patched
+
+    if _should_prioritize_chart_intent(
+        mode=mode,
+        message=effective_message,
+        state=state,
+        focus=focus,
+        quick_prompt=quick_prompt,
+    ):
+        return None
 
     if focus is not None and answer_mode is not None:
         generated_answer = _generate_artifact_answer(
@@ -2772,9 +3106,20 @@ def _ensure_strategy_alignment_text(message: str, strategy_digest: dict[str, Any
 
 def _build_system_prompt(mode: ChatMode, *, strategy_digest: dict[str, Any], strategy_notice: str | None) -> str:
     mode_clause = {
-        "auto": "Mode is auto. Choose chart, explain, clarify, or refuse based on user intent.",
-        "chart": "Mode is chart. Return chart when possible; use clarify only if execution is blocked.",
-        "explain": "Mode is explain. Return explain only.",
+        "auto": (
+            "Mode is auto. Infer intent from the user request. Prefer chart or chart_patch for prompts that ask to "
+            "show, plot, chart, graph, visualize, switch, change, turn into, compare by, break down by, group by, "
+            "trend by, filter to, or ask for a metric by a grouping field. Use explain only for explicit explanation "
+            "or guidance requests."
+        ),
+        "chart": (
+            "Mode is chart. The user wants a chart or chart update. Strongly prefer chart_patch when modifying an "
+            "existing focused/current chart; otherwise return chart. Use clarify only if a required field is missing."
+        ),
+        "explain": (
+            "Mode is explain. Strongly prefer explain and do not switch to chart unless the request cannot be "
+            "answered without asking for clarification."
+        ),
     }[mode]
     strategy_section = json.dumps(strategy_digest, ensure_ascii=True)
     strategy_notice_line = strategy_notice or "Strategy layer loaded."
@@ -2850,11 +3195,24 @@ def _build_user_prompt(
         "filters": "=, !=, in, between, >, >=, <, <=",
     }
 
-    explain_instructions = (
-        "For explain responses: answer the user's specific question in plain language, "
-        "include what this mart is good for, what it does not contain, "
-        "and provide 3-5 example prompts split between chart and explain styles."
-    )
+    planning_instructions = {
+        "auto": (
+            "Infer the user's intent without defaulting to explanation. "
+            "If they ask for a metric by a dimension/time field, or ask to show, plot, trend, compare, break down, filter, switch, or change a chart, "
+            "return chart or chart_patch. Use explain only when they explicitly ask to explain, interpret, summarize, or guide."
+        ),
+        "chart": (
+            "Return chart or chart_patch only. If focused artifact context includes a chart and the user asks to change, switch, turn, filter, break down, compare, or regroup it, "
+            "prefer chart_patch over explain."
+        ),
+        "explain": (
+            "Return explain only. Answer the user's exact question directly and do not add example prompts, generic prompt suggestions, or chart ideas unless the user explicitly asks for them."
+        ),
+    }[mode]
+    if quick_prompt is not None and quick_prompt.preferred_route in {"chart", "chart_patch"}:
+        planning_instructions += " Quick prompt route is chart-focused and should override generic artifact explanation."
+    elif quick_prompt is not None and quick_prompt.preferred_route == "explain":
+        planning_instructions += " Quick prompt route is explain-focused."
 
     compact_history = [
         {
@@ -2884,7 +3242,7 @@ def _build_user_prompt(
         f"Quick prompt metadata: {json.dumps(quick_prompt_digest, ensure_ascii=True)}\n\n"
         f"ChartSpec summary: {json.dumps(chartspec_summary, ensure_ascii=True)}\n"
         f"Allowed response schema: {json.dumps(response_schema, ensure_ascii=True)}\n\n"
-        f"Additional explain instructions: {explain_instructions}\n\n"
+        f"Planning instructions: {planning_instructions}\n\n"
         "Instruction: choose best available fields from context, use the focused artifact when present, honor quick prompt metadata when provided, do not copy templates verbatim, and avoid unnecessary clarify."
     )
 
@@ -3081,17 +3439,6 @@ def _context_explain_message(
     if not metrics:
         missing_capabilities.append("no numeric measures to aggregate")
 
-    chart_examples: list[str] = []
-    explain_examples: list[str] = [f"Explain what {table} represents"]
-    if metrics and dimensions:
-        chart_examples.append(f"Show {metrics[0]} by {dimensions[0]}")
-    if metrics and temporals:
-        chart_examples.append(f"Trend of {metrics[0]} by {temporals[0]}")
-    if metrics:
-        chart_examples.append(f"Top 10 groups by {metrics[0]}")
-        explain_examples.append(f"What does {metrics[0]} mean?")
-    explain_examples.append("What questions is this mart best suited to answer?")
-
     metric_hint = _join(_take(metrics, 2))
     dimension_hint = _join(_take(dimensions, 2))
     temporal_hint = _join(_take(temporals, 2))
@@ -3119,8 +3466,7 @@ def _context_explain_message(
         f"1) Mart: {table} represents {description}.\n"
         f"2) Best for: {', '.join(_take(good_for, 2)) if good_for else 'summary analytics using its available fields'}.\n"
         f"3) Key fields: {metric_hint or 'measures'}; {dimension_hint or 'dimensions'}; {temporal_hint or 'time fields'}.\n"
-        f"4) Chart ideas: {' | '.join(_take(chart_examples, 2)) if chart_examples else 'Show a metric by a breakdown field'}.\n"
-        f"5) Explain ideas: {' | '.join(_take(explain_examples, 2))}."
+        f"4) Coverage gaps: {_join(_take(missing_capabilities, 2)) or 'none called out in the mart summary'}."
     )
 
 
@@ -3196,6 +3542,7 @@ def run_chat_orchestration(
         dataset_id=dataset_id,
         table=resolved_table,
         message=intent_message,
+        mode=mode,
         state=parsed_state,
         focus=focus,
         quick_prompt=quick_prompt,
@@ -3293,7 +3640,15 @@ def run_chat_orchestration(
                 fallback_reason=fallback_reason,
                 exception_class_name=generation_exception_class,
             )
-        plan = _fallback_plan_from_context(message=message, mode=mode, table=resolved_table, context=context)
+        plan = _fallback_plan_from_context(
+            message=message,
+            mode=mode,
+            table=resolved_table,
+            context=context,
+            state=parsed_state,
+            focus=focus,
+            quick_prompt=quick_prompt,
+        )
 
     plan = _enforce_mode(plan=plan, mode=mode, context=context, table=resolved_table, message=message)
 
@@ -3311,8 +3666,8 @@ def run_chat_orchestration(
         return finalize(chart_response.model_dump(mode="json"))
 
     if isinstance(plan, ChatPlanPatch):
-        last_raw = parsed_state.last_chart_spec
-        if not last_raw:
+        base = _resolve_focus_chart_spec(parsed_state, focus)
+        if base is None:
             return finalize(
                 _default_clarify(
                     "I need an existing chart first. What metric should we chart?",
@@ -3322,7 +3677,6 @@ def run_chat_orchestration(
                 ).model_dump(mode="json")
             )
         try:
-            base = last_raw if isinstance(last_raw, ChartSpecV1) else ChartSpecV1.model_validate(last_raw)
             patched = apply_patch(base, plan.patch)
         except (ValidationError, HTTPException):
             return finalize(
