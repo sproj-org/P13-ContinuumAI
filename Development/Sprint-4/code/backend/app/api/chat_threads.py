@@ -39,25 +39,17 @@ async def list_chat_threads(
     db: Session = Depends(get_db),
 ):
     """List all chat threads for the current user."""
+    user_id = int(current_user.id)
     try:
-        threads = _list_threads(db, user_id=current_user.id)
+        threads = _list_threads(db, user_id=user_id)
     except OperationalError:
         logger.warning(
-            "Chat thread listing failed on the first attempt; retrying once.",
-            extra={"user_id": current_user.id},
+            "Chat thread listing unavailable; returning an empty list so workspace tabs continue loading.",
+            extra={"user_id": user_id},
             exc_info=True,
         )
         invalidate_db_session(db)
-        try:
-            threads = _list_threads(db, user_id=current_user.id)
-        except OperationalError:
-            logger.error(
-                "Chat thread listing unavailable; returning an empty list so workspace tabs continue loading.",
-                extra={"user_id": current_user.id},
-                exc_info=True,
-            )
-            invalidate_db_session(db)
-            return []
+        return []
     return [ChatThreadResponse.from_orm_model(t) for t in threads]
 
 
@@ -68,12 +60,14 @@ async def upsert_chat_thread(
     db: Session = Depends(get_db),
 ):
     """Create or update a chat thread (matched by user + thread_key)."""
+    user_id = int(current_user.id)
+    thread_key_value = data.thread_key
     try:
         thread = (
             db.query(ChatThread)
             .filter(
-                ChatThread.user_id == current_user.id,
-                ChatThread.thread_key == data.thread_key,
+                ChatThread.user_id == user_id,
+                ChatThread.thread_key == thread_key_value,
             )
             .first()
         )
@@ -85,8 +79,8 @@ async def upsert_chat_thread(
             thread.chat_mode = data.chat_mode
         else:
             thread = ChatThread(
-                user_id=current_user.id,
-                thread_key=data.thread_key,
+                user_id=user_id,
+                thread_key=thread_key_value,
                 turns=data.turns,
                 chat_state=data.chat_state,
                 last_chart_spec=data.last_chart_spec,
@@ -100,7 +94,7 @@ async def upsert_chat_thread(
         invalidate_db_session(db)
         logger.warning(
             "Chat thread upsert failed.",
-            extra={"user_id": current_user.id, "thread_key": data.thread_key},
+            extra={"user_id": user_id, "thread_key": thread_key_value},
             exc_info=True,
         )
         raise _chat_persistence_unavailable()
@@ -114,12 +108,14 @@ async def delete_chat_thread(
     db: Session = Depends(get_db),
 ):
     """Delete a single chat thread by key."""
+    user_id = int(current_user.id)
+    thread_key_value = thread_key
     try:
         thread = (
             db.query(ChatThread)
             .filter(
-                ChatThread.user_id == current_user.id,
-                ChatThread.thread_key == thread_key,
+                ChatThread.user_id == user_id,
+                ChatThread.thread_key == thread_key_value,
             )
             .first()
         )
@@ -131,7 +127,7 @@ async def delete_chat_thread(
         invalidate_db_session(db)
         logger.warning(
             "Chat thread delete failed.",
-            extra={"user_id": current_user.id, "thread_key": thread_key},
+            extra={"user_id": user_id, "thread_key": thread_key_value},
             exc_info=True,
         )
         raise _chat_persistence_unavailable()
@@ -143,8 +139,9 @@ async def clear_all_chat_threads(
     db: Session = Depends(get_db),
 ):
     """Clear all chat threads for the current user."""
+    user_id = int(current_user.id)
     try:
-        db.query(ChatThread).filter(ChatThread.user_id == current_user.id).delete(
+        db.query(ChatThread).filter(ChatThread.user_id == user_id).delete(
             synchronize_session=False
         )
         db.commit()
@@ -152,7 +149,7 @@ async def clear_all_chat_threads(
         invalidate_db_session(db)
         logger.warning(
             "Clearing chat threads failed.",
-            extra={"user_id": current_user.id},
+            extra={"user_id": user_id},
             exc_info=True,
         )
         raise _chat_persistence_unavailable()

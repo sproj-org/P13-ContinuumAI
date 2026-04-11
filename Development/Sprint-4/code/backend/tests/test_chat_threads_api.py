@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import datetime, timezone
 from types import SimpleNamespace
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm.exc import DetachedInstanceError
 
 os.environ["DATABASE_URL"] = "sqlite:///./test_chat_threads_api.db"
 os.environ.setdefault("JWT_SECRET_KEY", "test-secret")
@@ -72,30 +72,6 @@ class _BaseFakeDb:
     def handle_delete(self):  # type: ignore[no-untyped-def]
         return 0
 
-
-class _RetryingListDb(_BaseFakeDb):
-    def __init__(self) -> None:
-        super().__init__()
-        self._all_calls = 0
-
-    def handle_all(self):  # type: ignore[no-untyped-def]
-        self._all_calls += 1
-        if self._all_calls == 1:
-            raise _operational_error()
-        return [
-            SimpleNamespace(
-                id=7,
-                thread_key="silkroute:sales",
-                turns=[{"role": "user", "message": "Show sales"}],
-                chat_state=None,
-                last_chart_spec=None,
-                saved_prompts=[],
-                chat_mode="chart",
-                updated_at=datetime(2026, 4, 10, tzinfo=timezone.utc),
-            )
-        ]
-
-
 class _FailingListDb(_BaseFakeDb):
     def handle_all(self):  # type: ignore[no-untyped-def]
         raise _operational_error()
@@ -117,15 +93,29 @@ def _build_client(db) -> TestClient:  # type: ignore[no-untyped-def]
     return TestClient(app)
 
 
-def test_list_chat_threads_retries_once_and_recovers() -> None:
-    client = _build_client(_RetryingListDb())
+class _DetachingUser:
+    def __init__(self, user_id: int) -> None:
+        self._user_id = user_id
+        self._detached = False
 
-    response = client.get("/api/chat-threads")
+    @property
+    def id(self) -> int:
+        if self._detached:
+            raise DetachedInstanceError("User instance is detached")
+        return self._user_id
 
-    assert response.status_code == 200
-    payload = response.json()
-    assert len(payload) == 1
-    assert payload[0]["thread_key"] == "silkroute:sales"
+    def detach(self) -> None:
+        self._detached = True
+
+
+class _FailingListDbThatDetachesUser(_FailingListDb):
+    def __init__(self, user: _DetachingUser) -> None:
+        super().__init__()
+        self._user = user
+
+    def invalidate(self) -> None:
+        super().invalidate()
+        self._user.detach()
 
 
 def test_list_chat_threads_fails_soft_after_operational_error() -> None:
@@ -139,6 +129,23 @@ def test_list_chat_threads_fails_soft_after_operational_error() -> None:
     assert db.rollback_calls >= 1
     assert db.invalidate_calls >= 1
     assert "traceback" not in response.text.lower()
+
+
+def test_list_chat_threads_survives_user_detach_after_invalidation() -> None:
+    detaching_user = _DetachingUser(user_id=42)
+    db = _FailingListDbThatDetachesUser(detaching_user)
+    app = FastAPI()
+    app.include_router(chat_threads_router, prefix="/api")
+    app.dependency_overrides[get_current_user] = lambda: detaching_user
+    app.dependency_overrides[get_db] = lambda: db
+    client = TestClient(app)
+
+    response = client.get("/api/chat-threads")
+
+    assert response.status_code == 200
+    assert response.json() == []
+    assert db.invalidate_calls >= 1
+    assert "DetachedInstanceError" not in response.text
 
 
 def test_upsert_chat_thread_returns_clean_503_on_operational_error() -> None:
