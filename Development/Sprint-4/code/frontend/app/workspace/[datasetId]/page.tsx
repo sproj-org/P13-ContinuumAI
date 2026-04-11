@@ -35,7 +35,6 @@ function WorkspaceContent() {
     activeTab,
     setActiveTab,
     setActiveDataset,
-    selectedDatasetId,
     setSelectedDatasetId,
     selectedAggregation,
     setSelectedAggregation,
@@ -44,7 +43,7 @@ function WorkspaceContent() {
     vizAgentOpen,
     setVizAgentOpen,
   } = useAppStore();
-  const { data: aggregationsData } = useAggregations(selectedDatasetId);
+  const { data: aggregationsData } = useAggregations(datasetId);
 
   // Set active dataset on mount
   useEffect(() => {
@@ -125,7 +124,7 @@ function WorkspaceContent() {
                   <div className="flex items-center gap-2">
                     <Database className="w-4 h-4 text-[#4f46e5]" />
                     <span className="text-[#4f46e5] font-medium capitalize">
-                      {selectedDatasetId || datasetId}
+                      {datasetId}
                     </span>
                   </div>
                 </div>
