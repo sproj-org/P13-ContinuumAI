@@ -12,7 +12,7 @@ export interface BuildChatThreadSnapshotsInput {
   chatStateByKey: Record<string, unknown>;
   lastChartSpecByKey: Record<string, unknown>;
   savedPromptsByKey: Record<string, string[] | undefined>;
-  chatMode: string;
+  chatModeByKey: Record<string, string | undefined>;
 }
 
 export interface ChatThreadDiff {
@@ -68,7 +68,7 @@ export function buildChatThreadSnapshots(input: BuildChatThreadSnapshotsInput): 
           chat_state: (input.chatStateByKey[threadKey] as Record<string, unknown> | null | undefined) ?? null,
           last_chart_spec: (input.lastChartSpecByKey[threadKey] as Record<string, unknown> | null | undefined) ?? null,
           saved_prompts: [...(input.savedPromptsByKey[threadKey] ?? [])],
-          chat_mode: input.chatMode,
+          chat_mode: input.chatModeByKey[threadKey] ?? "auto",
         },
       ];
     });

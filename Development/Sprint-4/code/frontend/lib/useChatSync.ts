@@ -28,7 +28,7 @@ export function useChatSync(options: UseChatSyncOptions = {}) {
     chatStateByKey,
     lastChartSpecByKey,
     savedPromptsByKey,
-    chatMode,
+    chatModeByKey,
     hydrateChatThreads,
   } = useAppStore();
 
@@ -39,9 +39,9 @@ export function useChatSync(options: UseChatSyncOptions = {}) {
         chatStateByKey,
         lastChartSpecByKey,
         savedPromptsByKey,
-        chatMode,
+        chatModeByKey: chatModeByKey as Record<string, string | undefined>,
       }),
-    [chatMode, chatStateByKey, chatTurnsByKey, lastChartSpecByKey, savedPromptsByKey],
+    [chatModeByKey, chatStateByKey, chatTurnsByKey, lastChartSpecByKey, savedPromptsByKey],
   );
   const localThreadMap = useMemo(() => toSnapshotThreadKeyMap(localThreads), [localThreads]);
 

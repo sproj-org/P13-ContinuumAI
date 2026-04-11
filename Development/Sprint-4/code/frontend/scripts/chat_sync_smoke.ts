@@ -39,7 +39,9 @@ function run() {
     savedPromptsByKey: {
       "silkroute:sales": ["Show sales by region"],
     },
-    chatMode: "chart",
+    chatModeByKey: {
+      "silkroute:sales": "chart",
+    },
   });
 
   const remoteThreads = [
