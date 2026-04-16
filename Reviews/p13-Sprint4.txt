@@ -1,0 +1,26 @@
+SUBMISSION GUIDELINES [138/150]
+
+1. Properly tested working system deployed on an online hosting platform. [30/30]
+
+2. Code with readable comments uploaded in “Sprint 4” folder of your project’s Github repository.[8/10]
+
+3. 3-4 minutes video that explains the functionality of your system developed so far. This must be uploaded in “Sprint 4” folder of your project’s Github repository.[10/10]
+
+4. Update project schedule on Github. The schedule must reflect the status of development (completed, in progress, to be done).[5/10]
+
+5. This "Readme" file should be uploaded in Sprint 4 folder.[5/10]
+
+6. Size of the work completed.[30/30]
+7. System Testing (Test Cases) + AI Components (Test Cases)  [40/40]
+8. Updated threat modelling document. [10/10]
+
+
+
+General Comments
+Readme file is not according to the given template.
+Update GitHub project plan, add activities for prototype, sprint 1 and 2.
+
+Individual grading:
+
+
+
