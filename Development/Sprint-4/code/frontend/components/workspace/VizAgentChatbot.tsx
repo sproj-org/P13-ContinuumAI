@@ -38,6 +38,7 @@ import { buildAnalysisFocusContext, buildChartFocusContext, contextualPromptSugg
 import { renderChart } from "@/components/workspace/renderChart";
 import MarkdownMessage from "@/components/common/MarkdownMessage";
 import { useSavedCharts, useStrategyKpis } from "@/lib/hooks";
+import { useChatSync } from "@/lib/useChatSync";
 import { attachChartSemanticContext, resolveChartTitle } from "@/lib/chart-display";
 import { createChartBuilderSeed } from "@/lib/chart-builder-seed";
 import { getMartDrillAdvisory } from "@/lib/mart-drill-utils";
@@ -97,13 +98,14 @@ type ChartPreviewState = {
 };
 
 export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
+  useChatSync({ enabled: isOpen });
+
   const params = useParams<{ datasetId: string }>();
   const {
-    selectedDatasetId,
     selectedAggregation,
     setSelectedAggregation,
     availableMarts,
-    chatMode,
+    chatModeByKey,
     setChatMode,
     chatTurnsByKey,
     lastChartSpecByKey,
@@ -136,11 +138,15 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
   const [selectedDashboardOption, setSelectedDashboardOption] = useState<string>("Default");
   const [newDashboardName, setNewDashboardName] = useState<string>("");
   const martPickerRef = useRef<HTMLDivElement | null>(null);
-  const routeDatasetId = params?.datasetId || selectedDatasetId;
+  const routeDatasetId = params?.datasetId ?? "";
 
   const chatKey = useMemo(
     () => (selectedAggregation ? `${routeDatasetId}:${selectedAggregation}` : null),
     [routeDatasetId, selectedAggregation]
+  );
+  const chatMode = useMemo(
+    () => (chatKey ? chatModeByKey[chatKey] ?? "auto" : "auto"),
+    [chatKey, chatModeByKey],
   );
   const turns = useMemo(() => (chatKey ? chatTurnsByKey[chatKey] ?? [] : []), [chatKey, chatTurnsByKey]);
   const { data: savedCharts } = useSavedCharts(routeDatasetId);
@@ -912,7 +918,11 @@ export function VizAgentChatbot({ isOpen, onClose }: VizAgentChatbotProps) {
             <button
               key={option.id}
               type="button"
-              onClick={() => setChatMode(option.id)}
+              onClick={() => {
+                if (chatKey) {
+                  setChatMode(chatKey, option.id);
+                }
+              }}
               className={`flex-1 px-2 py-1 text-xs rounded-md transition-colors ${
                 chatMode === option.id
                   ? "bg-gradient-to-r from-[#4f46e5] to-indigo-600 text-white shadow-sm"

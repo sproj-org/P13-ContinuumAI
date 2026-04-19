@@ -55,6 +55,10 @@ export interface SavedPromptsState {
   [key: string]: string[];
 }
 
+export interface ChatModeByKey {
+  [key: string]: ChatMode;
+}
+
 interface AppState {
   selectedDatasetId: DatasetId;
   setSelectedDatasetId: (datasetId: DatasetId) => void;
@@ -97,6 +101,7 @@ interface AppState {
   chatTurnsByKey: Record<string, ChatTurn[]>;
   lastChartSpecByKey: Record<string, ChartSpecV1 | null>;
   chatStateByKey: Record<string, ChatThreadState>;
+  chatModeByKey: ChatModeByKey;
   savedPromptsByKey: SavedPromptsState;
   appendChatTurn: (key: string, turn: ChatTurn) => void;
   setChatTurns: (key: string, turns: ChatTurn[]) => void;
@@ -109,8 +114,7 @@ interface AppState {
       selections?: Partial<ChatSelectionsState>;
     }
   ) => void;
-  chatMode: ChatMode;
-  setChatMode: (mode: ChatMode) => void;
+  setChatMode: (key: string, mode: ChatMode) => void;
   addSavedPrompt: (key: string, prompt: string) => void;
   removeSavedPrompt: (key: string, prompt: string) => void;
   clearSavedPrompts: (key: string) => void;
@@ -186,6 +190,7 @@ type PersistedAppState = {
   chatTurnsByKey?: Record<string, unknown>;
   lastChartSpecByKey?: Record<string, unknown>;
   chatStateByKey?: Record<string, unknown>;
+  chatModeByKey?: Record<string, unknown>;
   chatMode?: ChatMode;
   savedPromptsByKey?: Record<string, unknown>;
 };
@@ -589,6 +594,22 @@ function sanitizePersistedSavedPrompts(raw: unknown): SavedPromptsState {
   return sanitized;
 }
 
+function normalizeChatMode(value: unknown): ChatMode {
+  return value === 'chart' || value === 'explain' || value === 'auto' ? value : 'auto';
+}
+
+function sanitizePersistedChatModes(raw: unknown): ChatModeByKey {
+  if (!raw || typeof raw !== 'object') {
+    return {};
+  }
+  const byKey = raw as Record<string, unknown>;
+  const sanitized: ChatModeByKey = {};
+  for (const [key, value] of Object.entries(byKey)) {
+    sanitized[key] = normalizeChatMode(value);
+  }
+  return sanitized;
+}
+
 const defaultChatThreadState: ChatThreadState = {
   clarify_id: null,
   selections: {
@@ -675,6 +696,7 @@ export const useAppStore = create<AppState>()(
       chatTurnsByKey: {},
       lastChartSpecByKey: {},
       chatStateByKey: {},
+      chatModeByKey: {},
       savedPromptsByKey: {},
       appendChatTurn: (key, turn) =>
         set((state) => ({
@@ -695,15 +717,18 @@ export const useAppStore = create<AppState>()(
           const nextTurns = { ...state.chatTurnsByKey };
           const nextSpecs = { ...state.lastChartSpecByKey };
           const nextChatState = { ...state.chatStateByKey };
+          const nextModes = { ...state.chatModeByKey };
           const nextPrompts = { ...state.savedPromptsByKey };
           delete nextTurns[key];
           delete nextSpecs[key];
           delete nextChatState[key];
+          delete nextModes[key];
           delete nextPrompts[key];
           return {
             chatTurnsByKey: nextTurns,
             lastChartSpecByKey: nextSpecs,
             chatStateByKey: nextChatState,
+            chatModeByKey: nextModes,
             savedPromptsByKey: nextPrompts,
           };
         }),
@@ -749,8 +774,13 @@ export const useAppStore = create<AppState>()(
             },
           };
         }),
-      chatMode: 'auto',
-      setChatMode: (mode) => set({ chatMode: mode }),
+      setChatMode: (key, mode) =>
+        set((state) => ({
+          chatModeByKey: {
+            ...state.chatModeByKey,
+            [key]: mode,
+          },
+        })),
       addSavedPrompt: (key, prompt) =>
         set((state) => {
           const trimmed = prompt.trim();
@@ -798,8 +828,8 @@ export const useAppStore = create<AppState>()(
           const nextTurns: Record<string, ChatTurn[]> = {};
           const nextSpecs: Record<string, ChartSpecV1 | null> = {};
           const nextChatState: Record<string, ChatThreadState> = {};
+          const nextModes: ChatModeByKey = {};
           const nextPrompts: SavedPromptsState = {};
-          let mode: ChatMode = 'auto';
           for (const t of threads) {
             nextTurns[t.thread_key] = t.turns;
             nextSpecs[t.thread_key] = t.last_chart_spec;
@@ -809,17 +839,14 @@ export const useAppStore = create<AppState>()(
             if (t.saved_prompts.length > 0) {
               nextPrompts[t.thread_key] = t.saved_prompts;
             }
-            // Use the mode from the most recent thread
-            if (t.chat_mode === 'chart' || t.chat_mode === 'explain' || t.chat_mode === 'auto') {
-              mode = t.chat_mode;
-            }
+            nextModes[t.thread_key] = normalizeChatMode(t.chat_mode);
           }
           return {
             chatTurnsByKey: nextTurns,
             lastChartSpecByKey: nextSpecs,
             chatStateByKey: nextChatState,
+            chatModeByKey: nextModes,
             savedPromptsByKey: nextPrompts,
-            chatMode: mode,
           };
         }),
 
@@ -833,33 +860,39 @@ export const useAppStore = create<AppState>()(
           chatTurnsByKey: {},
           lastChartSpecByKey: {},
           chatStateByKey: {},
-          chatMode: 'auto' as ChatMode,
+          chatModeByKey: {},
           savedPromptsByKey: {},
         }),
     }),
     {
       name: 'continuumai-app-store',
-      version: 6,
+      version: 7,
       storage: createJSONStorage(() => userScopedStorage),
       migrate: (persistedState: unknown, version: number) => {
         const state = (persistedState ?? {}) as PersistedAppState;
-        if (version >= 6) {
+        if (version >= 7) {
           return {
             ...state,
             chatTurnsByKey: sanitizePersistedTurns(state.chatTurnsByKey),
             chatStateByKey: sanitizePersistedChatState(state.chatStateByKey),
+            chatModeByKey: sanitizePersistedChatModes(state.chatModeByKey),
             savedPromptsByKey: sanitizePersistedSavedPrompts(state.savedPromptsByKey),
           };
         }
+        const persistedTurns = sanitizePersistedTurns(state.chatTurnsByKey);
+        const legacyMode = normalizeChatMode(state.chatMode);
+        const legacyChatModeByKey = Object.fromEntries(
+          Object.keys(persistedTurns).map((key) => [key, legacyMode]),
+        ) as ChatModeByKey;
         return {
           ...state,
-          chatTurnsByKey: sanitizePersistedTurns(state.chatTurnsByKey),
+          chatTurnsByKey: persistedTurns,
           lastChartSpecByKey:
             state.lastChartSpecByKey && typeof state.lastChartSpecByKey === 'object'
               ? (state.lastChartSpecByKey as Record<string, ChartSpecV1 | null>)
               : {},
           chatStateByKey: sanitizePersistedChatState(state.chatStateByKey),
-          chatMode: state.chatMode === 'chart' || state.chatMode === 'explain' ? state.chatMode : 'auto',
+          chatModeByKey: legacyChatModeByKey,
           savedPromptsByKey: sanitizePersistedSavedPrompts(state.savedPromptsByKey),
         };
       },
@@ -870,7 +903,7 @@ export const useAppStore = create<AppState>()(
         chatTurnsByKey: state.chatTurnsByKey,
         lastChartSpecByKey: state.lastChartSpecByKey,
         chatStateByKey: state.chatStateByKey,
-        chatMode: state.chatMode,
+        chatModeByKey: state.chatModeByKey,
         savedPromptsByKey: state.savedPromptsByKey,
       }),
     }

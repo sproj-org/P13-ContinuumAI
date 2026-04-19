@@ -48,6 +48,7 @@ ChatPromptArtifactAction = Literal[
     "explain_kpi",
     "next_step",
     "drill_next",
+    "chart_delta",
     "chart_change",
     "forecast_drivers",
     "forecast_target_gap",

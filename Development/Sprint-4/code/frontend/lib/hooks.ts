@@ -4,6 +4,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from './api';
+import { deleteChatThreadCache, upsertChatThreadCache } from './chat-sync-core';
 import type {
   SavedChartAPI,
   SavedChartCreateAPI,
@@ -22,6 +23,8 @@ import type {
   StrategyKpiLibraryResponse,
 } from './api-types';
 import type { ChartSpecV1, ChartsPreviewResponse } from "./types/chartspec";
+
+const CHAT_THREADS_QUERY_KEY = ['chatThreads'] as const;
 
 function stableSerialize(value: unknown): string {
   if (value === null || value === undefined) {
@@ -242,11 +245,16 @@ export function useDeleteDashboard() {
 /**
  * Fetch all chat threads for the current user.
  */
-export function useChatThreads() {
+export function useChatThreads(options?: { enabled?: boolean }) {
   return useQuery<ChatThreadAPI[], Error>({
-    queryKey: ['chatThreads'],
+    queryKey: CHAT_THREADS_QUERY_KEY,
     queryFn: () => apiClient.listChatThreads(),
-    staleTime: 30 * 1000,
+    enabled: options?.enabled ?? true,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 }
 
@@ -257,8 +265,11 @@ export function useUpsertChatThread() {
   const queryClient = useQueryClient();
   return useMutation<ChatThreadAPI, Error, ChatThreadUpsertAPI>({
     mutationFn: (data) => apiClient.upsertChatThread(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chatThreads'] });
+    onSuccess: (thread) => {
+      queryClient.setQueryData<ChatThreadAPI[]>(
+        CHAT_THREADS_QUERY_KEY,
+        (currentThreads) => upsertChatThreadCache(currentThreads, thread),
+      );
     },
   });
 }
@@ -270,8 +281,11 @@ export function useDeleteChatThread() {
   const queryClient = useQueryClient();
   return useMutation<void, Error, string>({
     mutationFn: (threadKey) => apiClient.deleteChatThread(threadKey),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chatThreads'] });
+    onSuccess: (_, threadKey) => {
+      queryClient.setQueryData<ChatThreadAPI[]>(
+        CHAT_THREADS_QUERY_KEY,
+        (currentThreads) => deleteChatThreadCache(currentThreads, threadKey),
+      );
     },
   });
 }
@@ -284,7 +298,7 @@ export function useClearChatThreads() {
   return useMutation<void, Error, void>({
     mutationFn: () => apiClient.clearAllChatThreads(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chatThreads'] });
+      queryClient.setQueryData<ChatThreadAPI[]>(CHAT_THREADS_QUERY_KEY, []);
     },
   });
 }

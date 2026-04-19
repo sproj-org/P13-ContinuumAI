@@ -3,7 +3,6 @@
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAppStore, WorkspaceTab } from "@/lib/store";
 import { useAggregations } from "@/lib/hooks";
-import { useChatSync } from "@/lib/useChatSync";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect } from "react";
@@ -36,7 +35,6 @@ function WorkspaceContent() {
     activeTab,
     setActiveTab,
     setActiveDataset,
-    selectedDatasetId,
     setSelectedDatasetId,
     selectedAggregation,
     setSelectedAggregation,
@@ -45,10 +43,7 @@ function WorkspaceContent() {
     vizAgentOpen,
     setVizAgentOpen,
   } = useAppStore();
-  const { data: aggregationsData } = useAggregations(selectedDatasetId);
-
-  // Bidirectional sync: hydrate chat state from DB + debounced write-back
-  useChatSync();
+  const { data: aggregationsData } = useAggregations(datasetId);
 
   // Set active dataset on mount
   useEffect(() => {
@@ -129,7 +124,7 @@ function WorkspaceContent() {
                   <div className="flex items-center gap-2">
                     <Database className="w-4 h-4 text-[#4f46e5]" />
                     <span className="text-[#4f46e5] font-medium capitalize">
-                      {selectedDatasetId || datasetId}
+                      {datasetId}
                     </span>
                   </div>
                 </div>
